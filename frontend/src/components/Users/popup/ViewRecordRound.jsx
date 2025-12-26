@@ -53,10 +53,7 @@ const ViewRecordRound = ({ onClose, recordViewData }) => {
 
   // Check if this is Round 0
   const isRound0 = recordViewData.round_type === "Round 0";
-
-  console.log("View Record Data:", recordViewData);
-  console.log("Parsed Founder Data:", founderData);
-  console.log("Parsed Instrument Data:", instrumentData);
+  const pricePerShare = parseFloat(founderData.pricePerShare) || 0;
 
   // Function to render Round 0 specific content
   const renderRound0Content = () => (
@@ -157,43 +154,128 @@ const ViewRecordRound = ({ onClose, recordViewData }) => {
                 <table className="table table-sm table-bordered">
                   <thead>
                     <tr>
-                      <th>Founder</th>
-                      <th>Shares</th>
+                      <th>Founder Name</th>
+                      <th>Email</th>
+                      <th>Phone</th>
+                      <th>Numbers of Shares</th>
                       <th>Share Type</th>
+                      <th>Share Class</th>
                       <th>Voting Rights</th>
                       <th>Ownership %</th>
+                      <th>Price Per Share</th>
+                      <th>Total Value</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {founderData.founders.map((founder, index) => {
+                    {founderData.founders && founderData.founders.map((founder, index) => {
                       const shares = parseInt(founder.shares) || 0;
                       const totalShares = founderData.totalShares || recordViewData.total_founder_shares || 1;
                       const percentage = totalShares > 0 ?
                         ((shares / totalShares) * 100).toFixed(1) : '0.0';
 
+                      // Calculate value if price per share is available
+                      const totalValue = (shares * pricePerShare).toFixed(2);
+
                       return (
                         <tr key={index}>
-                          <td>Founder {index + 1}</td>
+                          <td>
+                            {founder.firstName && founder.lastName ?
+                              `${founder.firstName} ${founder.lastName}` :
+                              `Founder ${index + 1}`
+                            }
+                          </td>
+                          <td>{founder.email || '-'}</td>
+                          <td>{founder.phone || '-'}</td>
                           <td>{shares.toLocaleString()}</td>
                           <td>
                             {founder.shareType === 'common' ? 'Common Shares' :
                               founder.shareType === 'preferred' ? 'Preferred Shares' :
-                                founder.shareType === 'other' ? 'Other' : 'Common Shares'}
+                                founder.shareType === 'other' && founder.customShareType ?
+                                  founder.customShareType : 'Other'
+                            }
+                          </td>
+                          <td>
+                            {founder.shareClass === 'other' && founder.customShareClass ?
+                              founder.customShareClass :
+                              founder.shareClass || 'Class A'
+                            }
                           </td>
                           <td>{founder.voting === 'voting' ? 'Voting' : 'Non-Voting'}</td>
                           <td>{percentage}%</td>
+                          <td>
+                            {recordViewData.currency ?
+                              `${recordViewData.currency.split(' ')[1]}${pricePerShare.toFixed(3)}` :
+                              `$${pricePerShare.toFixed(3)}`
+                            }
+                          </td>
+                          <td>
+                            {recordViewData.currency ?
+                              `${recordViewData.currency.split(' ')[1]}${totalValue}` :
+                              `$${totalValue}`
+                            }
+                          </td>
                         </tr>
                       );
                     })}
-                    <tr className="table-secondary fw-bold">
-                      <td>Total</td>
-                      <td>{(founderData.totalShares || recordViewData.total_founder_shares || 0).toLocaleString()}</td>
-                      <td>-</td>
-                      <td>-</td>
-                      <td>100%</td>
-                    </tr>
+
+                    {/* Total Row */}
+                    {founderData.totalShares && (
+                      <tr className="table-secondary fw-bold">
+                        <td colSpan="3">Total</td>
+                        <td>{(founderData.totalShares || recordViewData.total_founder_shares || 0).toLocaleString()}</td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td>100%</td>
+                        <td>
+                          {recordViewData.currency ?
+                            `${recordViewData.currency.split(' ')[1]}${pricePerShare.toFixed(3)}` :
+                            `$${pricePerShare.toFixed(3)}`
+                          }
+                        </td>
+                        <td>
+                          {recordViewData.currency ?
+                            `${recordViewData.currency.split(' ')[1]}${(parseFloat(founderData.totalShares || 0) * pricePerShare).toFixed(2)}` :
+                            `$${(parseFloat(founderData.totalShares || 0) * pricePerShare).toFixed(2)}`
+                          }
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
+              </div>
+
+              {/* Additional Summary Information */}
+              <div className="mt-3 p-3 bg-white rounded border">
+                <h6 className="mb-3">Round 0 Summary</h6>
+                <div className="row text-center">
+                  <div className="col-md-3">
+                    <small className="text-muted">Total Founders</small>
+                    <div className="fw-bold">{founderData.founders.length}</div>
+                  </div>
+                  <div className="col-md-3">
+                    <small className="text-muted">Total Shares</small>
+                    <div className="fw-bold">{(founderData.totalShares || recordViewData.total_founder_shares || 0).toLocaleString()}</div>
+                  </div>
+                  <div className="col-md-3">
+                    <small className="text-muted">Price Per Share</small>
+                    <div className="fw-bold">
+                      {recordViewData.currency ?
+                        `${recordViewData.currency.split(' ')[1]}${pricePerShare.toFixed(3)}` :
+                        `$${pricePerShare.toFixed(3)}`
+                      }
+                    </div>
+                  </div>
+                  <div className="col-md-3">
+                    <small className="text-muted">Total Value</small>
+                    <div className="fw-bold">
+                      {recordViewData.currency ?
+                        `${recordViewData.currency.split(' ')[1]}${(parseFloat(founderData.totalShares || 0) * pricePerShare).toFixed(2)}` :
+                        `$${(parseFloat(founderData.totalShares || 0) * pricePerShare).toFixed(2)}`
+                      }
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -285,264 +367,440 @@ const ViewRecordRound = ({ onClose, recordViewData }) => {
   );
 
   // Function to render regular investment round content
-  const renderInvestmentRoundContent = () => (
-    <div className="row g-3">
-      {/* Share Class Information */}
-      <div className="col-md-6">
-        <div className="p-3 bg-light rounded-3 h-100">
-          <span className="text-secondary small fw-semibold text-uppercase">
-            Name of Round:
-          </span>
-          <p className="mb-0 mt-1 fw-medium text-dark fs-6">
-            {recordViewData.nameOfRound || (
-              <span className="text-muted">Not provided</span>
-            )}
-          </p>
-        </div>
-      </div>
+  const renderInvestmentRoundContent = () => {
+    // Parse additional data for investment rounds
+    const preMoney = parseFloat(recordViewData.pre_money) || 0;
+    const postMoney = parseFloat(recordViewData.post_money) || 0;
+    const optionPoolPercent = parseFloat(recordViewData.optionPoolPercent) || 0;
 
-      <div className="col-md-6">
-        <div className="p-3 bg-light rounded-3 h-100">
-          <span className="text-secondary small fw-semibold text-uppercase">
-            Share Class Type:
-          </span>
-          <p className="mb-0 mt-1 fw-medium text-dark fs-6">
-            {recordViewData.shareClassType || (
-              <span className="text-muted">Not provided</span>
-            )}
-          </p>
-        </div>
-      </div>
-
-      {recordViewData.shareclassother && (
+    // Parse founder data for cap table calculations
+    const founderData = safeJsonParse(recordViewData.founder_data);
+    const totalFounderShares = recordViewData.total_founder_shares || founderData.totalShares || 0;
+    console.log(recordViewData)
+    return (
+      <div className="row g-3">
+        {/* Round Type */}
         <div className="col-md-6">
           <div className="p-3 bg-light rounded-3 h-100">
             <span className="text-secondary small fw-semibold text-uppercase">
-              Custom Share Class Name:
+              Round Type:
             </span>
             <p className="mb-0 mt-1 fw-medium text-dark fs-6">
-              {recordViewData.shareclassother}
+              {recordViewData.round_type || "Investment Round"}
             </p>
           </div>
         </div>
-      )}
 
-      {/* Description */}
-      {recordViewData.description && (
-        <div className="col-12">
-          <div className="p-3 bg-light rounded-3">
-            <span className="text-secondary small fw-semibold text-uppercase">
-              Description:
-            </span>
-            <p className="mb-0 mt-1 fw-medium text-dark fs-6">
-              {recordViewData.description}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Investment Instrument */}
-      {recordViewData.instrumentType && (
-        <>
-          <div className="col-md-6">
-            <div className="p-3 bg-light rounded-3 h-100">
-              <span className="text-secondary small fw-semibold text-uppercase">
-                Investment Instrument:
-              </span>
-              <p className="mb-0 mt-1 fw-medium text-dark fs-6">
-                {recordViewData.instrumentType}
-              </p>
-            </div>
-          </div>
-
-          {recordViewData.customInstrument && (
-            <div className="col-md-6">
-              <div className="p-3 bg-light rounded-3 h-100">
-                <span className="text-secondary small fw-semibold text-uppercase">
-                  Custom Investment Instrument:
-                </span>
-                <p className="mb-0 mt-1 fw-medium text-dark fs-6">
-                  {recordViewData.customInstrument}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Instrument Specific Details */}
-          {renderInstrumentDetails()}
-        </>
-      )}
-
-      {/* Round Size */}
-      {recordViewData.roundsize && (
+        {/* Share Class Information */}
         <div className="col-md-6">
           <div className="p-3 bg-light rounded-3 h-100">
             <span className="text-secondary small fw-semibold text-uppercase">
-              Round Size:
+              Name of Round:
             </span>
             <p className="mb-0 mt-1 fw-medium text-dark fs-6">
-              {recordViewData.currency || '$'}{Number(recordViewData.roundsize).toLocaleString()}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {recordViewData.currency && (
-        <div className="col-md-6">
-          <div className="p-3 bg-light rounded-3 h-100">
-            <span className="text-secondary small fw-semibold text-uppercase">
-              Currency:
-            </span>
-            <p className="mb-0 mt-1 fw-medium text-dark fs-6">
-              {recordViewData.currency}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Issued Shares */}
-      {recordViewData.issuedshares && (
-        <div className="col-md-6">
-          <div className="p-3 bg-light rounded-3 h-100">
-            <span className="text-secondary small fw-semibold text-uppercase">
-              Shares Issued:
-            </span>
-            <p className="mb-0 mt-1 fw-medium text-dark fs-6">
-              {Number(recordViewData.issuedshares).toLocaleString("en-US")}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Round Status */}
-      {recordViewData.roundStatus && (
-        <div className="col-md-6">
-          <div className="p-3 bg-light rounded-3 h-100">
-            <span className="text-secondary small fw-semibold text-uppercase">
-              Round Status:
-            </span>
-            <p className="mb-0 mt-1 fw-medium text-dark fs-6">
-              {recordViewData.roundStatus}
-              {recordViewData.roundStatus === "CLOSED" && recordViewData.dateroundclosed && (
-                <span className="text-muted small d-block mt-1">
-                  Closed on: {recordViewData.dateroundclosed}
-                </span>
+              {recordViewData.nameOfRound || (
+                <span className="text-muted">Not provided</span>
               )}
             </p>
           </div>
         </div>
-      )}
 
-      {/* Rights & Preferences */}
-      {recordViewData.rights && (
-        <div className="col-12">
-          <div className="p-3 bg-light rounded-3">
+        <div className="col-md-6">
+          <div className="p-3 bg-light rounded-3 h-100">
             <span className="text-secondary small fw-semibold text-uppercase">
-              Rights & Preferences:
+              Share Class Type:
             </span>
             <p className="mb-0 mt-1 fw-medium text-dark fs-6">
-              {recordViewData.rights}
+              {recordViewData.shareClassType || (
+                <span className="text-muted">Not provided</span>
+              )}
             </p>
           </div>
         </div>
-      )}
 
-      {/* Liquidation Preferences */}
-      {recordViewData.liquidationpreferences && (
-        <div className="col-12">
-          <div className="p-3 bg-light rounded-3">
-            <span className="text-secondary small fw-semibold text-uppercase">
-              Liquidation Preference:
-            </span>
-            <p className="mb-0 mt-1 fw-medium text-dark fs-6">
-              {recordViewData.liquidationpreferences}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Liquidation Type */}
-      {recordViewData.liquidation && (
-        <div className="col-12">
-          <div className="p-3 bg-light rounded-3">
-            <span className="text-secondary small fw-semibold text-uppercase">
-              Liquidation Type:
-            </span>
-            <p className="mb-0 mt-1 fw-medium text-dark fs-6">
-              {Array.isArray(recordViewData.liquidation) ?
-                recordViewData.liquidation.join(", ") :
-                recordViewData.liquidation
-              }
-            </p>
-            {recordViewData.liquidationOther && (
-              <p className="mb-0 mt-2 fw-medium text-dark">
-                <strong>Custom:</strong> {recordViewData.liquidationOther}
+        {recordViewData.shareclassother && (
+          <div className="col-md-6">
+            <div className="p-3 bg-light rounded-3 h-100">
+              <span className="text-secondary small fw-semibold text-uppercase">
+                Custom Share Class Name:
+              </span>
+              <p className="mb-0 mt-1 fw-medium text-dark fs-6">
+                {recordViewData.shareclassother}
               </p>
-            )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Convertible */}
-      {recordViewData.convertible && (
-        <div className="col-md-6">
-          <div className="p-3 bg-light rounded-3 h-100">
-            <span className="text-secondary small fw-semibold text-uppercase">
-              Convertible:
-            </span>
-            <p className="mb-0 mt-1 fw-medium text-dark fs-6">
-              {recordViewData.convertible}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Convertible Type */}
-      {recordViewData.convertibleType && (
-        <div className="col-md-6">
-          <div className="p-3 bg-light rounded-3 h-100">
-            <span className="text-secondary small fw-semibold text-uppercase">
-              Convertible Type:
-            </span>
-            <p className="mb-0 mt-1 fw-medium text-dark fs-6">
-              {recordViewData.convertibleType}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Voting Rights */}
-      {recordViewData.voting && (
-        <div className="col-md-6">
-          <div className="p-3 bg-light rounded-3 h-100">
-            <span className="text-secondary small fw-semibold text-uppercase">
-              Voting Rights:
-            </span>
-            <p className="mb-0 mt-1 fw-medium text-dark fs-6">
-              {recordViewData.voting}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* File Downloads */}
-      {renderFileDownloads()}
-
-      {/* General Notes */}
-      {recordViewData.generalnotes && (
+        {/* ========== INVESTMENT DETAILS SECTION ========== */}
         <div className="col-12">
-          <div className="p-3 bg-light rounded-3">
-            <span className="text-secondary small fw-semibold text-uppercase">
-              General Notes:
-            </span>
-            <p className="mb-0 mt-1 fw-medium text-dark fs-6">
-              {recordViewData.generalnotes}
-            </p>
+          <div className="p-3 bg-primary bg-opacity-10 rounded-3 border border-primary border-opacity-25">
+            <h5 className="text-primary mb-3">Investment Details</h5>
+            <div className="row">
+              {/* Round Size */}
+              {recordViewData.roundsize && (
+                <div className="col-md-4">
+                  <div className="p-3 bg-white rounded-3 h-100">
+                    <span className="text-secondary small fw-semibold text-uppercase">
+                      Round Size:
+                    </span>
+                    <p className="mb-0 mt-1 fw-bold text-dark fs-5">
+                      {recordViewData.currency || '$'}{Number(recordViewData.roundsize).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Pre-Money Valuation */}
+              {preMoney > 0 && (
+                <div className="col-md-4">
+                  <div className="p-3 bg-white rounded-3 h-100">
+                    <span className="text-secondary small fw-semibold text-uppercase">
+                      Pre-Money Valuation:
+                    </span>
+                    <p className="mb-0 mt-1 fw-bold text-dark fs-5">
+                      {recordViewData.currency || '$'}{preMoney.toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Post-Money Valuation */}
+              {postMoney > 0 && (
+                <div className="col-md-4">
+                  <div className="p-3 bg-white rounded-3 h-100">
+                    <span className="text-secondary small fw-semibold text-uppercase">
+                      Post-Money Valuation:
+                    </span>
+                    <p className="mb-0 mt-1 fw-bold text-dark fs-5">
+                      {recordViewData.currency || '$'}{postMoney.toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Option Pool Percentage */}
+              {optionPoolPercent > 0 && (
+                <div className="col-md-4">
+                  <div className="p-3 bg-white rounded-3 h-100">
+                    <span className="text-secondary small fw-semibold text-uppercase">
+                      Option Pool %:
+                    </span>
+                    <p className="mb-0 mt-1 fw-bold text-dark fs-5">
+                      {optionPoolPercent}%
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Currency */}
+              {recordViewData.currency && (
+                <div className="col-md-4">
+                  <div className="p-3 bg-white rounded-3 h-100">
+                    <span className="text-secondary small fw-semibold text-uppercase">
+                      Currency:
+                    </span>
+                    <p className="mb-0 mt-1 fw-bold text-dark fs-5">
+                      {recordViewData.currency}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Issued Shares */}
+              {recordViewData.issuedshares && (
+                <div className="col-md-4">
+                  <div className="p-3 bg-white rounded-3 h-100">
+                    <span className="text-secondary small fw-semibold text-uppercase">
+                      Shares Issued in Round:
+                    </span>
+                    <p className="mb-0 mt-1 fw-bold text-dark fs-5">
+                      {Number(recordViewData.issuedshares).toLocaleString("en-US")}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      )}
-    </div>
-  );
+
+        {/* ========== CAP TABLE SUMMARY SECTION ========== */}
+        {(preMoney > 0 || totalFounderShares > 0) && (
+          <div className="col-12">
+            <div className="p-3 bg-info bg-opacity-10 rounded-3 border border-info border-opacity-25">
+              <h5 className="text-info mb-3">Cap Table Summary</h5>
+              <div className="row">
+                {/* Total Founder Shares from Round 0 */}
+                {totalFounderShares > 0 && (
+                  <div className="col-md-3">
+                    <div className="p-3 bg-white rounded-3 h-100">
+                      <span className="text-secondary small fw-semibold text-uppercase">
+                        Founder Shares (Round 0):
+                      </span>
+                      <p className="mb-0 mt-1 fw-bold text-dark fs-6">
+                        {Number(totalFounderShares).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Investor Ownership Percentage */}
+                {preMoney > 0 && recordViewData.roundsize && (
+                  <div className="col-md-3">
+                    <div className="p-3 bg-white rounded-3 h-100">
+                      <span className="text-secondary small fw-semibold text-uppercase">
+                        Investor Ownership %:
+                      </span>
+                      <p className="mb-0 mt-1 fw-bold text-dark fs-6">
+                        {((parseFloat(recordViewData.roundsize) / postMoney) * 100).toFixed(1)}%
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Price Per Share Calculation */}
+                {/* {recordViewData.issuedshares && recordViewData.roundsize && (
+                  <div className="col-md-3">
+                    <div className="p-3 bg-white rounded-3 h-100">
+                      <span className="text-secondary small fw-semibold text-uppercase">
+                        Price Per Share:
+                      </span>
+                      <p className="mb-0 mt-1 fw-bold text-dark fs-6">
+                        {recordViewData.currency || '$'}
+                        {(parseFloat(recordViewData.roundsize) / parseFloat(recordViewData.issuedshares)).toFixed(4)}
+                      </p>
+                    </div>
+                  </div>
+                )} */}
+
+                {/* Dilution Impact */}
+                {totalFounderShares > 0 && recordViewData.issuedshares && (
+                  <div className="col-md-3">
+                    <div className="p-3 bg-white rounded-3 h-100">
+                      <span className="text-secondary small fw-semibold text-uppercase">
+                        Total Shares Post-Round:
+                      </span>
+                      <p className="mb-0 mt-1 fw-bold text-dark fs-6">
+                        {(parseInt(totalFounderShares) + parseInt(recordViewData.issuedshares)).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Description */}
+        {recordViewData.description && (
+          <div className="col-12">
+            <div className="p-3 bg-light rounded-3">
+              <span className="text-secondary small fw-semibold text-uppercase">
+                Round Description:
+              </span>
+              <p className="mb-0 mt-1 fw-medium text-dark fs-6">
+                {recordViewData.description}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Investment Instrument */}
+        {recordViewData.instrumentType && (
+          <>
+            <div className="col-md-6">
+              <div className="p-3 bg-light rounded-3 h-100">
+                <span className="text-secondary small fw-semibold text-uppercase">
+                  Investment Instrument:
+                </span>
+                <p className="mb-0 mt-1 fw-medium text-dark fs-6">
+                  {recordViewData.instrumentType}
+                </p>
+              </div>
+            </div>
+
+            {recordViewData.customInstrument && (
+              <div className="col-md-6">
+                <div className="p-3 bg-light rounded-3 h-100">
+                  <span className="text-secondary small fw-semibold text-uppercase">
+                    Custom Investment Instrument:
+                  </span>
+                  <p className="mb-0 mt-1 fw-medium text-dark fs-6">
+                    {recordViewData.customInstrument}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Instrument Specific Details */}
+            {renderInstrumentDetails()}
+          </>
+        )}
+
+        {/* Round Status */}
+        {recordViewData.roundStatus && (
+          <div className="col-md-6">
+            <div className="p-3 bg-light rounded-3 h-100">
+              <span className="text-secondary small fw-semibold text-uppercase">
+                Round Status:
+              </span>
+              <p className="mb-0 mt-1 fw-medium text-dark fs-6">
+                <span className={`badge ${recordViewData.roundStatus === "CLOSED" ? "bg-success" :
+                  recordViewData.roundStatus === "OPEN" ? "bg-primary" :
+                    recordViewData.roundStatus === "PENDING" ? "bg-warning" :
+                      "bg-secondary"
+                  }`}>
+                  {recordViewData.roundStatus}
+                </span>
+                {recordViewData.roundStatus === "CLOSED" && recordViewData.dateroundclosed && (
+                  <span className="text-muted small d-block mt-1">
+                    Closed on: {recordViewData.dateroundclosed}
+                  </span>
+                )}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Date Round Closed */}
+        {recordViewData.dateroundclosed && recordViewData.roundStatus !== "CLOSED" && (
+          <div className="col-md-6">
+            <div className="p-3 bg-light rounded-3 h-100">
+              <span className="text-secondary small fw-semibold text-uppercase">
+                Target Close Date:
+              </span>
+              <p className="mb-0 mt-1 fw-medium text-dark fs-6">
+                {recordViewData.dateroundclosed}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Rights & Preferences */}
+        {recordViewData.rights && (
+          <div className="col-12">
+            <div className="p-3 bg-light rounded-3">
+              <span className="text-secondary small fw-semibold text-uppercase">
+                Rights & Preferences:
+              </span>
+              <p className="mb-0 mt-1 fw-medium text-dark fs-6">
+                {recordViewData.rights}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Liquidation Preferences */}
+        {recordViewData.liquidationpreferences && (
+          <div className="col-12">
+            <div className="p-3 bg-light rounded-3">
+              <span className="text-secondary small fw-semibold text-uppercase">
+                Liquidation Preference:
+              </span>
+              <p className="mb-0 mt-1 fw-medium text-dark fs-6">
+                {recordViewData.liquidationpreferences}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Liquidation Type */}
+        {recordViewData.liquidation && (
+          <div className="col-12">
+            <div className="p-3 bg-light rounded-3">
+              <span className="text-secondary small fw-semibold text-uppercase">
+                Liquidation Type:
+              </span>
+              <p className="mb-0 mt-1 fw-medium text-dark fs-6">
+                {Array.isArray(recordViewData.liquidation) ?
+                  recordViewData.liquidation.join(", ") :
+                  recordViewData.liquidation
+                }
+              </p>
+              {recordViewData.liquidationOther && (
+                <p className="mb-0 mt-2 fw-medium text-dark">
+                  <strong>Custom:</strong> {recordViewData.liquidationOther}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Convertible */}
+        {recordViewData.convertible && (
+          <div className="col-md-6">
+            <div className="p-3 bg-light rounded-3 h-100">
+              <span className="text-secondary small fw-semibold text-uppercase">
+                Convertible:
+              </span>
+              <p className="mb-0 mt-1 fw-medium text-dark fs-6">
+                {recordViewData.convertible}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Convertible Type */}
+        {recordViewData.convertibleType && (
+          <div className="col-md-6">
+            <div className="p-3 bg-light rounded-3 h-100">
+              <span className="text-secondary small fw-semibold text-uppercase">
+                Convertible Type:
+              </span>
+              <p className="mb-0 mt-1 fw-medium text-dark fs-6">
+                {recordViewData.convertibleType}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Voting Rights */}
+        {recordViewData.voting && (
+          <div className="col-md-6">
+            <div className="p-3 bg-light rounded-3 h-100">
+              <span className="text-secondary small fw-semibold text-uppercase">
+                Voting Rights:
+              </span>
+              <p className="mb-0 mt-1 fw-medium text-dark fs-6">
+                {recordViewData.voting}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* File Downloads */}
+        {renderFileDownloads()}
+
+        {/* General Notes */}
+        {recordViewData.generalnotes && (
+          <div className="col-12">
+            <div className="p-3 bg-light rounded-3">
+              <span className="text-secondary small fw-semibold text-uppercase">
+                General Notes:
+              </span>
+              <p className="mb-0 mt-1 fw-medium text-dark fs-6">
+                {recordViewData.generalnotes}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Created/Updated Information */}
+        <div className="col-12">
+          <div className="p-3 bg-secondary bg-opacity-10 rounded-3">
+            <h6 className="text-secondary mb-2">Record Information</h6>
+            <div className="row small">
+              {recordViewData.created_at && (
+                <div className="col-md-4">
+                  <strong>Created:</strong> {new Date(recordViewData.created_at).toLocaleDateString()}
+                </div>
+              )}
+
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   // Function to render instrument-specific details
   const renderInstrumentDetails = () => {
@@ -608,21 +866,36 @@ const ViewRecordRound = ({ onClose, recordViewData }) => {
                 </div>
                 {instrumentData.hasWarrants_preferred && (
                   <>
-                    {instrumentData.exercisePrice_preferred && (
+                    {instrumentData.preferred_valuation && (
                       <div className="col-md-6">
-                        <strong>Exercise Price:</strong> ${instrumentData.exercisePrice_preferred}
+                        <strong>Company Valuation:</strong> ${instrumentData.preferred_valuation}
                       </div>
                     )}
+
+                    {instrumentData.warrant_coverage_percentage && (
+                      <div className="col-md-6">
+                        <strong>Warrant Coverage (%):</strong> {instrumentData.warrant_coverage_percentage}%
+                      </div>
+                    )}
+
+                    {instrumentData.warrant_adjustment_direction && (
+                      <div className="col-md-6">
+                        <strong>Adjustment Direction:</strong> {instrumentData.warrant_adjustment_direction}
+                      </div>
+                    )}
+
+                    {instrumentData.warrant_adjustment_percent && (
+                      <div className="col-md-6">
+                        <strong>Adjustment Percent:</strong> {instrumentData.warrant_adjustment_percent}%
+                      </div>
+                    )}
+
                     {instrumentData.expirationDate_preferred && (
                       <div className="col-md-6">
                         <strong>Expiration Date:</strong> {instrumentData.expirationDate_preferred}
                       </div>
                     )}
-                    {instrumentData.warrantRatio_preferred && (
-                      <div className="col-md-6">
-                        <strong>Warrant Ratio:</strong> {instrumentData.warrantRatio_preferred}
-                      </div>
-                    )}
+
                     {instrumentData.warrantType_preferred && (
                       <div className="col-md-6">
                         <strong>Warrant Type:</strong> {instrumentData.warrantType_preferred}
@@ -630,6 +903,7 @@ const ViewRecordRound = ({ onClose, recordViewData }) => {
                     )}
                   </>
                 )}
+
               </div>
             </div>
           </div>
@@ -648,14 +922,14 @@ const ViewRecordRound = ({ onClose, recordViewData }) => {
                 )}
                 {instrumentData.discountRate && (
                   <div className="col-md-6">
-                    <strong>Discount Rate:</strong> {instrumentData.discountRate}%
+                    <strong>Conversion Discount:</strong> {instrumentData.discountRate}%
                   </div>
                 )}
-                {instrumentData.safeType && (
+                {/* {instrumentData.safeType && (
                   <div className="col-md-6">
                     <strong>SAFE Type:</strong> {instrumentData.safeType === "PRE_MONEY" ? "Pre-Money" : "Post-Money"}
                   </div>
-                )}
+                )} */}
               </div>
             </div>
           </div>
@@ -674,7 +948,7 @@ const ViewRecordRound = ({ onClose, recordViewData }) => {
                 )}
                 {instrumentData.discountRate_note && (
                   <div className="col-md-6">
-                    <strong>Discount Rate:</strong> {instrumentData.discountRate_note}%
+                    <strong>Conversion Discount:</strong> {instrumentData.discountRate_note}%
                   </div>
                 )}
                 {instrumentData.maturityDate && (
@@ -687,11 +961,11 @@ const ViewRecordRound = ({ onClose, recordViewData }) => {
                     <strong>Interest Rate:</strong> {instrumentData.interestRate_note}%
                   </div>
                 )}
-                {instrumentData.convertibleTrigger && (
+                {/* {instrumentData.convertibleTrigger && (
                   <div className="col-md-6">
                     <strong>Conversion Trigger:</strong> {instrumentData.convertibleTrigger.replace(/_/g, " & ")}
                   </div>
-                )}
+                )} */}
               </div>
             </div>
           </div>

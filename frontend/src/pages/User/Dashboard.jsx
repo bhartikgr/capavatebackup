@@ -23,6 +23,7 @@ import {
   Legend,
 } from "chart.js";
 import axios from "axios";
+import { API_BASE_URL } from "../../config/config";
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -36,8 +37,8 @@ ChartJS.register(
 );
 
 export default function Dashboard() {
-  const apiURLDashboard = "http://localhost:5000/api/user/dashboard/";
-  const apiUrlRound = "http://localhost:5000/api/user/capitalround/";
+  const apiURLDashboard = API_BASE_URL + "api/user/dashboard/";
+  const apiUrlRound = API_BASE_URL + "api/user/capitalround/";
 
   const storedUsername = localStorage.getItem("SignatoryLoginData");
   const userLogin = JSON.parse(storedUsername);
@@ -187,7 +188,7 @@ export default function Dashboard() {
           },
         }
       );
-
+      console.log(respo.data.data);
       if (respo.data && respo.data.success) {
         setoptionpoolLastestvalue(respo.data.data);
       } else {
@@ -294,7 +295,7 @@ export default function Dashboard() {
 
   const formatPercentage = (percentage) => {
     if (!percentage || percentage === 0) return "0%";
-    return `${parseFloat(percentage).toFixed(1)}%`;
+    return `${percentage}%`;
   };
 
   const formatShares = (shares) => {
@@ -569,29 +570,22 @@ export default function Dashboard() {
     }
   };
   useEffect(() => {
-    if (CompanyDatashare && CompanyDatashare.length > 0) {
-      let cumulativeTotalShares = 0;
-      let cumulativeInvestorShares = 0;
+    if (ownershipTable && ownershipTable.length > 0) {
+      // ownershipTable se direct calculate karein
+      const totalShares = ownershipTable.reduce((sum, row) => sum + row.shares, 0);
+      const investorShares = ownershipTable
+        .filter(row => row.type === 'Investor')
+        .reduce((sum, row) => sum + row.shares, 0);
 
-      CompanyDatashare.forEach((round) => {
-        const totalShares = parseFloat(round.total_issued_shares || 0);
-        const founderShares = parseFloat(round.founder_shares || 0);
-
-        cumulativeTotalShares += totalShares;
-        cumulativeInvestorShares += totalShares - founderShares;
-      });
-
-      // Use rounding to avoid floating-point issues
-      const investorStakesPercent =
-        cumulativeTotalShares > 0
-          ? Math.round(
-            (cumulativeInvestorShares / cumulativeTotalShares) * 10000
-          ) / 100
-          : 0;
+      const investorStakesPercent = totalShares > 0
+        ? (investorShares / totalShares) * 100
+        : 0;
 
       setInvestorStakesPercent(investorStakesPercent.toFixed(2));
+    } else {
+      setInvestorStakesPercent("0");
     }
-  }, [CompanyDatashare]);
+  }, [ownershipTable]); // ownershipTable aapke getShareholder API se aata hai
 
   const getCompanystokes = async () => {
     const formData = {

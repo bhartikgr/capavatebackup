@@ -17,8 +17,9 @@ import CompanyShareReferralCode from "../../components/Users/popup/CompanyShareR
 import DataTable from "react-data-table-component";
 import { Link } from "react-router-dom";
 import { FaShareAlt } from "react-icons/fa";
+import { API_BASE_URL } from "../../config/config.js";
 export default function Referralcode() {
-  var apiUrl = "http://localhost:5000/api/user/";
+  var apiUrl = API_BASE_URL + "api/user/";
   document.title = "Share Referral Code";
   useEffect(() => {
     getallsharedCodeByCompany();

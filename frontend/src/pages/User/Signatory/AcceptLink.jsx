@@ -21,7 +21,7 @@ import {
 } from "../../../components/Styles/RegisterStyles";
 
 import { Lock, Mail, Building } from "lucide-react";
-
+import { API_BASE_URL } from "../../../config/config";
 export default function AcceptLink() {
   const navigate = useNavigate();
 
@@ -33,7 +33,7 @@ export default function AcceptLink() {
   const [SignatoryDataActiveOrNOt, setSignatoryDataActiveOrNOt] = useState("");
   const { code } = useParams();
   document.title = "Accept Invition Link";
-  var apiURL = "http://localhost:5000/api/user/signatory/";
+  var apiURL = API_BASE_URL + "api/user/signatory/";
   localStorage.removeItem("SignatoryLoginData");
 
   useEffect(() => {

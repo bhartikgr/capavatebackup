@@ -1,5 +1,5 @@
 // PreviousSection.js
-import React from "react";
+import React, { useState } from "react";
 import { VscOpenPreview } from "react-icons/vsc";
 
 const PreviousSection = ({
@@ -14,7 +14,11 @@ const PreviousSection = ({
   founderCount = 0
 }) => {
   const showField = (field) => visibleFields.includes(field);
-
+  const calculateFounderValue = (shares) => {
+    const pricePerShare = parseFloat(formData.pricePerShare) || 0;
+    return (shares * pricePerShare).toFixed(2);
+  };
+  const [selectedFounder, setSelectedFounder] = useState(null);
   // Function to render Round 0 specific content
   const renderRound0Content = () => (
     <div className="round-0-special-section">
@@ -114,55 +118,274 @@ const PreviousSection = ({
         {/* Founder Allocation Details */}
         {showField("shareclass") && foundersData && foundersData.length > 0 && (
           <div className="col-12">
-            <div className="p-3 bg-light rounded-3">
-              <span className="text-secondary small fw-semibold text-uppercase">
-                Founder Share Allocation:
-              </span>
-              <div className="table-responsive mt-2">
-                <table className="table table-sm table-bordered">
-                  <thead>
-                    <tr>
-                      <th>Founder</th>
-                      <th>Shares</th>
-                      <th>Share Type</th>
-                      <th>Voting Rights</th>
-                      <th>Ownership %</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {foundersData.map((founder, index) => {
-                      const shares = parseInt(founder.shares) || 0;
-                      const totalShares = calculateTotalShares();
-                      const percentage = totalShares > 0 ?
-                        ((shares / totalShares) * 100).toFixed(1) : '0.0';
+            <div className="card border-0 shadow-sm">
+              <div className="card-header bg-white py-3 border-bottom">
+                <div className="d-flex justify-content-between align-items-center">
+                  <h5 className="card-title mb-0 text-primary">
+                    <i className="bi bi-people-fill me-2"></i>
+                    Founder Share Allocation
+                  </h5>
+                  <span className="badge bg-primary rounded-pill">
+                    {foundersData.length} Founder{foundersData.length > 1 ? 's' : ''}
+                  </span>
+                </div>
+              </div>
 
-                      return (
-                        <tr key={index}>
-                          <td>Founder {index + 1}</td>
-                          <td>{shares.toLocaleString()}</td>
-                          <td>
-                            {founder.shareType === 'common' ? 'Common Shares' :
-                              founder.shareType === 'preferred' ? 'Preferred Shares' :
-                                founder.shareType === 'other' ? 'Other' : 'Common Shares'}
-                          </td>
-                          <td>{founder.voting === 'voting' ? 'Voting' : 'Non-Voting'}</td>
-                          <td>{percentage}%</td>
-                        </tr>
-                      );
-                    })}
-                    {calculateTotalShares() > 0 && (
-                      <tr className="table-secondary fw-bold">
-                        <td>Total</td>
-                        <td>{calculateTotalShares().toLocaleString()}</td>
-                        <td>-</td>
-                        <td>-</td>
-                        <td>100%</td>
+              <div className="card-body p-0">
+                <div className="table-responsive">
+                  <table className="table table-hover align-middle mb-0">
+                    <thead className="table-light">
+                      <tr>
+                        <th className="ps-4 py-3 fw-semibold text-uppercase small text-muted border-0">Founder</th>
+                        <th className="py-3 fw-semibold text-uppercase small text-muted border-0">Numbers of Shares</th>
+                        <th className="py-3 fw-semibold text-uppercase small text-muted border-0">Ownership</th>
+                        <th className="py-3 fw-semibold text-uppercase small text-muted border-0">Value</th>
+                        <th className="pe-4 py-3 fw-semibold text-uppercase small text-muted border-0 text-end">Actions</th>
                       </tr>
-                    )}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {foundersData.map((founder, index) => {
+                        const shares = parseInt(founder.shares) || 0;
+                        const totalShares = calculateTotalShares();
+                        const percentage = totalShares > 0 ?
+                          ((shares / totalShares) * 100).toFixed(1) : '0.0';
+                        const value = calculateFounderValue ? calculateFounderValue(shares) : '0.00';
+
+                        return (
+                          <tr key={index} className="border-bottom">
+                            <td className="ps-4 py-3">
+                              <div className="d-flex align-items-center">
+                                <div className="avatar-sm me-3">
+                                  <div className="avatar-title bg-light-primary text-primary rounded-circle fw-bold">
+                                    {founder.firstName ? founder.firstName.charAt(0).toUpperCase() :
+                                      founder.lastName ? founder.lastName.charAt(0).toUpperCase() :
+                                        `F${index + 1}`}
+                                  </div>
+                                </div>
+                                <div>
+                                  <button
+                                    type="button"
+                                    className="btn btn-link p-0 text-decoration-none text-start fw-semibold"
+                                    onClick={() => setSelectedFounder(founder)}
+                                    style={{ border: 'none', background: 'none', cursor: 'pointer' }}
+                                  >
+                                    {founder.firstName || founder.firstName !== '' ?
+                                      `${founder.firstName} ${founder.lastName || ''}`.trim() :
+                                      `Founder ${index + 1}`
+                                    }
+                                  </button>
+                                  <div className="text-muted small">
+                                    {founder.shareType === 'common' ? 'Common' :
+                                      founder.shareType === 'preferred' ? 'Preferred' :
+                                        founder.customShareType || 'Other'}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-3">
+                              <span className="fw-semibold">{shares.toLocaleString()}</span>
+                            </td>
+                            <td className="py-3">
+                              <div className="d-flex align-items-center">
+                                <div className="progress flex-grow-1 me-2" style={{ height: '6px', width: '60px' }}>
+                                  <div
+                                    className="progress-bar bg-success"
+                                    style={{ width: `${percentage}%` }}
+                                  ></div>
+                                </div>
+                                <span className="fw-semibold text-nowrap">{percentage}%</span>
+                              </div>
+                            </td>
+                            <td className="py-3">
+                              <span className="fw-semibold text-success">
+                                {formData.currency ? formData.currency.split(' ')[1] : '$'}{value}
+                              </span>
+                            </td>
+                            <td className="pe-4 py-3 text-end">
+                              <button
+                                type="button"
+                                className="btn btn-outline-primary btn-sm"
+                                onClick={() => setSelectedFounder(founder)}
+                              >
+                                <i className="bi bi-eye me-1"></i>
+                                View
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+
+                      {/* Total Row */}
+                      {calculateTotalShares() > 0 && (
+                        <tr className="bg-light-primary border-top">
+                          <td className="ps-4 py-3 fw-bold">Total</td>
+                          <td className="py-3 fw-bold">{calculateTotalShares().toLocaleString()}</td>
+                          <td className="py-3 fw-bold">100%</td>
+                          <td className="py-3 fw-bold text-success">
+                            {formData.currency ? formData.currency.split(' ')[1] : '$'}
+                            {calculateTotalValue ? calculateTotalValue() : '0.00'}
+                          </td>
+                          <td className="pe-4 py-3"></td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
+
+            {/* Enhanced Founder Details Modal */}
+            {selectedFounder && (
+              <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }} tabIndex="-1">
+                <div className="modal-dialog modal-dialog-centered modal-lg">
+                  <div className="modal-content border-0 shadow-lg">
+                    <div className="modal-header bgprimary text-white">
+                      <div className="d-flex align-items-center">
+
+                        <div>
+                          <h5 className="modal-title mb-0 text-white">
+                            {selectedFounder.firstName || selectedFounder.firstName !== '' ?
+                              `${selectedFounder.firstName} ${selectedFounder.lastName || ''}`.trim() :
+                              'Founder Details'
+                            }
+                          </h5>
+                          <p className="mb-0 text-white-50 small">Founder Information & Share Details</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn-close btn-close-white"
+                        onClick={() => setSelectedFounder(null)}
+                      ></button>
+                    </div>
+
+                    <div className="modal-body p-4">
+                      <div className="row">
+                        {/* Personal Information */}
+                        <div className="col-md-6 mb-4">
+                          <h6 className="text-uppercase text-muted mb-3 small fw-bold">
+                            <i className="bi bi-person me-2"></i>Personal Information
+                          </h6>
+                          <div className="card bg-light border-0">
+                            <div className="card-body">
+                              <div className="mb-3">
+                                <label className="form-label small text-muted mb-1">First Name</label>
+                                <div className="fw-semibold">{selectedFounder.firstName || '-'}</div>
+                              </div>
+                              <div className="mb-3">
+                                <label className="form-label small text-muted mb-1">Last Name</label>
+                                <div className="fw-semibold">{selectedFounder.lastName || '-'}</div>
+                              </div>
+                              <div className="mb-3">
+                                <label className="form-label small text-muted mb-1">Email</label>
+                                <div className="fw-semibold text-truncate">{selectedFounder.email || '-'}</div>
+                              </div>
+                              <div>
+                                <label className="form-label small text-muted mb-1">Phone</label>
+                                <div className="fw-semibold">{selectedFounder.phone || '-'}</div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Share Information */}
+                        <div className="col-md-6 mb-4">
+                          <h6 className="text-uppercase text-muted mb-3 small fw-bold">
+                            <i className="bi bi-pie-chart me-2"></i>Share Information
+                          </h6>
+                          <div className="card bg-light border-0">
+                            <div className="card-body">
+                              <div className="mb-3">
+                                <label className="form-label small text-muted mb-1">Shares</label>
+                                <div className="fw-semibold fs-5 text-primary">
+                                  {(parseInt(selectedFounder.shares) || 0).toLocaleString()}
+                                </div>
+                              </div>
+                              <div className="mb-3">
+                                <label className="form-label small text-muted mb-1">Ownership Percentage</label>
+                                <div className="fw-semibold fs-5 text-success">
+                                  {calculateTotalShares() > 0 ?
+                                    (((parseInt(selectedFounder.shares) || 0) / calculateTotalShares()) * 100).toFixed(1) : '0.0'
+                                  }%
+                                </div>
+                              </div>
+                              <div className="mb-3">
+                                <label className="form-label small text-muted mb-1">Total Value</label>
+                                <div className="fw-semibold fs-5 text-success">
+                                  {formData.currency ? formData.currency.split(' ')[1] : '$'}
+                                  {calculateFounderValue ? calculateFounderValue(parseInt(selectedFounder.shares) || 0) : '0.00'}
+                                </div>
+                              </div>
+                              <div className="mb-3">
+                                <label className="form-label small text-muted mb-1">Price Per Share</label>
+                                <div className="fw-semibold">
+                                  {formData.currency ? formData.currency.split(' ')[1] : '$'}{formData.pricePerShare || '0.00'}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Share Details */}
+                        <div className="col-12">
+                          <h6 className="text-uppercase text-muted mb-3 small fw-bold">
+                            <i className="bi bi-gear me-2"></i>Share Details
+                          </h6>
+                          <div className="card bg-light border-0">
+                            <div className="card-body">
+                              <div className="row">
+                                <div className="col-md-4 mb-3">
+                                  <label className="form-label small text-muted mb-1">Share Type</label>
+                                  <div className="fw-semibold">
+                                    {selectedFounder.shareType === 'common' ?
+                                      <span className="badge bg-primary">Common Shares</span> :
+                                      selectedFounder.shareType === 'preferred' ?
+                                        <span className="badge bg-warning text-dark">Preferred Shares</span> :
+                                        selectedFounder.shareType === 'other' && selectedFounder.customShareType ?
+                                          <span className="badge bg-secondary">{selectedFounder.customShareType}</span> :
+                                          <span className="badge bg-secondary">Other</span>
+                                    }
+                                  </div>
+                                </div>
+                                <div className="col-md-4 mb-3">
+                                  <label className="form-label small text-muted mb-1">Share Class</label>
+                                  <div className="fw-semibold">
+                                    {selectedFounder.shareClass === 'other' && selectedFounder.customShareClass ?
+                                      selectedFounder.customShareClass :
+                                      selectedFounder.shareClass || 'Class A'
+                                    }
+                                  </div>
+                                </div>
+                                <div className="col-md-4 mb-3">
+                                  <label className="form-label small text-muted mb-1">Voting Rights</label>
+                                  <div className="fw-semibold">
+                                    {selectedFounder.voting === 'voting' ?
+                                      <span className="badge bg-success">Voting</span> :
+                                      <span className="badge bg-secondary">Non-Voting</span>
+                                    }
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="modal-footer border-top-0 bg-light rounded-bottom">
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary"
+                        onClick={() => setSelectedFounder(null)}
+                      >
+                        <i className="bi bi-x-circle me-1"></i>
+                        Close
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -390,21 +613,37 @@ const PreviousSection = ({
                       <div className="col-md-6">
                         <strong>Warrants:</strong> Yes
                       </div>
-                      {formData.exercisePrice_preferred && (
+
+                      {formData.preferred_valuation && (
                         <div className="col-md-6">
-                          <strong>Exercise Price:</strong> ${formData.exercisePrice_preferred}
+                          <strong>Company Valuation:</strong> ${formData.preferred_valuation}
                         </div>
                       )}
+
+                      {formData.warrant_coverage_percentage && (
+                        <div className="col-md-6">
+                          <strong>Warrant Coverage:</strong> {formData.warrant_coverage_percentage}%
+                        </div>
+                      )}
+
+                      {formData.warrant_adjustment_direction && (
+                        <div className="col-md-6">
+                          <strong>Adjustment Direction:</strong> {formData.warrant_adjustment_direction}
+                        </div>
+                      )}
+
+                      {formData.warrant_adjustment_percent && (
+                        <div className="col-md-6">
+                          <strong>Adjustment Percent:</strong> {formData.warrant_adjustment_percent}%
+                        </div>
+                      )}
+
                       {formData.expirationDate_preferred && (
                         <div className="col-md-6">
                           <strong>Expiration Date:</strong> {formData.expirationDate_preferred}
                         </div>
                       )}
-                      {formData.warrantRatio_preferred && (
-                        <div className="col-md-6">
-                          <strong>Warrant Ratio:</strong> {formData.warrantRatio_preferred}
-                        </div>
-                      )}
+
                       {formData.warrantType_preferred && (
                         <div className="col-md-6">
                           <strong>Warrant Type:</strong> {formData.warrantType_preferred}
@@ -412,6 +651,7 @@ const PreviousSection = ({
                       )}
                     </>
                   )}
+
                 </div>
               </div>
             </div>
@@ -531,10 +771,22 @@ const PreviousSection = ({
           <div className="col-md-6">
             <div className="p-3 bg-light rounded-3 h-100">
               <span className="text-secondary small fw-semibold text-uppercase">
-                Round Size:
+                Investment Amount:
               </span>
               <p className="mb-0 mt-1 fw-medium text-dark fs-6">
-                {formData.roundsize ? `${formData.currency || '$'}${Number(formData.roundsize).toLocaleString()}` : (
+                {formData.roundsize ? `${formData.currency || '$'}${formData.roundsize}` : (
+                  <span className="text-muted">Not provided</span>
+                )}
+              </p>
+            </div>
+          </div>
+          <div className="col-md-6">
+            <div className="p-3 bg-light rounded-3 h-100">
+              <span className="text-secondary small fw-semibold text-uppercase">
+                Investor Post-Money Ownership(%):
+              </span>
+              <p className="mb-0 mt-1 fw-medium text-dark fs-6">
+                {formData.investorPostMoney ? `${formData.investorPostMoney}` : (
                   <span className="text-muted">Not provided</span>
                 )}
               </p>
@@ -552,25 +804,60 @@ const PreviousSection = ({
               </p>
             </div>
           </div>
-        </>
-      )}
-
-      {showField("issuedshares") && (
-        <>
           <div className="col-md-6">
             <div className="p-3 bg-light rounded-3 h-100">
               <span className="text-secondary small fw-semibold text-uppercase">
-                Shares Issued:
+                Pre-Money Valuation
               </span>
               <p className="mb-0 mt-1 fw-medium text-dark fs-6">
-                {formData.issuedshares ? (
-                  Number(formData.issuedshares).toLocaleString("en-US")
-                ) : (
+                {formData.pre_money || (
                   <span className="text-muted">Not provided</span>
                 )}
               </p>
             </div>
           </div>
+          <div className="col-md-6">
+            <div className="p-3 bg-light rounded-3 h-100">
+              <span className="text-secondary small fw-semibold text-uppercase">
+                Post-Money Valuation
+              </span>
+              <p className="mb-0 mt-1 fw-medium text-dark fs-6">
+                {formData.post_money || (
+                  <span className="text-muted">Not provided</span>
+                )}
+              </p>
+            </div>
+          </div>
+          <div className="col-md-6">
+            <div className="p-3 bg-light rounded-3 h-100">
+              <span className="text-secondary small fw-semibold text-uppercase">
+                Pre-Money Option Pool (%)
+              </span>
+              <p className="mb-0 mt-1 fw-medium text-dark fs-6">
+                {formData.optionPoolPercent || (
+                  <span className="text-muted">Not provided</span>
+                )}
+              </p>
+            </div>
+          </div>
+          <div className="col-md-6">
+            <div className="p-3 bg-light rounded-3 h-100">
+              <span className="text-secondary small fw-semibold text-uppercase">
+                Total Shares Issued in this Round
+              </span>
+              <p className="mb-0 mt-1 fw-medium text-dark fs-6">
+                {formData.issuedshares || (
+                  <span className="text-muted">Not provided</span>
+                )}
+              </p>
+            </div>
+          </div>
+        </>
+      )}
+
+      {showField("issuedshares") && (
+        <>
+
 
           {formData.roundStatus && (
             <div className="col-md-6">

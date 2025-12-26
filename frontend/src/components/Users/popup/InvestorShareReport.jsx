@@ -91,6 +91,11 @@ const InvestorShareReport = ({
 
   // Optional: handle "select all"
   const handleSelectAll = () => {
+    console.log(allinvestor.length);
+    if (allinvestor.length === 0) {
+      return;
+    }
+
     if (selectedRecords.length === records.length) {
       setSelectedRecords([]);
     } else {

@@ -1945,3 +1945,212 @@ button.activate_btn.border-0.active_sb {
 .bg_color {
   background: #cc0000;
 }
+.modal-header.bgprimary.text-white {
+  background: #cc0000;
+}
+
+/*****new css*****/
+.innerbanner {
+  background: var(--primary);
+  padding: 40px 0;
+}
+.innerbanner h1 {
+  font-size: 40px;
+  color: var(--white);
+  font-weight: 400;
+  text-transform: capitalize;
+}
+.breadcrumb a,
+.breadcrumb p {
+  color: var(--white);
+  font-size: 16px;
+  font-weight: 400;
+}
+.breadcrumb a:hover,
+.breadcrumb p:hover {
+  color: var(--black);
+}
+.fundcontent {
+  border-radius: 6px;
+  padding: 5%;
+  background: #f5f5f5;
+  min-height: 100%;
+}
+.fundlist {
+  background: var(--white);
+  padding: 20px;
+  border-radius: 6px;
+}
+.fundlist h3 {
+  color: var(--primary);
+  font-size: 30px;
+  font-weight: 800;
+}
+.fundlist h4 {
+  font-size: 24px;
+  color: var(--black);
+  font-weight: 400;
+}
+.fundlist p {
+  font-size: 16px;
+  color: var(--black);
+  font-weight: 400;
+}
+.locationcontent .icon-circle {
+  background: var(--primary);
+  fill: var(--white);
+  display: grid;
+  place-items: center;
+  width: 70px;
+  aspect-ratio: 1;
+  border-radius: 100px;
+}
+.locationcontent .icon-circle svg {
+  fill: var(--white);
+  font-size: 40px;
+}
+.locationcontent h5 {
+  color: var(--black);
+  font-size: 22px;
+}
+.locationcontent p {
+  color: var(--black);
+  font-size: 16px;
+}
+.contact-hero {
+  max-height: 50vw;
+  height: 450px;
+}
+.contact-hero .overlay-content {
+  padding: 20px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.5);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  z-index: 3;
+  color: var(--white);
+}
+.map-wrapper iframe {
+  height: 450px;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.cfome h2 {
+  font-size: 32px;
+  font-weight: 400;
+  line-height: 38px;
+  color: var(--black);
+}
+
+.cfome input[type="text"],
+.cfome input[type="email"],
+.cfome input[type="number"],
+.cfome input[type="tel"],
+.cfome select {
+  border: 1px solid #dddddd;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 16px;
+  color: #333333;
+  background-color: var(--white);
+  font-size: 16px;
+}
+.cfome input[type="text"]:focus,
+.cfome input[type="email"]:focus,
+.cfome input[type="number"]:focus,
+.cfome input[type="tel"]:focus,
+.cfome select:focus,
+.cfome textarea:focus {
+  outline: none;
+  box-shadow: none;
+  border-color: none;
+}
+.cfome textarea {
+  height: 160px !important;
+  padding-top: 18px;
+  padding-bottom: 18px;
+  resize: none;
+  font-size: 16px;
+}
+
+.cfome .submitbtn {
+  background-color: var(--primary);
+  color: var(--white);
+  font-size: 16px;
+  font-weight: 600;
+  padding: 10px 30px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.cfome .submitbtn:hover {
+  background-color: var(--black);
+  color: var(--white);
+}
+.sercontent h2 {
+  font-size: 32px;
+  line-height: 40px;
+  margin: 0;
+  font-weight: 700;
+  color: #0f1724;
+}
+
+.sercontent h3 {
+  font-size: 20px;
+  line-height: 28px;
+  margin: 0;
+  font-weight: 600;
+  color: #0b1220;
+}
+
+.sercontent p {
+  font-size: 16px;
+  line-height: 24px;
+  margin: 0;
+  color: #44484d;
+}
+
+.sercontent ul {
+  padding-left: 20px;
+  margin: 0;
+}
+.sercontent ul li {
+  font-size: 16px;
+  line-height: 24px;
+  margin: 8px 0;
+}
+
+.sercontent p strong {
+  font-weight: 700;
+  color: #111827;
+}
+.fSize-12 {
+  font-size: 12px !important;
+}
+.fSize-14 {
+  font-size: 14px !important;
+}
+.fSize-16 {
+  font-size: 16px !important;
+}
+.fSize-18 {
+  font-size: 18px !important;
+}
+.fSize-20 {
+  font-size: 20px !important;
+}
+
+@media (max-width: 768px) {
+  .contact-hero .overlay-content {
+    border-radius: 0px;
+    top: 0%;
+    left: 0%;
+    transform: translate(0%, 0%);
+    z-index: 3;
+  }
+}

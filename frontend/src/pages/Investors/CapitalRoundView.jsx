@@ -12,12 +12,16 @@ import {
   FaUsers,
   FaFileContract,
   FaSignature,
+  FaEye,
+  FaLock,
 } from "react-icons/fa";
 import {
   IoShareSocial,
   IoDocumentText,
   IoBusiness,
   IoStatsChart,
+  IoAnalytics,
+  IoFileTray
 } from "react-icons/io5";
 import SideBar from "../../components/Investor/Sidebar.jsx";
 import { BackButton } from "../../components/Styles/GlobalStyles.js";
@@ -38,7 +42,7 @@ import { useNavigate } from "react-router-dom";
 import SignaturePad from "react-signature-canvas";
 import InvestNowPopup from "../../components/Investor/popup/InvestNowPopup.jsx";
 import InstrumentDataDisplay from "../../components/Investor/InstrumentDataDisplay.jsx";
-
+import { API_BASE_URL } from "../../config/config.js";
 function CapitalRoundView() {
   const { id, company_id } = useParams();
   const [successmessage, setSuccessmessage] = useState("");
@@ -50,7 +54,7 @@ function CapitalRoundView() {
   document.title = "Company Capital Round List - Investor";
   const [errr, seterrr] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  var apiURL = "http://localhost:5000/api/user/capitalround/";
+  var apiURL = API_BASE_URL + "api/user/capitalround/";
 
   const storedUsername = localStorage.getItem("InvestorData");
   const userLogin = JSON.parse(storedUsername);
@@ -143,36 +147,103 @@ function CapitalRoundView() {
     setShowPopupInvest(false);
   };
 
-  const clearSignature = () => {
-    sigPadRef.current.clear();
-    setTrimmedDataURL(null);
+  // Add these states at the top
+  const [signatureText, setSignatureText] = useState("");
+  const [signatureFontStyle, setSignatureFontStyle] = useState("normal");
+  const [useTextSignature, setUseTextSignature] = useState(false);
+
+  // Function to get font style
+  const getSignatureTextStyle = () => {
+    const baseStyle = {
+      fontSize: '24px',
+      fontFamily: 'Arial, sans-serif',
+      color: '#000',
+      minHeight: '50px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    };
+
+    switch (signatureFontStyle) {
+      case 'italic':
+        return { ...baseStyle, fontStyle: 'italic', fontFamily: 'Georgia, serif' };
+      case 'cursive':
+        return { ...baseStyle, fontFamily: 'Brush Script MT, cursive', fontSize: '28px' };
+      case 'bold':
+        return { ...baseStyle, fontWeight: 'bold' };
+      default:
+        return baseStyle;
+    }
   };
 
+  // Toggle font style function
+  const toggleSignatureStyle = () => {
+    const styles = ['normal', 'italic', 'cursive', 'bold'];
+    const currentIndex = styles.indexOf(signatureFontStyle);
+    const nextIndex = (currentIndex + 1) % styles.length;
+    setSignatureFontStyle(styles[nextIndex]);
+  };
+
+  // Add to your states
+  const [signatureType, setSignatureType] = useState('draw'); // 'draw' or 'text'
+
+
+  // Update saveSignature function
+  console.log(records)
   const saveSignature = async () => {
-    const canvas = sigPadRef.current;
 
-    if (!canvas) return;
-
-    if (canvas.isEmpty()) {
+    if (!isAllTermsAccepted()) {
       seterrr(true);
-      setSuccessmessage("Please provide a signature first!");
+      setSuccessmessage("Please accept all terms and conditions before signing!");
       setTimeout(() => {
         seterrr(false);
         setSuccessmessage("");
       }, 3500);
       return;
     }
+    console.log('klkl', signatureType)
+    // Validate based on selected type
+    if (signatureType === 'draw') {
+      if (!sigPadRef.current || sigPadRef.current.isEmpty()) {
+        seterrr(true);
+        setSuccessmessage("Please draw your signature first!");
+        setTimeout(() => {
+          seterrr(false);
+          setSuccessmessage("");
+        }, 3500);
+        return;
+      }
+    } else if (signatureType === 'text') {
+      if (!signatureText.trim()) {
+        seterrr(true);
+        setSuccessmessage("Please type your signature first!");
+        setTimeout(() => {
+          seterrr(false);
+          setSuccessmessage("");
+        }, 3500);
+        return;
+      }
+    }
 
-    const signatureData = canvas.toDataURL("image/png");
+    // Create signature data based on type
+    let signatureData;
+    if (signatureType === 'draw') {
+      signatureData = sigPadRef.current.toDataURL("image/png");
+    } else {
+      signatureData = await createTextSignatureImage();
+    }
 
     let formData = {
       user_id: userLogin.id,
       id: records.sharerecordround_id,
       signature_authorize: signatureData,
+      signature_type: signatureType,
+      signature_text: signatureType === 'text' ? signatureText : null,
       company_id: records.user_id,
       reports: records,
+      company_id: records.company_id,
+      termsChecked: termsChecked.acceptAll
     };
-
     try {
       const res = await axios.post(
         apiURL + "investorrecordAuthorize",
@@ -193,6 +264,63 @@ function CapitalRoundView() {
         setSuccessmessage("");
       }, 10000);
     } catch (err) { }
+
+    // ... rest of the code
+  };
+
+  // Update clearSignature function
+  const clearSignature = () => {
+    if (signatureType === 'draw' && sigPadRef.current) {
+      sigPadRef.current.clear();
+    } else if (signatureType === 'text') {
+      setSignatureText("");
+    }
+    setTrimmedDataURL(null);
+  };
+
+  // Function to create text signature as image
+  const createTextSignatureImage = () => {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 600;
+      canvas.height = 150;
+      const ctx = canvas.getContext('2d');
+
+      // Set background
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Set font style
+      ctx.fillStyle = 'black';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      // Apply font style
+      let fontSize = 40;
+      let fontFamily = 'Arial';
+      let fontStyle = 'normal';
+
+      switch (signatureFontStyle) {
+        case 'italic':
+          fontFamily = 'Georgia';
+          fontStyle = 'italic';
+          break;
+        case 'cursive':
+          fontFamily = 'Brush Script MT';
+          fontSize = 48;
+          break;
+        case 'bold':
+          fontStyle = 'bold';
+          break;
+      }
+
+      ctx.font = `${fontStyle} ${fontSize}px ${fontFamily}`;
+      ctx.fillText(signatureText, canvas.width / 2, canvas.height / 2);
+
+      // Convert to data URL
+      const dataUrl = canvas.toDataURL("image/png");
+      resolve(dataUrl);
+    });
   };
 
   useEffect(() => {
@@ -439,6 +567,62 @@ function CapitalRoundView() {
       return {};
     }
   };
+
+  //Terms condition checked
+  // Add these states at the top of your component
+  const [termsChecked, setTermsChecked] = useState({
+    termSheet: false,
+    subscription: false,
+    acceptAll: false
+  });
+
+  const [showTermSheetPreview, setShowTermSheetPreview] = useState(false);
+  const [showSubscriptionPreview, setShowSubscriptionPreview] = useState(false);
+
+  // Add these functions
+  const handleTermsCheck = (type, checked) => {
+    if (type === 'acceptAll') {
+      setTermsChecked({
+        // termSheet: checked,
+        // subscription: checked,
+        acceptAll: checked
+      });
+    } else {
+      setTermsChecked(prev => ({
+        ...prev,
+        [type]: checked
+      }));
+    }
+  };
+
+  const isAllTermsAccepted = () => {
+    // Either local state OR database value should be true
+    return termsChecked.acceptAll || records.termsChecked === 'true';
+  };
+
+  const handleProceedToSignature = () => {
+    if (isAllTermsAccepted()) {
+      setActiveTab("signature");
+
+      // Optional: Save to backend
+      saveTermsAcceptance();
+    }
+  };
+
+  const saveTermsAcceptance = async () => {
+    // try {
+    //   const formData = {
+    //     investor_id: userLogin.id,
+    //     roundrecord_id: records.id,
+    //     terms_accepted: true,
+    //     accepted_at: new Date().toISOString()
+    //   };
+
+    //   await axios.post(apiURL + "saveTermsAcceptance", formData);
+    // } catch (error) {
+    //   console.error("Error saving terms acceptance:", error);
+    // }
+  };
   if (isLoading) {
     return (
       <Wrapper className="investor-login-wrapper">
@@ -545,6 +729,7 @@ function CapitalRoundView() {
     link.click();
     document.body.removeChild(link);
   };
+  console.log(records);
   return (
     <Wrapper className="investor-login-wrapper">
       <div className="fullpage d-block">
@@ -571,10 +756,30 @@ function CapitalRoundView() {
                     </div>
                     <BackButton
                       type="button"
-                      className="global_btn w-fit "
+                      disabled={!isAllTermsAccepted() || records.signature_status !== "Yes"}
+                      className="global_btn w-fit"
                       onClick={handleInvestNow}
+                      style={{
+                        opacity: (!isAllTermsAccepted() || records.signature_status !== "Yes") ? 0.4 : 1,
+                        cursor: (!isAllTermsAccepted() || records.signature_status !== "Yes") ? 'not-allowed' : 'pointer'
+                      }}
+                      title={
+                        !isAllTermsAccepted() ? "Accept all terms first" :
+                          records.signature_status !== "Yes" ? "Complete digital signature first" :
+                            "Click to invest"
+                      }
                     >
-                      Invest Now
+                      {(!isAllTermsAccepted() || records.signature_status !== "Yes") ? (
+                        <>
+                          <FaLock size={14} className="me-1" />
+                          Invest Now (Requirements Pending)
+                        </>
+                      ) : (
+                        <>
+                          <FaMoneyBillWave size={14} className="me-1" />
+                          Invest Now
+                        </>
+                      )}
                     </BackButton>
                   </div>
                 </div>
@@ -632,42 +837,6 @@ function CapitalRoundView() {
                   </div>
 
                   {/* Navigation Tabs */}
-                  <div className="round-tabs">
-                    <button
-                      className={`tab-button ${activeTab === "overview" ? "active" : ""
-                        }`}
-                      onClick={() => setActiveTab("overview")}
-                    >
-                      <BarChart3 size={16} className="me-2" />
-                      Overview
-                    </button>
-                    <button
-                      className={`tab-button ${activeTab === "terms" ? "active" : ""
-                        }`}
-                      onClick={() => setActiveTab("terms")}
-                    >
-                      <Settings size={16} className="me-2" />
-                      Terms & Rights
-                    </button>
-                    <button
-                      className={`tab-button ${activeTab === "documents" ? "active" : ""
-                        }`}
-                      onClick={() => setActiveTab("documents")}
-                    >
-                      <IoDocumentText size={16} className="me-2" />
-                      Documents
-                    </button>
-                    {/* <button
-                      className={`tab-button ${
-                        activeTab === "signature" ? "active" : ""
-                      }`}
-                      onClick={() => setActiveTab("signature")}
-                    >
-                      <FaFileSignature size={16} className="me-2" />
-                      E-Signature
-                    </button> */}
-                  </div>
-
                   {/* Success Message */}
                   {successmessage && (
                     <div
@@ -689,6 +858,51 @@ function CapitalRoundView() {
                       </button>
                     </div>
                   )}
+                  <div className="round-tabs">
+                    <button
+                      className={`tab-button ${activeTab === "overview" ? "active" : ""
+                        }`}
+                      onClick={() => setActiveTab("overview")}
+                    >
+                      <BarChart3 size={16} className="me-2" />
+                      Overview
+                    </button>
+                    <button
+                      className={`tab-button ${activeTab === "terms" ? "active" : ""
+                        }`}
+                      onClick={() => setActiveTab("terms")}
+                    >
+                      <Settings size={16} className="me-2" />
+                      Rights
+                    </button>
+                    <button
+                      className={`tab-button ${activeTab === "excutivesummary" ? "active" : ""
+                        }`}
+                      onClick={() => setActiveTab("excutivesummary")}
+                    >
+                      <IoAnalytics size={16} className="me-2" />
+                      Excutive Summary
+                    </button>
+                    <button
+                      className={`tab-button ${activeTab === "documents" ? "active" : ""
+                        }`}
+                      onClick={() => setActiveTab("documents")}
+                    >
+                      <IoDocumentText size={16} className="me-2" />
+                      Terms & Subscription Documents
+                    </button>
+
+                    {/* <button
+                      className={`tab-button ${activeTab === "signature" ? "active" : ""
+                        }`}
+                      onClick={() => setActiveTab("signature")}
+                    >
+                      <IoAnalytics size={16} className="me-2" />
+                      Digital Signature
+                    </button> */}
+                  </div>
+
+
 
                   {/* Tab Content */}
                   <div className="tab-content">
@@ -792,9 +1006,11 @@ function CapitalRoundView() {
                               <label>Price per Share</label>
                               <h3>
                                 {records.currency}{" "}
-                                {Number(
-                                  pricePerShare.toFixed(2)
-                                ).toLocaleString()}
+                                {pricePerShare.toLocaleString(undefined, {
+                                  minimumFractionDigits: 3,
+                                  maximumFractionDigits: 3
+                                })}
+
                               </h3>
                             </div>
                           </div>
@@ -806,7 +1022,11 @@ function CapitalRoundView() {
                             <div className="metric-content">
                               <label>Total Shares</label>
                               <h3>
-                                {Number(records.issuedshares).toLocaleString()}
+                                {Number(records.issuedshares).toLocaleString("en-US", {
+                                  minimumFractionDigits: 3,
+                                  maximumFractionDigits: 3,
+                                })}
+
                               </h3>
                             </div>
                           </div>
@@ -960,13 +1180,84 @@ function CapitalRoundView() {
                         <div className="section-title mb-4">
                           <h4>Investment Documents</h4>
                           <p>
-                            Legal documents and agreements for this investment
-                            round
+                            Legal documents and agreements for this investment round
                           </p>
                         </div>
 
+                        {/* Terms Acceptance Box - ADDED NEW */}
+                        <div className="terms-acceptance-box mb-4">
+                          <div className="card border-primary">
+                            <div className="card-body">
+                              <h5 className="card-title text-primary">
+                                <i className="bi bi-file-check me-2"></i>
+                                Terms Acceptance Required
+                              </h5>
+                              <p className="card-text">
+                                Before proceeding to investment, you must:
+                              </p>
+                              <div className="terms-checklist">
+                                {/* <div className="form-check mb-2">
+                                  <input
+                                    className="form-check-input"
+                                    type="checkbox"
+                                    id="termsCheck1"
+                                    checked={termsChecked.termSheet}
+                                    onChange={(e) => handleTermsCheck('termSheet', e.target.checked)}
+                                  />
+                                  <label className="form-check-label" htmlFor="termsCheck1">
+                                    I have read and understood the <strong>Term Sheet</strong>
+                                  </label>
+                                </div>
+
+                                <div className="form-check mb-2">
+                                  <input
+                                    className="form-check-input"
+                                    type="checkbox"
+                                    id="termsCheck2"
+                                    checked={termsChecked.subscription}
+                                    onChange={(e) => handleTermsCheck('subscription', e.target.checked)}
+                                  />
+                                  <label className="form-check-label" htmlFor="termsCheck2">
+                                    I have read and understood the <strong>Subscription Agreement</strong>
+                                  </label>
+                                </div> */}
+
+                                <div className="form-check mb-3">
+                                  <input
+                                    className="form-check-input"
+                                    type="checkbox"
+                                    id="termsCheck3"
+                                    checked={termsChecked.acceptAll || records.termsChecked} style={{
+                                      cursor: termsChecked.acceptAll ? 'not-allowed' : 'pointer'
+                                    }}
+                                    onChange={(e) => handleTermsCheck('acceptAll', e.target.checked)}
+                                  />
+                                  <label className="form-check-label" htmlFor="termsCheck3">
+                                    <strong>I accept all terms and conditions</strong> outlined in both documents
+                                  </label>
+                                </div>
+                              </div>
+
+                              {/* Status Indicator */}
+                              <div className="terms-status mt-3">
+                                {isAllTermsAccepted() ? (
+                                  <div className="alert alert-success py-2 mb-0">
+                                    <i className="bi bi-check-circle-fill me-2"></i>
+                                    All terms accepted. You can now proceed to investment.
+                                  </div>
+                                ) : (
+                                  <div className="alert alert-warning py-2 mb-0">
+                                    <i className="bi bi-exclamation-circle me-2"></i>
+                                    Please read and accept all terms before investing.
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
                         <div className="documents-grid row">
-                          {/* Term Sheet Card */}
+                          {/* Term Sheet Card - UPDATED WITH CHECKBOX */}
                           <div className="col-lg-6 mb-4">
                             <div className="document-card card h-100">
                               <div className="card-body">
@@ -975,10 +1266,15 @@ function CapitalRoundView() {
                                     <FileText size={24} />
                                   </div>
                                   <div className="document-info flex-grow-1">
-                                    <h5 className="card-title">Term Sheet</h5>
-                                    <p className="card-text text-muted">
-                                      Investment terms and conditions document
-                                    </p>
+                                    <div className="d-flex align-items-center justify-content-between">
+                                      <div>
+                                        <h5 className="card-title">Term Sheet</h5>
+                                        <p className="card-text text-muted">
+                                          Investment terms and conditions document
+                                        </p>
+                                      </div>
+
+                                    </div>
                                   </div>
                                 </div>
 
@@ -994,27 +1290,27 @@ function CapitalRoundView() {
                                           }{" "}
                                           file(s)
                                         </span>
-                                        <button
-                                          className="btn btn-sm btn-success"
-                                          onClick={() =>
-                                            downloadAllFiles(
-                                              records.termsheetFile,
-                                              `http://localhost:5000/api/upload/docs/doc_${records.company_id}/companyRound`,
-                                              "termsheet"
-                                            )
-                                          }
-                                        >
-                                          <FaDownload
-                                            size={12}
-                                            className="me-1"
-                                          />
-                                          Download All
-                                        </button>
+                                        <div>
+                                          <button
+                                            className="btn btn-sm btn-outline-primary me-2"
+                                            onClick={() =>
+                                              downloadAllFiles(
+                                                records.termsheetFile,
+                                                `${API_BASE_URL}api/upload/docs/doc_${records.company_id}/companyRound`,
+                                                "termsheet"
+                                              )
+                                            }
+                                          >
+                                            <FaDownload size={12} className="me-1" />
+                                            Download All
+                                          </button>
+
+                                        </div>
                                       </div>
 
                                       {renderFileList(
                                         records.termsheetFile,
-                                        `http://localhost:5000/api/upload/docs/doc_${records.company_id}/companyRound`,
+                                        `${API_BASE_URL}api/upload/docs/doc_${records.company_id}/companyRound`,
                                         "termsheet"
                                       )}
                                     </div>
@@ -1028,7 +1324,7 @@ function CapitalRoundView() {
                             </div>
                           </div>
 
-                          {/* Subscription Agreement Card */}
+                          {/* Subscription Agreement Card - UPDATED WITH CHECKBOX */}
                           <div className="col-lg-6 mb-4">
                             <div className="document-card card h-100">
                               <div className="card-body">
@@ -1037,12 +1333,17 @@ function CapitalRoundView() {
                                     <FaFileContract size={24} />
                                   </div>
                                   <div className="document-info flex-grow-1">
-                                    <h5 className="card-title">
-                                      Subscription Agreement
-                                    </h5>
-                                    <p className="card-text text-muted">
-                                      Legal subscription document and agreement
-                                    </p>
+                                    <div className="d-flex align-items-center justify-content-between">
+                                      <div>
+                                        <h5 className="card-title">
+                                          Subscription Agreement
+                                        </h5>
+                                        <p className="card-text text-muted">
+                                          Legal subscription document and agreement
+                                        </p>
+                                      </div>
+
+                                    </div>
                                   </div>
                                 </div>
 
@@ -1060,27 +1361,27 @@ function CapitalRoundView() {
                                           }{" "}
                                           file(s)
                                         </span>
-                                        <button
-                                          className="btn btn-sm btn-success"
-                                          onClick={() =>
-                                            downloadAllFiles(
-                                              records.subscriptiondocument,
-                                              `http://localhost:5000/api/upload/docs/doc_${records.company_id}/companyRound`,
-                                              "subscription"
-                                            )
-                                          }
-                                        >
-                                          <FaDownload
-                                            size={12}
-                                            className="me-1"
-                                          />
-                                          Download All
-                                        </button>
+                                        <div>
+                                          <button
+                                            className="btn btn-sm btn-outline-success me-2"
+                                            onClick={() =>
+                                              downloadAllFiles(
+                                                records.subscriptiondocument,
+                                                `${API_BASE_URL}api/upload/docs/doc_${records.company_id}/companyRound`,
+                                                "subscription"
+                                              )
+                                            }
+                                          >
+                                            <FaDownload size={12} className="me-1" />
+                                            Download All
+                                          </button>
+
+                                        </div>
                                       </div>
 
                                       {renderFileList(
                                         records.subscriptiondocument,
-                                        `http://localhost:5000/api/upload/docs/doc_${records.company_id}/companyRound`,
+                                        `${API_BASE_URL}api/upload/docs/doc_${records.company_id}/companyRound`,
                                         "subscription"
                                       )}
                                     </div>
@@ -1097,123 +1398,438 @@ function CapitalRoundView() {
                           </div>
                         </div>
 
-                        {/* Signature Section */}
+                        {/* Proceed Button - ADDED NEW */}
+
+                        {isAllTermsAccepted() && records.signature_status === "No" && (
+                          <div className="signature-content">
+                            <div className="section-title">
+                              <h4>Electronic Signature</h4>
+                              <p>
+                                Provide your signature to authorize this investment
+                              </p>
+
+                              {/* Terms Acceptance Status - ADDED */}
+                              {!isAllTermsAccepted() && (
+                                <div className="alert alert-warning mt-3">
+                                  <div className="d-flex align-items-center">
+                                    <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                                    <div>
+                                      <strong>Terms Not Accepted:</strong> Please accept all terms before signing.
+                                      <div className="small mt-1">
+                                        <a
+                                          href="#"
+                                          onClick={(e) => {
+                                            e.preventDefault();
+                                            setActiveTab("documents");
+                                          }}
+                                          className="alert-link"
+                                        >
+                                          Go back to Documents tab to accept terms
+                                        </a>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="signature-container">
+                              <div className="signature-instructions">
+                                <div className="instruction-item">
+                                  <CheckCircle size={16} />
+                                  <span>
+                                    By signing below, you confirm your subscription to this investment round
+                                  </span>
+                                </div>
+                                <div className="instruction-item">
+                                  <CheckCircle size={16} />
+                                  <span>
+                                    You agree to the terms outlined in the Subscription Document
+                                  </span>
+                                </div>
+                                <div className="instruction-item">
+                                  <CheckCircle size={16} />
+                                  <span>
+                                    Your signature will be legally binding
+                                  </span>
+                                </div>
+
+                                {/* Terms Acceptance Confirmation - ADDED */}
+                                {isAllTermsAccepted() && (
+                                  <div className="instruction-item success">
+                                    <CheckCircle size={16} className="text-success" />
+                                    <span className="text-success">
+                                      <strong>✓ All terms and conditions accepted</strong>
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Signature Pad with Disabled State */}
+                              <div className="signature-pad-wrapper">
+                                <div className={`signature-pad-container ${!isAllTermsAccepted() ? 'disabled' : ''}`}>
+
+                                  {/* Tab Selection - ADDED */}
+                                  <div className="signature-tabs mb-4">
+                                    <ul className="nav nav-tabs">
+                                      <li className="nav-item">
+                                        <button
+                                          className={`nav-link ${signatureType === 'draw' ? 'active' : ''}`}
+                                          onClick={() => setSignatureType('draw')}
+                                          disabled={!isAllTermsAccepted()}
+                                        >
+                                          <i className="bi bi-pen me-1"></i>
+                                          Draw Signature
+                                        </button>
+                                      </li>
+                                      <li className="nav-item">
+                                        <button
+                                          className={`nav-link ${signatureType === 'text' ? 'active' : ''}`}
+                                          onClick={() => setSignatureType('text')}
+                                          disabled={!isAllTermsAccepted()}
+                                        >
+                                          <i className="bi bi-fonts me-1"></i>
+                                          Type Signature
+                                        </button>
+                                      </li>
+                                    </ul>
+                                  </div>
+
+                                  {/* Tab Content */}
+                                  <div className="tab-content">
+                                    {/* Draw Tab */}
+                                    {signatureType === 'draw' && (
+                                      <div className="tab-pane fade show active">
+                                        <div className="draw-signature-section">
+                                          <SignaturePad
+                                            ref={sigPadRef}
+                                            penColor="black"
+                                            canvasProps={{
+                                              className: "signature-canvas",
+                                              width: 600,
+                                              height: 200,
+                                              style: {
+                                                cursor: isAllTermsAccepted() ? 'crosshair' : 'not-allowed',
+                                                opacity: isAllTermsAccepted() ? 1 : 0.5
+                                              }
+                                            }}
+                                            disabled={!isAllTermsAccepted()}
+                                          />
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Type Tab */}
+                                    {signatureType === 'text' && (
+                                      <div className="tab-pane fade show active">
+                                        <div className="type-signature-section">
+                                          <div className="input-group mb-3">
+                                            <input
+                                              type="text"
+                                              className="form-control signature-text-input"
+                                              placeholder="Type your full name"
+                                              value={signatureText}
+                                              onChange={(e) => setSignatureText(e.target.value)}
+                                              disabled={!isAllTermsAccepted()}
+                                            />
+                                            <button
+                                              className="btn btn-outline-secondary"
+                                              type="button"
+                                              onClick={toggleSignatureStyle}
+                                              disabled={!isAllTermsAccepted() || !signatureText}
+                                              title="Toggle font style"
+                                            >
+                                              <i className="bi bi-fonts"></i>
+                                            </button>
+                                          </div>
+
+                                          {/* Font Style Options */}
+                                          <div className="font-style-options mt-2 mb-3">
+                                            <div className="btn-group btn-group-sm" role="group">
+                                              <button
+                                                type="button"
+                                                className={`btn ${signatureFontStyle === 'normal' ? 'btn-primary' : 'btn-outline-primary'}`}
+                                                onClick={() => setSignatureFontStyle('normal')}
+                                                disabled={!isAllTermsAccepted()}
+                                              >
+                                                Normal
+                                              </button>
+                                              <button
+                                                type="button"
+                                                className={`btn ${signatureFontStyle === 'italic' ? 'btn-primary' : 'btn-outline-primary'}`}
+                                                onClick={() => setSignatureFontStyle('italic')}
+                                                disabled={!isAllTermsAccepted()}
+                                              >
+                                                Italic
+                                              </button>
+                                              <button
+                                                type="button"
+                                                className={`btn ${signatureFontStyle === 'cursive' ? 'btn-primary' : 'btn-outline-primary'}`}
+                                                onClick={() => setSignatureFontStyle('cursive')}
+                                                disabled={!isAllTermsAccepted()}
+                                              >
+                                                Cursive
+                                              </button>
+                                              <button
+                                                type="button"
+                                                className={`btn ${signatureFontStyle === 'bold' ? 'btn-primary' : 'btn-outline-primary'}`}
+                                                onClick={() => setSignatureFontStyle('bold')}
+                                                disabled={!isAllTermsAccepted()}
+                                              >
+                                                Bold
+                                              </button>
+                                            </div>
+                                          </div>
+
+                                          {/* Signature Preview */}
+                                          {signatureText && (
+                                            <div className="signature-text-preview mt-3 p-3 border rounded bg-light">
+                                              <h6 className="mb-2">Preview:</h6>
+                                              <div
+                                                className="signature-display"
+                                                style={getSignatureTextStyle()}
+                                              >
+                                                {signatureText}
+                                              </div>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Overlay when terms not accepted */}
+                                  {!isAllTermsAccepted() && (
+                                    <div className="signature-disabled-overlay">
+                                      <div className="overlay-content">
+                                        <i className="bi bi-lock-fill"></i>
+                                        <p>Accept terms to enable signature</p>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {!isAllTermsAccepted() && (
+                                  <p className="text-muted small mt-2 text-center">
+                                    <i className="bi bi-info-circle me-1"></i>
+                                    Signature disabled until all terms are accepted
+                                  </p>
+                                )}
+                              </div>
+
+                              <div className="signature-actions">
+                                <button
+                                  className="btn-secondary"
+                                  onClick={clearSignature}
+                                  disabled={!isAllTermsAccepted()}
+                                >
+                                  Clear Signature
+                                </button>
+                                <button
+                                  className="btn-primary"
+                                  onClick={saveSignature}
+                                  disabled={!isAllTermsAccepted()}
+                                >
+                                  <FaSignature size={16} className="me-2" />
+                                  Authorize Investmenttt
+                                  {!isAllTermsAccepted() && " (Terms Required)"}
+                                </button>
+                              </div>
+
+                              {/* Terms Not Accepted Message - ADDED */}
+                              {!isAllTermsAccepted() && (
+                                <div className="alert alert-info mt-4">
+                                  <div className="d-flex align-items-center">
+                                    <i className="bi bi-file-text me-2"></i>
+                                    <div>
+                                      <strong>Step Required:</strong>
+                                      <div>
+                                        Please go back to the <strong>Documents</strong> tab and:
+                                        <ol className="mb-0 mt-1">
+                                          <li>Read both Term Sheet and Subscription Agreement</li>
+                                          <li>Check "I have read" boxes for both documents</li>
+                                          <li>Check "I accept all terms and conditions"</li>
+                                        </ol>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
+                              {trimmedDataURL && (
+                                <div className="signature-preview mt-4">
+                                  <h6>Signature Preview:</h6>
+                                  <img
+                                    src={trimmedDataURL}
+                                    alt="Signature Preview"
+                                    className="preview-image"
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        {/* Signature Display Section */}
                         {records.signature_status === "Yes" && (
-                          <div className="signature-preview mt-4 card">
-                            <div className="card-body">
-                              <h5 className="card-title">
-                                Authorized Signature
-                              </h5>
-                              <div className="signature-image p-3 border rounded bg-light">
-                                <img
-                                  src={records.signature}
-                                  alt="Authorized Signature"
-                                  className="img-fluid"
-                                  style={{ maxHeight: "200px" }}
-                                />
+                          <div className="signature-complete-section">
+                            <div className="section-title">
+                              <h4>Electronic Signature - Complete</h4>
+                              <p>
+                                Your investment has been successfully authorized and signed
+                              </p>
+                            </div>
+
+                            <div className="signature-container">
+                              <div className="signature-status-card success">
+                                <div className="status-header">
+                                  <div className="status-icon">
+                                    <CheckCircle size={24} />
+                                  </div>
+                                  <div className="status-text">
+                                    <h5>Signature Complete</h5>
+                                    <p className="text-muted">
+                                      Signed on: {formatCurrentDate(records.signature_date)}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                {/* Terms Acceptance Status */}
+                                <div className="terms-acceptance-status mb-4">
+                                  <div className="d-flex align-items-center mb-2">
+                                    <i className="bi bi-check-circle-fill text-success me-2"></i>
+                                    <span><strong>Terms & Conditions Accepted</strong></span>
+                                  </div>
+                                  <div className="text-muted small">
+                                    Accepted on: {formatCurrentDate(records.terms_accepted_at)}
+                                  </div>
+                                </div>
+
+                                {/* Display Signature */}
+                                <div className="signature-display-card">
+                                  <h6>Your Digital Signature:</h6>
+                                  <div className="signature-image-container">
+                                    <img
+                                      src={records.signature}
+                                      alt="Your Digital Signature"
+                                      className="signature-img"
+                                    />
+                                  </div>
+                                  <div className="signature-details mt-3">
+                                    <div className="row">
+                                      <div className="col-md-6">
+                                        <div className="detail-item">
+                                          <span className="label">Signature Type:</span>
+                                          <span className="value">
+                                            {records.signature_type === 'text' ? 'Typed Signature' : 'Drawn Signature'}
+                                          </span>
+                                        </div>
+                                        {records.signature_text && (
+                                          <div className="detail-item">
+                                            <span className="label">Signature Text:</span>
+                                            <span className="value">{records.signature_text}</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                      <div className="col-md-6">
+                                        <div className="detail-item">
+                                          <span className="label">Status:</span>
+                                          <span className="badge bg-success">Authorized</span>
+                                        </div>
+                                        <div className="detail-item">
+                                          <span className="label">Investment Ready:</span>
+                                          <span className="badge bg-primary">Yes</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Next Steps */}
+                                <div className="next-steps mt-4">
+                                  <h6>Next Steps:</h6>
+                                  <div className="steps-list">
+                                    <div className="step-item completed">
+                                      <div className="step-number">1</div>
+                                      <div className="step-content">
+                                        <strong>Documents Reviewed</strong>
+                                        <p className="mb-0">Term Sheet & Subscription Agreement</p>
+                                      </div>
+                                    </div>
+                                    <div className="step-item completed">
+                                      <div className="step-number">2</div>
+                                      <div className="step-content">
+                                        <strong>Terms Accepted</strong>
+                                        <p className="mb-0">All terms and conditions accepted</p>
+                                      </div>
+                                    </div>
+                                    <div className="step-item completed">
+                                      <div className="step-number">3</div>
+                                      <div className="step-content">
+                                        <strong>Digital Signature</strong>
+                                        <p className="mb-0">Signature provided and authorized</p>
+                                      </div>
+                                    </div>
+                                    <div className="step-item current">
+                                      <div className="step-number">4</div>
+                                      <div className="step-content">
+                                        <strong>Proceed to Investment</strong>
+                                        <p className="mb-0">
+                                          <button
+                                            className="btn btn-success btn-sm"
+                                            onClick={handleInvestNow}
+                                          >
+                                            <FaMoneyBillWave size={14} className="me-1" />
+                                            Invest Now
+                                          </button>
+                                        </p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           </div>
                         )}
+
+
+
                       </div>
                     )}
 
-                    {activeTab === "signature" &&
-                      records.signature_status === "No" && (
-                        <div className="signature-content">
-                          <div className="section-title">
-                            <h4>Electronic Signature</h4>
-                            <p>
-                              Provide your signature to authorize this
-                              investment
-                            </p>
-                          </div>
 
-                          <div className="signature-container">
-                            <div className="signature-instructions">
-                              <div className="instruction-item">
-                                <CheckCircle size={16} />
-                                <span>
-                                  By signing below, you confirm your
-                                  subscription to this investment round
-                                </span>
-                              </div>
-                              <div className="instruction-item">
-                                <CheckCircle size={16} />
-                                <span>
-                                  You agree to the terms outlined in the
-                                  Subscription Document
-                                </span>
-                              </div>
-                              <div className="instruction-item">
-                                <CheckCircle size={16} />
-                                <span>
-                                  Your signature will be legally binding
-                                </span>
-                              </div>
-                            </div>
-
-                            <div className="signature-pad-wrapper">
-                              <SignaturePad
-                                ref={sigPadRef}
-                                penColor="black"
-                                canvasProps={{
-                                  className: "signature-canvas",
-                                  width: 600,
-                                  height: 200,
-                                }}
-                              />
-                            </div>
-
-                            <div className="signature-actions">
-                              <button
-                                className="btn-secondary"
-                                onClick={clearSignature}
-                              >
-                                Clear Signature
-                              </button>
-                              <button
-                                className="btn-primary"
-                                onClick={saveSignature}
-                              >
-                                <FaSignature size={16} className="me-2" />
-                                Authorize Investment
-                              </button>
-                            </div>
-
-                            {trimmedDataURL && (
-                              <div className="signature-preview mt-4">
-                                <h6>Signature Preview:</h6>
-                                <img
-                                  src={trimmedDataURL}
-                                  alt="Signature Preview"
-                                  className="preview-image"
-                                />
-                              </div>
-                            )}
-                          </div>
+                    {activeTab === "excutivesummary" && (
+                      <div className="executive-summary-container mt-4">
+                        <div className="summary-header d-flex align-items-center p-3 bg-primary text-white rounded-top">
+                          <IoAnalytics size={20} className="me-2" />
+                          <h5 className="mb-0">Executive Summary</h5>
                         </div>
-                      )}
-
-                    {activeTab === "signature" &&
-                      records.signature_status === "Yes" && (
-                        <div className="signature-complete">
-                          <div className="complete-status">
-                            <CheckCircle size={48} className="success-icon" />
-                            <h4>Signature Complete</h4>
-                            <p>
-                              Your investment has been successfully authorized
-                              and signed.
-                            </p>
-                            <div className="signature-preview">
-                              <img
-                                src={records.signature}
-                                alt="Your Signature"
-                              />
+                        <div className="summary-body p-4 bg-white rounded-bottom border border-top-0">
+                          {records.executive_summary ? (
+                            <div className="summary-content">
+                              <div className="d-flex align-items-start">
+                                <div className="flex-grow-1">
+                                  <p style={{
+                                    whiteSpace: 'pre-line',
+                                    lineHeight: '1.8',
+                                    fontSize: '0.95rem'
+                                  }}>
+                                    {records.executive_summary}
+                                  </p>
+                                </div>
+                              </div>
                             </div>
-                          </div>
+                          ) : (
+                            <div className="empty-state text-center py-5">
+                              <IoFileTray size={48} className="text-muted mb-3" />
+                              <h6 className="text-muted">No summary generated yet</h6>
+                              <p className="text-muted small mb-0">
+                                AI-generated executive summary will appear here
+                              </p>
+                            </div>
+                          )}
                         </div>
-                      )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1228,6 +1844,7 @@ function CapitalRoundView() {
           records={records}
           nextround={nextround}
           nextRoundData={nextRoundData}
+
         />
       )}
 

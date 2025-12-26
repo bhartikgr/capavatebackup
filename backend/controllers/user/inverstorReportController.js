@@ -61,9 +61,9 @@ exports.investorQuatarlyEmailSend = (req, res) => {
 };
 
 // Every day at 9 AM, check for quarterly reminders
-cron.schedule("0 9 * * *", () => {
-  investorQuatarlyEmailSend(); // call the function
-});
+// cron.schedule("0 9 * * *", () => {
+//   investorQuatarlyEmailSend(); // call the function
+// });
 
 const transporter = nodemailer.createTransport({
   service: "gmail",

@@ -28,6 +28,7 @@ import {
 } from "@stripe/react-stripe-js";
 import ViewRecordRound from "../../../components/Users/popup/ViewRecordRound";
 import AirwallexPaymentPopupOneTimeDataroom from "../../../components/Users/AirwallexPaymentPopupOneTimeDataroom.jsx";
+import { API_BASE_URL } from "../../../config/config.js";
 export default function RecordRoundList() {
   const navigate = useNavigate();
   const storedUsername = localStorage.getItem("SignatoryLoginData");
@@ -37,8 +38,8 @@ export default function RecordRoundList() {
   const [messagesuccessError, setmessagesuccessError] = useState("");
   const [errr, seterrr] = useState(false);
   const [dangerMessage, setdangerMessage] = useState("");
-  var apiURLInvestor = "http://localhost:5000/api/user/investor/";
-  const apiURLSignature = "http://localhost:5000/api/user/";
+  var apiURLInvestor = API_BASE_URL + "api/user/investor/";
+  const apiURLSignature = API_BASE_URL + "api/user/";
   const [LockId, setLockId] = useState("");
   document.title = "Investment Rounds Overview";
 
@@ -164,20 +165,23 @@ export default function RecordRoundList() {
       sortable: true,
     },
     {
-      name: "Number of Shares",
+      name: "Numbers of Shares",
       selector: (row) => {
         const formattedAmount = Number(row.issuedshares).toLocaleString(
           "en-IN",
           {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
+            minimumFractionDigits: 3,
+            maximumFractionDigits: 3,
           }
         );
+        // Add (New) for Investment type
+        if (row.round_type === "Investment") {
+          return `${formattedAmount} (New)`;
+        }
         return `${formattedAmount}`;
       },
       sortable: true,
     },
-
     {
       name: "Status of Round",
       selector: (row) => row.dateroundclosed,
@@ -409,8 +413,8 @@ export default function RecordRoundList() {
   const [getDataroompay, setgetDataroompay] = useState("");
   const [PayidOnetime, setPayidOnetime] = useState("");
   const [paymentType, setpaymentType] = useState("Onetime");
-  var apiURLAiFile = "http://localhost:5000/api/user/aifile/";
-  const apiUrlModule = "http://localhost:5000/api/admin/module/";
+  var apiURLAiFile = API_BASE_URL + "api/user/aifile/";
+  const apiUrlModule = API_BASE_URL + "api/admin/module/";
   useEffect(() => {
     getDataroompayment();
   }, []);

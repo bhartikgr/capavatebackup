@@ -581,10 +581,14 @@ const ViewInvestorEndRecordRound = ({ onClose, recordViewData }) => {
                   </span>
                   <p className="mb-0 mt-1 fw-medium text-dark fs-6">
                     {recordViewData.roundsize ? (
-                      Number(recordViewData.roundsize).toLocaleString("en-US")
+                      <>
+                        {recordViewData.currency} {Number(recordViewData.roundsize).toFixed(2)}
+                      </>
                     ) : (
                       <span className="text-muted">Not provided</span>
                     )}
+
+
                   </p>
                 </div>
               </div>
@@ -838,10 +842,12 @@ const ViewInvestorEndRecordRound = ({ onClose, recordViewData }) => {
                 </span>
                 <p className="mb-0 mt-1 fw-medium text-dark fs-6">
                   {recordViewData.roundsize ? (
-                    Number(recordViewData.roundsize).toLocaleString("en-US")
+                    Number(recordViewData.roundsize).toFixed(2)
                   ) : (
                     <span className="text-muted">Not provided</span>
                   )}
+
+
                 </p>
               </div>
             </div>

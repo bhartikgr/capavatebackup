@@ -22,9 +22,7 @@ import { Button } from "../../../components/Styles/MainStyle.js";
 import { loadStripe } from "@stripe/stripe-js";
 import { Link, useNavigate } from "react-router-dom";
 // import { fontWeight } from "html2canvas/dist/types/css/property-descriptors/font-weight.js";
-const stripePromise = loadStripe(
-  "pk_test_51RUJzWAx6rm2q3pys9SgKUPRxNxPZ4P1X6EazNQvnPuHKOOfzGsbylaTLUktId9ANHULkwBk67jnp5aqZ9Dlm6PR00jKdDwvSq"
-);
+import { API_BASE_URL } from "../../../config/config.js";
 export default function InvestorEntry() {
   const navigate = useNavigate();
   const [searchText, setSearchText] = useState("");
@@ -36,8 +34,8 @@ export default function InvestorEntry() {
   const [dangerMessagealertDoc, setdangerMessagealertDoc] = useState("");
   const [errr, seterrr] = useState(false);
   const [authorizedData, setAuthorizedData] = useState(null);
-  var apiURL = "http://localhost:5000/api/user/investor/";
-  const apiURLSignature = "http://localhost:5000/api/user/";
+  var apiURL = API_BASE_URL + "api/user/investor/";
+  const apiURLSignature = API_BASE_URL + "api/user/";
   document.title = "Add Investor";
   const customStyles = {
     table: {

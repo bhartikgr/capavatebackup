@@ -428,3 +428,130 @@ cron.schedule("0 0 * * *", () => {
   console.log("⏳ Running cron job to check expired discount codes...");
   updateExpiredDiscountCodes();
 });
+
+//Round Rate Convert For Investor
+function extractCurrencyCode(currencyString) {
+  // currencyString example: "USD $" → return "USD"
+  return currencyString.split(" ")[0].trim();
+}
+
+async function getBOCRate(currencyRaw, date) {
+  const currency = extractCurrencyCode(currencyRaw); // "USD $" → "USD"
+
+  // If currency is CAD → return 1 immediately
+  if (currency === "CAD") {
+    return 1;
+  }
+
+  const currencyPair = `FX${currency}CAD`; // FXUSDCAD, FXEURCAD, etc
+
+  const url = `https://www.bankofcanada.ca/valet/observations/${currencyPair}?start_date=${date}&end_date=${date}`;
+
+  const res = await axios.get(url);
+
+  if (!res.data.observations || res.data.observations.length === 0) {
+    throw new Error("Rate not found for this date");
+  }
+
+  return parseFloat(res.data.observations[0][currencyPair].v);
+}
+
+// 2. Main Function → Convert all foreign rounds
+function formatDateToBOC(dateStr) {
+  // input: "12/10/2025" (MM/DD/YYYY)
+  // output: "2025-12-10" (YYYY-MM-DD)
+
+  const [month, day, year] = dateStr.split("/");
+  return `${year}-${day.padStart(2, "0")}-${month.padStart(2, "0")}`;
+}
+
+function convertCurrencyForRounds() {
+  const fetchQuery = `
+    SELECT id, roundsize, currency, dateroundclosed
+    FROM roundrecord
+    WHERE currency IS NOT NULL
+      AND currency != 'CAD'
+      AND roundsize IS NOT NULL
+      AND dateroundclosed IS NOT NULL
+      AND dateroundclosed != '';
+  `;
+
+  db.query(fetchQuery, async (error, rows) => {
+    if (error) {
+      console.error("❌ Error fetching rounds:", error);
+      return;
+    }
+
+    if (rows.length === 0) {
+      console.log("ℹ No foreign currency rounds found.");
+      return;
+    }
+
+    console.log(`🔍 Found ${rows.length} rounds needing conversion...`);
+
+    for (const row of rows) {
+      try {
+        const roundId = row.id;
+        const amount = parseFloat(row.roundsize);
+        const currency = row.currency.toUpperCase();
+        const date = formatDateToBOC(row.dateroundclosed);
+
+        // Check if this round/date already has a conversion
+        const checkQuery = `
+          SELECT id FROM round_currency_conversion
+          WHERE round_id = ? AND conversion_date = ?
+        `;
+
+        const existingRows = await new Promise((resolve, reject) => {
+          db.query(checkQuery, [roundId, date], (err, results) => {
+            if (err) reject(err);
+            else resolve(results);
+          });
+        });
+
+        if (existingRows.length > 0) {
+          console.log(
+            `⚠ Round ${roundId} already converted for ${date}, skipping.`
+          );
+          continue; // Skip this round
+        }
+
+        // Fetch BOC exchange rate
+        const rate = await getBOCRate(currency, date);
+
+        // Convert
+        const amountCad = (amount * rate).toFixed(2);
+
+        // Insert conversion
+        const insertQuery = `
+          INSERT INTO round_currency_conversion 
+          (round_id, currency, amount, exchange_rate, amount_cad, conversion_date)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `;
+
+        await new Promise((resolve, reject) => {
+          db.query(
+            insertQuery,
+            [roundId, currency, amount, rate, amountCad, date],
+            (err) => {
+              if (err) reject(err);
+              else resolve();
+            }
+          );
+        });
+
+        console.log(
+          `✅ Round ${roundId}: ${amount} ${currency} → ${amountCad} CAD saved.`
+        );
+      } catch (err) {
+        console.error(`❌ Conversion failed for round ${row.id}:`, err.message);
+      }
+    }
+  });
+}
+
+// 3. Cron Job (Runs every midnight)
+cron.schedule("0 0 * * *", () => {
+  convertCurrencyForRounds();
+});
+//Round Rate Convert For Investor

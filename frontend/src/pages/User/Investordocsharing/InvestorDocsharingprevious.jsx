@@ -11,12 +11,13 @@ import { DataRoomSection } from "../../../components/Styles/DataRoomStyle.js";
 import { FaDownload } from "react-icons/fa"; // FontAwesome icons
 import axios from "axios";
 import InvestorShareReport from "../../../components/Users/popup/InvestorShareReport.jsx";
+import { API_BASE_URL } from "../../../config/config.js";
 export default function InvestorDocsharingprevious() {
   const storedUsername = localStorage.getItem("CompanyLoginData");
   const userLogin = JSON.parse(storedUsername);
   const [records, setrecords] = useState([]);
   const [IsModalOpenShareReport, setIsModalOpenShareReport] = useState(false);
-  var apiURLINFile = "http://localhost:5000/api/user/investorreport/";
+  var apiURLINFile = API_BASE_URL + "api/user/investorreport/";
   document.title = "Previous Version";
   useEffect(() => {
     getInvestorReport();

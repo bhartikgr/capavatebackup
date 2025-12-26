@@ -15,6 +15,11 @@ import "./assets/admin/style/style.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { GlobalStyles } from "./components/Styles/GlobalStyles";
 import "./capavatestyle.css";
+import About from "./pages/About";
+import Services from "./pages/Services";
+import HowItWork from "./pages/HowItWork";
+import ContactPage from "./pages/ContactPage";
+import SingleService from "./pages/SingleService";
 // Lazy load components
 const Demopage = lazy(() => import("./pages/Demopage"));
 
@@ -641,6 +646,14 @@ class App extends Component {
               <Route path="/company-profile" element={<CompanyProfile />} />
               <Route path="/activity-logs" element={<ActivityLogs />} />
               <Route path="/discount-coupon" element={<DiscountCoupon />} />
+              <Route path="/capavate/about" element={<About />} />
+              <Route path="/capavate/services" element={<Services />} />
+              <Route path="/capavate/howitwork" element={<HowItWork />} />
+              <Route path="/capavate/contact" element={<ContactPage />} />
+              <Route
+                path="/capavate/singleservice"
+                element={<SingleService />}
+              />
             </Routes>{" "}
           </Suspense>{" "}
         </div>{" "}

@@ -19,6 +19,7 @@ import axios from "axios";
 import { FaDownload, FaEye } from "react-icons/fa"; // FontAwesome icons
 import ViewInvestorEndRecordRound from "../../../components/Users/popup/ViewInvestorEndRecordRound";
 import { useNavigate, useParams } from "react-router-dom";
+import { API_BASE_URL } from "../../../config/config.js";
 export default function InvestorReportViewRecordRound() {
   const navigate = useNavigate();
 
@@ -32,7 +33,7 @@ export default function InvestorReportViewRecordRound() {
   const [messagesuccessError, setmessagesuccessError] = useState("");
   const [InvestorAllRoundRecordData, setInvestorAllRoundRecordData] =
     useState(null);
-  var apiURLInvestor = "http://localhost:5000/api/user/investor/";
+  var apiURLInvestor = API_BASE_URL + "api/user/investor/";
   document.title = "Shared Investor Report";
   const { id } = useParams();
   useEffect(() => {
@@ -351,7 +352,7 @@ export default function InvestorReportViewRecordRound() {
   };
   //Record get
   const baseUrl =
-    "http://localhost:5000/api/upload/investor/inv_" + InvestorInfo.investor_id;
+    API_BASE_URL + "api/upload/investor/inv_" + InvestorInfo.investor_id;
   return (
     <>
       <>
@@ -640,16 +641,18 @@ export default function InvestorReportViewRecordRound() {
                                   </td>
                                   <td>
                                     {record.currency}
-                                    {""}
-                                    {Number(record.roundsize).toLocaleString(
-                                      "en-US"
-                                    )}
+                                    {Number(record.roundsize).toLocaleString("en-US", {
+                                      minimumFractionDigits: 2,
+                                      maximumFractionDigits: 2
+                                    })}
                                   </td>
                                   <td>
-                                    {Number(record.issuedshares).toLocaleString(
-                                      "en-US"
-                                    )}
+                                    {Number(record.issuedshares).toLocaleString("en-US", {
+                                      minimumFractionDigits: 3,
+                                      maximumFractionDigits: 3
+                                    })}
                                   </td>
+
                                   <td>
                                     {formatCurrentDate(record.created_at)}
                                   </td>
@@ -709,11 +712,11 @@ export default function InvestorReportViewRecordRound() {
                                         </strong>{" "}
                                         {record.currency}
                                         {""}
-                                        {record.investor_investment
-                                          ? Number(
-                                            record.investor_investment
-                                          ).toLocaleString("en-US")
-                                          : "0"}
+                                        {Number(record.investor_investment).toLocaleString("en-US", {
+                                          minimumFractionDigits: 2,
+                                          maximumFractionDigits: 2
+                                        })}
+
                                       </div>
                                       <div className="detail-item">
                                         <strong>Date Invested:</strong>{" "}

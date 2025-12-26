@@ -12,9 +12,10 @@ import { NumericFormat } from "react-number-format";
 import axios from "axios";
 import DangerAlertPopup from "../../../components/Admin/DangerAlertPopup";
 import { useParams } from "react-router-dom";
+import { API_BASE_URL } from "../../../config/config";
 export default function EditRecordround() {
   const navigate = useNavigate();
-  const apiUrlRound = "http://localhost:5000/api/user/capitalround/";
+  const apiUrlRound = API_BASE_URL + "api/user/capitalround/";
   const [progresswidth, setprogresswidth] = useState("0");
   const [countrySymbolList, setCountrysymbollist] = useState([]);
   const [errorMsg, seterrorMsg] = useState("");

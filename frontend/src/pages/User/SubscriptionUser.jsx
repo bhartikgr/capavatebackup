@@ -21,12 +21,13 @@ import {
 import { Button } from "../../components/Styles/MainStyle.js";
 import PaymentPopupAcademy from "../../components/Users/PaymentPopupAcademy";
 import AirwallexPaymentPopupOneTimeDataroom from "../../components/Users/AirwallexPaymentPopupOneTimeDataroom.jsx";
+import { API_BASE_URL } from "../../config/config.js";
 export default function SubscriptionUser() {
   document.title = "Pricing Plan";
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const apiURLAiFile = "http://localhost:5000/api/user/aifile/";
-  const apiUrlModule = "http://localhost:5000/api/admin/module/";
-  const apiURLRegister = "http://localhost:5000/api/user/";
+  const apiURLAiFile = API_BASE_URL + "api/user/aifile/";
+  const apiUrlModule = API_BASE_URL + "api/admin/module/";
+  const apiURLRegister = API_BASE_URL + "api/user/";
   const storedUsername = localStorage.getItem("SignatoryLoginData");
   const userLogin = JSON.parse(storedUsername);
   const [CompanyPlans, setCompanyPlans] = useState(false);

@@ -38,7 +38,7 @@ import {
   HelpCircle,
   X,
 } from "lucide-react";
-
+import { API_BASE_URL } from "../../config/config.js";
 export default function Approvalpage() {
   const [expdoc, setexpdoc] = useState("Export Documents");
   const [spinner, setspinner] = useState(false);
@@ -47,8 +47,8 @@ export default function Approvalpage() {
   const [categories, setCategories] = useState([]);
   const storedUsername = localStorage.getItem("SignatoryLoginData");
   const userLogin = JSON.parse(storedUsername);
-  var apiURL = "http://localhost:5000/api/user/";
-  var apiURLAiFile = "http://localhost:5000/api/user/aifile/";
+  var apiURL = API_BASE_URL + "api/user/";
+  var apiURLAiFile = API_BASE_URL + "api/user/aifile/";
   document.title = "Approval Page";
   const [err, seterr] = useState(false);
   const { code } = useParams();
@@ -92,7 +92,7 @@ export default function Approvalpage() {
   };
 
   //Payments one time
-  const apiUrlModule = "http://localhost:5000/api/admin/module/";
+  const apiUrlModule = API_BASE_URL + "api/admin/module/";
 
   const [dangerMessage, setdangerMessage] = useState("");
   const [dangerMessagealert, setdangerMessagealert] = useState("");

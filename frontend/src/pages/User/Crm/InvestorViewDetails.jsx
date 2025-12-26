@@ -19,6 +19,7 @@ import axios from "axios";
 import { FaDownload, FaEye } from "react-icons/fa"; // FontAwesome icons
 import ViewInvestorEndRecordRound from "../../../components/Users/popup/ViewInvestorEndRecordRound";
 import { useNavigate, useParams } from "react-router-dom";
+import { API_BASE_URL } from "../../../config/config.js";
 export default function InvestorViewDetails() {
   const navigate = useNavigate();
 
@@ -32,7 +33,7 @@ export default function InvestorViewDetails() {
   const [messagesuccessError, setmessagesuccessError] = useState("");
   const [InvestorAllRoundRecordData, setInvestorAllRoundRecordData] =
     useState(null);
-  var apiURLInvestor = "http://localhost:5000/api/user/investor/";
+  var apiURLInvestor = API_BASE_URL + "api/user/investor/";
   document.title = "Investor Information";
   const { id } = useParams();
   useEffect(() => {
@@ -198,7 +199,7 @@ export default function InvestorViewDetails() {
   };
   //Record get
   const baseUrl =
-    "http://localhost:5000/api/upload/investor/inv_" + InvestorInfo.investor_id;
+    API_BASE_URL + "api/upload/investor/inv_" + InvestorInfo.investor_id;
   return (
     <>
       <>

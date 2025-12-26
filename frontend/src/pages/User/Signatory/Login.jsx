@@ -20,7 +20,7 @@ import {
 import { Link } from "react-router-dom";
 
 import { Globe, User, Lock } from "lucide-react";
-
+import { API_BASE_URL } from "../../../config/config";
 export default function Login() {
   const navigate = useNavigate();
 
@@ -50,7 +50,7 @@ export default function Login() {
   const [resendLink, setresendLink] = useState(false);
   const [companyData, setcompanyData] = useState([]);
   const [SignatoryLoginData, setSignatoryLoginData] = useState(null);
-  var apiURL = "http://localhost:5000/api/user/signatory/";
+  var apiURL = API_BASE_URL + "api/user/signatory/";
   useEffect(() => {
     const getIP = async () => {
       try {

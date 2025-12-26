@@ -19,6 +19,7 @@ import { BackButton } from "../../../components/Styles/GlobalStyles.js";
 import { ArrowLeft } from "lucide-react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "../../../config/config.js";
 export default function AddInvestorReport() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState();
@@ -28,12 +29,12 @@ export default function AddInvestorReport() {
   const [message, setmessage] = useState("");
   const [ClientIP, setClientIP] = useState("");
   const [err, seterr] = useState(false);
-  var apiURLAiFile = "http://localhost:5000/api/user/aifile/";
+  var apiURLAiFile = API_BASE_URL + "api/user/aifile/";
   document.title = "Investor Report Form";
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
-  const apiURLSignature = "http://localhost:5000/api/user/";
+  const apiURLSignature = API_BASE_URL + "api/user/";
   useEffect(() => {
     getAuthorizedSignature();
   }, []);

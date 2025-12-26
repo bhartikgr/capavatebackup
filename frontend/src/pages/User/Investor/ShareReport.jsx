@@ -19,6 +19,7 @@ import { useNavigate } from "react-router-dom";
 import InvestorShareReport from "../../../components/Users/popup/InvestorShareReport.jsx";
 import InvestorShareReportRecordRound from "../../../components/Users/popup/InvestorShareReportRecordRound.jsx";
 import ViewRecordRound from "../../../components/Users/popup/ViewRecordRound";
+import { API_BASE_URL } from "../../../config/config.js";
 export default function ShareReport() {
   const navigate = useNavigate();
   const [IsModalOpenShareReport, setIsModalOpenShareReport] = useState(false);
@@ -35,11 +36,11 @@ export default function ShareReport() {
   const [messagesuccessError, setmessagesuccessError] = useState("");
   const [errr, seterrr] = useState(false);
   const [allinvestor, setallinvestor] = useState([]);
-  var apiURLAiFile = "http://localhost:5000/api/user/aifile/";
-  const apiUrlModule = "http://localhost:5000/api/admin/module/";
-  var apiURLInvestor = "http://localhost:5000/api/user/investor/";
-  var apiURLRound = "http://localhost:5000/api/user/capitalround/";
-  const apiURLSignature = "http://localhost:5000/api/user/";
+  var apiURLAiFile = API_BASE_URL + "api/user/aifile/";
+  const apiUrlModule = API_BASE_URL + "api/admin/module/";
+  var apiURLInvestor = API_BASE_URL + "api/user/investor/";
+  var apiURLRound = API_BASE_URL + "api/user/capitalround/";
+  const apiURLSignature = API_BASE_URL + "api/user/";
   const [authorizedData, setAuthorizedData] = useState(null);
   document.title = "Investor Report List";
   useEffect(() => {

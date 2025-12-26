@@ -3761,6 +3761,7 @@ exports.companyProfileUpdate = (req, res) => {
           req.file.filename
         )
       : null;
+    console.log(req.body);
 
     // ✅ Update company table explicitly
     const companyUpdateQuery = `
@@ -4593,3 +4594,103 @@ function sendApprovalEmail(to, fullName, companyName) {
     else console.log("Approval email sent:", info.response);
   });
 }
+
+exports.capavatecontact = async (req, res) => {
+  try {
+    const { firstName, lastName, email, phone, message } = req.body;
+
+    if (!firstName || !lastName || !email || !message) {
+      return res
+        .status(400)
+        .json({ message: "All required fields must be filled" });
+    }
+
+    const fullName = `${firstName} ${lastName}`;
+
+    // Send email
+    sendContactEmail(email, fullName, phone, message);
+
+    return res.status(200).json({ message: "Message sent successfully" });
+  } catch (err) {
+    console.error("Error:", err);
+    return res.status(500).json({ message: "Something went wrong" });
+  }
+};
+function sendContactEmail(to, fullName, phone, message) {
+  const subject = `New Contact Message from ${fullName}`;
+
+  const htmlBody = `
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>New Contact Message</title>
+  </head>
+  <body>
+    <div style="width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 10px; font-family: Verdana, sans-serif;">
+      <table style="width:100%; border-collapse: collapse;">
+        <tr>
+          <td style="background:#efefef; padding:15px; text-align:center;">
+            <img src="http://localhost:5000/api/upload/images/logo.png" alt="Capavate Logo" style="width:130px;" />
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:25px;">
+            <h2 style="font-size:18px; color:#111;">New Contact Form Submission</h2>
+
+            <p style="font-size:14px; color:#111;"><b>Name:</b> ${fullName}</p>
+            <p style="font-size:14px; color:#111;"><b>Email:</b> ${to}</p>
+            <p style="font-size:14px; color:#111;"><b>Phone:</b> ${
+              phone || "Not Provided"
+            }</p>
+
+            <p style="font-size:14px; color:#111; margin-top:20px;"><b>Message:</b></p>
+            <p style="font-size:14px; color:#111;">${message}</p>
+
+            <p style="font-size:14px; color:#111; margin-top:25px;">Regards,<br/>Capavate Website</p>
+          </td>
+        </tr>
+      </table>
+
+      <div style="text-align:center; font-size:12px; color:#999; padding:15px 0;">
+        Capavate. Powered by Blueprint Catalyst Limited
+      </div>
+    </div>
+  </body>
+  </html>
+  `;
+
+  const mailOptions = {
+    from: '"Capavate" <scale@blueprintcatalyst.com>',
+    to: "scale@blueprintcatalyst.com", // Admin receives contact form
+    subject,
+    html: htmlBody,
+  };
+
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) console.error("Error sending contact email:", error);
+    else console.log("Contact email sent:", info.response);
+  });
+}
+
+exports.getcountrySymbolLocal = (req, res) => {
+  var company_id = req.body.company_id;
+  db.query(
+    "SELECT * FROM company where id = ?",
+    [company_id],
+    async (err, row) => {
+      if (err) {
+        return res
+          .status(500)
+          .json({ message: "Database query error", error: err });
+      }
+
+      res.status(200).json({
+        message: "",
+        results: row,
+      });
+    }
+  );
+};

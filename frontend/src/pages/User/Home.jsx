@@ -28,6 +28,7 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 import { format, toZonedTime } from "date-fns-tz";
 import ModuleSideNav from "../../components/Users/ModuleSideNav";
 import axios from "axios";
+import { API_BASE_URL } from "../../config/config";
 export default function Home() {
   const navigate = useNavigate();
   const [showPopup, setShowPopup] = useState(false);
@@ -46,7 +47,7 @@ export default function Home() {
   const [loader, setloader] = useState("");
   const { id } = useParams();
   const [Descriptionvalue, setDescriptionvalue] = useState("");
-  const apiURL = "http://localhost:5000/api/user/";
+  const apiURL = API_BASE_URL + "api/user/";
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };

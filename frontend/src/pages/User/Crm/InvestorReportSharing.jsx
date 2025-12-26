@@ -18,7 +18,7 @@ import { Button } from "../../../components/Styles/MainStyle.js";
 import { useNavigate, Link } from "react-router-dom";
 import InvestorShareReport from "../../../components/Users/popup/InvestorShareReport.jsx";
 // import { fontWeight } from "html2canvas/dist/types/css/property-descriptors/font-weight.js";
-
+import { API_BASE_URL } from "../../../config/config.js";
 export default function InvestorReport() {
   const navigate = useNavigate();
   const [IsModalOpenShareReport, setIsModalOpenShareReport] = useState(false);
@@ -37,8 +37,8 @@ export default function InvestorReport() {
   const [errr, seterrr] = useState(false);
   const [allinvestor, setallinvestor] = useState([]);
   const [authorizedData, setAuthorizedData] = useState(null);
-  var apiURLInvestor = "http://localhost:5000/api/user/investor/";
-  const apiURLSignature = "http://localhost:5000/api/user/";
+  var apiURLInvestor = API_BASE_URL + "api/user/investor/";
+  const apiURLSignature = API_BASE_URL + "api/user/";
   document.title = "Investor Report Sharing";
   useEffect(() => {
     getAuthorizedSignature();

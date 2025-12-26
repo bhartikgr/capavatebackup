@@ -28,6 +28,7 @@ import { Calendar, momentLocalizer } from "react-big-calendar";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import ModuleSideNav from "../../components/Users/ModuleSideNav";
 import axios from "axios";
+import { API_BASE_URL } from "../../config/config";
 export default function ModuleOne() {
   const navigate = useNavigate();
   const [timeZones, setTimeZones] = useState([]);
@@ -53,8 +54,8 @@ export default function ModuleOne() {
   const storedUsername = localStorage.getItem("CompanyLoginData");
   const userLogin = JSON.parse(storedUsername);
   const [getDataroompay, setgetDataroompay] = useState("");
-  const apiURL = "http://localhost:5000/api/user/";
-  const apiUrlModule = "http://localhost:5000/api/admin/module/";
+  const apiURL = API_BASE_URL + "api/user/";
+  const apiUrlModule = API_BASE_URL + "api/admin/module/";
   const [errorData, seterrorData] = useState(null);
   const [successData, setSuccessData] = useState(null);
   const [viewMeetData, setviewMeetData] = useState(null);

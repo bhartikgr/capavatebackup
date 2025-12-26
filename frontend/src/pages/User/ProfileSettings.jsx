@@ -13,14 +13,11 @@ import { useNavigate } from "react-router-dom";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import { NumericFormat } from "react-number-format";
-const stripePromise = loadStripe(
-  "pk_test_51RUJzWAx6rm2q3pys9SgKUPRxNxPZ4P1X6EazNQvnPuHKOOfzGsbylaTLUktId9ANHULkwBk67jnp5aqZ9Dlm6PR00jKdDwvSq"
-);
-
+import { API_BASE_URL } from "../../config/config.js";
 export default function ProfileSettings() {
   const storedUsername = localStorage.getItem("CompanyLoginData");
   const userLogin = JSON.parse(storedUsername);
-  const apiURL = "http://localhost:5000/api/user/";
+  const apiURL = API_BASE_URL + "api/user/";
   document.title = "Profile";
   const [errr, seterrr] = useState(false);
   const [dangerMessage, setdangerMessage] = useState("");

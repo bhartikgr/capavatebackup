@@ -12,11 +12,11 @@ import axios from "axios";
 import { Modal } from "antd";
 
 import DangerAlertPopup from "../../components/Admin/DangerAlertPopup";
-import { FaEdit, FaEye, FaTrash } from "react-icons/fa";
+import { API_BASE_URL } from "../../config/config.js";
 export default function DiscountCoupon() {
   const storedUsername = localStorage.getItem("SignatoryLoginData");
   const userLogin = JSON.parse(storedUsername);
-  const apiURL = "http://localhost:5000/api/user/accesslogs/";
+  const apiURL = API_BASE_URL + "api/user/accesslogs/";
   const [CompanyDiscountCoupon, setCompanyDiscountCoupon] = useState([]);
   const [deleteId, setDeleteId] = useState("");
   const [dangerMessage, setdangerMessage] = useState("");

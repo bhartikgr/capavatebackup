@@ -19,6 +19,7 @@ import { IoCloseCircleOutline } from "react-icons/io5";
 import axios from "axios";
 import { FaDownload, FaEye } from "react-icons/fa"; // FontAwesome icons
 import { useNavigate, useParams } from "react-router-dom";
+import { API_BASE_URL } from "../../../config/config.js";
 export default function InvestorReportView() {
   const navigate = useNavigate();
 
@@ -29,7 +30,7 @@ export default function InvestorReportView() {
   const [errr, seterrr] = useState(false);
   const [InvestorInfo, setInvestorInfo] = useState("");
   const [messagesuccessError, setmessagesuccessError] = useState("");
-  var apiURLInvestor = "http://localhost:5000/api/user/investor/";
+  var apiURLInvestor = API_BASE_URL + "api/user/investor/";
   document.title = "Shared Investor Report";
   const { id } = useParams();
   useEffect(() => {
@@ -279,7 +280,7 @@ export default function InvestorReportView() {
     return /\.(jpg|jpeg|png|gif)$/i.test(file);
   };
   const baseUrl =
-    "http://localhost:5000/api/upload/investor/inv_" + InvestorInfo.investor_id;
+    API_BASE_URL + "api/upload/investor/inv_" + InvestorInfo.investor_id;
   return (
     <>
       <>

@@ -1,20 +1,21 @@
 import React, { useEffect, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { BsArrowRight } from "react-icons/bs";
 import { IoMdMenu } from "react-icons/io";
+
 export default function Header() {
   const [sticky, setSticky] = useState(false);
+  const location = useLocation();
+  const [activeLink, setActiveLink] = useState(location.pathname);
 
   useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 50) {
-        // scroll ke 50px ke baad sticky
-        setSticky(true);
-      } else {
-        setSticky(false);
-      }
-    };
+    setActiveLink(location.pathname);
+  }, [location.pathname]);
 
+  useEffect(() => {
+    const handleScroll = () => setSticky(window.scrollY > 50);
     window.addEventListener("scroll", handleScroll);
+
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -23,59 +24,83 @@ export default function Header() {
       <div className="main-nav d-block">
         <nav className="navbar navbar-expand-lg navbar-light">
           <div className="container-lg">
-            <a className="navbar-brand fulw" href="index.html">
+            <Link className="navbar-brand fulw" to="/capavate/home">
               <img src="/assets/images/logo.png" alt="logo" />
-            </a>
+            </Link>
+
             <button
               className="navbar-toggler rounded-0"
               type="button"
               data-bs-toggle="collapse"
               data-bs-target="#navbarSupportedContent"
-              aria-controls="navbarSupportedContent"
-              aria-expanded="false"
-              aria-label="Toggle navigation"
             >
               <IoMdMenu />
             </button>
+
             <div
               className="collapse navbar-collapse"
               id="navbarSupportedContent"
             >
               <ul className="navbar-nav mx-auto mb-2 mb-lg-0">
-                <li className="nav-item active">
-                  <a className="nav-link" aria-current="page" href="#">
+                <li
+                  className={`nav-item ${
+                    activeLink === "/capavate/home" ? "active" : ""
+                  }`}
+                >
+                  <Link className="nav-link" to="/capavate/home">
                     Home
-                  </a>
+                  </Link>
                 </li>
-                <li className="nav-item">
-                  <a className="nav-link" href="#">
+
+                <li
+                  className={`nav-item ${
+                    activeLink === "/capavate/about" ? "active" : ""
+                  }`}
+                >
+                  <Link className="nav-link" to="/capavate/about">
                     About us
-                  </a>
+                  </Link>
                 </li>
-                <li className="nav-item">
-                  <a className="nav-link" href="#">
+
+                <li
+                  className={`nav-item ${
+                    activeLink === "/capavate/services" ? "active" : ""
+                  }`}
+                >
+                  <Link className="nav-link" to="/capavate/services">
                     Services
-                  </a>
+                  </Link>
                 </li>
-                <li className="nav-item">
-                  <a className="nav-link" href="#">
-                    How it work
-                  </a>
+
+                <li
+                  className={`nav-item ${
+                    activeLink === "/capavate/howitwork" ? "active" : ""
+                  }`}
+                >
+                  <Link className="nav-link" to="/capavate/howitwork">
+                    How it works
+                  </Link>
                 </li>
-                <li className="nav-item">
-                  <a className="nav-link" href="#">
-                    Conatct
-                  </a>
+
+                <li
+                  className={`nav-item ${
+                    activeLink === "/capavate/contact" ? "active" : ""
+                  }`}
+                >
+                  <Link className="nav-link" to="/capavate/contact">
+                    Contact
+                  </Link>
                 </li>
               </ul>
+
               <div className="d-flex gap-3 align-items-center top-btns">
-                <a href="/user/register" className="tlink">
+                <Link to="/user/login" className="tlink">
                   Sign In
-                </a>
-                <a href="/user/register" className="tbtn">
+                </Link>
+                <Link to="/user/register" className="tbtn">
                   <span>Get Started</span>
                   <BsArrowRight />
-                </a>
+                </Link>
               </div>
             </div>
           </div>

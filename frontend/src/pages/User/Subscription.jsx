@@ -12,7 +12,7 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 import { format, toZonedTime } from "date-fns-tz";
 import ModuleSideNav from "../../components/Users/ModuleSideNav";
 import axios from "axios";
-
+import { API_BASE_URL } from "../../config/config";
 export default function Subscription() {
   document.title = "Your Active Plan";
   const localizer = momentLocalizer(moment);
@@ -20,7 +20,7 @@ export default function Subscription() {
   const [selectedPeriod, setSelectedPeriod] = useState("monthly");
   const [showPopup, setShowPopup] = useState(false);
   const [planId, setplanId] = useState("");
-  const apiUrl = "http://localhost:5000/api/user/";
+  const apiUrl = API_BASE_URL + "api/user/";
   const storedUsername = localStorage.getItem("SignatoryLoginData");
   const userLogin = JSON.parse(storedUsername);
   const [userPlans, setUserPlans] = useState([]);

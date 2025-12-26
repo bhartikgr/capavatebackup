@@ -50,6 +50,7 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import AirwallexPaymentPopupOneTimeDataroom from "../../components/Users/AirwallexPaymentPopupOneTimeDataroom.jsx";
 import AirwallexPaymentPopupPerInstanceDataroom from "../../components/Users/AirwallexPaymentPopupPerInstanceDataroom.jsx";
+import { API_BASE_URL } from "../../config/config.js";
 export default function DataroomDiligence() {
   const [lockId, setlockId] = useState([]);
   const [dangerMessagealertLockUnlock, setdangerMessagealertLockUnlock] =
@@ -68,8 +69,8 @@ export default function DataroomDiligence() {
   const [spinnerss, setspinnerss] = useState(false);
   const [checkReferCodepay, setcheckReferCodepay] = useState(true);
   const userLogin = JSON.parse(storedUsername);
-  var apiURL = "http://localhost:5000/api/user/";
-  var apiURLAiFile = "http://localhost:5000/api/user/aifile/";
+  var apiURL = API_BASE_URL + "api/user/";
+  var apiURLAiFile = API_BASE_URL + "api/user/aifile/";
   document.title = "Dataroom Management & Executive Summary";
   const [err, seterr] = useState(false);
 
@@ -80,7 +81,7 @@ export default function DataroomDiligence() {
   const [companyData, setcompanyData] = useState("");
   const [companyLogoUrl, setCompanyLogoUrl] = useState("");
   const [authorizedData, setAuthorizedData] = useState(null);
-  const apiURLSignature = "http://localhost:5000/api/user/";
+  const apiURLSignature = API_BASE_URL + "api/user/";
 
   useEffect(() => {
     getAuthorizedSignature();
@@ -239,7 +240,7 @@ export default function DataroomDiligence() {
   };
 
   //Payments one time
-  const apiUrlModule = "http://localhost:5000/api/admin/module/";
+  const apiUrlModule = API_BASE_URL + "api/admin/module/";
 
   const [dangerMessage, setdangerMessage] = useState("");
   const [dangerMessagealert, setdangerMessagealert] = useState("");

@@ -31,6 +31,7 @@ import {
 import PaymentPopupAcademy from "../../components/Users/PaymentPopupAcademy"; // Adjust path
 import ModuleSideNav from "../../components/Users/ModuleSideNav";
 import axios from "axios";
+import { API_BASE_URL } from "../../config/config.js";
 export default function AdviceVideos() {
   const [errr, seterrr] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -38,9 +39,9 @@ export default function AdviceVideos() {
   const [errorMsg, seterrorMsg] = useState("");
   const [selectedVideo, setSelectedVideo] = useState(null);
   const videoRef = useRef();
-  const backendpath = "http://localhost:5000/api/upload/video";
-  const apiUrl = "http://localhost:5000/api/user/";
-  const apiUrlModule = "http://localhost:5000/api/admin/module/";
+  const backendpath = API_BASE_URL + "api/upload/video";
+  const apiUrl = API_BASE_URL + "api/user/";
+  const apiUrlModule = API_BASE_URL + "api/admin/module/";
   const storedUsername = localStorage.getItem("CompanyLoginData");
   const userLogin = JSON.parse(storedUsername);
   const [moduledata, setmoduledata] = useState("");
@@ -214,7 +215,7 @@ export default function AdviceVideos() {
     setSelectedVideo(null);
   };
 
-  const apiUrlVideo = "http://localhost:5000/api/admin/video/";
+  const apiUrlVideo = API_BASE_URL + "api/admin/video/";
   useEffect(() => {
     getvideo();
   }, []);

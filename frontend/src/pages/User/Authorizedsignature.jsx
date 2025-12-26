@@ -10,6 +10,7 @@ import {
 import axios from "axios";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
+import { API_BASE_URL } from "../../config/config";
 export default function Authorizedsignature() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   document.title = "Authorized Signature";
@@ -23,7 +24,7 @@ export default function Authorizedsignature() {
   const sigPadRef = useRef(null);
   const storedUsername = localStorage.getItem("SignatoryLoginData");
   const userLogin = JSON.parse(storedUsername);
-  const apiURLSignature = "http://localhost:5000/api/user/";
+  const apiURLSignature = API_BASE_URL + "api/user/";
   // Select method and reset others
   const selectMethod = (method) => {
     setSignatureMethod(method);
@@ -194,7 +195,7 @@ export default function Authorizedsignature() {
                       </p>
                       {authorizedData.type === "upload" && (
                         <img
-                          src={`http://localhost:5000/api/upload/docs/doc_${authorizedData.company_id}/signatory/${authorizedData.signature}`}
+                          src={`${API_BASE_URL}api/upload/docs/doc_${authorizedData.company_id}/signatory/${authorizedData.signature}`}
                           alt="Uploaded Signature"
                           style={{ maxWidth: "300px" }}
                         />

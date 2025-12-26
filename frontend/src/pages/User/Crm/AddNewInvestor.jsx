@@ -12,6 +12,7 @@ import { BackButton } from "../../../components/Styles/GlobalStyles.js";
 import { ArrowLeft } from "lucide-react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
+import { API_BASE_URL } from "../../../config/config.js";
 export default function AddNewInvestor() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState();
@@ -24,7 +25,7 @@ export default function AddNewInvestor() {
   const { id } = useParams();
   const [investortype, setinvestortype] = useState("");
   const [ClientIP, setClientIP] = useState("");
-  var apiURL = "http://localhost:5000/api/user/investor/";
+  var apiURL = API_BASE_URL + "api/user/investor/";
   document.title = "Investor Report Form";
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });

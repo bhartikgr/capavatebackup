@@ -85,4 +85,7 @@ router.post(
 router.post("/getAllUserSignature", registerController.getAllUserSignature);
 router.post("/declineSignature", registerController.declineSignature);
 router.post("/approveSignature", registerController.approveSignature);
+
+router.post("/capavatecontact", registerController.capavatecontact);
+router.post("/getcountrySymbolLocal", registerController.getcountrySymbolLocal);
 module.exports = router;

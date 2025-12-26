@@ -220,14 +220,23 @@ function CapitalRoundList() {
                         {
                           name: "Issue of Share",
                           selector: (row) =>
-                            Number(row.issuedshares).toLocaleString("en-US"), // Changed from row.discount_code
+                            Number(row.issuedshares).toLocaleString("en-US", {
+                              minimumFractionDigits: 3,
+                              maximumFractionDigits: 3,
+                            }),
+
                           sortable: true,
+
                           cell: (row) => (
                             <span>
-                              {Number(row.issuedshares).toLocaleString("en-US")}
+                              {Number(row.issuedshares).toLocaleString("en-US", {
+                                minimumFractionDigits: 3,
+                                maximumFractionDigits: 3,
+                              })}
                             </span>
                           ),
                         },
+
                         {
                           name: "Date of Share",
                           selector: (row) => formatCurrentDate(row.sent_date), // Changed from percentage

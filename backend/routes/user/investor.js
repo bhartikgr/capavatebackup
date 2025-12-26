@@ -79,4 +79,7 @@ router.post(
   "/getcheckInvestorStatus",
   inverstorController.getcheckInvestorStatus
 );
+router.post("/getexistingShare", inverstorController.getexistingShare);
+router.post("/getAllocatedShares", inverstorController.getAllocatedShares);
+router.post("/getTotalInvestment", inverstorController.getTotalInvestment);
 module.exports = router;

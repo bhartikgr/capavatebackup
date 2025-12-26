@@ -1512,7 +1512,7 @@ exports.InvestorrequestToCompany = (req, res) => {
   // 1️⃣ Insert into investorrequest_company
   const sqlInvestment = `
     INSERT INTO investorrequest_company
-    (next_round_id,investor_id, roundrecord_id, company_id, shares, investment_amount, created_at)
+    (next_round_id, investor_id, roundrecord_id, company_id, shares, investment_amount, created_at)
     VALUES (?, ?, ?, ?, ?, ?, NOW())
   `;
 
@@ -1533,7 +1533,159 @@ exports.InvestorrequestToCompany = (req, res) => {
 
     const insertedId = result.insertId;
 
-    // 2️⃣ Insert log into access_logs_investor
+    // 🔴 NEW: CHECK AND CREATE WARRANT ENTRY (ONLY FOR PREFERRED EQUITY)
+    const checkWarrantsAndCreateEntry = (investmentId) => {
+      // 1. First, get round details to check instrument type and warrants
+      const getRoundSql = `
+        SELECT instrumentType, instrument_type_data 
+        FROM roundrecord 
+        WHERE id = ? AND company_id = ?
+      `;
+
+      db.query(
+        getRoundSql,
+        [roundrecord_id, company_id],
+        (roundErr, roundResult) => {
+          if (roundErr || !roundResult.length) {
+            console.log("Could not fetch round details for warrants");
+            return;
+          }
+
+          const round = roundResult[0];
+          console.log(round.instrumentType);
+          // ✅ CONDITION: Only process if instrumentType is "Preferred Equity"
+          if (round.instrumentType !== "Preferred Equity") {
+            console.log(
+              `No warrants: Instrument type is ${round.instrumentType}, not Preferred Equity`
+            );
+            return;
+          }
+
+          try {
+            const instrumentData = round.instrument_type_data
+              ? JSON.parse(round.instrument_type_data)
+              : {};
+
+            // Check if warrants are enabled for this round
+            const hasWarrants =
+              instrumentData.hasWarrants_preferred === true ||
+              instrumentData.hasWarrants_preferred === "true";
+
+            if (!hasWarrants) {
+              console.log(
+                "No warrants enabled for this Preferred Equity round"
+              );
+              return;
+            }
+
+            // Calculate warrant coverage amount
+            const investmentAmount = parseFloat(investment_amount || 0);
+            if (investmentAmount <= 0) {
+              console.log("Invalid investment amount for warrant");
+              return;
+            }
+
+            const coveragePercentage = parseFloat(
+              instrumentData.warrant_coverage_percentage || 0
+            );
+            if (coveragePercentage <= 0) {
+              console.log("Invalid or zero warrant coverage percentage");
+              return;
+            }
+
+            const coverageAmount =
+              investmentAmount * (coveragePercentage / 100);
+
+            // 2. Create warrant entry
+            const createWarrantSql = `
+            INSERT INTO warrants (
+              roundrecord_id,
+              company_id,
+              investor_id,
+              warrant_coverage_percentage,
+              warrant_exercise_type,
+              warrant_adjustment_percent,
+              warrant_adjustment_direction,
+              warrant_coverage_amount,
+              warrant_status,
+              expiration_date,
+              issued_date,
+              created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+          `;
+
+            const warrantValues = [
+              roundrecord_id,
+              company_id,
+              investor_id,
+              coveragePercentage,
+              instrumentData.warrant_exercise_type || "next_round_adjusted",
+              parseFloat(instrumentData.warrant_adjustment_percent || 0),
+              instrumentData.warrant_adjustment_direction || "decrease",
+              coverageAmount,
+              "pending",
+              instrumentData.expirationDate_preferred || null,
+            ];
+
+            db.query(
+              createWarrantSql,
+              warrantValues,
+              (warrantErr, warrantResult) => {
+                if (warrantErr) {
+                  console.error("Warrant creation error:", warrantErr);
+                } else {
+                  console.log(
+                    `Warrant created for investor ${investor_id}, ID: ${warrantResult.insertId}`
+                  );
+
+                  // Optional: Log warrant creation
+                  const warrantLogSql = `
+                INSERT INTO access_logs_investor
+                (investor_id, user_id, company_id, company_name, action, module, description, ip_address, extra_data, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+              `;
+
+                  const warrantLogValues = [
+                    investor_id,
+                    created_by_id || null,
+                    company_id || null,
+                    company_name || null,
+                    "WARRANT_CREATED",
+                    "Capital Round",
+                    `Warrant created for ${coveragePercentage}% coverage (Amount: ${coverageAmount})`,
+                    ip_address || null,
+                    JSON.stringify({
+                      warrant_id: warrantResult.insertId,
+                      investment_id: investmentId,
+                      roundrecord_id: roundrecord_id,
+                      instrument_type: "Preferred Equity",
+                      coverage_percentage: coveragePercentage,
+                      coverage_amount: coverageAmount,
+                      exercise_type: instrumentData.warrant_exercise_type,
+                      adjustment_percent:
+                        instrumentData.warrant_adjustment_percent,
+                      adjustment_direction:
+                        instrumentData.warrant_adjustment_direction,
+                    }),
+                  ];
+
+                  db.query(warrantLogSql, warrantLogValues, (logErr) => {
+                    if (logErr) console.error("Warrant log error:", logErr);
+                  });
+                }
+              }
+            );
+          } catch (parseError) {
+            console.error("Error parsing instrument data:", parseError);
+          }
+        }
+      );
+    };
+
+    // Call warrant creation function
+    checkWarrantsAndCreateEntry(insertedId);
+
+    // 3️⃣ Insert log into access_logs_investor (ORIGINAL LOG)
     const sqlLog = `
       INSERT INTO access_logs_investor
       (investor_id, user_id, company_id, company_name, action, module, description, ip_address, extra_data, created_at)
@@ -1545,19 +1697,18 @@ exports.InvestorrequestToCompany = (req, res) => {
       created_by_id || null,
       company_id || null,
       company_name || null,
-      "INVESTMENT_REQUEST", // action
-      "Capital Round", // module
-      `Investor requested ${shares} shares for ${investment_amount}`, // description
+      "INVESTMENT_REQUEST",
+      "Capital Round",
+      `Investor requested ${shares} shares for ${investment_amount}`,
       ip_address || null,
-      JSON.stringify({ requestId: insertedId }), // extra_data
+      JSON.stringify({ requestId: insertedId }),
     ];
 
     db.query(sqlLog, logValues, (err2) => {
       if (err2) {
         console.error("DB Log Error:", err2);
-        // Log failed, but main request succeeded
         return res.status(200).json({
-          message: "Investment request submitted, but logging failed",
+          message: "Investment request submitted (log failed)",
           insertedId,
         });
       }
@@ -1854,11 +2005,11 @@ exports.fetchInvestorData = (req, res) => {
     LEFT JOIN investorrequest_company ON roundrecord.id = investorrequest_company.roundrecord_id
     LEFT JOIN investor_information ON investor_information.id = investorrequest_company.investor_id
     LEFT JOIN company ON company.id = investorrequest_company.company_id
-    WHERE investorrequest_company.company_id = ? AND roundrecord.roundStatus = ?
+    WHERE investorrequest_company.company_id = ? 
     ORDER BY roundrecord.created_at ASC, investorrequest_company.id ASC
   `;
 
-  db.query(fetchQuery, [company_id, "ACTIVE"], (err, results) => {
+  db.query(fetchQuery, [company_id], (err, results) => {
     if (err) {
       console.error("Database query error:", err);
       return res.status(500).json({
@@ -1908,6 +2059,7 @@ exports.fetchInvestorData = (req, res) => {
           roundSize: parseFloat(row.roundsize || 0),
           instrumentType: row.instrumentType || "Common Stock",
           instrumentData,
+          currency: row.currency || "USD",
           investors: [],
           created_at: row.round_created_at,
         };
@@ -1918,16 +2070,36 @@ exports.fetchInvestorData = (req, res) => {
           `${row.first_name || ""} ${row.last_name || ""}`.trim() ||
           `Investor ${row.investor_id}`;
 
+        // Calculate shares based on investment amount and round price
+        let shares = 0;
+        const investmentAmount = parseFloat(row.investment_amount || 0);
+
+        if (
+          investmentAmount > 0 &&
+          roundsMap[row.roundrecord_id].roundSize > 0 &&
+          roundsMap[row.roundrecord_id].issuedShares > 0
+        ) {
+          const pricePerShare =
+            roundsMap[row.roundrecord_id].roundSize /
+            roundsMap[row.roundrecord_id].issuedShares;
+          if (pricePerShare > 0) {
+            shares = investmentAmount / pricePerShare;
+          }
+        }
+
         roundsMap[row.roundrecord_id].investors.push({
           id: row.investor_id,
           name: investorName,
-          shares: parseFloat(row.shares || 0),
-          investmentAmount: parseFloat(row.investment_amount || 0),
+          shares: shares,
+          investmentAmount: investmentAmount,
           request_confirm: row.request_confirm,
           instrumentType: row.instrumentType,
           instrumentData: row.instrument_type_data
             ? JSON.parse(row.instrument_type_data)
             : {},
+          email: row.email,
+          phone: row.phone,
+          currency: row.currency || "USD",
         });
 
         // Track SAFEs / Convertible Notes for conversion
@@ -1944,6 +2116,7 @@ exports.fetchInvestorData = (req, res) => {
             instrumentData: row.instrument_type_data
               ? JSON.parse(row.instrument_type_data)
               : {},
+            currency: row.currency || "USD",
           });
         }
 
@@ -1957,6 +2130,7 @@ exports.fetchInvestorData = (req, res) => {
 
     let cumulativeTotalShares = 0;
     const stakeholderShares = {};
+    const stakeholderInvestments = {};
 
     rounds.forEach((round) => {
       let additionalSharesFromConversions = 0;
@@ -1992,6 +2166,8 @@ exports.fetchInvestorData = (req, res) => {
             additionalSharesFromConversions += shares;
             stakeholderShares[inst.investorName] =
               (stakeholderShares[inst.investorName] || 0) + shares;
+            stakeholderInvestments[inst.investorName] =
+              (stakeholderInvestments[inst.investorName] || 0) + inst.amount;
             allStakeholders.add(inst.investorName);
           }
         });
@@ -2009,6 +2185,8 @@ exports.fetchInvestorData = (req, res) => {
         ) {
           stakeholderShares[inv.name] =
             (stakeholderShares[inv.name] || 0) + inv.shares;
+          stakeholderInvestments[inv.name] =
+            (stakeholderInvestments[inv.name] || 0) + inv.investmentAmount;
           totalInvestorSharesThisRound += inv.shares;
         }
       });
@@ -2025,41 +2203,52 @@ exports.fetchInvestorData = (req, res) => {
     });
 
     // --- Build formatted results for API response ---
-    const colorPalette = [
-      "#1e40af",
-      "#dc2626",
-      "#059669",
-      "#7c3aed",
-      "#ea580c",
-      "#f59e0b",
-      "#10b981",
-      "#6366f1",
-      "#ec4899",
-      "#8b5cf6",
-    ];
-    let colorIndex = 0;
+    // --- Build formatted results for API response ---
+    const formattedResults = [];
 
-    const formattedResults = results.map((inv) => {
-      const key = inv.investor_id
-        ? `${inv.first_name} ${inv.last_name}`.trim()
-        : "Founders";
-      const ownershipPercentage = cumulativeTotalShares
-        ? parseFloat(
-            ((stakeholderShares[key] || 0) / cumulativeTotalShares) * 100
-          ).toFixed(2)
-        : 0;
+    results.forEach((row) => {
+      if (row.investor_id) {
+        const investorName =
+          `${row.first_name || ""} ${row.last_name || ""}`.trim() ||
+          `Investor ${row.investor_id}`;
+        const investorShares = stakeholderShares[investorName] || 0;
+        const ownershipPercentage =
+          cumulativeTotalShares > 0
+            ? parseFloat(
+                (investorShares / cumulativeTotalShares) * 100
+              ).toFixed(2)
+            : "0.00";
 
-      return {
-        ...inv,
-        investor_name: key,
-        ownershipPercentage,
-        totalSharesIncludingWarrants: cumulativeTotalShares,
-        sharesAfterConversion: Math.round(stakeholderShares[key] || 0), // Add this to show post-conversion shares
-      };
+        formattedResults.push({
+          id: row.id,
+          investor_id: row.investor_id,
+          investor_name: investorName,
+          investor_email: row.email,
+          investor_phone: row.phone,
+          nameOfRound:
+            row.nameOfRound ||
+            (row.shareClassType !== "OTHER"
+              ? row.shareClassType
+              : row.shareclassother || "Common"),
+          company_name: row.company_name,
+          shareClassType: row.shareClassType,
+          investment_amount: parseFloat(row.investment_amount || 0),
+          shares: investorShares,
+          issuedshares: row.issuedshares,
+          roundsize: parseFloat(row.roundsize || 0), // यहाँ roundsize add करें
+          currency: row.currency || "USD",
+          instrumentType: row.instrumentType,
+          request_confirm: row.request_confirm,
+          roundStatus: row.roundStatus,
+          ownershipPercentage: ownershipPercentage,
+          totalSharesIncludingWarrants: cumulativeTotalShares,
+        });
+      }
     });
 
     // --- Stats ---
     let stats = {
+      currency: "",
       totalInvestment: 0,
       activeInvestments: 0,
       totalShares: Math.round(cumulativeTotalShares),
@@ -2070,6 +2259,7 @@ exports.fetchInvestorData = (req, res) => {
 
     formattedResults.forEach((inv) => {
       const amount = parseFloat(inv.investment_amount) || 0;
+      stats.currency += inv.currency;
       if (inv.request_confirm === "Yes") {
         stats.totalInvestment += amount;
         stats.confirmedInvestments += 1;
@@ -2084,7 +2274,7 @@ exports.fetchInvestorData = (req, res) => {
       message: "Investment data fetched successfully",
       results: formattedResults,
       stats,
-      totalRecords: results.length,
+      totalRecords: formattedResults.length,
       metadata: {
         totalShares: Math.round(cumulativeTotalShares),
         founderShares: Math.round(stakeholderShares["Founders"] || 0),
@@ -2208,4 +2398,346 @@ exports.getcheckInvestorStatus = (req, res) => {
       });
     }
   );
+};
+
+exports.getexistingShare = async (req, res) => {
+  try {
+    const { company_id, roundrecord_id } = req.body;
+
+    if (!company_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Company ID is required",
+      });
+    }
+
+    // Step 1: Get Round 0 data for base shares
+    const roundZeroQuery = `
+      SELECT issuedshares, founder_data, total_founder_shares 
+      FROM roundrecord 
+      WHERE company_id = ? AND round_type = 'Round 0'
+    `;
+
+    db.query(roundZeroQuery, [company_id], (err, roundZeroResults) => {
+      if (err) {
+        console.error("Database error fetching Round 0:", err);
+        return res.status(500).json({
+          success: false,
+          message: "Database error",
+          error: err,
+        });
+      }
+
+      if (roundZeroResults.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "Round 0 (Incorporation) data not found",
+          existingShares: 0,
+        });
+      }
+
+      const roundZero = roundZeroResults[0];
+      let existingShares = 0;
+
+      // Try to get shares from founder_data first
+      if (roundZero.founder_data) {
+        try {
+          let founderData = roundZero.founder_data;
+
+          // Handle JSON string parsing
+          if (typeof founderData === "string") {
+            founderData = JSON.parse(founderData);
+          }
+
+          if (founderData.totalShares) {
+            existingShares = parseInt(founderData.totalShares);
+          } else if (
+            founderData.founders &&
+            Array.isArray(founderData.founders)
+          ) {
+            // Calculate total from individual founders
+            existingShares = founderData.founders.reduce((total, founder) => {
+              return total + parseInt(founder.shares || 0);
+            }, 0);
+          }
+        } catch (parseError) {
+          console.error("Error parsing founder_data:", parseError);
+        }
+      }
+
+      // Fallback to issuedshares field
+      if (existingShares === 0 && roundZero.issuedshares) {
+        existingShares = parseInt(roundZero.issuedshares);
+      }
+
+      // Final fallback to total_founder_shares
+      if (existingShares === 0 && roundZero.total_founder_shares) {
+        existingShares = parseInt(roundZero.total_founder_shares);
+      }
+
+      // Step 2: If specific round is provided, check if it's SAFE and adjust
+      if (roundrecord_id) {
+        const currentRoundQuery = `
+          SELECT instrumentType, instrument_type_data, roundsize, optionPoolPercent 
+          FROM roundrecord 
+          WHERE id = ? AND company_id = ?
+        `;
+
+        db.query(
+          currentRoundQuery,
+          [roundrecord_id, company_id],
+          (err, currentRoundResults) => {
+            if (err) {
+              console.error("Database error fetching current round:", err);
+              return res.status(500).json({
+                success: false,
+                message: "Database error fetching current round",
+                error: err,
+              });
+            }
+
+            if (currentRoundResults.length > 0) {
+              const currentRound = currentRoundResults[0];
+
+              // If this is a SAFE round, existing shares remain the same
+              // If this is an equity round, we need to add option pool shares
+              if (currentRound.instrumentType !== "Safe") {
+                const optionPoolPercent = parseFloat(
+                  currentRound.optionPoolPercent || 0
+                );
+
+                if (optionPoolPercent > 0) {
+                  // Calculate option pool shares: existingShares / (1 - optionPool%) * optionPool%
+                  const optionPoolShares = Math.round(
+                    (existingShares * (optionPoolPercent / 100)) /
+                      (1 - optionPoolPercent / 100)
+                  );
+                  existingShares += optionPoolShares;
+                }
+              }
+            }
+
+            return res.status(200).json({
+              success: true,
+              message: "Existing shares retrieved successfully",
+              existingShares: existingShares,
+              source: "Round 0 + Option Pool",
+              breakdown: {
+                roundZeroShares: existingShares,
+                includesOptionPool:
+                  currentRoundResults.length > 0 &&
+                  currentRoundResults[0].instrumentType !== "Safe",
+              },
+            });
+          }
+        );
+      } else {
+        // No specific round provided, return Round 0 shares only
+        return res.status(200).json({
+          success: true,
+          message: "Existing shares retrieved successfully",
+          existingShares: existingShares,
+          source: "Round 0 only",
+          breakdown: {
+            roundZeroShares: existingShares,
+            includesOptionPool: false,
+          },
+        });
+      }
+    });
+  } catch (error) {
+    console.error("Error in getexistingShare:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};
+
+exports.getAllocatedShares = async (req, res) => {
+  const { roundrecord_id, company_id } = req.body;
+
+  // Validate inputs
+  if (!roundrecord_id || !company_id) {
+    return res.status(400).json({
+      success: false,
+      message: "Missing required parameters",
+    });
+  }
+
+  try {
+    // 1. Get round details
+    const roundQuery = `
+      SELECT roundsize, issuedshares
+      FROM roundrecord 
+      WHERE id = ? AND company_id = ?
+    `;
+
+    console.log("Fetching round details for:", { roundrecord_id, company_id });
+
+    // Use promise-based query
+    const [roundResults] = await db
+      .promise()
+      .query(roundQuery, [roundrecord_id, company_id]);
+
+    if (roundResults.length === 0) {
+      return res.json({
+        success: true,
+        allocated_shares: 0,
+        total_investment: 0,
+        price_per_share: 0,
+        message: "Round not found",
+      });
+    }
+
+    const round = roundResults[0];
+    const totalSharesInRound = parseFloat(round.issuedshares) || 0;
+    const roundSize = parseFloat(round.roundsize) || 0;
+
+    // Calculate price per share
+    const pricePerShare =
+      totalSharesInRound > 0 ? roundSize / totalSharesInRound : 0;
+
+    // 2. Get total investment amount
+    const investmentQuery = `
+      SELECT investment_amount
+      FROM investorrequest_company 
+      WHERE roundrecord_id = ? 
+        AND company_id = ?
+        AND request_confirm IN ('No', 'Yes')
+    `;
+
+    console.log("Fetching investment amounts...");
+    const [investmentResults] = await db
+      .promise()
+      .query(investmentQuery, [roundrecord_id, company_id]);
+
+    // Calculate sum manually
+    let totalInvestment = 0;
+    investmentResults.forEach((row) => {
+      if (row.investment_amount) {
+        const amount =
+          parseFloat(row.investment_amount.toString().replace(/,/g, "")) || 0;
+        totalInvestment += amount;
+      }
+    });
+
+    // Calculate allocated shares
+    const allocatedShares =
+      pricePerShare > 0 ? totalInvestment / pricePerShare : 0;
+
+    res.json({
+      success: true,
+      allocated_shares: allocatedShares,
+      total_investment: totalInvestment,
+      price_per_share: pricePerShare,
+      round_details: {
+        total_shares: totalSharesInRound,
+        round_size: roundSize,
+      },
+      investors_count: investmentResults.length,
+      message: `Found ${investmentResults.length} investors with $${totalInvestment} investment`,
+    });
+  } catch (error) {
+    console.error("❌ Error in getAllocatedShares:", error);
+    res.status(500).json({
+      success: false,
+      message: "Database error",
+      error: error.message,
+    });
+  }
+};
+exports.getTotalInvestment = async (req, res) => {
+  const { roundrecord_id, company_id } = req.body;
+
+  if (!roundrecord_id || !company_id) {
+    return res.status(400).json({
+      success: false,
+      message: "Missing roundrecord_id or company_id",
+    });
+  }
+
+  try {
+    // Simple query to get all investment amounts
+    const query = `
+      SELECT id, investment_amount, request_confirm
+      FROM investorrequest_company 
+      WHERE roundrecord_id = ? 
+        AND company_id = ?
+        AND request_confirm IN ('No', 'Yes')
+    `;
+
+    console.log("Running getTotalInvestment for:", {
+      roundrecord_id,
+      company_id,
+    });
+
+    // Use promise wrapper
+    const [results] = await db
+      .promise()
+      .query(query, [roundrecord_id, company_id]);
+
+    // Calculate sum manually
+    let totalInvestment = 0;
+    results.forEach((row) => {
+      if (row.investment_amount) {
+        // Remove commas and convert to number
+        const amountStr = row.investment_amount.toString().replace(/,/g, "");
+        const amount = parseFloat(amountStr) || 0;
+        totalInvestment += amount;
+      }
+    });
+
+    console.log(
+      `Found ${results.length} records, total investment: $${totalInvestment}`
+    );
+
+    res.json({
+      success: true,
+      total_investment: totalInvestment,
+      total_investors: results.length,
+      investors: results.map((r) => ({
+        id: r.id,
+        amount: r.investment_amount,
+        status: r.request_confirm,
+      })),
+    });
+  } catch (error) {
+    console.error("❌ Error in getTotalInvestment:", error);
+
+    // Fallback: Try with callback if promise fails
+    try {
+      db.query(query, [roundrecord_id, company_id], (error, results) => {
+        if (error) {
+          return res.status(500).json({
+            success: false,
+            message: "Database error",
+            error: error.message,
+          });
+        }
+
+        let totalInvestment = 0;
+        results.forEach((row) => {
+          if (row.investment_amount) {
+            const amount = parseFloat(row.investment_amount) || 0;
+            totalInvestment += amount;
+          }
+        });
+
+        res.json({
+          success: true,
+          total_investment: totalInvestment,
+          total_investors: results.length,
+        });
+      });
+    } catch (fallbackError) {
+      res.status(500).json({
+        success: false,
+        message: "Failed to fetch investment data",
+        total_investment: 0,
+        total_investors: 0,
+      });
+    }
+  }
 };

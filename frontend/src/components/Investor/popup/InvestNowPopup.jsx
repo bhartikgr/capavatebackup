@@ -4,13 +4,9 @@ import { ModalContainer } from "../../Styles/DataRoomStyle.js";
 import React, { useState, useEffect } from "react";
 import { NumericFormat } from "react-number-format";
 import axios from "axios";
+import { API_BASE_URL } from "../../../config/config.js";
 
 const InvestNowPopup = ({ onClose, records, nextround, nextRoundData }) => {
-  const capitalizeFirstLetter = (str) => {
-    if (!str) return "";
-    return str.charAt(0).toUpperCase() + str.slice(1);
-  };
-
   const storedUsername = localStorage.getItem("InvestorData");
   const userLogin = JSON.parse(storedUsername);
   const [investment, setInvestment] = useState("");
@@ -23,16 +19,157 @@ const InvestNowPopup = ({ onClose, records, nextround, nextRoundData }) => {
   const [conversionDetails, setConversionDetails] = useState(null);
   const [errr, seterrr] = useState(false);
 
-  var apiURL = "http://localhost:5000/api/user/investor/";
+  // NEW WARRANT STATES
+  const [warrantCoverageAmount, setWarrantCoverageAmount] = useState(0);
+  const [warrantExercisePrice, setWarrantExercisePrice] = useState(0);
+  const [warrantDetails, setWarrantDetails] = useState("");
+  const [warrantStatus, setWarrantStatus] = useState("pending");
+
+  // NEW STATES FOR AVAILABLE SHARES
+  const [availableShares, setAvailableShares] = useState(0);
+  const [totalRoundShares, setTotalRoundShares] = useState(0);
+  const [allocatedShares, setAllocatedShares] = useState(0);
+  const [maxInvestment, setMaxInvestment] = useState(0);
+  const [pricePerShare, setPricePerShare] = useState(0);
+  const [validationError, setValidationError] = useState("");
+
+  var apiURL = API_BASE_URL + "api/user/investor/";
   const [formData, setFormData] = useState({});
   const [interestRate, setInterestRate] = useState(0);
   const [maturityMonths, setMaturityMonths] = useState(0);
-  const [pricePerShare, setPricePerShare] = useState(0);
   const [liquidationPreference, setLiquidationPreference] = useState([]);
+  const [existingSharess, setExistingShares] = useState(0);
 
   useEffect(() => {
+    getexistingShare();
     getcheckInvestorStatus();
-  }, []);
+    calculateAvailableShares();
+  }, [records]);
+
+  // NEW FUNCTION: Calculate available shares
+  const calculateAvailableShares = async () => {
+    if (!records || !records.id) return;
+
+    try {
+      // Get round details
+      const totalSharesInRound = parseFloat(records.issuedshares || 0);
+      const roundSize = parseFloat(records.roundsize || 0);
+
+      setTotalRoundShares(totalSharesInRound);
+
+      // Calculate price per share
+      const calculatedPrice = totalSharesInRound > 0 ? roundSize / totalSharesInRound : 0;
+      setPricePerShare(calculatedPrice);
+
+      // Get allocated investment amount from database
+      const formData = {
+        roundrecord_id: records.id,
+        company_id: records.company_id
+      };
+
+      const res = await axios.post(
+        apiURL + "getAllocatedShares",
+        formData,
+        {
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      console.log("API Response:", res.data);
+
+      let allocatedShares = 0;
+      let allocatedInvestment = 0;
+
+      if (res.data.success) {
+        // Use allocated_shares from API (calculated from investment_amount)
+        allocatedShares = parseFloat(res.data.allocated_shares || 0);
+        allocatedInvestment = parseFloat(res.data.total_investment || 0);
+
+        // If API returned 0 but we have price, calculate from investment
+        if (allocatedShares === 0 && calculatedPrice > 0 && allocatedInvestment > 0) {
+          allocatedShares = allocatedInvestment / calculatedPrice;
+        }
+      }
+
+      setAllocatedShares(allocatedShares);
+
+      // Calculate available shares
+      const available = Math.max(0, totalSharesInRound - allocatedShares);
+      setAvailableShares(available);
+
+      // Calculate maximum investment
+      const maxInv = calculatedPrice * available;
+      setMaxInvestment(maxInv);
+
+    } catch (err) {
+      console.error("Error calculating available shares:", err);
+      console.error("Error details:", err.response?.data);
+
+      // Fallback: Calculate from local data
+      const totalSharesInRound = parseFloat(records.issuedshares || 0);
+      const roundSize = parseFloat(records.roundsize || 0);
+      const calculatedPrice = totalSharesInRound > 0 ? roundSize / totalSharesInRound : 0;
+
+      setTotalRoundShares(totalSharesInRound);
+
+      // Try to get investment amount from existing investor requests
+      let allocatedInvestment = 0;
+      try {
+        const investmentRes = await axios.post(
+          apiURL + "getTotalInvestment",
+          {
+            roundrecord_id: records.id,
+            company_id: records.company_id
+          }
+        );
+        if (investmentRes.data.success) {
+          allocatedInvestment = parseFloat(investmentRes.data.total_investment || 0);
+        }
+      } catch (investmentErr) {
+        console.log("Could not fetch investment total, using 0");
+      }
+
+      // Calculate allocated shares from investment
+      const allocatedShares = calculatedPrice > 0 ? allocatedInvestment / calculatedPrice : 0;
+      const available = Math.max(0, totalSharesInRound - allocatedShares);
+
+      setAvailableShares(available);
+      setAllocatedShares(allocatedShares);
+      setPricePerShare(calculatedPrice);
+      setMaxInvestment(calculatedPrice * available);
+    }
+  };
+
+  const getexistingShare = async () => {
+    let formData = {
+      investor_id: userLogin.id,
+      company_id: records.company_id,
+      roundrecord_id: records.id,
+    };
+    try {
+      const res = await axios.post(
+        apiURL + "getexistingShare",
+        formData,
+        {
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (res.data.success) {
+        setExistingShares(res.data.existingShares);
+      } else {
+        console.error("❌ Error:", res.data.message);
+      }
+
+    } catch (err) {
+      console.error("Error fetching capital round data:", err);
+    }
+  };
 
   const getcheckInvestorStatus = async () => {
     let formData = {
@@ -65,8 +202,320 @@ const InvestNowPopup = ({ onClose, records, nextround, nextRoundData }) => {
     }
   };
 
+  // 🔴 NEW FUNCTION: CALCULATE WARRANTS (Client Requirements)
+  const calculateWarrantsForPreferredEquity = (investmentAmount, instrumentData) => {
+    // Reset warrant values
+    setWarrantShares(0);
+    setWarrantCoverageAmount(0);
+    setWarrantExercisePrice(0);
+    setWarrantDetails("");
+    setWarrantStatus("pending");
+
+    // Check if warrants are enabled (NEW FORMAT)
+    const hasWarrants = instrumentData?.hasWarrants_preferred || instrumentData?.hasWarrants;
+    if (!hasWarrants) return;
+
+    // Get coverage percentage (NEW: warrant_coverage_percentage, OLD: warrantRatio)
+    let coveragePercentage = 0;
+    if (instrumentData.warrant_coverage_percentage) {
+      coveragePercentage = parseFloat(instrumentData.warrant_coverage_percentage);
+    } else if (instrumentData.warrantRatio) {
+      // Convert old ratio (1:3) to percentage (33.33%)
+      const ratioParts = instrumentData.warrantRatio.split(':');
+      if (ratioParts.length === 2) {
+        const numerator = parseFloat(ratioParts[0]);
+        const denominator = parseFloat(ratioParts[1]);
+        if (denominator > 0) {
+          coveragePercentage = (numerator / denominator) * 100;
+        }
+      }
+    }
+
+    if (coveragePercentage <= 0) return;
+
+    // 1. Calculate warrant coverage amount
+    const coverageAmount = investmentAmount * (coveragePercentage / 100);
+    setWarrantCoverageAmount(coverageAmount);
+
+    // 2. Calculate exercise price
+    let exercisePrice = 0;
+    let detailsText = "";
+
+    // Check exercise price type
+    const exerciseType = instrumentData.warrant_exercise_type || "fixed";
+
+    if (exerciseType === "next_round_adjusted" && nextRoundData) {
+      // NEW: Next Round Price ± Adjustment %
+      const nextRoundShares = parseFloat(nextRoundData.issuedshares || 0);
+      const nextRoundSize = parseFloat(nextRoundData.roundsize || 0);
+
+      if (nextRoundShares > 0 && nextRoundSize > 0) {
+        const nextRoundPrice = nextRoundSize / nextRoundShares;
+        const adjustmentPercent = parseFloat(instrumentData.warrant_adjustment_percent || 0);
+        const adjustmentType = instrumentData.warrant_adjustment_direction || "decrease";
+
+        // Calculate exercise price: Next round price ± adjustment%
+        if (adjustmentType === "decrease") {
+          exercisePrice = nextRoundPrice * (1 - (adjustmentPercent / 100));
+        } else {
+          exercisePrice = nextRoundPrice * (1 + (adjustmentPercent / 100));
+        }
+
+        setWarrantExercisePrice(exercisePrice);
+        setWarrantStatus("will_exercise");
+
+        detailsText = `Exercise price: ${records.currency}${exercisePrice.toFixed(2)} (Next round: ${records.currency}${nextRoundPrice.toFixed(2)} ${adjustmentType === "decrease" ? "-" : "+"} ${adjustmentPercent}%)`;
+      }
+    } else if (exerciseType === "next_round" && nextRoundData) {
+      // Next round price without adjustment
+      const nextRoundShares = parseFloat(nextRoundData.issuedshares || 0);
+      const nextRoundSize = parseFloat(nextRoundData.roundsize || 0);
+
+      if (nextRoundShares > 0 && nextRoundSize > 0) {
+        exercisePrice = nextRoundSize / nextRoundShares;
+        setWarrantExercisePrice(exercisePrice);
+        setWarrantStatus("will_exercise");
+        detailsText = `Exercise price: ${records.currency}${exercisePrice.toFixed(2)} (Next round price)`;
+      }
+    } else if (instrumentData.exercisePrice || instrumentData.exercisePrice_preferred) {
+      // Fixed exercise price (old format)
+      exercisePrice = parseFloat(instrumentData.exercisePrice || instrumentData.exercisePrice_preferred || 0);
+      setWarrantExercisePrice(exercisePrice);
+      setWarrantStatus("fixed_price");
+      detailsText = `Exercise price: ${records.currency}${exercisePrice.toFixed(2)} (Fixed price)`;
+    }
+
+    // 3. Calculate warrant shares
+    if (exercisePrice > 0) {
+      const calculatedWarrantShares = coverageAmount / exercisePrice;
+      setWarrantShares(Math.floor(calculatedWarrantShares * 100) / 100);
+    } else {
+      // No exercise price determined yet
+      detailsText = "Warrant exercise price will be determined when next priced round occurs";
+      setWarrantStatus("pending");
+    }
+
+    setWarrantDetails(detailsText);
+  };
+
+  // UPDATED: Handle investment change with validation
+  const handleInvestmentChange = (e) => {
+    setValidationError(""); // Clear previous errors
+
+    let amount = parseFloat(e.target.value.replace(/,/g, "")) || 0;
+
+    // Check if investment exceeds maximum allowed
+    if (maxInvestment > 0 && amount > maxInvestment) {
+      setValidationError(`Maximum investment allowed: ${records.currency}${maxInvestment.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      })} (Based on available shares)`);
+
+      // Auto-correct to maximum
+      amount = maxInvestment;
+    }
+
+    // Check minimum investment (price for 1 share)
+    const minInvestment = pricePerShare;
+    if (amount > 0 && amount < minInvestment) {
+      setValidationError(`Minimum investment: ${records.currency}${minInvestment.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      })} (Price for 1 share)`);
+    }
+
+    setInvestment(
+      amount.toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })
+    );
+
+    // Reset values
+    setShares(0);
+    setOwnership(0);
+    setWarrantShares(0);
+    setConversionDetails(null);
+    setWarrantCoverageAmount(0);
+    setWarrantExercisePrice(0);
+    setWarrantDetails("");
+
+    if (amount === 0) return;
+
+    const existingShares = parseFloat(existingSharess || 0);
+    const roundSize = parseFloat(records.roundsize || 0);
+
+    // 🟩 COMMON STOCK
+    if (records.instrumentType === "Common Stock") {
+      if (existingShares > 0 && roundSize > 0) {
+        // ✅ SIMPLE CALCULATION WITHOUT SHARE LIMIT CHECK
+        const pricePerShareCalc = roundSize / existingShares;
+        const calculatedShares = amount / pricePerShareCalc;
+
+        // ✅ NO SHARE LIMIT CHECK - Investor can enter any amount
+        // System will handle limits at submission time
+        setShares(Math.floor(calculatedShares * 100) / 100);
+
+        // Ownership calculation
+        const postMoneyShares = existingShares + calculatedShares;
+        const ownership = (calculatedShares / postMoneyShares) * 100;
+        setOwnership(Number(ownership.toFixed(4)));
+      }
+    }
+
+    // 🟩 PREFERRED EQUITY
+    else if (records.instrumentType === "Preferred Equity") {
+      if (existingShares > 0 && roundSize > 0) {
+        // Simple calculation without limit check
+        const pricePerShareCalc = roundSize / existingShares;
+        const calculatedShares = amount / pricePerShareCalc;
+
+        // ✅ NO SHARE LIMIT CHECK HERE
+        setShares(Math.floor(calculatedShares * 100) / 100);
+
+        // Ownership calculation
+        const postMoneyShares = existingShares + calculatedShares;
+        const ownership = (calculatedShares / postMoneyShares) * 100;
+        setOwnership(Number(ownership.toFixed(4)));
+
+        // Warrant calculation
+        const instrumentData = getInstrumentData();
+        if (records.instrumentType === "Preferred Equity") {
+          calculateWarrantsForPreferredEquity(amount, instrumentData);
+        }
+      }
+    }
+
+    // 🟨 SAFE CONVERSION
+    else if (records.instrumentType === "Safe") {
+      let safeData = getInstrumentData();
+      if (!safeData) return;
+
+      const valuationCap = parseFloat(safeData.valuationCap || safeData.valuationCap_note || 0);
+      const discountRate = parseFloat(safeData.discountRate || safeData.discountRate_note || 0);
+      const safeType = safeData.safeType || "POST_MONEY";
+
+      if (valuationCap === 0 || existingShares === 0) return;
+
+      let conversionPrice = 0;
+
+      if (nextround && nextRoundData) {
+        const nextRoundShares = parseFloat(nextRoundData.issuedshares || 0);
+        const nextRoundSize = parseFloat(nextRoundData.roundsize || 0);
+
+        if (nextRoundShares > 0 && nextRoundSize > 0) {
+          const nextRoundPrice = nextRoundSize / nextRoundShares;
+          const capPrice = valuationCap / existingShares;
+          const discountPrice = nextRoundPrice * (1 - discountRate / 100);
+          conversionPrice = Math.min(capPrice, discountPrice);
+        }
+      } else {
+        conversionPrice = valuationCap / existingShares;
+      }
+
+      if (conversionPrice > 0) {
+        const calculatedShares = amount / conversionPrice;
+
+        // ✅ NO SHARE LIMIT CHECK
+        if (safeType === "POST_MONEY") {
+          const ownershipPercent = (amount / valuationCap) * 100;
+          setShares(Math.round(calculatedShares));
+          setOwnership(Number(ownershipPercent.toFixed(2)));
+        } else {
+          const postMoneyValuation = valuationCap + amount;
+          const ownershipPercent = (amount / postMoneyValuation) * 100;
+          setShares(Math.round(calculatedShares));
+          setOwnership(Number(ownershipPercent.toFixed(2)));
+        }
+      }
+    }
+
+    // 🟧 CONVERTIBLE NOTE
+    else if (records.instrumentType === "Convertible Note") {
+      let noteData = getInstrumentData();
+      if (!noteData) return;
+
+      const valuationCap = parseFloat(noteData.valuationCap_note || 0);
+      const discountRate = parseFloat(noteData.discountRate_note || 0);
+      const interestRate = parseFloat(noteData.interestRate_note || 0) / 100;
+      const principal = amount;
+
+      const interest = principal * interestRate * 1;
+      const maturityAmount = principal + interest;
+
+      if (nextround && nextRoundData) {
+        const nextRoundShares = parseFloat(nextRoundData.issuedshares || 0);
+        const nextRoundSize = parseFloat(nextRoundData.roundsize || 0);
+
+        if (nextRoundShares > 0 && nextRoundSize > 0) {
+          const nextRoundPrice = nextRoundSize / nextRoundShares;
+          const capPrice = valuationCap > 0 && existingShares > 0 ? valuationCap / existingShares : Infinity;
+          const discountPrice = discountRate > 0 ? nextRoundPrice * (1 - discountRate / 100) : Infinity;
+          const conversionPrice = Math.min(capPrice, discountPrice);
+          const calculatedShares = maturityAmount / conversionPrice;
+
+          // ✅ NO SHARE LIMIT CHECK
+          const postMoneyShares = existingShares + calculatedShares;
+          const ownershipPercent = (calculatedShares / postMoneyShares) * 100;
+
+          setShares(Number(calculatedShares.toFixed(2)));
+          setOwnership(Number(ownershipPercent.toFixed(4)));
+        }
+      } else if (valuationCap > 0 && existingShares > 0) {
+        const conversionPrice = valuationCap / existingShares;
+        const calculatedShares = maturityAmount / conversionPrice;
+
+        // ✅ NO SHARE LIMIT CHECK
+        const postMoneyShares = existingShares + calculatedShares;
+        const ownershipPercent = (calculatedShares / postMoneyShares) * 100;
+
+        setShares(Number(calculatedShares.toFixed(2)));
+        setOwnership(Number(ownershipPercent.toFixed(4)));
+      }
+    }
+
+    // 🟥 VENTURE/BANK DEBT
+    else if (records.instrumentType === "Venture/Bank DEBT") {
+      setShares(0);
+      setOwnership(0);
+
+      const instrumentData = getInstrumentData();
+      if (instrumentData?.hasWarrants_Bank) {
+        const exercisePrice = parseFloat(instrumentData.exercisePrice_bank || 0);
+        const warrantRatio = parseFloat(instrumentData.warrantRatio_bank || 1);
+
+        if (exercisePrice > 0) {
+          const warrantSharesCalc = (amount / exercisePrice) * warrantRatio;
+          // ✅ NO SHARE LIMIT CHECK
+          setWarrantShares(Math.floor(warrantSharesCalc * 100) / 100);
+        }
+      }
+    }
+  };
+
+  // UPDATED: Handle submit with validation
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // NEW: Validate investment amount
+    const investmentAmount = parseFloat(String(investment).toString().replace(/,/g, "")) || 0;
+
+    if (investmentAmount <= 0) {
+      setValidationError("Please enter a valid investment amount");
+      return;
+    }
+
+    if (maxInvestment > 0 && investmentAmount > maxInvestment) {
+      setValidationError(`Investment exceeds maximum allowed amount of ${records.currency}${maxInvestment.toLocaleString()}`);
+      return;
+    }
+
+    // Calculate shares based on investment
+    const calculatedShares = shares;
+    if (calculatedShares > availableShares) {
+      setValidationError(`Requested ${calculatedShares.toLocaleString()} shares but only ${availableShares.toLocaleString()} available`);
+      return;
+    }
 
     let formDataa = {
       investor_id: userLogin.id,
@@ -75,8 +524,12 @@ const InvestNowPopup = ({ onClose, records, nextround, nextRoundData }) => {
       created_by_id: records.created_by_id,
       roundrecord_id: records.id,
       next_round_id: nextRoundData?.id,
-      investment_amount:
-        parseFloat(String(investment).toString().replace(/,/g, "")) || 0,
+      investment_amount: investmentAmount,
+      // Include warrant data
+      warrant_coverage_amount: warrantCoverageAmount,
+      warrant_exercise_price: warrantExercisePrice,
+      warrant_shares: warrantShares,
+      warrant_status: warrantStatus
     };
 
     try {
@@ -93,13 +546,17 @@ const InvestNowPopup = ({ onClose, records, nextround, nextRoundData }) => {
 
       setSubmitted("No");
       setSuccessmessage("Investment request submitted successfully!");
+      setValidationError(""); // Clear errors on success
 
+      // Refresh available shares after successful investment
       setTimeout(() => {
+        calculateAvailableShares();
         setSubmitted("No");
       }, 4500);
     } catch (err) {
       console.error("Error submitting investment:", err);
       setSubmitted(null);
+      setValidationError("Error submitting investment. Please try again.");
     }
   };
 
@@ -123,330 +580,6 @@ const InvestNowPopup = ({ onClose, records, nextround, nextRoundData }) => {
     }
   };
 
-  const handleInvestmentChange = (e) => {
-    let amount = parseFloat(e.target.value.replace(/,/g, "")) || 0;
-    setInvestment(
-      amount.toLocaleString("en-US", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      })
-    );
-
-    // Reset values
-    setShares(0);
-    setOwnership(0);
-    setWarrantShares(0);
-    setConversionDetails(null);
-
-    if (amount === 0) return;
-
-    // Get current round data
-    const existingShares = parseFloat(records.issuedshares || 0);
-    const roundSize = parseFloat(records.roundsize || 0);
-
-    // 🟩 COMMON STOCK / PREFERRED EQUITY
-    if (
-      records.instrumentType === "Common Stock" ||
-      records.instrumentType === "Preferred Equity"
-    ) {
-      if (existingShares > 0 && roundSize > 0) {
-        // Formula: Share Price = Round Size ÷ Issued Shares
-        const pricePerShare = roundSize / existingShares;
-
-        // Formula: New Shares = Investment Amount ÷ Share Price
-        const calculatedShares = amount / pricePerShare;
-        setShares(Math.floor(calculatedShares * 100) / 100);
-
-        // Formula: Ownership = New Shares ÷ (Outstanding Shares + New Shares)
-        const postMoneyShares = existingShares + calculatedShares;
-        const ownership = (calculatedShares / postMoneyShares) * 100;
-        setOwnership(Number(ownership.toFixed(4)));
-
-        // Check for warrants
-        const instrumentData = getInstrumentData();
-        if (instrumentData?.hasWarrants) {
-          const exercisePrice = parseFloat(instrumentData.exercisePrice || 0);
-          const warrantRatio = parseFloat(instrumentData.warrantRatio || 1);
-
-          if (exercisePrice > 0) {
-            const warrantSharesCalc = (amount / exercisePrice) * warrantRatio;
-            setWarrantShares(Math.floor(warrantSharesCalc * 100) / 100);
-          }
-        }
-
-        console.log(`Common/Preferred Calculation:
-          Price Per Share: $${pricePerShare.toFixed(2)}
-          Shares Issued: ${calculatedShares.toFixed(2)}
-          Ownership: ${ownership.toFixed(4)}%
-        `);
-      }
-    }
-
-    // 🟨 SAFE CONVERSION
-    else if (records.instrumentType === "Safe") {
-      let safeData = getInstrumentData();
-      if (!safeData) {
-        console.error("Invalid SAFE data");
-        return;
-      }
-
-      const valuationCap = parseFloat(safeData.valuationCap || 0);
-      const discountRate = parseFloat(safeData.discountRate || 0);
-      const safeType = safeData.safeType || "POST_MONEY";
-
-      console.log(`SAFE Details:
-        Investment: $${amount.toLocaleString()}
-        Valuation Cap: $${valuationCap.toLocaleString()}
-        Discount Rate: ${discountRate}%
-        SAFE Type: ${safeType}
-        Existing Shares: ${existingShares}
-      `);
-
-      let conversionPrice = 0;
-      let calculatedShares = 0;
-      let ownershipPercent = 0;
-      let details = {};
-
-      // Check if we have next round data
-      if (nextround && nextRoundData) {
-        const nextRoundShares = parseFloat(nextRoundData.issuedshares || 0);
-        const nextRoundSize = parseFloat(nextRoundData.roundsize || 0);
-
-        if (nextRoundShares > 0 && nextRoundSize > 0) {
-          // Formula: Next Round Price = Next Round Size ÷ Next Round Shares
-          const nextRoundPrice = nextRoundSize / nextRoundShares;
-
-          // Formula: Cap Price = Valuation Cap ÷ Outstanding Shares
-          const capPrice =
-            valuationCap > 0 && existingShares > 0
-              ? valuationCap / existingShares
-              : Infinity;
-
-          // Formula: Discount Price = Next Round Price × (1 - Discount Rate)
-          const discountPrice =
-            discountRate > 0
-              ? nextRoundPrice * (1 - discountRate / 100)
-              : Infinity;
-
-          // Formula: Conversion Price = MIN(Next Round Price, Cap Price, Discount Price)
-          conversionPrice = Math.min(nextRoundPrice, capPrice, discountPrice);
-
-          details = {
-            nextRoundPrice: nextRoundPrice.toFixed(2),
-            capPrice: capPrice === Infinity ? "N/A" : capPrice.toFixed(2),
-            discountPrice:
-              discountPrice === Infinity ? "N/A" : discountPrice.toFixed(2),
-            conversionPrice: conversionPrice.toFixed(2),
-          };
-
-          console.log(`SAFE Conversion with Next Round:
-            Next Round Price: $${nextRoundPrice.toFixed(2)}
-            Cap Price: $${capPrice === Infinity ? "N/A" : capPrice.toFixed(2)}
-            Discount Price: $${discountPrice === Infinity ? "N/A" : discountPrice.toFixed(2)
-            }
-            Conversion Price: $${conversionPrice.toFixed(2)}
-          `);
-        }
-      } else if (valuationCap > 0 && existingShares > 0) {
-        // No next round - use valuation cap only
-        conversionPrice = valuationCap / existingShares;
-        details = {
-          capPrice: conversionPrice.toFixed(2),
-          conversionPrice: conversionPrice.toFixed(2),
-        };
-        console.log(
-          `SAFE Conversion without Next Round (Cap only): $${conversionPrice.toFixed(
-            2
-          )}`
-        );
-      }
-
-      if (conversionPrice > 0) {
-        if (safeType === "POST_MONEY") {
-          // POST-MONEY SAFE
-          // Formula: Shares = SAFE Amount ÷ Conversion Price
-          calculatedShares = amount / conversionPrice;
-
-          // Formula: Ownership = (SAFE Amount ÷ Valuation Cap) × 100
-          // In post-money SAFE, ownership is fixed based on cap
-          if (valuationCap > 0) {
-            ownershipPercent = (amount / valuationCap) * 100;
-          } else {
-            // Fallback if no cap
-            const postMoneyShares = existingShares + calculatedShares;
-            ownershipPercent = (calculatedShares / postMoneyShares) * 100;
-          }
-
-          console.log(`POST-MONEY SAFE:
-            Shares Issued: ${calculatedShares.toFixed(2)}
-            Ownership (Fixed): ${ownershipPercent.toFixed(4)}%
-          `);
-        } else if (safeType === "PRE_MONEY") {
-          // PRE-MONEY SAFE
-          // Formula: Post-Money Valuation = Valuation Cap + SAFE Amount
-          const postMoneyValuation = valuationCap + amount;
-
-          // Formula: Shares = (SAFE Amount ÷ Post-Money Valuation) × Total Outstanding Shares
-          // This assumes conversion happens at current outstanding shares
-          calculatedShares = amount / conversionPrice;
-
-          // Formula: Ownership = SAFE Amount ÷ (Valuation Cap + SAFE Amount)
-          ownershipPercent = (amount / postMoneyValuation) * 100;
-
-          console.log(`PRE-MONEY SAFE:
-            Post-Money Valuation: $${postMoneyValuation.toLocaleString()}
-            Shares Issued: ${calculatedShares.toFixed(2)}
-            Ownership: ${ownershipPercent.toFixed(4)}%
-          `);
-        }
-
-        setShares(Number(calculatedShares.toFixed(2)));
-        setOwnership(Number(ownershipPercent.toFixed(4)));
-        setConversionDetails(details);
-      }
-    }
-
-    // 🟧 CONVERTIBLE NOTE
-    else if (records.instrumentType === "Convertible Note") {
-      let noteData = getInstrumentData();
-      if (!noteData) {
-        console.error("Invalid Convertible Note data");
-        return;
-      }
-
-      const valuationCap = parseFloat(noteData.valuationCap_note || 0);
-      const discountRate = parseFloat(noteData.discountRate_note || 0);
-      const interestRate = parseFloat(noteData.interestRate_note || 0) / 100;
-      const principal = amount;
-
-      // Formula: Interest = Principal × Interest Rate × Time Period (1 year)
-      const interest = principal * interestRate * 1;
-
-      // Formula: Maturity Amount = Principal + Interest
-      const maturityAmount = principal + interest;
-
-      console.log(`Convertible Note Details:
-        Principal: $${principal.toLocaleString()}
-        Interest Rate: ${(interestRate * 100).toFixed(2)}%
-        Interest (1 year): $${interest.toLocaleString()}
-        Maturity Amount: $${maturityAmount.toLocaleString()}
-        Valuation Cap: $${valuationCap.toLocaleString()}
-        Discount Rate: ${discountRate}%
-      `);
-
-      let details = {
-        principal: principal.toFixed(2),
-        interest: interest.toFixed(2),
-        maturityAmount: maturityAmount.toFixed(2),
-      };
-
-      // Check if we have next round data
-      if (nextround && nextRoundData) {
-        const nextRoundShares = parseFloat(nextRoundData.issuedshares || 0);
-        const nextRoundSize = parseFloat(nextRoundData.roundsize || 0);
-
-        if (nextRoundShares > 0 && nextRoundSize > 0) {
-          // Formula: Next Round Price = Next Round Size ÷ Next Round Shares
-          const nextRoundPrice = nextRoundSize / nextRoundShares;
-
-          // Formula: Cap Price = Valuation Cap ÷ Outstanding Shares
-          const capPrice =
-            valuationCap > 0 && existingShares > 0
-              ? valuationCap / existingShares
-              : Infinity;
-
-          // Formula: Discount Price = Next Round Price × (1 - Discount Rate)
-          const discountPrice =
-            discountRate > 0
-              ? nextRoundPrice * (1 - discountRate / 100)
-              : Infinity;
-
-          // Formula: Conversion Price = MIN(Cap Price, Discount Price)
-          const conversionPrice = Math.min(capPrice, discountPrice);
-
-          // Formula: Shares Issued = Maturity Amount ÷ Conversion Price
-          const calculatedShares = maturityAmount / conversionPrice;
-
-          // Formula: Ownership = Shares Issued ÷ (Outstanding Shares + Shares Issued)
-          const postMoneyShares = existingShares + calculatedShares;
-          const ownershipPercent = (calculatedShares / postMoneyShares) * 100;
-
-          setShares(Number(calculatedShares.toFixed(2)));
-          setOwnership(Number(ownershipPercent.toFixed(4)));
-
-          details = {
-            ...details,
-            nextRoundPrice: nextRoundPrice.toFixed(2),
-            capPrice: capPrice === Infinity ? "N/A" : capPrice.toFixed(2),
-            discountPrice:
-              discountPrice === Infinity ? "N/A" : discountPrice.toFixed(2),
-            conversionPrice: conversionPrice.toFixed(2),
-          };
-
-          console.log(`Convertible Note Conversion:
-            Next Round Price: $${nextRoundPrice.toFixed(2)}
-            Cap Price: $${capPrice === Infinity ? "N/A" : capPrice.toFixed(2)}
-            Discount Price: $${discountPrice === Infinity ? "N/A" : discountPrice.toFixed(2)
-            }
-            Conversion Price: $${conversionPrice.toFixed(2)}
-            Shares Issued: ${calculatedShares.toFixed(2)}
-            Ownership: ${ownershipPercent.toFixed(4)}%
-          `);
-        }
-      } else if (valuationCap > 0 && existingShares > 0) {
-        // No next round - use valuation cap only
-        const conversionPrice = valuationCap / existingShares;
-        const calculatedShares = maturityAmount / conversionPrice;
-        const postMoneyShares = existingShares + calculatedShares;
-        const ownershipPercent = (calculatedShares / postMoneyShares) * 100;
-
-        setShares(Number(calculatedShares.toFixed(2)));
-        setOwnership(Number(ownershipPercent.toFixed(4)));
-
-        details = {
-          ...details,
-          capPrice: conversionPrice.toFixed(2),
-          conversionPrice: conversionPrice.toFixed(2),
-        };
-      }
-
-      setConversionDetails(details);
-    }
-
-    // 🟥 VENTURE/BANK DEBT
-    else if (records.instrumentType === "Venture/Bank DEBT") {
-      // Debt doesn't create shares or ownership
-      setShares(0);
-      setOwnership(0);
-
-      // Calculate warrants if applicable
-      const instrumentData = getInstrumentData();
-      if (instrumentData?.hasWarrants_Bank) {
-        const exercisePrice = parseFloat(
-          instrumentData.exercisePrice_bank || 0
-        );
-        const warrantRatio = parseFloat(instrumentData.warrantRatio_bank || 1);
-
-        if (exercisePrice > 0) {
-          // Formula: Warrant Shares = (Investment Amount ÷ Exercise Price) × Warrant Ratio
-          const warrantSharesCalc = (amount / exercisePrice) * warrantRatio;
-          setWarrantShares(Math.floor(warrantSharesCalc * 100) / 100);
-
-          // Formula: Potential Dilution = Warrant Shares ÷ (Outstanding Shares + Warrant Shares)
-          const potentialDilution =
-            (warrantSharesCalc / (existingShares + warrantSharesCalc)) * 100;
-
-          console.log(`Venture Debt with Warrants:
-            Exercise Price: $${exercisePrice.toFixed(2)}
-            Warrant Ratio: ${warrantRatio}
-            Warrant Shares: ${warrantSharesCalc.toFixed(2)}
-            Potential Dilution: ${potentialDilution.toFixed(4)}%
-          `);
-        }
-      }
-    }
-  };
-
   useEffect(() => {
     if (!records) return;
 
@@ -455,19 +588,17 @@ const InvestNowPopup = ({ onClose, records, nextround, nextRoundData }) => {
       instrumentData = JSON.parse(instrumentData);
     }
 
-    // ✅ Liquidation Preference Parsing (Fixed)
+    // Liquidation Preference Parsing
     if (records.liquidation) {
       try {
         let liquidationData = records.liquidation;
 
-        // If it's a JSON string (rare case)
         if (
           typeof liquidationData === "string" &&
           liquidationData.startsWith("[")
         ) {
           liquidationData = JSON.parse(liquidationData);
         }
-        // If it's comma-separated values
         else if (typeof liquidationData === "string") {
           liquidationData = liquidationData
             .split(",")
@@ -475,7 +606,6 @@ const InvestNowPopup = ({ onClose, records, nextround, nextRoundData }) => {
             .filter((i) => i.length > 0);
         }
 
-        // Ensure it's always an array
         setLiquidationPreference(
           Array.isArray(liquidationData) ? liquidationData : [liquidationData]
         );
@@ -496,6 +626,7 @@ const InvestNowPopup = ({ onClose, records, nextround, nextRoundData }) => {
         setFormData({
           ...instrumentData,
           hasWarrants: instrumentData?.hasWarrants || false,
+          hasWarrants_preferred: instrumentData?.hasWarrants_preferred || false,
         });
         break;
 
@@ -526,11 +657,16 @@ const InvestNowPopup = ({ onClose, records, nextround, nextRoundData }) => {
     successLight: "#ECFDF5",
     info: "#3B82F6",
     infoLight: "#EFF6FF",
+    warning: "#F59E0B",
+    warningLight: "#FEF3C7",
+    danger: "#EF4444",
+    dangerLight: "#FEE2E2",
     textDark: "#1F2937",
     textSecondary: "#6B7280",
     border: "#E5E7EB",
     background: "#F9FAFB",
   };
+
   if (!records) return null;
 
   return (
@@ -554,7 +690,7 @@ const InvestNowPopup = ({ onClose, records, nextround, nextRoundData }) => {
           backgroundColor: "white",
           borderRadius: "12px",
           padding: "24px",
-          maxWidth: "600px",
+          maxWidth: "850px",
           width: "90%",
           maxHeight: "90vh",
           overflow: "auto",
@@ -569,7 +705,7 @@ const InvestNowPopup = ({ onClose, records, nextround, nextRoundData }) => {
                 className="mb-0 fw-semibold"
                 style={{ color: colors.textDark }}
               >
-                Invest Now
+                Invest Now - {records.nameOfRound || records.shareClassType}
               </h3>
               <button
                 type="button"
@@ -580,6 +716,79 @@ const InvestNowPopup = ({ onClose, records, nextround, nextRoundData }) => {
                 <IoCloseCircleOutline size={24} />
               </button>
             </div>
+          </div>
+
+          {/* Available Shares Information Section */}
+          <div className="available-shares-section mb-4 p-3 rounded-3"
+            style={{
+              backgroundColor: colors.infoLight,
+              border: `1px solid ${colors.info}`
+            }}>
+            <div className="d-flex justify-content-between align-items-center mb-2">
+              <span className="fw-semibold" style={{ color: colors.info }}>
+                Round Availability
+              </span>
+              <span className="badge" style={{
+                backgroundColor: colors.info,
+                color: 'white'
+              }}>
+                {totalRoundShares > 0 ?
+                  `${((allocatedShares / totalRoundShares) * 100).toFixed(1)}% Filled` :
+                  'New Round'}
+              </span>
+            </div>
+
+            <div className="progress mb-2" style={{ height: '10px', borderRadius: '5px' }}>
+              <div
+                className="progress-bar"
+                role="progressbar"
+                style={{
+                  width: `${totalRoundShares > 0 ? (allocatedShares / totalRoundShares) * 100 : 0}%`,
+                  backgroundColor: colors.info,
+                  borderRadius: '5px'
+                }}
+              ></div>
+            </div>
+
+            <div className="row text-center">
+              <div className="col-4">
+                <div className="text-muted small">Total Shares</div>
+                <div className="fw-bold">{totalRoundShares.toLocaleString()}</div>
+              </div>
+              <div className="col-4">
+                <div className="text-muted small">Allocated</div>
+                <div className="fw-bold">{allocatedShares.toLocaleString()}</div>
+              </div>
+              <div className="col-4">
+                <div className="text-muted small">Available</div>
+                <div className="fw-bold" style={{ color: colors.success }}>
+                  {availableShares.toLocaleString()}
+                </div>
+              </div>
+            </div>
+
+            {maxInvestment > 0 && (
+              <div className="mt-3 pt-2 border-top">
+                <div className="d-flex justify-content-between align-items-center">
+                  <span className="text-muted small">Maximum Investment:</span>
+                  <span className="fw-bold" style={{ color: colors.primary }}>
+                    {records.currency}{" "}{maxInvestment.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2
+                    })}
+                  </span>
+                </div>
+                <div className="d-flex justify-content-between align-items-center mt-1">
+                  <span className="text-muted small">Price per Share:</span>
+                  <span className="fw-bold">
+                    {records.currency}{" "}{pricePerShare.toLocaleString(undefined, {
+                      minimumFractionDigits: 3,
+                      maximumFractionDigits: 3
+                    })}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="row g-3">
@@ -607,8 +816,8 @@ const InvestNowPopup = ({ onClose, records, nextround, nextRoundData }) => {
                     <div
                       className="alert mt-3"
                       style={{
-                        backgroundColor: "#FEF3C7",
-                        border: "1px solid #F59E0B",
+                        backgroundColor: colors.warningLight,
+                        border: `1px solid ${colors.warning}`,
                         borderRadius: "8px",
                         padding: "12px",
                       }}
@@ -618,7 +827,7 @@ const InvestNowPopup = ({ onClose, records, nextround, nextRoundData }) => {
                           <svg
                             width="20"
                             height="20"
-                            fill="#F59E0B"
+                            fill={colors.warning}
                             viewBox="0 0 20 20"
                           >
                             <path
@@ -639,41 +848,26 @@ const InvestNowPopup = ({ onClose, records, nextround, nextRoundData }) => {
                               </div>
                             ))}
                           </div>
-                          <small
-                            className="d-block mt-2"
-                            style={{ color: "#78350F" }}
-                          >
-                            {liquidationPreference.includes(
-                              "Non-Participating"
-                            ) &&
-                              "You will receive either the liquidation preference or common stock value, whichever is higher."}
-                            {liquidationPreference.includes("Participating") &&
-                              "You will receive the liquidation preference plus pro-rata participation with common shareholders."}
-                            {liquidationPreference.includes(
-                              "Capped Participating"
-                            ) &&
-                              "Your total return is capped at a defined multiple of your investment."}
-                            {liquidationPreference.some((p) =>
-                              p.includes("1x")
-                            ) &&
-                              "You will receive 1x your investment before common shareholders."}
-                            {liquidationPreference.some((p) =>
-                              p.includes("2x")
-                            ) &&
-                              "You will receive 2x your investment before common shareholders."}
-                            {liquidationPreference.some((p) =>
-                              p.includes("3x")
-                            ) &&
-                              "You will receive 3x your investment before common shareholders."}
-                            {liquidationPreference.includes("Senior Debt") &&
-                              "This debt takes priority in repayment over other debts."}
-                            {liquidationPreference.includes("Common Debt") &&
-                              "This debt has secondary priority after senior debts."}
-                          </small>
                         </div>
                       </div>
                     </div>
                   )}
+
+                {/* Validation Error Message */}
+                {validationError && (
+                  <div
+                    className="alert mt-3"
+                    style={{
+                      backgroundColor: colors.dangerLight,
+                      border: `1px solid ${colors.danger}`,
+                      color: colors.danger,
+                      borderRadius: "8px",
+                      padding: "16px",
+                    }}
+                  >
+                    <strong>Error:</strong> {validationError}
+                  </div>
+                )}
 
                 {submitted === "No" && (
                   <div
@@ -709,135 +903,153 @@ const InvestNowPopup = ({ onClose, records, nextround, nextRoundData }) => {
                   <form onSubmit={handleSubmit} className="mt-3">
                     <div className="form-group mb-4">
                       <label
-                        className="form-label fw-semibold mb-2"
+                        className="form-label fw-semibold mb-2 d-flex justify-content-between"
                         style={{ color: colors.textDark }}
                       >
-                        Enter Investment Amount ($)
+                        <span>Enter Investment Amount ({records.currency})</span>
+                        {maxInvestment > 0 && (
+                          <span className="small text-muted">
+                            Max: {records.currency}{" "}{maxInvestment.toLocaleString()}
+                          </span>
+                        )}
                       </label>
                       <NumericFormat
                         thousandSeparator
                         decimalScale={2}
                         fixedDecimalScale
                         allowNegative={false}
-                        placeholder="Enter amount"
+                        placeholder={`Enter amount (Max: ${records.currency}${maxInvestment.toLocaleString()})`}
                         value={investment}
                         className="form-control"
                         onChange={handleInvestmentChange}
+                        style={{
+                          borderColor: validationError ? colors.danger : colors.border
+                        }}
                       />
+                      {availableShares > 0 && pricePerShare > 0 && (
+                        <div className="form-text mt-1">
+                          Available: {availableShares.toLocaleString()} shares × {records.currency}{pricePerShare.toFixed(2)} = {records.currency}{maxInvestment.toLocaleString()}
+                        </div>
+                      )}
                     </div>
 
                     {/* Common Stock / Preferred Equity */}
-                    {(records.instrumentType === "Common Stock" ||
-                      records.instrumentType === "Preferred Equity") && (
-                        <>
-                          <div className="form-group mb-4">
-                            <label className="form-label fw-semibold mb-2">
-                              Price Per Share
-                            </label>
-                            <div
-                              className="form-control-plaintext fw-bold"
-                              style={{ color: colors.primary, fontSize: "18px" }}
-                            >
-                              ${pricePerShare.toFixed(2)}
-                            </div>
-                          </div>
-                          <div className="form-group mb-4">
-                            <label className="form-label fw-semibold mb-2">
-                              Shares You Will Receive
-                            </label>
-                            <div
-                              className="form-control-plaintext fw-bold"
-                              style={{
-                                color: colors.primary,
-                                fontSize: "18px",
-                                backgroundColor: "white",
-                                padding: "12px",
-                                borderRadius: "8px",
-                                border: `1px solid ${colors.border}`,
-                              }}
-                            >
-                              {shares.toLocaleString()} shares
-                            </div>
-                          </div>
-                          <div className="form-group mb-4">
-                            <label className="form-label fw-semibold mb-2">
-                              Ownership Percentage
-                            </label>
-                            <div
-                              className="form-control-plaintext fw-bold"
-                              style={{
-                                color: colors.info,
-                                fontSize: "18px",
-                                backgroundColor: "white",
-                                padding: "12px",
-                                borderRadius: "8px",
-                                border: `1px solid ${colors.border}`,
-                              }}
-                            >
-                              {Ownership}%
-                            </div>
-                          </div>
 
-                          {/* Show liquidation calculation for Preferred Equity */}
-                          {records.instrumentType === "Preferred Equity" &&
-                            liquidationPreference.length > 0 &&
-                            !liquidationPreference.includes("N/A") &&
-                            investment &&
-                            parseFloat(investment.replace(/,/g, "")) > 0 && (
-                              <div
-                                className="alert mb-4"
-                                style={{
-                                  backgroundColor: colors.infoLight,
-                                  border: `1px solid ${colors.info}`,
-                                  borderRadius: "8px",
-                                  padding: "12px",
-                                }}
-                              >
-                                <strong style={{ color: colors.info }}>
-                                  Liquidation Scenario:
-                                </strong>
-                                <div
-                                  className="mt-2"
-                                  style={{ color: colors.textDark }}
-                                >
-                                  {liquidationPreference.some((p) =>
-                                    p.includes("1x")
-                                  ) && (
-                                      <div>
-                                        Minimum return on exit: $
-                                        {(
-                                          parseFloat(investment.replace(/,/g, "")) *
-                                          1
-                                        ).toLocaleString()}
-                                      </div>
-                                    )}
-                                  {liquidationPreference.some((p) =>
-                                    p.includes("2x")
-                                  ) && (
-                                      <div>
-                                        Minimum return on exit: $
-                                        {(
-                                          parseFloat(investment.replace(/,/g, "")) *
-                                          2
-                                        ).toLocaleString()}
-                                      </div>
-                                    )}
-                                  {liquidationPreference.some((p) =>
-                                    p.includes("3x")
-                                  ) && (
-                                      <div>
-                                        Minimum return on exit: $
-                                        {(
-                                          parseFloat(investment.replace(/,/g, "")) *
-                                          3
-                                        ).toLocaleString()}
-                                      </div>
-                                    )}
-                                </div>
+                    {(records.instrumentType === "Preferred Equity") && (
+                      <>
+                        <div className="form-group mb-4">
+                          <label className="form-label fw-semibold mb-2">
+                            Price Per Share
+                          </label>
+                          <div
+                            className="form-control-plaintext fw-bold"
+                            style={{ color: colors.primary, fontSize: "18px" }}
+                          >
+                            {records.currency}{pricePerShare.toFixed(2)}
+                          </div>
+                        </div>
+                        <div className="form-group mb-4">
+                          <label className="form-label fw-semibold mb-2">
+                            Shares You Will Receive
+                          </label>
+                          <div
+                            className="form-control-plaintext fw-bold"
+                            style={{
+                              color: colors.primary,
+                              fontSize: "18px",
+                              backgroundColor: "white",
+                              padding: "12px",
+                              borderRadius: "8px",
+                              border: `1px solid ${colors.border}`,
+                            }}
+                          >
+                            {shares > 0 ? shares.toLocaleString() : '0'} shares
+                            {availableShares > 0 && (
+                              <div className="small text-muted mt-1">
+                                {shares > 0 ? (
+                                  <>Uses {((shares / availableShares) * 100).toFixed(1)}% of available shares</>
+                                ) : (
+                                  <>Enter investment amount to see shares</>
+                                )}
                               </div>
                             )}
+                          </div>
+                        </div>
+                        <div className="form-group mb-4">
+                          <label className="form-label fw-semibold mb-2">
+                            Ownership Percentage
+                          </label>
+                          <div
+                            className="form-control-plaintext fw-bold"
+                            style={{
+                              color: colors.info,
+                              fontSize: "18px",
+                              backgroundColor: "white",
+                              padding: "12px",
+                              borderRadius: "8px",
+                              border: `1px solid ${colors.border}`,
+                            }}
+                          >
+                            {Ownership > 0 ? `${Ownership.toFixed(4)}%` : '0%'}
+                          </div>
+                        </div>
 
-                          {formData.hasWarrants && warrantShares > 0 && (
+                        {/* 🔴 NEW WARRANT DISPLAY (Preferred Equity) */}
+                        {records.instrumentType === "Preferred Equity" &&
+                          (formData.hasWarrants_preferred || formData.hasWarrants) &&
+                          investment && parseFloat(investment.replace(/,/g, "")) > 0 && (
+                            <div className="form-group mb-4">
+                              <label className="form-label fw-semibold mb-2">
+                                Warrant Information
+                              </label>
+                              <div className="border rounded p-3 bg-white">
+                                {/* Warrant Coverage */}
+                                <div className="mb-2">
+                                  <strong>Warrant Coverage:</strong>
+                                  {formData.warrant_coverage_percentage ?
+                                    ` ${formData.warrant_coverage_percentage}%` :
+                                    formData.warrantRatio ? ` ${formData.warrantRatio} ratio` : ' Not specified'}
+                                  <div className="small text-muted">
+                                    ({records.currency}{warrantCoverageAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} of {investment})
+                                  </div>
+                                </div>
+
+                                {/* Warrant Details */}
+                                {warrantDetails && (
+                                  <div className="mb-2">
+                                    <strong>Exercise Terms:</strong>
+                                    <div className="small text-success">{warrantDetails}</div>
+                                  </div>
+                                )}
+
+                                {/* Warrant Shares */}
+                                {warrantShares > 0 && (
+                                  <div className="mb-2">
+                                    <strong>Potential Warrant Shares:</strong>
+                                    <div className="fw-bold" style={{ color: colors.success }}>
+                                      {warrantShares.toLocaleString()} shares
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Warrant Status */}
+                                <div className="mt-2">
+                                  <span className={`badge ${warrantStatus === 'will_exercise' ? 'bg-success' :
+                                    warrantStatus === 'fixed_price' ? 'bg-info' : 'bg-warning'}`}>
+                                    {warrantStatus === 'will_exercise' ? 'Will Exercise in Next Round' :
+                                      warrantStatus === 'fixed_price' ? 'Fixed Price Warrants' : 'Pending Next Round'}
+                                  </span>
+                                  <div className="small text-muted mt-1">
+                                    <i className="bi bi-info-circle me-1"></i>
+                                    Warrants will automatically exercise according to the terms.
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                        {/* Legacy warrant display for Common Stock */}
+                        {/* {records.instrumentType === "Common Stock" && formData.hasWarrants && warrantShares > 0 && (
                             <div className="form-group mb-4">
                               <label className="form-label fw-semibold mb-2">
                                 Potential Warrant Shares
@@ -846,9 +1058,9 @@ const InvestNowPopup = ({ onClose, records, nextround, nextRoundData }) => {
                                 {warrantShares.toLocaleString()} shares
                               </div>
                             </div>
-                          )}
-                        </>
-                      )}
+                          )} */}
+                      </>
+                    )}
 
                     {/* Venture/Bank Debt */}
                     {records.instrumentType === "Venture/Bank DEBT" && (
@@ -869,53 +1081,6 @@ const InvestNowPopup = ({ onClose, records, nextround, nextRoundData }) => {
                             {maturityMonths} months
                           </div>
                         </div>
-
-                        {/* Show debt repayment calculation */}
-                        {investment &&
-                          parseFloat(investment.replace(/,/g, "")) > 0 && (
-                            <div
-                              className="alert mb-4"
-                              style={{
-                                backgroundColor: colors.infoLight,
-                                border: `1px solid ${colors.info}`,
-                                borderRadius: "8px",
-                                padding: "12px",
-                              }}
-                            >
-                              <strong style={{ color: colors.info }}>
-                                Expected Return:
-                              </strong>
-                              <div
-                                className="mt-2"
-                                style={{ color: colors.textDark }}
-                              >
-                                <div>
-                                  Principal: $
-                                  {parseFloat(
-                                    investment.replace(/,/g, "")
-                                  ).toLocaleString()}
-                                </div>
-                                <div>
-                                  Interest ({interestRate}%): $
-                                  {(
-                                    ((parseFloat(investment.replace(/,/g, "")) *
-                                      interestRate) /
-                                      100) *
-                                    (maturityMonths / 12)
-                                  ).toLocaleString()}
-                                </div>
-                                <div className="fw-bold mt-1">
-                                  Total Repayment: $
-                                  {(
-                                    parseFloat(investment.replace(/,/g, "")) *
-                                    (1 +
-                                      (interestRate / 100) *
-                                      (maturityMonths / 12))
-                                  ).toLocaleString()}
-                                </div>
-                              </div>
-                            </div>
-                          )}
 
                         {formData.hasWarrants_Bank && warrantShares > 0 && (
                           <div className="form-group mb-4">
@@ -968,7 +1133,7 @@ const InvestNowPopup = ({ onClose, records, nextround, nextRoundData }) => {
                               border: `1px solid ${colors.border}`,
                             }}
                           >
-                            {shares.toLocaleString()} shares
+                            {shares > 0 ? shares.toLocaleString() : '0'} shares
                           </div>
                         </div>
                         <div className="form-group mb-3">
@@ -986,19 +1151,9 @@ const InvestNowPopup = ({ onClose, records, nextround, nextRoundData }) => {
                               border: `1px solid ${colors.border}`,
                             }}
                           >
-                            {Ownership}%
+                            {Ownership > 0 ? `${Ownership}%` : '0%'}
                           </div>
                         </div>
-                        {conversionDetails && (
-                          <div className="alert alert-info mt-3">
-                            <small>
-                              <strong>Conversion Details:</strong>
-                              <br />
-                              {conversionDetails.conversionPrice &&
-                                `Conversion Price: $${conversionDetails.conversionPrice}`}
-                            </small>
-                          </div>
-                        )}
                       </>
                     )}
 
@@ -1010,41 +1165,12 @@ const InvestNowPopup = ({ onClose, records, nextround, nextRoundData }) => {
                             Principal Amount
                           </label>
                           <div className="form-control-plaintext fw-bold">
-                            $
+                            {records.currency}
                             {parseFloat(
                               investment.replace(/,/g, "") || 0
                             ).toLocaleString()}
                           </div>
                         </div>
-                        {conversionDetails && (
-                          <>
-                            <div className="form-group mb-3">
-                              <label className="form-label fw-semibold">
-                                Interest Accrued (1 year)
-                              </label>
-                              <div className="form-control-plaintext fw-bold">
-                                $
-                                {parseFloat(
-                                  conversionDetails.interest || 0
-                                ).toLocaleString()}
-                              </div>
-                            </div>
-                            <div className="form-group mb-3">
-                              <label className="form-label fw-semibold">
-                                Total Maturity Amount
-                              </label>
-                              <div
-                                className="form-control-plaintext fw-bold"
-                                style={{ color: colors.primary }}
-                              >
-                                $
-                                {parseFloat(
-                                  conversionDetails.maturityAmount || 0
-                                ).toLocaleString()}
-                              </div>
-                            </div>
-                          </>
-                        )}
                         <div className="form-group mb-3">
                           <label className="form-label fw-semibold">
                             Estimated Shares at Conversion
@@ -1060,7 +1186,7 @@ const InvestNowPopup = ({ onClose, records, nextround, nextRoundData }) => {
                               border: `1px solid ${colors.border}`,
                             }}
                           >
-                            {shares.toLocaleString()} shares
+                            {shares > 0 ? shares.toLocaleString() : '0'} shares
                           </div>
                         </div>
                         <div className="form-group mb-3">
@@ -1078,49 +1204,16 @@ const InvestNowPopup = ({ onClose, records, nextround, nextRoundData }) => {
                               border: `1px solid ${colors.border}`,
                             }}
                           >
-                            {Ownership}%
+                            {Ownership > 0 ? `${Ownership}%` : '0%'}
                           </div>
                         </div>
-                        {conversionDetails &&
-                          conversionDetails.conversionPrice && (
-                            <div className="alert alert-info mt-3">
-                              <small>
-                                <strong>Conversion Details:</strong>
-                                <br />
-                                Conversion Price: $
-                                {conversionDetails.conversionPrice}
-                                {conversionDetails.nextRoundPrice && (
-                                  <>
-                                    <br />
-                                    Next Round Price: $
-                                    {conversionDetails.nextRoundPrice}
-                                  </>
-                                )}
-                              </small>
-                            </div>
-                          )}
                       </>
                     )}
 
-                    {/* General note for SAFE and Convertible Notes */}
-                    {(records.instrumentType === "Safe" ||
-                      records.instrumentType === "Convertible Note") && (
-                        <div className="alert alert-warning mt-3">
-                          <small>
-                            <strong>Note:</strong> Shares and ownership shown are
-                            estimates based on
-                            {nextround && nextRoundData
-                              ? " the next funding round"
-                              : " the valuation cap"}
-                            . Actual conversion will depend on the terms of the
-                            qualifying financing event.
-                          </small>
-                        </div>
-                      )}
-
+                    {/* Submit Button */}
                     <button
                       type="submit"
-                      className="btn w-100 mt-2 fw-semibold"
+                      className="btn w-100 mt-4 fw-semibold"
                       style={{
                         backgroundColor: colors.primary,
                         color: "white",
@@ -1129,9 +1222,26 @@ const InvestNowPopup = ({ onClose, records, nextround, nextRoundData }) => {
                         borderRadius: "8px",
                         fontSize: "16px",
                       }}
+                      disabled={validationError || !investment || parseFloat(investment.replace(/,/g, "")) === 0}
                     >
-                      Confirm Investment
+                      {validationError ? "Fix Errors to Invest" : "Confirm Investment"}
                     </button>
+
+                    {/* Available Shares Warning */}
+                    {availableShares === 0 && (
+                      <div className="alert alert-warning mt-3">
+                        <strong>Round Full!</strong> No shares available in this round.
+                      </div>
+                    )}
+
+                    {availableShares > 0 && investment && parseFloat(investment.replace(/,/g, "")) > 0 && (
+                      <div className="alert alert-info mt-3 small">
+                        <strong>Note:</strong> This investment will use {shares.toLocaleString()} of {availableShares.toLocaleString()} available shares.
+                        {shares > availableShares && (
+                          <span className="text-danger"> <strong>Warning:</strong> Exceeds available shares!</span>
+                        )}
+                      </div>
+                    )}
                   </form>
                 )}
               </div>

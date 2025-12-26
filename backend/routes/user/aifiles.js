@@ -220,4 +220,5 @@ router.post(
 );
 router.post("/checkApprovaldoc", aifileController.checkApprovaldoc);
 router.post("/companyRole", aifileController.companyRole);
+router.post("/getexistingShares", aifileController.getexistingShares);
 module.exports = router;

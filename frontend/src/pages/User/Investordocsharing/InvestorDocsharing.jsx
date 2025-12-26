@@ -12,13 +12,14 @@ import { DataRoomSection } from "../../../components/Styles/DataRoomStyle.js";
 import { FaDownload } from "react-icons/fa"; // FontAwesome icons
 import axios from "axios";
 import InvestorShareReport from "../../../components/Users/popup/InvestorShareReport.jsx";
+import { API_BASE_URL } from "../../../config/config.js";
 export default function InvestorDocsharing() {
   const storedUsername = localStorage.getItem("CompanyLoginData");
   const userLogin = JSON.parse(storedUsername);
   const [records, setrecords] = useState([]);
   const [recordsPopup, setrecordsPopup] = useState([]);
   const [IsModalOpenShareReport, setIsModalOpenShareReport] = useState(false);
-  var apiURLINFile = "http://localhost:5000/api/user/aifile/";
+  var apiURLINFile = API_BASE_URL + "api/user/aifile/";
   const [checkval, setcheckval] = useState(false);
   const handleCheckboxChange = (id) => {
     const updatedData = records.map((row) => {

@@ -12,11 +12,11 @@ import { State, City } from "country-state-city";
 import { useNavigate } from "react-router-dom";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
-
+import { API_BASE_URL } from "../../config/config.js";
 export default function CompanyProfile() {
   const storedUsername = localStorage.getItem("SignatoryLoginData");
   const userLogin = JSON.parse(storedUsername);
-  const apiURL = "http://localhost:5000/api/user/";
+  const apiURL = API_BASE_URL + "api/user/";
   document.title = "Company Profile";
   const [errr, seterrr] = useState(false);
   const [dangerMessage, setdangerMessage] = useState("");
@@ -94,10 +94,10 @@ export default function CompanyProfile() {
         setStates(states);
 
         // ✅ if company_state exists, populate Cities
-        if (data.company_state) {
+        if (data.state_code) {
           const stateObj = states.find(
             (s) =>
-              s.name === data.company_state || s.isoCode === data.company_state
+              s.name === data.state_code || s.isoCode === data.state_code
           );
 
           if (stateObj) {
@@ -153,13 +153,13 @@ export default function CompanyProfile() {
     solutionStep4: "",
     company_state: "",
     company_postal_code: "",
-    company_country: selectedCountryStep2,
+    company_country: "",
     articles_files: "",
     business_number: "",
     entity_name: "",
     jurisdiction: "",
-    state_code: state_codes,
-    country_code: step2Countrycode,
+    state_code: "",
+    country_code: "",
     date_of_incorporation: "",
     entity_type: "",
     jurisdiction_country: "",
@@ -184,6 +184,8 @@ export default function CompanyProfile() {
         formDataToSend.append(key, value ?? "");
       }
     });
+    console.log(formData);
+    //return
     try {
       const respo = await axios.post(
         `${apiURL}companyProfileUpdate`,
@@ -290,12 +292,16 @@ export default function CompanyProfile() {
     } else {
       setstep2required(true);
     }
-
+    console.log(countryCode);
     setselectedCountryStep2(countryName);
-
+    setFormData((prev) => ({
+      ...prev,
+      company_country: countryName,
+      country_code: countryCode, // State name
+    }));
     // Assuming you have a method to fetch states based on country code
     const indiaStates = State.getStatesOfCountry(countryCode);
-    console.log(indiaStates);
+
     setCities([]);
     setStates(indiaStates);
   };
@@ -303,6 +309,7 @@ export default function CompanyProfile() {
     setSelectedState(e.target.value);
 
     const stateCode = e.target.value;
+    console.log(stateCode, formData.country_code);
     // Get cities of that state
     const cities = City.getCitiesOfState(formData.country_code, stateCode);
     const selectedStateObj = States.find(
@@ -314,7 +321,7 @@ export default function CompanyProfile() {
 
     setFormData((prev) => ({
       ...prev,
-
+      state_code: stateCode,
       company_state: stateName, // State name
     }));
     if (cities.length === 0) {

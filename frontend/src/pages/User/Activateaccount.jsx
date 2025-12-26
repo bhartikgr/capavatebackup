@@ -31,7 +31,7 @@ import {
   Users,
   OctagonAlert,
 } from "lucide-react";
-
+import { API_BASE_URL } from "../../config/config";
 export default function Register() {
   const navigate = useNavigate();
   const [errr, seterrr] = useState(false);
@@ -42,7 +42,7 @@ export default function Register() {
   const queryParams = new URLSearchParams(location.search);
   const code = queryParams.get("code");
   const email = queryParams.get("email");
-  var apiURL = "http://localhost:5000/api/user/";
+  var apiURL = API_BASE_URL + "api/user/";
   useEffect(() => {
     // Check if the username key exists in session storage
     const storedUsername = localStorage.getItem("CompanyLoginData");

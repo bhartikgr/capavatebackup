@@ -3,8 +3,11 @@ import {
   DollarSign,
   TrendingUp,
   Calendar,
-  Percent,
   FileText,
+  Percent,
+  Divide,
+  Calculator,
+  Info
 } from "lucide-react";
 
 const InstrumentDataDisplay = ({ records }) => {
@@ -66,7 +69,7 @@ const InstrumentDataDisplay = ({ records }) => {
           </div>
         </div>
 
-        {(instrumentData.hasWarrants === true ||
+        {/* {(instrumentData.hasWarrants === true ||
           instrumentData.hasWarrants === "true") && (
           <>
             <div className="detail-card">
@@ -124,97 +127,214 @@ const InstrumentDataDisplay = ({ records }) => {
               </div>
             </div>
           </>
-        )}
+        )} */}
       </div>
     </div>
   );
 
   // Render Preferred Equity Details
-  const renderPreferredEquityDetails = () => (
-    <div className="instrument-details-section">
-      <h5 className="mb-3">Preferred Equity Details</h5>
-      <div className="details-grid">
-        <div className="detail-card">
-          <div className="detail-icon">
-            <DollarSign size={20} />
+  const renderPreferredEquityDetails = () => {
+    // Check if warrants exist properly
+    const hasWarrants =
+      instrumentData?.hasWarrants_preferred === true ||
+      instrumentData?.hasWarrants_preferred === "true";
+
+    // Check if fields have actual values (not empty strings)
+    const hasExercisePrice = instrumentData?.exercisePrice_preferred &&
+      instrumentData.exercisePrice_preferred !== "";
+    const hasWarrantRatio = instrumentData?.warrantRatio_preferred &&
+      instrumentData.warrantRatio_preferred !== "";
+    const hasExpirationDate = instrumentData?.expirationDate_preferred &&
+      instrumentData.expirationDate_preferred !== "";
+
+    return (
+      <div className="instrument-details-section">
+        <h5 className="mb-3">Preferred Equity Details</h5>
+        <div className="details-grid">
+          {/* Company Valuation */}
+          <div className="detail-card">
+            <div className="detail-icon">
+              <DollarSign size={20} />
+            </div>
+            <div className="detail-content">
+              <label>Company Valuation:</label>{" "}
+              <span>
+                <b>
+                  {records?.currency || "$"}{" "}
+                  {Number(instrumentData?.preferred_valuation || 0).toLocaleString()}
+                </b>
+              </span>
+            </div>
           </div>
-          <div className="detail-content">
-            <label>Company Valuation:</label>{" "}
-            <span>
-              <b>
-                {records.currency}{" "}
-                {Number(
-                  instrumentData.preferred_valuation || 0
-                ).toLocaleString()}
-              </b>
-            </span>
-          </div>
+
+          {/* Warrant Section - Only show if hasWarrants is true */}
+          {hasWarrants && (
+            <>
+              <div className="warrant-section-header">
+                <h6 className="text-primary">
+                  <FileText className="me-2" size={18} />
+                  Warrant Details
+                </h6>
+              </div>
+
+              {/* Exercise Price - Only show if has value */}
+              {hasExercisePrice ? (
+                <div className="detail-card">
+                  <div className="detail-icon">
+                    <TrendingUp size={20} />
+                  </div>
+                  <div className="detail-content">
+                    <label>Exercise Price:</label>{" "}
+                    <span>
+                      <b>
+                        {records?.currency || "$"}{" "}
+                        {Number(instrumentData.exercisePrice_preferred).toLocaleString()}
+                      </b>
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="detail-card">
+                  <div className="detail-icon">
+                    <TrendingUp size={20} />
+                  </div>
+                  <div className="detail-content">
+                    <label>Exercise Price:</label>{" "}
+                    <span>
+                      <b className="text-muted">To be determined at next priced round</b>
+                    </span>
+                    <div className="detail-note small text-muted">
+                      Will be calculated based on next round price per client requirements
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Expiration Date - Only show if has value */}
+              {hasExpirationDate && (
+                <div className="detail-card">
+                  <div className="detail-icon">
+                    <Calendar size={20} />
+                  </div>
+                  <div className="detail-content">
+                    <label>Expiration Date:</label>{" "}
+                    <span>
+                      <b>{instrumentData.expirationDate_preferred}</b>
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Warrant Ratio - Only show if has value */}
+              {hasWarrantRatio ? (
+                <div className="detail-card">
+                  <div className="detail-icon">
+                    <FileText size={20} />
+                  </div>
+                  <div className="detail-content">
+                    <label>Warrant Ratio:</label>{" "}
+                    <span>
+                      <b>{instrumentData.warrantRatio_preferred}</b>
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="detail-card">
+                  <div className="detail-icon">
+                    <FileText size={20} />
+                  </div>
+                  <div className="detail-content">
+                    <label>Warrant Coverage:</label>{" "}
+                    <span>
+                      <b className="text-muted">Will use coverage percentage</b>
+                    </span>
+                    <div className="detail-note small text-muted">
+                      Coverage percentage will be specified in warrant agreement
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Warrant Type - Always show if warrants exist */}
+              <div className="detail-card">
+                <div className="detail-icon">
+                  <FileText size={20} />
+                </div>
+                <div className="detail-content">
+                  <label>Warrant Type:</label>{" "}
+                  <span>
+                    <b>
+                      {instrumentData?.warrantType_preferred === "CALL"
+                        ? "Call Warrant (investor can buy shares)"
+                        : "Put Warrant (investor can sell shares)"}
+                    </b>
+                  </span>
+                  {instrumentData?.warrantType_preferred === "PUT" && (
+                    <div className="detail-note small text-warning">
+                      ⚠️ Rare structure in startups
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 🔴 NEW CLIENT REQUIREMENT FIELDS */}
+              {/* Check for new format fields */}
+              {instrumentData?.warrant_coverage_percentage && (
+                <div className="detail-card highlight">
+                  <div className="detail-icon">
+                    <Percent size={20} />
+                  </div>
+                  <div className="detail-content">
+                    <label>Warrant Coverage:</label>{" "}
+                    <span>
+                      <b className="text-success">
+                        {instrumentData.warrant_coverage_percentage}%
+                      </b>
+                    </span>
+                    <div className="detail-note small">
+                      {instrumentData.warrant_coverage_percentage}% of investment amount
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {instrumentData?.warrant_exercise_type && (
+                <div className="detail-card">
+                  <div className="detail-icon">
+                    <Calculator size={20} />
+                  </div>
+                  <div className="detail-content">
+                    <label>Exercise Price Calculation:</label>{" "}
+                    <span>
+                      <b>
+                        {instrumentData.warrant_exercise_type === "next_round_adjusted"
+                          ? `Next Round Price ${instrumentData?.warrant_adjustment_direction === "decrease" ? "-" : "+"} ${instrumentData?.warrant_adjustment_percent || 0}%`
+                          : instrumentData.warrant_exercise_type === "next_round"
+                            ? "Next Round Price"
+                            : "Fixed Price"}
+                      </b>
+                    </span>
+                    {instrumentData.warrant_exercise_type.includes("next_round") && (
+                      <div className="detail-note small">
+                        Automatically calculated when next priced round occurs
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Summary Note */}
+              <div className="alert alert-info mt-3 p-2 small">
+                <Info className="me-2" size={16} />
+                <strong>Note:</strong> Warrant exercise price and shares will be finalized
+                when the next priced equity round occurs, per client requirements.
+              </div>
+            </>
+          )}
         </div>
-
-        {(instrumentData.hasWarrants_preferred === true ||
-          instrumentData.hasWarrants_preferred === "true") && (
-          <>
-            <div className="detail-card">
-              <div className="detail-icon">
-                <TrendingUp size={20} />
-              </div>
-              <div className="detail-content">
-                <label>Exercise Price:</label>{" "}
-                <span>
-                  <b>
-                    {records.currency}{" "}
-                    {Number(
-                      instrumentData.exercisePrice_preferred || 0
-                    ).toLocaleString()}
-                  </b>
-                </span>
-              </div>
-            </div>
-
-            <div className="detail-card">
-              <div className="detail-icon">
-                <Calendar size={20} />
-              </div>
-              <div className="detail-content">
-                <label>Expiration Date:</label>{" "}
-                <span>
-                  <b>{instrumentData.expirationDate_preferred || "N/A"}</b>
-                </span>
-              </div>
-            </div>
-
-            <div className="detail-card">
-              <div className="detail-icon">
-                <FileText size={20} />
-              </div>
-              <div className="detail-content">
-                <label>Warrant Ratio:</label>{" "}
-                <span>
-                  <b>{instrumentData.warrantRatio_preferred || "N/A"}</b>
-                </span>
-              </div>
-            </div>
-
-            <div className="detail-card">
-              <div className="detail-icon">
-                <FileText size={20} />
-              </div>
-              <div className="detail-content">
-                <label>Warrant Type:</label>{" "}
-                <span>
-                  <b>
-                    {instrumentData.warrantType_preferred === "CALL"
-                      ? "Call Warrant (buy shares)"
-                      : "Put Warrant (sell shares)"}
-                  </b>
-                </span>
-              </div>
-            </div>
-          </>
-        )}
       </div>
-    </div>
-  );
+    );
+  };
 
   // Render SAFE Details
   const renderSafeDetails = () => (
@@ -241,14 +361,14 @@ const InstrumentDataDisplay = ({ records }) => {
             <Percent size={20} />
           </div>
           <div className="detail-content">
-            <label>Discount Rate</label>
+            <label>Conversion Discount</label>
             <span>
               <b>{instrumentData.discountRate || 0}%</b>
             </span>
           </div>
         </div>
 
-        <div className="detail-card">
+        {/* <div className="detail-card">
           <div className="detail-icon">
             <FileText size={20} />
           </div>
@@ -262,7 +382,7 @@ const InstrumentDataDisplay = ({ records }) => {
               </b>
             </span>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );
@@ -388,7 +508,7 @@ const InstrumentDataDisplay = ({ records }) => {
             <Percent size={20} />
           </div>
           <div className="detail-content">
-            <label>Discount Rate:</label>{" "}
+            <label>Conversion Discount:</label>{" "}
             <span>
               <b>{instrumentData.discountRate_note || 0}%</b>
             </span>

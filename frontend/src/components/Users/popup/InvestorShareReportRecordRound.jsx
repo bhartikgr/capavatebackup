@@ -9,7 +9,6 @@ import {
   ButtonGroup,
 } from "../../Styles/DataRoomStyle.js";
 import axios from "axios";
-import { Button } from "bootstrap";
 const InvestorShareReportRecordRound = ({
   onClose,
   records,
@@ -84,12 +83,18 @@ const InvestorShareReportRecordRound = ({
     );
   };
 
-  // Optional: handle "select all"
+  // Corrected handleSelectAll function
   const handleSelectAll = () => {
-    if (selectedRecords.length === records.length) {
+    if (allinvestor.length === 0) {
+      return;
+    }
+
+    if (selectedRecords.length === allinvestor.length) {
+      // If all investors are already selected, deselect all
       setSelectedRecords([]);
     } else {
-      setSelectedRecords(records.map((r) => r.id));
+      // Select all investors
+      setSelectedRecords(allinvestor.map((investor) => investor.id));
     }
   };
 
@@ -147,8 +152,6 @@ const InvestorShareReportRecordRound = ({
           <div className="form-group  mt-4">
             {/* Flex container for buttons */}
             <div className="d-flex justify-content-between align-items-center flex-wrap">
-              {/* Left side - Add More Email */}
-
               {/* Right side - Close and Submit */}
               <ButtonGroup className="d-flex gap-2">
                 <ModalBtn onClick={onClose} className="close_btn w-fit">
