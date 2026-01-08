@@ -19,7 +19,7 @@ function Dashboard() {
   const [TotalDataroomReport, setTotalDataroomReport] = useState("");
   const storedUsername = localStorage.getItem("InvestorData");
   const userLogin = JSON.parse(storedUsername);
-  var apiURL = "http://localhost:5000/api/user/capitalround/";
+  var apiURL = "https://capavate.com/api/user/capitalround/";
   document.title = "Investor Dashboard Page";
   useEffect(() => {
     getTotalcompany();
@@ -27,7 +27,6 @@ function Dashboard() {
     getlatestinvestorreport();
     getlatestinvestorDataroom();
     getTotalInvestorReport();
-
     getTotalDataroomsReport();
   }, []);
   const getTotalcompany = async () => {
@@ -72,7 +71,7 @@ function Dashboard() {
           },
         }
       );
-      setTotalInvestorReport(res.data.results.length);
+      setTotalInvestorReport(res.data.results.totalCount);
     } catch (err) { }
   };
   const getTotalDataroomsReport = async () => {
@@ -329,18 +328,18 @@ function Dashboard() {
                       </div>
 
                       <div class="row gap-0 dashboard-top">
-                        <div class="col-6 col-md-3 p-0 bor">
+                        <div class="col-6 col-md-4 p-0 bor">
                           <div class="p-3">
-                            <p class="small fw-medium mb-1">Total Company</p>
+                            <p class="small fw-medium mb-1">Total Portfolio Companies</p>
                             <div className="d-flex align-items-center gap-3 justify-content-between">
                               <p class="h4 fw-semibold mb-0">{totalCompany}</p>
                             </div>
                           </div>
                         </div>
-                        <div class="col-6 col-md-3 p-0 bor">
+                        <div class="col-6 col-md-4 p-0 bor">
                           <div class="p-3">
                             <p class="small fw-medium mb-1">
-                              Total Investor Report
+                              Total Investor Reports Reviewed
                             </p>
                             <div className="d-flex align-items-center gap-3 justify-content-between">
                               <p class="h4 fw-semibold mb-0">
@@ -349,22 +348,11 @@ function Dashboard() {
                             </div>
                           </div>
                         </div>
-                        <div class="col-6 col-md-3 p-0 bor">
-                          <div class="p-3">
-                            <p class="small fw-medium mb-1">
-                              Total DataRoom Management Report
-                            </p>
-                            <div className="d-flex align-items-center gap-3 justify-content-between">
-                              <p class="h4 fw-semibold mb-0">
-                                {TotalDataroomReport}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
 
-                        <div class="col-6 col-md-3 p-0 bor">
+
+                        <div class="col-6 col-md-4 p-0 bor">
                           <div class="p-3">
-                            <p class="small fw-medium mb-1">Total Round</p>
+                            <p class="small fw-medium mb-1">Number of Participating Rounds</p>
                             <p class="h4 fw-semibold mb-0">{totalround}</p>
                           </div>
                         </div>

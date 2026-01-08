@@ -3,10 +3,6 @@ import { ImQuotesRight } from "react-icons/im";
 
 import {
   MoveRight,
-  Share2,
-  Facebook,
-  Instagram,
-  Linkedin,
   ChevronLeft,
   ChevronRight,
   Check,
@@ -16,24 +12,12 @@ import HomeHeader from "../../components/Users/HomeHeader";
 import HomeFooter from "../../components/Users/HomeFooter";
 import {
   SectionBox,
-  Aboutbox,
   ServiceBox,
-  TeamBox,
-  TestimonialBox,
-  ContactBox,
-  PortfolioBox,
   BrandBox,
-  Faq,
-  VideoBox,
-  InvestmentSection,
-  Dataroom,
-  Exclusive,
-  PrimaryButton,
 } from "../../components/Styles/HomeNewStyles";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
-import { Play, FileText } from "lucide-react";
 import VideoPopup from "../../components/Users/VideoPopup";
 import { VideoPopupStyles } from "../../components/Styles/VideoPopupStyles";
 import axios from "axios";
@@ -151,7 +135,7 @@ const testimonials = [
 export default function HomeNew() {
   const [messagecontact, setmessagecontact] = useState("");
   const [errcontact, seterrcontact] = useState(false);
-  document.title = "BLUEPRINT CATALYST.LTD";
+  document.title = "Capavate.com";
   var settings = {
     dots: true,
     infinite: true,
@@ -304,7 +288,7 @@ export default function HomeNew() {
     });
     setHeights(newHeights);
   };
-  var apiURL = "http://localhost:5000/api/user/";
+  var apiURL = "https://capavate.com/api/user/";
   const handleSendContactInfo = async (e) => {
     e.preventDefault();
     var data = e.target;

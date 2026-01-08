@@ -12,7 +12,7 @@ const CompanyShareReferralCodetrack = ({
   sharedDetailSingleUsage,
 }) => {
   console.log(sharedDetailSingleUsage);
-  const apiUrl = "http://localhost:5000/api/user/";
+  const apiUrl = "https://capavate.com/api/user/";
   const storedUsername = localStorage.getItem("CompanyLoginData");
   const userLogin = JSON.parse(storedUsername);
   function formatCurrentDate(input) {

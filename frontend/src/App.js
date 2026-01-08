@@ -287,6 +287,7 @@ const SignatoryLogin = lazy(() => import("./pages/User/Signatory/Login"));
 
 //Capavate Home Page
 const CapavateHome = lazy(() => import("./pages/CapavateHome"));
+const Landing = lazy(() => import("./pages/Landing"));
 class App extends Component {
   render() {
     return (
@@ -500,8 +501,8 @@ class App extends Component {
                 element={<UserRegisterActivateAccount />}
               />{" "}
               <Route path="/user/login" element={<Login />} />{" "}
-              <Route path="/home" element={<HomeNew />} />{" "}
-              <Route path="/" element={<HomeNew />} />{" "}
+              <Route path="/home" element={<Landing />} />{" "}
+              <Route path="/" element={<Landing />} />{" "}
               <Route path="/advicevideos" element={<AdviceVideos />} />{" "}
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/createrecord" element={<Recordround />} />{" "}

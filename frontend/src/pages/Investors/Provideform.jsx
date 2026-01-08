@@ -23,8 +23,9 @@ export default function Provideform() {
   const storedUsername = localStorage.getItem("InvestorData");
   const userLogin = JSON.parse(storedUsername);
   const [spinners, setspinners] = useState(false);
-  var apiURLINFile = "http://localhost:5000/api/user/investorreport/";
-  var apiURL = "http://localhost:5000/api/user/";
+  var apiURLINFile = "https://capavate.com/api/user/investorreport/";
+  var apiURL = "https://capavate.com/api/user/";
+  var apiURLIndustry = "https://capavate.com/api/user/capitalround/";
   document.title = "Investor Page";
   // Component के top में
   const [formErrors, setFormErrors] = useState({});
@@ -34,6 +35,24 @@ export default function Provideform() {
   const [allcountry, setallcountry] = useState([]);
   const [InvestorData, setInvestorData] = useState("");
   const code = useParams();
+  const [IndustryExpertise, setIndustryExpertise] = useState([]);
+  useEffect(() => {
+    getIndustryExpertise();
+  }, []);
+  const getIndustryExpertise = async () => {
+    let formData = {
+      investor_id: '',
+    };
+    try {
+      const res = await axios.post(apiURLIndustry + "getIndustryExpertise", formData, {
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      });
+      setIndustryExpertise(res.data.results);
+    } catch (err) { }
+  };
   useEffect(() => {
     checkinvestorCode();
 
@@ -214,49 +233,57 @@ export default function Provideform() {
           };
 
           setTimeout(() => {
-            navigate("/investor/login");
-          }, 2000);
+            //  navigate("/investor/login");
+          }, 8000);
         }
         setTimeout(() => {
-          navigate("/investor/login");
-        }, 2000);
+          // navigate("/investor/login");
+        }, 8000);
       }
 
       setTimeout(() => {
-        setsuccessresponse("");
-      }, 2000);
+        // setsuccessresponse("");
+      }, 8000);
     } catch (err) { }
   };
   const handlePhoneChange = (value) => {
     setFormData_Step2((prev) => ({ ...prev, phone: value }));
   };
-
+  const handleredirectLogin = () => {
+    navigate("/investor/login");
+  }
   return (
     <>
       <>
         <Wrapper className="investor-login-wrapper">
           <div className="fullpage d-block w-100">
-            {/* {dangerMessage && (
+
+            {successresponse && (
               <div
-                className={`alert ${
-                  errr ? "alert-danger" : "alert-success"
-                } alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3 z-3`}
-                role="alert"
+                className={`flex items-center justify-between gap-3 shadow-lg ${err ? "error_pop" : "success_pop"
+                  }`}
               >
-                {dangerMessage}
+                <div className="d-flex align-items-start gap-2">
+
+                  <span className="d-block">
+                    {successresponse}
+                  </span>
+                </div>
+
                 <button
                   type="button"
-                  className="btn-close"
-                  onClick={() => setdangerMessage("")}
-                  aria-label="Close"
-                ></button>
+                  className="close_btnCros"
+                  onClick={() => handleredirectLogin("")}
+                >
+                  ×
+                </button>
               </div>
-            )} */}
-            {successresponse && (
+            )}
+            {/* {successresponse && (
               <p className={err ? " mt-3 error_pop" : "success_pop mt-3"}>
                 {successresponse}
               </p>
-            )}
+            )} */}
             <SectionWrapper className="d-block login-main-section py-5">
               <div className="container-fluid">
                 <div className="row justify-content-center">
@@ -535,155 +562,11 @@ export default function Provideform() {
                                         placeholder=""
                                       >
                                         <option value="">--Select--</option>
-                                        <option value="Aerospace & Defense">
-                                          Aerospace & Defense
-                                        </option>
-                                        <option value="Agriculture & Farming">
-                                          Agriculture & Farming
-                                        </option>
-                                        <option value="Artificial Intelligence & Machine Learning">
-                                          Artificial Intelligence & Machine
-                                          Learning
-                                        </option>
-                                        <option value="Automotive">
-                                          Automotive
-                                        </option>
-                                        <option value="Banking & Financial Services">
-                                          Banking & Financial Services
-                                        </option>
-                                        <option value="Biotechnology">
-                                          Biotechnology
-                                        </option>
-                                        <option value="Chemical Industry">
-                                          Chemical Industry
-                                        </option>
-                                        <option value="Construction & Engineering">
-                                          Construction & Engineering
-                                        </option>
-                                        <option value="Consumer Goods">
-                                          Consumer Goods
-                                        </option>
-                                        <option value="Cybersecurity">
-                                          Cybersecurity
-                                        </option>
-                                        <option value="Data Storage & Management">
-                                          Data Storage & Management
-                                        </option>
-                                        <option value="Education & Training">
-                                          Education & Training
-                                        </option>
-                                        <option value="Electric Vehicles & Sustainable Transportation">
-                                          Electric Vehicles & Sustainable
-                                          Transportation
-                                        </option>
-                                        <option value="Energy & Utilities">
-                                          Energy & Utilities
-                                        </option>
-                                        <option value="Entertainment & Media">
-                                          Entertainment & Media
-                                        </option>
-                                        <option value="Environmental Services & Sustainability">
-                                          Environmental Services &
-                                          Sustainability
-                                        </option>
-                                        <option value="Fashion & Apparel">
-                                          Fashion & Apparel
-                                        </option>
-                                        <option value="Fintech & Digital Payments">
-                                          Fintech & Digital Payments
-                                        </option>
-                                        <option value="Food & Beverage">
-                                          Food & Beverage
-                                        </option>
-                                        <option value="Gaming & Esports">
-                                          Gaming & Esports
-                                        </option>
-                                        <option value="Healthcare & Pharmaceuticals">
-                                          Healthcare & Pharmaceuticals
-                                        </option>
-                                        <option value="Heavy Industry">
-                                          Heavy Industry
-                                        </option>
-                                        <option value="Hospitality & Tourism">
-                                          Hospitality & Tourism
-                                        </option>
-                                        <option value="Information Technology (IT)">
-                                          Information Technology (IT)
-                                        </option>
-                                        <option value="Insurance">
-                                          Insurance
-                                        </option>
-                                        <option value="Jewelry & Luxury Goods">
-                                          Jewelry & Luxury Goods
-                                        </option>
-                                        <option value="Legal Services">
-                                          Legal Services
-                                        </option>
-                                        <option value="Logistics & Supply Chain">
-                                          Logistics & Supply Chain
-                                        </option>
-                                        <option value="Manufacturing">
-                                          Manufacturing
-                                        </option>
-                                        <option value="Mining & Metals">
-                                          Mining & Metals
-                                        </option>
-                                        <option value="Nanotechnology">
-                                          Nanotechnology
-                                        </option>
-                                        <option value="Pet Care & Supplies">
-                                          Pet Care & Supplies
-                                        </option>
-                                        <option value="Public Administration & Government Services">
-                                          Public Administration & Government
-                                          Services
-                                        </option>
-                                        <option value="Quantum Computing">
-                                          Quantum Computing
-                                        </option>
-                                        <option value="Real Estate & Property Management">
-                                          Real Estate & Property Management
-                                        </option>
-                                        <option value="Retail & E-commerce">
-                                          Retail & E-commerce
-                                        </option>
-                                        <option value="Robotics">
-                                          Robotics
-                                        </option>
-                                        <option value="Security & Surveillance">
-                                          Security & Surveillance
-                                        </option>
-                                        <option value="Social Media & Digital Marketing">
-                                          Social Media & Digital Marketing
-                                        </option>
-                                        <option value="Space Exploration & Satellite Technology">
-                                          Space Exploration & Satellite
-                                          Technology
-                                        </option>
-                                        <option value="Sports & Fitness">
-                                          Sports & Fitness
-                                        </option>
-                                        <option value="Supply Chain & Procurement">
-                                          Supply Chain & Procurement
-                                        </option>
-                                        <option value="Telecommunications">
-                                          Telecommunications
-                                        </option>
-                                        <option value="Traditional Crafts & Artisanal Goods">
-                                          Traditional Crafts & Artisanal Goods
-                                        </option>
-                                        <option value="Transportation & Logistics">
-                                          Transportation & Logistics
-                                        </option>
-                                        <option value="Venture Capital & Private Equity">
-                                          Venture Capital & Private Equity
-                                        </option>
-                                        <option value="Video Game Industry">
-                                          Video Game Industry
-                                        </option>
-                                        <option value="Waste Management">
-                                          Waste Management
-                                        </option>
+                                        {IndustryExpertise.map((industry, index) => (
+                                          <option key={index} value={industry.value || industry.name}>
+                                            {industry.name}
+                                          </option>
+                                        ))}
                                       </select>
                                     </Iconblock>
                                   </div>

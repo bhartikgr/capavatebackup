@@ -19,7 +19,7 @@ function AdminUserZoomMeetRegister() {
   const [Deleteid, setDeleteid] = useState("");
   const [successMessage, setsuccessMessage] = useState("");
   const [show, setShow] = useState(false);
-  const apiUrl = "http://localhost:5000/api/admin/module/";
+  const apiUrl = "https://capavate.com/api/admin/module/";
   const [records, setRecords] = useState([]);
   const { id } = useParams();
   document.title = "Register Zoom Meeting List - Admin";

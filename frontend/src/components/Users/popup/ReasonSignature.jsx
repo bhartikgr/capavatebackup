@@ -23,7 +23,7 @@ const ReasonSignature = ({
     if (!str) return "";
     return str.charAt(0).toUpperCase() + str.slice(1);
   };
-  var apiURL = "http://localhost:5000/api/user/";
+  var apiURL = "https://capavate.com/api/user/";
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -108,7 +108,7 @@ const ReasonSignature = ({
                 <div className="mt-2">
                   {ViewData.type === "upload" && (
                     <img
-                      src={`http://localhost:5000/upload/docs/doc_${ViewData.company_id}/signatory/${ViewData.signature}`}
+                      src={`https://capavate.com/upload/docs/doc_${ViewData.company_id}/signatory/${ViewData.signature}`}
                       alt="Uploaded Signature"
                       style={{ maxWidth: "300px" }}
                     />

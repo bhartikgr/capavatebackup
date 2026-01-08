@@ -139,7 +139,7 @@ ORDER BY iu.id DESC;
       let downloadUrl = null;
 
       if (doc.document_name) {
-        downloadUrl = `http://localhost:5000/api/${pathname}/investor_report/${doc.document_name}`;
+        downloadUrl = `https://capavate.com/api/${pathname}/investor_report/${doc.document_name}`;
       }
 
       return {
@@ -239,8 +239,8 @@ exports.SendreportToinvestor = async (req, res) => {
 
           const url =
             results.length > 0
-              ? `http://localhost:5000/investor/login`
-              : `http://localhost:5000/investor/information/${token}`;
+              ? `https://capavate.com/investor/login`
+              : `https://capavate.com/investor/information/${token}`;
 
           const mailOptions = {
             from: '"BluePrint Catalyst" <scale@blueprintcatalyst.com>',
@@ -260,7 +260,7 @@ exports.SendreportToinvestor = async (req, res) => {
                   <tr>
                     <td style="background: #efefef; padding: 10px 0; text-align: center;">
                       <div style="width: 130px; margin: 0 auto;">
-                        <img src="http://localhost:5000/api/upload/images/logo.png" alt="Blueprint Catalyst" style="width: 100%;" />
+                        <img src="https://capavate.com/api/upload/images/logo.png" alt="Blueprint Catalyst" style="width: 100%;" />
                       </div>
                     </td>
                   </tr>
@@ -356,7 +356,7 @@ ORDER BY iu.id DESC;
       let downloadUrl = null;
 
       if (doc.document_name) {
-        downloadUrl = `http://localhost:5000/api/${pathname}/investor_report/${doc.document_name}`;
+        downloadUrl = `https://capavate.com/api/${pathname}/investor_report/${doc.document_name}`;
       }
 
       return {
@@ -548,11 +548,17 @@ exports.investorInformation = async (req, res) => {
           extraData: { email: data.email },
         });
         const fullName = data.first_name + " " + data.last_name;
-        sendEmailInvestorpassword(data.email, fullName || "Investor", password);
+        sendEmailInvestorpassword(
+          data.email,
+          fullName || "Investor",
+          password,
+          invdata.company_name
+        );
 
         return res.status(200).json({
+          // Use a large, unmissable alert banner
           message:
-            "Investor information inserted successfully, Please check your email to get password",
+            "✅ Registration complete! Check your email for your password.",
 
           status: "1",
         });
@@ -589,11 +595,17 @@ exports.investorInformation = async (req, res) => {
         const [insertResult] = await db.promise().query(insertQuery, formdata);
 
         const fullName = data.first_name + " " + data.last_name;
-        sendEmailInvestorpassword(data.email, fullName || "Investor", password);
+        sendEmailInvestorpassword(
+          data.email,
+          fullName || "Investor",
+          password,
+          invdata.company_name
+        );
 
         return res.status(200).json({
+          // Use a large, unmissable alert banner
           message:
-            "Investor information inserted successfully, Please check your email to get password",
+            "✅ Registration complete! Check your email for your password.",
           data: insertResult,
           status: "1",
         });
@@ -642,7 +654,7 @@ function insertInvestorLog({
   );
 }
 
-function sendEmailInvestorpassword(to, fullName, newPassword) {
+function sendEmailInvestorpassword(to, fullName, newPassword, companyname) {
   const subject = `Your Capavate Account Has Been Created`;
 
   const htmlBody = `
@@ -659,7 +671,7 @@ function sendEmailInvestorpassword(to, fullName, newPassword) {
           <tr>
             <td style="background: #efefef; padding: 10px 0; text-align: center;">
               <div style="width: 130px; margin: 0 auto;">
-                <img src="http://localhost:5000/api/upload/images/logo.png" alt="Capavate" style="width: 100%;" />
+                <img src="https://capavate.com/api/upload/images/logo.png" alt="Capavate" style="width: 100%;" />
               </div>
             </td>
           </tr>
@@ -670,7 +682,7 @@ function sendEmailInvestorpassword(to, fullName, newPassword) {
                   <td style="padding: 20px;">
                     <h2 style="margin: 0 0 15px 0; font-size: 16px; color: #111;">Dear ${fullName},</h2>
                     <p style="margin: 0 0 15px 0; font-size: 14px; color: #111;">
-                      Your account has been successfully created on <strong>Capavate</strong>.
+                      Your investor account on Capavate is now active, created using an invitation from <strong>${companyname}</strong>.
                     </p>
                     <p style="margin: 0 0 15px 0; font-size: 14px; color: #111;">
                       Below are your login credentials:
@@ -685,7 +697,7 @@ function sendEmailInvestorpassword(to, fullName, newPassword) {
                 <tr>
                   <td>
                     <div style="padding: 0 20px 20px 20px; text-align: center;">
-                      <a href="http://localhost:5000/investor/login" style="background: #ff3c3e; color: #fff; text-decoration: none; font-size: 14px; padding: 10px 30px; border-radius: 10px;">Login to Your Account</a>
+                      <a href="https://capavate.com/investor/login" style="background: #ff3c3e; color: #fff; text-decoration: none; font-size: 14px; padding: 10px 30px; border-radius: 10px;">Login to Your Account</a>
                     </div>
                   </td>
                 </tr>
@@ -824,7 +836,7 @@ exports.getreportForInvestor = (req, res) => {
 
       const updatedResults = filteredResults.map((doc) => ({
         ...doc,
-        downloadUrl: `http://localhost:5000/api/upload/docs/doc_${doc.user_id}/investor_report/${doc.document_name}`,
+        downloadUrl: `https://capavate.com/api/upload/docs/doc_${doc.user_id}/investor_report/${doc.document_name}`,
       }));
 
       return res.status(200).json({

@@ -14,7 +14,7 @@ function AdminTrackingReferralCodeSinigleDetail() {
   useEffect(() => {
     document.title = "Referral Tracking Detail - Admin";
   }, []);
-  const apiUrl = "http://localhost:5000/api/admin/module/";
+  const apiUrl = "https://capavate.com/api/admin/module/";
   const [searchQuery, setSearchQuery] = useState("");
   const { id, discount_code } = useParams();
   const [singlerecord, setsinglerecord] = useState("");

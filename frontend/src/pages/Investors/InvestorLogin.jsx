@@ -29,7 +29,7 @@ export default function InvestorLogin() {
   const [userdataa, setuserdataa] = useState("");
   const [spinners, setspinners] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  var apiURL = "http://localhost:5000/api/user/investorreport/";
+  var apiURL = "https://capavate.com/api/user/investorreport/";
   //localStorage.removeItem("InvestorData");
   useEffect(() => {
     const storedData = JSON.parse(localStorage.getItem("InvestorData"));

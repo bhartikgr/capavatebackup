@@ -84,62 +84,51 @@ const InvestNowPopup = ({ onClose, records, nextround, nextRoundData }) => {
       let allocatedInvestment = 0;
 
       if (res.data.success) {
-        // Use allocated_shares from API (calculated from investment_amount)
         allocatedShares = parseFloat(res.data.allocated_shares || 0);
         allocatedInvestment = parseFloat(res.data.total_investment || 0);
 
-        // If API returned 0 but we have price, calculate from investment
+        console.log("Allocated Shares from API:", allocatedShares);
+        console.log("Allocated Investment from API:", allocatedInvestment);
+
+        // Calculate shares from investment if API returned 0 shares
         if (allocatedShares === 0 && calculatedPrice > 0 && allocatedInvestment > 0) {
           allocatedShares = allocatedInvestment / calculatedPrice;
+          console.log("Calculated allocated shares from investment:", allocatedShares);
         }
       }
 
       setAllocatedShares(allocatedShares);
 
-      // Calculate available shares
+      // Calculate available shares - FIX: Ensure it's not negative
       const available = Math.max(0, totalSharesInRound - allocatedShares);
       setAvailableShares(available);
 
-      // Calculate maximum investment
+      // Calculate maximum investment - FIX: Use available shares
       const maxInv = calculatedPrice * available;
       setMaxInvestment(maxInv);
 
+      console.log("Final Calculation:");
+      console.log("Total Shares:", totalSharesInRound);
+      console.log("Allocated Shares:", allocatedShares);
+      console.log("Available Shares:", available);
+      console.log("Price per Share:", calculatedPrice);
+      console.log("Max Investment:", maxInv);
+
     } catch (err) {
       console.error("Error calculating available shares:", err);
-      console.error("Error details:", err.response?.data);
 
-      // Fallback: Calculate from local data
+      // Fallback calculation
       const totalSharesInRound = parseFloat(records.issuedshares || 0);
       const roundSize = parseFloat(records.roundsize || 0);
       const calculatedPrice = totalSharesInRound > 0 ? roundSize / totalSharesInRound : 0;
 
       setTotalRoundShares(totalSharesInRound);
-
-      // Try to get investment amount from existing investor requests
-      let allocatedInvestment = 0;
-      try {
-        const investmentRes = await axios.post(
-          apiURL + "getTotalInvestment",
-          {
-            roundrecord_id: records.id,
-            company_id: records.company_id
-          }
-        );
-        if (investmentRes.data.success) {
-          allocatedInvestment = parseFloat(investmentRes.data.total_investment || 0);
-        }
-      } catch (investmentErr) {
-        console.log("Could not fetch investment total, using 0");
-      }
-
-      // Calculate allocated shares from investment
-      const allocatedShares = calculatedPrice > 0 ? allocatedInvestment / calculatedPrice : 0;
-      const available = Math.max(0, totalSharesInRound - allocatedShares);
-
-      setAvailableShares(available);
-      setAllocatedShares(allocatedShares);
       setPricePerShare(calculatedPrice);
-      setMaxInvestment(calculatedPrice * available);
+
+      // Set default values
+      setAvailableShares(totalSharesInRound);
+      setAllocatedShares(0);
+      setMaxInvestment(calculatedPrice * totalSharesInRound);
     }
   };
 
@@ -316,6 +305,7 @@ const InvestNowPopup = ({ onClose, records, nextround, nextRoundData }) => {
     }
 
     // Check minimum investment (price for 1 share)
+
     const minInvestment = pricePerShare;
     if (amount > 0 && amount < minInvestment) {
       setValidationError(`Minimum investment: ${records.currency}${minInvestment.toLocaleString(undefined, {
@@ -344,9 +334,9 @@ const InvestNowPopup = ({ onClose, records, nextround, nextRoundData }) => {
 
     const existingShares = parseFloat(existingSharess || 0);
     const roundSize = parseFloat(records.roundsize || 0);
-
+    console.log(existingShares, roundSize)
     // 🟩 COMMON STOCK
-    if (records.instrumentType === "Common Stock") {
+    if (records.instrumentType === "Common Stock" || records.instrumentType === "") {
       if (existingShares > 0 && roundSize > 0) {
         // ✅ SIMPLE CALCULATION WITHOUT SHARE LIMIT CHECK
         const pricePerShareCalc = roundSize / existingShares;
@@ -512,10 +502,11 @@ const InvestNowPopup = ({ onClose, records, nextround, nextRoundData }) => {
 
     // Calculate shares based on investment
     const calculatedShares = shares;
-    if (calculatedShares > availableShares) {
-      setValidationError(`Requested ${calculatedShares.toLocaleString()} shares but only ${availableShares.toLocaleString()} available`);
-      return;
-    }
+    console.log(calculatedShares, availableShares)
+    // if (calculatedShares > availableShares) {
+    //   setValidationError(`Requested ${calculatedShares.toLocaleString()} shares but only ${availableShares.toLocaleString()} available`);
+    //   return;
+    // }
 
     let formDataa = {
       investor_id: userLogin.id,
@@ -928,7 +919,7 @@ const InvestNowPopup = ({ onClose, records, nextround, nextRoundData }) => {
                       />
                       {availableShares > 0 && pricePerShare > 0 && (
                         <div className="form-text mt-1">
-                          Available: {availableShares.toLocaleString()} shares × {records.currency}{pricePerShare.toFixed(2)} = {records.currency}{maxInvestment.toLocaleString()}
+                          Available: {availableShares.toLocaleString()} shares × {records.currency}{pricePerShare.toFixed(3)} = {records.currency}{maxInvestment.toLocaleString()}
                         </div>
                       )}
                     </div>
@@ -1234,14 +1225,14 @@ const InvestNowPopup = ({ onClose, records, nextround, nextRoundData }) => {
                       </div>
                     )}
 
-                    {availableShares > 0 && investment && parseFloat(investment.replace(/,/g, "")) > 0 && (
+                    {/* {availableShares > 0 && investment && parseFloat(investment.replace(/,/g, "")) > 0 && (
                       <div className="alert alert-info mt-3 small">
-                        <strong>Note:</strong> This investment will use {shares.toLocaleString()} of {availableShares.toLocaleString()} available shares.
+
                         {shares > availableShares && (
                           <span className="text-danger"> <strong>Warning:</strong> Exceeds available shares!</span>
                         )}
                       </div>
-                    )}
+                    )} */}
                   </form>
                 )}
               </div>

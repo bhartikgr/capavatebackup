@@ -89,36 +89,33 @@ export default function Recordround() {
     subscriptiondocument: null,
     generalnotes: "",
 
-    common_stock_valuation: "",
-    hasWarrants: "",
-    exercisePrice: "",
-    expirationDate: "",
-    warrantRatio: "",
-    warrantType: "",
-    preferred_valuation: "",
-    hasWarrants_preferred: "",
-    exercisePrice_preferred: "",
+    // ❌ WRONG: Empty string evaluates to FALSE
+    // hasWarrants_preferred: "",
+
+    // ✅ CORRECT: Use boolean false
+    hasWarrants_preferred: false,
+
+    // ✅ Warrant fields with proper defaults
+    warrant_coverage_percentage: "",
+    warrant_exercise_type: "next_round_adjusted", // Default value
+    warrant_adjustment_percent: "",
+    warrant_adjustment_direction: "decrease", // Default value
     expirationDate_preferred: "",
-    warrantRatio_preferred: "",
-    warrantType_preferred: "",
+    warrant_notes: "",
+
+    // Other fields...
+    preferred_valuation: "",
     valuationCap: "",
     discountRate: "",
-    //safeType: "",
     interestRate: "",
     repaymentSchedule: "",
-    hasWarrants_Bank: "",
-    exercisePrice_bank: "",
-    exercisedate_bank: "",
-    warrantRatio_bank: "",
-    warrantType_bank: "",
+    hasWarrants_Bank: false, // ✅ Boolean, not empty string
     valuationCap_note: "",
     discountRate_note: "",
     maturityDate: "",
     interestRate_note: "",
-    // convertibleTrigger: "",
     customInstrument: "",
     roundStatus: "",
-
     pricePerShare: "",
     pre_money: "",
     post_money: "",
@@ -127,9 +124,7 @@ export default function Recordround() {
     existingShares: "",
     isPostEntered: false,
     investorPostMoney: "",
-
-
-    isCalculationSource: false, // Track if calculation is in progress
+    isCalculationSource: false,
     lastUpdatedField: null,
   });
 
@@ -634,16 +629,17 @@ export default function Recordround() {
         case "Preferred Equity":
           instrumentData = {
             preferred_valuation: formData.preferred_valuation || "",
+
+            // ✅ WARRANT DATA (will be saved separately)
             hasWarrants_preferred: formData.hasWarrants_preferred || false,
             ...(formData.hasWarrants_preferred && {
-              // These fields exist in your form
               warrant_coverage_percentage: formData.warrant_coverage_percentage || "",
+              warrant_exercise_type: formData.warrant_exercise_type || "next_round_adjusted",
               warrant_adjustment_direction: formData.warrant_adjustment_direction || "decrease",
               warrant_adjustment_percent: formData.warrant_adjustment_percent || "",
               expirationDate_preferred: formData.expirationDate_preferred || "",
-              warrantType_preferred: formData.warrantType_preferred || "CALL",
-              // Note: exercise price will be calculated later when next round is created
-            }),
+              warrant_notes: formData.warrant_notes || ""
+            })
           };
           break;
 
@@ -697,6 +693,40 @@ export default function Recordround() {
           },
         }
       );
+      const createdRoundId = res.data.id;
+      if (!isFirstRound &&
+        formData.instrumentType === "Preferred Equity" &&
+        formData.hasWarrants_preferred &&
+        createdRoundId) {
+
+        const warrantData = {
+          roundrecord_id: createdRoundId,
+          company_id: userLogin.companies[0].id,
+          investor_id: 0, // Will be updated when investor confirms
+          warrant_coverage_percentage: parseFloat(formData.warrant_coverage_percentage) || 0,
+          warrant_exercise_type: formData.warrant_exercise_type || "next_round_adjusted",
+          warrant_adjustment_percent: parseFloat(formData.warrant_adjustment_percent) || 0,
+          warrant_adjustment_direction: formData.warrant_adjustment_direction || "decrease",
+          calculated_exercise_price: null, // Calculated when exercised
+          calculated_warrant_shares: null, // Calculated when exercised
+          warrant_coverage_amount: null, // Calculated when exercised
+          warrant_status: "pending",
+          issued_date: formData.dateroundclosed || new Date().toISOString().split('T')[0],
+          expiration_date: formData.expirationDate_preferred || null,
+          notes: formData.warrant_notes || null
+        };
+
+        // Save warrant to warrants table
+        await axios.post(
+          apiUrlRound + "createWarrant",
+          warrantData,
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+      }
       setIsLoading(false);
       seterrr(false);
       setmessageAll(res.data.message);
@@ -1165,122 +1195,668 @@ export default function Recordround() {
 
 
   //Round 1
+  // ✅ CORRECTED SERIES A CALCULATION
+  const [previousRoundOptionPool, setPreviousRoundOptionPool] = useState(0);
   useEffect(() => {
-    const investment = parseFloat(formData.roundsize || 0);
-    const pre = parseFloat(formData.pre_money || 0);
-    const post = parseFloat(formData.post_money || 0);
-
-    // Auto-calculate depending on which field user edited
-    if (investment > 0) {
-      if (pre > 0 && !formData.isPostEntered) {
-        setFormData((prev) => ({
-          ...prev,
-          post_money: (pre + investment).toFixed(2),
-        }));
-      } else if (post > 0 && formData.isPostEntered) {
-        setFormData((prev) => ({
-          ...prev,
-          pre_money: (post - investment).toFixed(2),
-        }));
-      }
-    }
-  }, [formData.roundsize, formData.pre_money, formData.post_money]);
-  // Round 1 Calculations
-
-
-  useEffect(() => {
-
-
-    // ✅ Agar calculation source se update hua hai, toh skip karein
     if (formData.isCalculationSource) {
       return;
     }
 
     const preMoney = parseFloat(formData.pre_money || 0);
     const roundSize = parseFloat(formData.roundsize || 0);
-    const optionPool = parseFloat(formData.optionPoolPercent || 0);
+    const postMoneyPool = parseFloat(formData.optionPoolPercent_post || 0);
     const existing = parseFloat(existingSharesUse || 0);
 
-    console.log('existing:', existing);
+    console.log('\n🔵 ========== CALCULATION START ==========');
+    console.log('Investment Amount: $' + roundSize.toLocaleString());
+    console.log('Pre-Money Valuation: $' + preMoney.toLocaleString());
+    console.log('Existing Shares: ' + existing.toLocaleString());
+    console.log('Target Post-Money Pool: ' + postMoneyPool + '%');
+    console.log('Previous Round Option Pool: ' + previousRoundOptionPool + '%');
 
-    // ✅ Early return if any required value is missing or zero
     if (preMoney <= 0 || roundSize <= 0 || existing <= 0) {
       return;
     }
 
     try {
-      // Step 1: Basic calculations
+      const isSeriesRound = selected?.includes("Series");
       const postMoney = preMoney + roundSize;
       const investorOwnershipPercent = (roundSize / postMoney) * 100;
 
-      // Step 2: Calculate shares with option pool
-      const poolFactor = 1 - (optionPool / 100);
+      let sharePrice = 0;
+      let newSharesIssued = 0;
+      let totalPostShares = 0;
+      let newOptionShares = 0;
+      let existingOptionPoolPercent = 0;
+      let doc4Action = 'NO_ACTION';
 
-      const preRoundShares = existing / poolFactor;
-      const employeeShares = preRoundShares - existing;
+      if (isSeriesRound && postMoneyPool > 0) {
+        console.log('\n🎯 SERIES ROUND CALCULATION');
 
-      // Step 3: Calculate new shares to be issued
-      const totalPreInvestmentShares = existing + employeeShares;
+        // ✅ STEP 1: Get existing option pool percentage
+        existingOptionPoolPercent = parseFloat(previousRoundOptionPool || 0);
+        console.log('Step 1 - Existing Option Pool: ' + existingOptionPoolPercent + '%');
 
-      const totalPostShares = totalPreInvestmentShares / (1 - (investorOwnershipPercent / 100));
-      const newSharesIssued = totalPostShares - totalPreInvestmentShares;
+        // ✅ STEP 2: Calculate existing option pool shares
+        const existingOptionShares = Math.round(existing * (existingOptionPoolPercent / 100));
+        console.log('Step 2 - Existing Option Shares: ' + existingOptionShares.toLocaleString());
 
-      // Step 4: Calculate share price
-      const sharePrice = roundSize / newSharesIssued;
-      console.log(totalPostShares, totalPreInvestmentShares);
+        // ✅ STEP 3: Calculate Founders + Seed shares (non-pool)
+        const foundersSeedShares = existing - existingOptionShares;
+        console.log('Step 3 - Founders + Seed Shares: ' + foundersSeedShares.toLocaleString());
 
+        // Check if top-up needed
+        if (existingOptionPoolPercent >= postMoneyPool) {
+          // NO TOP-UP NEEDED
+          doc4Action = 'NO_ACTION';
+          console.log('✅ NO TOP-UP: Existing pool sufficient');
 
-      // ✅ Convert to fixed decimals
+          sharePrice = preMoney / existing;
+          newSharesIssued = roundSize / sharePrice;
+          totalPostShares = existing + newSharesIssued;
+          newOptionShares = 0;
+
+        } else {
+          // TOP-UP NEEDED
+          doc4Action = 'TOP_UP';
+          console.log('⚠️ TOP-UP NEEDED: Expanding pool from ' + existingOptionPoolPercent + '% to ' + postMoneyPool + '%');
+
+          // ✅ STEP 4: Calculate Founders + Seed ownership percentage
+          const foundersSeedPercent = 100 - investorOwnershipPercent - postMoneyPool;
+          console.log('Step 4 - Founders + Seed will own: ' + foundersSeedPercent.toFixed(2) + '%');
+
+          // ✅ STEP 5: Calculate total post-investment shares
+          // FORMULA: Founders+Seed Shares / Founders+Seed %
+          totalPostShares = Math.round(foundersSeedShares / (foundersSeedPercent / 100));
+          console.log('Step 5 - Total Post Shares: ' + totalPostShares.toLocaleString());
+
+          // ✅ STEP 6: Calculate total NEW shares needed
+          const totalNewShares = totalPostShares - existing;
+          console.log('Step 6 - Total New Shares: ' + totalNewShares.toLocaleString() + ' ✨ THIS IS THE 93,434!');
+
+          // ✅ STEP 7: Calculate required option pool (post-money)
+          const requiredOptionShares = Math.round(totalPostShares * (postMoneyPool / 100));
+          console.log('Step 7 - Required Option Pool: ' + requiredOptionShares.toLocaleString());
+
+          // ✅ STEP 8: Calculate additional option shares (top-up)
+          newOptionShares = Math.max(0, requiredOptionShares - existingOptionShares);
+          console.log('Step 8 - New Option Shares (top-up): ' + newOptionShares.toLocaleString());
+
+          // ✅ STEP 9: Calculate Series A investor shares
+          newSharesIssued = totalNewShares - newOptionShares;
+          console.log('Step 9 - Series A Investor Shares: ' + Math.round(newSharesIssued).toLocaleString());
+
+          // ✅ STEP 10: Calculate share price
+          sharePrice = preMoney / (existing + newOptionShares);
+          console.log('Step 10 - Share Price: $' + sharePrice.toFixed(4));
+
+          // ✅ VERIFICATION
+          console.log('\n📊 VERIFICATION:');
+          console.log('├─ Founders + Seed: ' + foundersSeedShares.toLocaleString() + ' (' + foundersSeedPercent.toFixed(2) + '%)');
+          console.log('├─ Existing Options: ' + existingOptionShares.toLocaleString());
+          console.log('├─ New Options: ' + newOptionShares.toLocaleString());
+          console.log('├─ Total Options: ' + requiredOptionShares.toLocaleString() + ' (' + postMoneyPool + '%)');
+          console.log('├─ Series A Investors: ' + Math.round(newSharesIssued).toLocaleString() + ' (' + investorOwnershipPercent.toFixed(2) + '%)');
+          console.log('└─ TOTAL: ' + totalPostShares.toLocaleString() + ' (100%)');
+
+          // Double-check percentages
+          const foundersSeedActual = (foundersSeedShares / totalPostShares) * 100;
+          const optionPoolActual = (requiredOptionShares / totalPostShares) * 100;
+          const investorActual = (newSharesIssued / totalPostShares) * 100;
+
+          console.log('\n✅ PERCENTAGE CHECK:');
+          console.log('Founders + Seed: ' + foundersSeedActual.toFixed(2) + '% (should be ' + foundersSeedPercent.toFixed(2) + '%)');
+          console.log('Option Pool: ' + optionPoolActual.toFixed(2) + '% (should be ' + postMoneyPool + '%)');
+          console.log('Series A: ' + investorActual.toFixed(2) + '% (should be ' + investorOwnershipPercent.toFixed(2) + '%)');
+          console.log('Total: ' + (foundersSeedActual + optionPoolActual + investorActual).toFixed(2) + '% (should be 100%)');
+        }
+
+      } else {
+        // SEED ROUND CALCULATION
+        const preMoneyPool = parseFloat(formData.optionPoolPercent || 0);
+
+        if (preMoneyPool > 0) {
+          const poolFactor = 1 - (preMoneyPool / 100);
+          const preRoundShares = existing / poolFactor;
+          const employeeOptionShares = preRoundShares - existing;
+
+          const totalPreInvestmentShares = existing + employeeOptionShares;
+          totalPostShares = totalPreInvestmentShares / (1 - (investorOwnershipPercent / 100));
+          newSharesIssued = totalPostShares - totalPreInvestmentShares;
+          sharePrice = roundSize / newSharesIssued;
+
+          doc4Action = 'CREATED';
+          newOptionShares = Math.round(employeeOptionShares);
+          existingOptionPoolPercent = preMoneyPool;
+        } else {
+          sharePrice = preMoney / existing;
+          newSharesIssued = roundSize / sharePrice;
+          totalPostShares = existing + newSharesIssued;
+          newOptionShares = 0;
+        }
+      }
+
+      // Update state
       const newPostMoney = postMoney.toFixed(2);
       const newInvestorOwnership = investorOwnershipPercent.toFixed(2);
-      const newIssuedShares = newSharesIssued.toFixed(3);
-      const newSharePrice = sharePrice.toFixed(3);
+      const newIssuedShares = Math.round(newSharesIssued).toString();
+      const newSharePrice = sharePrice.toFixed(4);
 
-      // ✅ Check if ANY value changed before updating
-      const hasChanged =
-        formData.post_money !== newPostMoney ||
+      console.log('\n🎉 FINAL RESULTS:');
+      console.log('Share Price: $' + newSharePrice);
+      console.log('Shares Issued to Investors: ' + newIssuedShares);
+      console.log('New Option Shares: ' + Math.round(newOptionShares).toLocaleString());
+      console.log('Total Post Shares: ' + Math.round(totalPostShares).toLocaleString());
+      console.log('Existing Option Pool %: ' + existingOptionPoolPercent);
+      console.log('Doc 4 Action: ' + doc4Action);
+      console.log('========== CALCULATION END ==========\n');
+
+      setCalculatedValues({
+        sharePrice: newSharePrice,
+        newSharesIssued: parseInt(newIssuedShares) || 0,
+        totalPostShares: Math.round(totalPostShares),
+        newOptionShares: Math.round(newOptionShares),
+        existingOptionPoolPercent: existingOptionPoolPercent,
+        postMoneyValuation: newPostMoney,
+        investorOwnershipPercent: newInvestorOwnership,
+        doc4Action: doc4Action
+      });
+
+      if (formData.post_money !== newPostMoney ||
         formData.investorPostMoney !== newInvestorOwnership ||
-        formData.issuedshares !== newIssuedShares ||
-        formData.sharePrice !== newSharePrice;
-
-      if (hasChanged) {
-        console.log('Updating formData with new calculations');
-
-        // Set flag ki calculation source se update ho raha hai
+        formData.issuedshares !== newIssuedShares) {
         setFormData(prev => ({
           ...prev,
           post_money: newPostMoney,
           investorPostMoney: newInvestorOwnership,
           issuedshares: newIssuedShares,
           sharePrice: newSharePrice,
-          isCalculationSource: true, // Set flag
+          isCalculationSource: true,
         }));
 
-        // 10ms baad flag reset karein
         setTimeout(() => {
-          setFormData(prev => ({
-            ...prev,
-            isCalculationSource: false
-          }));
+          setFormData(prev => ({ ...prev, isCalculationSource: false }));
         }, 10);
-      } else {
-        console.log('No changes detected, skipping update');
       }
 
     } catch (error) {
-      console.error("Error in calculations:", error);
+      console.error("❌ Calculation Error:", error);
     }
   }, [
     formData.pre_money,
     formData.roundsize,
     formData.optionPoolPercent,
-    existingSharesUse
-    // ✅ isCalculationSource ko exclude karein
+    formData.optionPoolPercent_post,
+    existingSharesUse,
+    selected,
+    previousRoundOptionPool
+  ]);
+  // Round 1 Calculations
+
+
+  // Aapke existing calculation useEffect ko REPLACE karein isse (around line 600):
+
+
+
+  // Add this state at the top of your component
+  const [calculatedValues, setCalculatedValues] = useState({
+    sharePrice: '0.0000',
+    newSharesIssued: 0,
+    totalPostShares: 0,
+    employeeOptionShares: 0,
+    newOptionShares: 0,
+    existingOptionPoolPercent: 0,
+    postMoneyValuation: '0.00',
+    investorOwnershipPercent: '0.00',
+    doc4Action: 'NO_ACTION'
+  });
+
+  useEffect(() => {
+    if (formData.isCalculationSource) {
+      return;
+    }
+
+    const preMoney = parseFloat(formData.pre_money || 0);
+    const roundSize = parseFloat(formData.roundsize || 0);
+    const postMoneyPool = parseFloat(formData.optionPoolPercent_post || 0);
+    const existing = parseFloat(existingSharesUse || 0);
+    if (preMoney <= 0 || roundSize <= 0 || existing <= 0) {
+      console.log('❌ Missing values');
+      return;
+    }
+
+    try {
+      const isSeriesRound = selected?.includes("Series");
+      const postMoney = preMoney + roundSize;
+      const investorOwnershipPercent = (roundSize / postMoney) * 100;
+      const isSeriesCommonStock =
+        isSeriesRound && formData.instrumentType === "Common Stock";
+      let sharePrice = 0;
+      let newSharesIssued = 0;
+      let totalPostShares = 0;
+      let newOptionShares = 0;
+      let doc4Action = 'NO_ACTION';
+
+      // ✅ CRITICAL: Use previousRoundOptionPool for existing pool
+      const existingOptionPoolPercent = previousRoundOptionPool;
+
+      if (isSeriesRound && postMoneyPool > 0 && isSeriesCommonStock) {
+
+        const existingOptionShares = Math.round(existing * (existingOptionPoolPercent / 100));
+
+
+        const foundersSeedShares = existing - existingOptionShares;
+
+
+        if (existingOptionPoolPercent >= postMoneyPool) {
+          // NO TOP-UP
+          doc4Action = 'NO_ACTION';
+
+
+          sharePrice = preMoney / existing;
+          newSharesIssued = roundSize / sharePrice;
+          totalPostShares = existing + newSharesIssued;
+          newOptionShares = 0;
+
+        } else {
+          // TOP-UP NEEDED
+          doc4Action = 'TOP_UP';
+
+
+          const foundersSeedPercent = 100 - investorOwnershipPercent - postMoneyPool;
+
+
+          totalPostShares = Math.round(foundersSeedShares / (foundersSeedPercent / 100));
+
+
+          const totalNewShares = totalPostShares - existing;
+
+
+          const requiredOptionShares = Math.round(totalPostShares * (postMoneyPool / 100));
+
+
+          newOptionShares = Math.max(0, requiredOptionShares - existingOptionShares);
+
+
+          newSharesIssued = totalNewShares - newOptionShares;
+
+
+          sharePrice = preMoney / (existing + newOptionShares);
+
+
+          // Verification
+
+        }
+
+      } else {
+        // SEED ROUND
+        const preMoneyPool = parseFloat(formData.optionPoolPercent || 0);
+
+        if (preMoneyPool > 0) {
+          const poolFactor = 1 - (preMoneyPool / 100);
+          const preRoundShares = existing / poolFactor;
+          const employeeOptionShares = preRoundShares - existing;
+
+          const totalPreInvestmentShares = existing + employeeOptionShares;
+          totalPostShares = totalPreInvestmentShares / (1 - (investorOwnershipPercent / 100));
+          newSharesIssued = totalPostShares - totalPreInvestmentShares;
+          sharePrice = roundSize / newSharesIssued;
+
+          doc4Action = 'CREATED';
+          newOptionShares = Math.round(employeeOptionShares);
+        } else {
+          sharePrice = preMoney / existing;
+          newSharesIssued = roundSize / sharePrice;
+          totalPostShares = existing + newSharesIssued;
+          newOptionShares = 0;
+        }
+      }
+
+      const newPostMoney = postMoney.toFixed(2);
+      const newInvestorOwnership = investorOwnershipPercent.toFixed(2);
+      const newIssuedShares = Math.round(newSharesIssued).toString();
+      const newSharePrice = sharePrice.toFixed(4);
+
+
+      setCalculatedValues({
+        sharePrice: newSharePrice,
+        newSharesIssued: parseInt(newIssuedShares) || 0,
+        totalPostShares: Math.round(totalPostShares),
+        newOptionShares: Math.round(newOptionShares),
+        existingOptionPoolPercent: existingOptionPoolPercent,
+        postMoneyValuation: newPostMoney,
+        investorOwnershipPercent: newInvestorOwnership,
+        doc4Action: doc4Action
+      });
+
+      if (formData.post_money !== newPostMoney ||
+        formData.investorPostMoney !== newInvestorOwnership ||
+        formData.issuedshares !== newIssuedShares) {
+        setFormData(prev => ({
+          ...prev,
+          post_money: newPostMoney,
+          investorPostMoney: newInvestorOwnership,
+          issuedshares: newIssuedShares,
+          sharePrice: newSharePrice,
+          isCalculationSource: true,
+        }));
+
+        setTimeout(() => {
+          setFormData(prev => ({ ...prev, isCalculationSource: false }));
+        }, 10);
+      }
+
+    } catch (error) {
+      console.error("❌ Calculation error:", error);
+    }
+  }, [
+    formData.pre_money,
+    formData.roundsize,
+    formData.optionPoolPercent,
+    formData.optionPoolPercent_post,
+    existingSharesUse,
+    selected,
+    previousRoundOptionPool // ✅ This dependency is critical
   ]);
 
+  //Automatic Fill
+  // Frontend: Recordround.jsx mein yeh function add karein
+  const autoFillFromPreviousRound = async () => {
+    if (isFirstRound || !selected || selected === "Advisor Shares") {
+      return;
+    }
 
 
+
+    try {
+      const res = await axios.post(
+        apiUrlRound + "getPreviousRoundForAutoFill",
+        {
+          company_id: userLogin.companies[0].id,
+          current_round_id: id || 0
+        }
+      );
+
+      console.log("📥 Auto-fill response:", res.data);
+
+      if (res.data.success && res.data.data) {
+        const previousData = res.data.data;
+
+        // Auto-fill existing shares
+        if (previousData.existingShares > 0) {
+          setexistingSharesUse(previousData.existingShares.toString());
+          setFormData(prev => ({
+            ...prev,
+            existingShares: previousData.existingShares.toString()
+          }));
+          console.log(`✅ Existing shares: ${previousData.existingShares.toLocaleString()}`);
+        }
+
+        // ✅ CRITICAL: Auto-fill option pool and sync ALL states
+        if (previousData.existingOptionPoolPercent > 0) {
+          const poolPercent = parseFloat(previousData.existingOptionPoolPercent);
+
+          console.log(`✅ Option pool from previous round: ${poolPercent}%`);
+
+          // Update all three states that track option pool
+          setFormData(prev => ({
+            ...prev,
+            optionPoolPercent: poolPercent.toFixed(2)
+          }));
+
+          setPreviousRoundOptionPool(poolPercent);
+
+          setCalculatedValues(prev => ({
+            ...prev,
+            existingOptionPoolPercent: poolPercent
+          }));
+
+          console.log(`✅ Synced all option pool states to: ${poolPercent}%`);
+        }
+
+
+      }
+
+    } catch (err) {
+      console.error("❌ Auto-fill error:", err);
+    }
+  };
+  // Component ke shuru mein yeh useEffect add karein
+  useEffect(() => {
+    const isSeriesRound = selected?.includes("Series");
+    const isSeriesCommonStock =
+      isSeriesRound && formData.instrumentType === "Common Stock";
+
+    if (!selected || isFirstRound) return;
+
+    if (isSeriesCommonStock) {
+      // ✅ Only here auto-fill should run
+      autoFillFromPreviousRound();
+    } else {
+      // ❌ Not Series + Common Stock → reset option pool
+      setFormData(prev => ({
+        ...prev,
+        optionPoolPercent: "0.00"
+      }));
+
+      setPreviousRoundOptionPool(0);
+
+      setCalculatedValues(prev => ({
+        ...prev,
+        existingOptionPoolPercent: 0
+      }));
+
+      console.log("🚫 Auto-fill skipped, option pool reset to 0%");
+    }
+  }, [selected, formData.instrumentType]);
+
+
+
+  // getexistingShares function ke baad yeh function add karein (around line 150)
+  const fetchPreviousRoundOptionPool = async () => {
+    if (!selected || selected.includes("Seed") || selected === "Pre-Seed") {
+      setPreviousRoundOptionPool(0);
+      return;
+    }
+
+    // ✅ Check if already autofilled
+    const currentPool = parseFloat(formData.optionPoolPercent || 0);
+    if (currentPool > 0) {
+      console.log(`✅ Option pool already set: ${currentPool}%`);
+      if (previousRoundOptionPool !== currentPool) {
+        setPreviousRoundOptionPool(currentPool);
+      }
+      return;
+    }
+
+    console.log('🔍 Fetching previous pool (autofill missed it)...');
+
+    try {
+      const res = await axios.post(
+        apiUrlRound + "getPreviousRoundOptionPool",
+        { company_id: userLogin.companies[0].id }
+      );
+
+      if (res.data.success) {
+        const poolPercent = parseFloat(res.data.existingOptionPoolPercent || 0);
+
+        setPreviousRoundOptionPool(poolPercent);
+
+        setFormData(prev => ({
+          ...prev,
+          optionPoolPercent: poolPercent.toFixed(2)
+        }));
+
+        console.log(`✅ Fetched and set pool: ${poolPercent}%`);
+      }
+    } catch (err) {
+      console.error("❌ Fetch error:", err);
+      setPreviousRoundOptionPool(0);
+    }
+  };
+  // useEffect(() => {
+  //   const isSeriesRound = selected?.includes("Series");
+  //   const CommonStock = formData.instrumentType;
+  //   const isSeriesCommonStock = isSeriesRound && CommonStock === 'Common Stock';
+
+  //   if (!isFirstRound && isSeriesCommonStock) {
+  //     // Reset states first
+  //     setPreviousRoundOptionPool(0);
+
+  //     // Then autofill
+  //     autoFillFromPreviousRound();
+  //   }
+  // }, [selected, isFirstRound]);
+
+  // Sync states if formData.optionPoolPercent changes manually
+  useEffect(() => {
+    if (selected?.includes("Series") && formData.optionPoolPercent) {
+      const poolValue = parseFloat(formData.optionPoolPercent);
+
+      if (!isNaN(poolValue) && poolValue > 0 && poolValue !== previousRoundOptionPool) {
+        console.log(`🔄 Manual change detected: syncing to ${poolValue}%`);
+        setPreviousRoundOptionPool(poolValue);
+      }
+    }
+  }, [formData.optionPoolPercent]);
+  // Doc 4 Rule
   //Round 1
+  const OptionPoolFields = () => {
+    const isSeriesRound = selected?.includes("Series");
+    const CommonStock = formData.instrumentType;
+    const isSeriesCommonStock = isSeriesRound && CommonStock === 'Common Stock';
+
+    return (
+      <div className="row">
+        {/* PRE-MONEY OPTION POOL */}
+        <div className="col-md-6 mb-4">
+          <label className="form-label fw-semibold">
+            Pre-Money Option Pool (%)
+            {isSeriesCommonStock && (
+              <span className="badge bg-info ms-2" style={{ fontSize: '0.7em' }}>
+                Auto-filled
+              </span>
+            )}
+            <i
+              className="bi bi-info-circle text-muted ms-1"
+              title={
+                isSeriesCommonStock
+                  ? "Carried over from previous round - This is the existing option pool percentage before Series A investment"
+                  : "Percentage of equity reserved for employees before this round"
+              }
+            ></i>
+          </label>
+
+          {isSeriesCommonStock ? (
+            // READ-ONLY for Series rounds
+            <>
+              <input
+                type="text"
+                value={formData.optionPoolPercent ? `${formData.optionPoolPercent}%` : "0%"}
+                readOnly
+                className="form-control bg-light"
+                style={{
+                  backgroundColor: '#f8f9fa',
+                  cursor: 'not-allowed',
+                  fontWeight: '500'
+                }}
+              />
+              <small className="text-muted d-block mt-1">
+                {formData.optionPoolPercent > 0
+                  ? `✓ Carried over from previous round (${formData.optionPoolPercent}%)`
+                  : "No option pool from previous round"
+                }
+              </small>
+            </>
+          ) : (
+            // EDITABLE for Seed rounds
+            <>
+              <NumericFormat
+                thousandSeparator={true}
+                decimalScale={2}
+                fixedDecimalScale={true}
+                allowNegative={false}
+                placeholder="Enter option pool % (e.g. 10)"
+                value={formData.optionPoolPercent}
+                onValueChange={(values) => {
+                  handleInputChange("optionPoolPercent", values.floatValue);
+                }}
+
+                className="textarea_input"
+              />
+              <small className="text-muted d-block mt-1">
+                Option pool percentage before investment (Pre-Money)
+              </small>
+            </>
+          )}
+        </div>
+
+        {/* POST-MONEY OPTION POOL (Only for Series rounds) */}
+        {isSeriesCommonStock && (
+          <div className="col-md-6 mb-4">
+            <label className="form-label fw-semibold">
+              Post-Money Option Pool Target (%)
+              <span className="text-danger ms-1">*</span>
+              <i
+                className="bi bi-info-circle text-muted ms-1"
+                title="Target percentage of equity reserved for employees after this investment round. If higher than existing pool, additional shares will be created."
+              ></i>
+            </label>
+
+            <NumericFormat
+              suffix="%"
+              decimalScale={2}
+              fixedDecimalScale
+              allowNegative={false}
+              placeholder="Enter target pool % (e.g. 20)"
+              value={formData.optionPoolPercent_post}
+              onValueChange={(values) => {
+                handleInputChange("optionPoolPercent_post", values.value);
+              }}
+              className="textarea_input"
+            />
+
+            <small className="text-muted d-block mt-1">
+              Target option pool percentage after investment (Post-Money)
+            </small>
+
+            {/* Top-up Status Alert */}
+            {formData.optionPoolPercent && formData.optionPoolPercent_post && (
+              <div className="mt-2">
+                {parseFloat(formData.optionPoolPercent_post) > parseFloat(formData.optionPoolPercent) ? (
+                  <div className="alert alert-warning py-2 mb-0" style={{ fontSize: '0.85em' }}>
+                    <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                    <strong>Top-up needed:</strong> Expanding pool from {formData.optionPoolPercent}% to {formData.optionPoolPercent_post}%
+                    <br />
+                    <small className="text-muted">
+                      Additional option shares will be created
+                      {calculatedValues.newOptionShares > 0 && (
+                        <> (+{calculatedValues.newOptionShares.toLocaleString()} shares)</>
+                      )}
+                    </small>
+                  </div>
+                ) : parseFloat(formData.optionPoolPercent_post) === parseFloat(formData.optionPoolPercent) ? (
+                  <div className="alert alert-info py-2 mb-0" style={{ fontSize: '0.85em' }}>
+                    <i className="bi bi-info-circle-fill me-2"></i>
+                    <strong>No change:</strong> Maintaining {formData.optionPoolPercent}% pool
+                  </div>
+                ) : (
+                  <div className="alert alert-success py-2 mb-0" style={{ fontSize: '0.85em' }}>
+                    <i className="bi bi-check-circle-fill me-2"></i>
+                    <strong>No top-up needed:</strong> Existing {formData.optionPoolPercent}% pool is sufficient
+                    <br />
+                    <small className="text-muted">
+                      No additional option shares will be created
+                    </small>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
   const [isCollapsed, setIsCollapsed] = useState(false);
   return (
     <Wrapper>
@@ -2312,235 +2888,330 @@ export default function Recordround() {
                                 <div className="mt-3 p-3 border rounded bg-light">
                                   <h5>Preferred Equity Details</h5>
 
-                                  {/* Company Valuation */}
-                                  <label className="form-label">
-                                    Company Valuation <span className="text-danger">*</span>
-                                  </label>
-                                  <NumericFormat
-                                    thousandSeparator
-                                    decimalScale={2}
-                                    fixedDecimalScale
-                                    allowNegative={false}
-                                    placeholder="Enter company valuation"
-                                    value={formData.preferred_valuation || ""}
-                                    onValueChange={(values) => {
-                                      handleInputChange("preferred_valuation", values.value);
+                                  {/* ========== WARRANT SECTION ========== */}
+                                  <div className="border-top pt-3 mt-3">
+                                    <div className="d-flex justify-content-between align-items-center mb-3">
+                                      <h6 className="mb-0">Warrant Details (Optional)</h6>
+                                      <div className="form-check form-switch">
+                                        <input
+                                          type="checkbox"
+                                          className="form-check-input"
+                                          id="hasWarrants_preferred"
+                                          checked={formData.hasWarrants_preferred || false}
+                                          onChange={(e) => {
+                                            const checked = e.target.checked;
+                                            handleInputChange("hasWarrants_preferred", checked);
 
-                                      if (errors.preferred_valuation) {
-                                        setErrors((prev) => ({
-                                          ...prev,
-                                          preferred_valuation: "",
-                                        }));
-                                      }
-                                    }}
-                                    className={`form-control mb-3 ${errors.preferred_valuation ? "is-invalid" : ""}`}
-                                  />
-
-                                  {errors.preferred_valuation && (
-                                    <div className="text-danger small">
-                                      <i className="bi bi-exclamation-circle me-1"></i>
-                                      {errors.preferred_valuation}
+                                            // Reset warrant fields if unchecked
+                                            if (!checked) {
+                                              handleInputChange("warrant_coverage_percentage", "");
+                                              handleInputChange("warrant_exercise_type", "next_round_adjusted");
+                                              handleInputChange("warrant_adjustment_percent", "");
+                                              handleInputChange("warrant_adjustment_direction", "decrease");
+                                              handleInputChange("expirationDate_preferred", "");
+                                              handleInputChange("warrant_notes", "");
+                                            }
+                                          }}
+                                        />
+                                        <label className="form-check-label" htmlFor="hasWarrants_preferred">
+                                          Include Warrants with this investment
+                                        </label>
+                                      </div>
                                     </div>
-                                  )}
 
-                                  {/* Warrants Checkbox */}
-                                  <div className="form-check mb-3">
-                                    <input
-                                      type="checkbox"
-                                      className="form-check-input"
-                                      id="hasWarrants_preferred"
-                                      checked={formData.hasWarrants_preferred || false}
-                                      onChange={(e) => {
-                                        const checked = e.target.checked;
-                                        handleInputChange("hasWarrants_preferred", checked);
+                                    {formData.hasWarrants_preferred && (
+                                      <>
+                                        {/* Alert - Important Info */}
+                                        <div className="alert alert-info mb-4">
+                                          <i className="bi bi-info-circle me-2"></i>
+                                          <strong>About Warrants:</strong> Warrants will be exercised in the next priced equity round.
+                                          Exercise price and shares will be calculated automatically at that time.
+                                        </div>
 
-                                        // Reset warrant fields if unchecked
-                                        if (!checked) {
-                                          handleInputChange("warrant_coverage_percentage", "");
-                                          handleInputChange("warrant_exercise_type", "next_round");
-                                          handleInputChange("warrant_adjustment_percent", "");
-                                          handleInputChange("warrant_adjustment_direction", "decrease");
-                                        }
-                                      }}
-                                    />
-                                    <label className="form-check-label" htmlFor="hasWarrants_preferred">
-                                      Add Warrants (optional)
-                                    </label>
-                                  </div>
+                                        {/* 🔹 WARRANT COVERAGE PERCENTAGE */}
+                                        <div className="row mb-4">
+                                          <div className="col-md-6">
+                                            <label className="form-label">
+                                              Warrant Coverage Percentage (%)
+                                              <span className="text-danger ms-1">*</span>
+                                              <span className="tooltip-icon ms-2" tabIndex={0}>
+                                                <img
+                                                  className="blackdark"
+                                                  width="15"
+                                                  height="15"
+                                                  src="/assets/user/images/question.png"
+                                                  alt="Tip"
+                                                />
+                                                <div className="tooltip-text tool-test-white text-white" role="tooltip">
+                                                  <strong>What it is:</strong> Percentage of new shares issued in the NEXT priced round that will be allocated as warrant shares.
+                                                  <br /><br />
+                                                  <strong>Example:</strong> If Series B issues 50,000 new shares and warrant coverage is 20%, then 10,000 warrant shares will be created.
+                                                </div>
+                                              </span>
+                                            </label>
+                                            <div className="input-group">
+                                              <input
+                                                type="number"
+                                                className={`form-control ${errors.warrant_coverage_percentage ? "is-invalid" : ""}`}
+                                                value={formData.warrant_coverage_percentage || ""}
+                                                onChange={(e) => {
+                                                  handleInputChange("warrant_coverage_percentage", e.target.value);
+                                                  if (errors.warrant_coverage_percentage) {
+                                                    setErrors(prev => ({ ...prev, warrant_coverage_percentage: "" }));
+                                                  }
+                                                }}
+                                                placeholder="e.g., 20"
+                                                min="0"
+                                                max="100"
+                                                step="0.1"
+                                              />
+                                              <span className="input-group-text">%</span>
+                                            </div>
+                                            {errors.warrant_coverage_percentage && (
+                                              <div className="text-danger small mt-1">
+                                                <i className="bi bi-exclamation-circle me-1"></i>
+                                                {errors.warrant_coverage_percentage}
+                                              </div>
+                                            )}
+                                            <small className="text-muted d-block mt-1">
+                                              Percentage of next round's new shares that become warrant shares
+                                            </small>
+                                          </div>
+                                        </div>
 
-                                  {/* WARRANT DETAILS SECTION */}
-                                  {formData.hasWarrants_preferred && (
-                                    <div className="border-top pt-3 mt-3">
-                                      <h6>Warrant Details</h6>
+                                        {/* 🔹 WARRANT EXERCISE TYPE */}
+                                        <div className="row mb-4">
+                                          <div className="col-md-12">
+                                            <label className="form-label">
+                                              Warrant Exercise Price Method
+                                              <span className="text-danger ms-1">*</span>
+                                            </label>
+                                            <div className="border rounded p-3 bg-white">
+                                              {/* Option 1: Fixed Price (Disabled as per client requirements) */}
+                                              <div className="form-check mb-3 opacity-50">
+                                                <input
+                                                  className="form-check-input"
+                                                  type="radio"
+                                                  name="warrant_exercise_type"
+                                                  id="exerciseTypeFixed"
+                                                  value="fixed"
+                                                  disabled
+                                                  checked={formData.warrant_exercise_type === "fixed"}
+                                                />
+                                                <label className="form-check-label" htmlFor="exerciseTypeFixed">
+                                                  <strong>Fixed Price</strong> (Not available)
+                                                  <div className="small text-muted">
+                                                    Exercise at a predetermined fixed price - Not supported per client requirements
+                                                  </div>
+                                                </label>
+                                              </div>
 
-                                      {/* 🔹 WARRANT COVERAGE PERCENTAGE (Required by Client) */}
-                                      <div className="row mb-3">
-                                        <div className="col-md-6">
-                                          <label className="form-label">
-                                            Warrant Coverage Percentage (%) <span className="text-danger">*</span>
-                                          </label>
-                                          <div className="input-group">
+                                              {/* Option 2: Next Round Price (No Adjustment) */}
+                                              <div className="form-check mb-3">
+                                                <input
+                                                  className="form-check-input"
+                                                  type="radio"
+                                                  name="warrant_exercise_type"
+                                                  id="exerciseTypeNextRound"
+                                                  value="next_round"
+                                                  checked={formData.warrant_exercise_type === "next_round"}
+                                                  onChange={(e) => {
+                                                    handleInputChange("warrant_exercise_type", e.target.value);
+                                                    // Clear adjustment fields
+                                                    handleInputChange("warrant_adjustment_percent", "");
+                                                    if (errors.warrant_exercise_type) {
+                                                      setErrors(prev => ({ ...prev, warrant_exercise_type: "" }));
+                                                    }
+                                                  }}
+                                                />
+                                                <label className="form-check-label" htmlFor="exerciseTypeNextRound">
+                                                  <strong>Next Priced Round Price</strong> (No Adjustment)
+                                                  <div className="small text-muted">
+                                                    Exercise at the exact share price of the next priced equity round
+                                                  </div>
+                                                </label>
+                                              </div>
+
+                                              {/* Option 3: Next Round Price with Adjustment (DEFAULT) */}
+                                              <div className="form-check">
+                                                <input
+                                                  className="form-check-input"
+                                                  type="radio"
+                                                  name="warrant_exercise_type"
+                                                  id="exerciseTypeAdjusted"
+                                                  value="next_round_adjusted"
+                                                  checked={formData.warrant_exercise_type === "next_round_adjusted" || !formData.warrant_exercise_type}
+                                                  onChange={(e) => {
+                                                    handleInputChange("warrant_exercise_type", e.target.value);
+                                                    if (errors.warrant_exercise_type) {
+                                                      setErrors(prev => ({ ...prev, warrant_exercise_type: "" }));
+                                                    }
+                                                  }}
+                                                />
+                                                <label className="form-check-label" htmlFor="exerciseTypeAdjusted">
+                                                  <strong>Next Priced Round Price ± Adjustment</strong> (Recommended)
+                                                  <div className="small text-muted">
+                                                    Exercise at next round price, adjusted by a percentage increase or decrease
+                                                  </div>
+                                                </label>
+                                              </div>
+                                            </div>
+
+                                            {errors.warrant_exercise_type && (
+                                              <div className="text-danger small mt-1">
+                                                <i className="bi bi-exclamation-circle me-1"></i>
+                                                {errors.warrant_exercise_type}
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+
+                                        {/* 🔹 ADJUSTMENT PERCENTAGE (Only if adjusted type selected) */}
+                                        {formData.warrant_exercise_type === "next_round_adjusted" && (
+                                          <div className="row mb-4">
+                                            <div className="col-md-6">
+                                              <label className="form-label">
+                                                Adjustment Direction & Percentage
+                                                <span className="text-danger ms-1">*</span>
+                                              </label>
+                                              <div className="input-group">
+                                                <select
+                                                  className={`form-select ${errors.warrant_adjustment_direction ? "is-invalid" : ""}`}
+                                                  style={{ maxWidth: "140px" }}
+                                                  value={formData.warrant_adjustment_direction || "decrease"}
+                                                  onChange={(e) => {
+                                                    handleInputChange("warrant_adjustment_direction", e.target.value);
+                                                    if (errors.warrant_adjustment_direction) {
+                                                      setErrors(prev => ({ ...prev, warrant_adjustment_direction: "" }));
+                                                    }
+                                                  }}
+                                                >
+                                                  <option value="decrease">Decrease by</option>
+                                                  <option value="increase">Increase by</option>
+                                                </select>
+                                                <input
+                                                  type="number"
+                                                  className={`form-control ${errors.warrant_adjustment_percent ? "is-invalid" : ""}`}
+                                                  value={formData.warrant_adjustment_percent || ""}
+                                                  onChange={(e) => {
+                                                    handleInputChange("warrant_adjustment_percent", e.target.value);
+                                                    if (errors.warrant_adjustment_percent) {
+                                                      setErrors(prev => ({ ...prev, warrant_adjustment_percent: "" }));
+                                                    }
+                                                  }}
+                                                  placeholder="e.g., 20"
+                                                  min="0"
+                                                  max="100"
+                                                  step="0.1"
+                                                />
+                                                <span className="input-group-text">%</span>
+                                              </div>
+                                              {(errors.warrant_adjustment_direction || errors.warrant_adjustment_percent) && (
+                                                <div className="text-danger small mt-1">
+                                                  <i className="bi bi-exclamation-circle me-1"></i>
+                                                  {errors.warrant_adjustment_direction || errors.warrant_adjustment_percent}
+                                                </div>
+                                              )}
+                                              <small className="text-muted d-block mt-1">
+                                                Adjust the next round's share price by this percentage
+                                              </small>
+                                            </div>
+
+                                            {/* Example Calculation */}
+                                            <div className="col-md-6">
+                                              <label className="form-label">Example Calculation</label>
+                                              <div className="form-control bg-light">
+                                                {formData.warrant_adjustment_percent ? (
+                                                  <small>
+                                                    If next round price = <strong>$10.00</strong><br />
+                                                    Adjustment = <strong>{formData.warrant_adjustment_percent}%</strong> {formData.warrant_adjustment_direction}
+                                                    <br />
+                                                    <strong>→ Exercise price = ${
+                                                      formData.warrant_adjustment_direction === "decrease"
+                                                        ? (10 * (1 - formData.warrant_adjustment_percent / 100)).toFixed(2)
+                                                        : (10 * (1 + formData.warrant_adjustment_percent / 100)).toFixed(2)
+                                                    }</strong>
+                                                  </small>
+                                                ) : (
+                                                  <small className="text-muted">Enter adjustment % to see example</small>
+                                                )}
+                                              </div>
+                                            </div>
+                                          </div>
+                                        )}
+
+                                        {/* 🔹 EXPIRATION DATE */}
+                                        <div className="row mb-4">
+                                          <div className="col-md-6">
+                                            <label className="form-label">
+                                              Warrant Expiration Date (Optional)
+                                            </label>
                                             <input
-                                              type="number"
+                                              type="date"
                                               className="form-control"
-                                              value={formData.warrant_coverage_percentage || ""}
-                                              onChange={(e) => handleInputChange("warrant_coverage_percentage", e.target.value)}
-                                              placeholder="e.g., 20"
-                                              min="0"
-                                              max="100"
-                                              step="0.1"
+                                              value={formData.expirationDate_preferred || ""}
+                                              onChange={(e) => handleInputChange("expirationDate_preferred", e.target.value)}
                                             />
-                                            <span className="input-group-text">%</span>
-                                          </div>
-                                          <small className="text-muted">
-                                            Percentage of investment amount that can be converted to warrants
-                                          </small>
-                                        </div>
-                                      </div>
-
-                                      {/* 🔹 EXERCISE PRICE TYPE (Client Requirement - Next Round Price ± %) */}
-                                      <div className="row mb-3">
-                                        <div className="col-md-12">
-                                          <label className="form-label">Exercise Price Calculation</label>
-                                          <div className="border rounded p-3 bg-white">
-
-                                            <div className="mb-3">
-                                              <div className="form-text">
-                                                <i className="bi bi-info-circle me-1"></i>
-                                                <strong>Warrants will exercise at:</strong> Next Priced Round Share Price ± Adjustment %
-                                              </div>
-                                            </div>
-
-                                            {/* Adjustment Input */}
-                                            <div className="row">
-                                              <div className="col-md-6">
-                                                <label className="form-label">Adjustment Percentage</label>
-                                                <div className="input-group">
-                                                  <select
-                                                    className="form-select"
-                                                    style={{ width: "120px" }}
-                                                    value={formData.warrant_adjustment_direction || "decrease"}
-                                                    onChange={(e) => handleInputChange("warrant_adjustment_direction", e.target.value)}
-                                                  >
-                                                    <option value="decrease">Decrease by</option>
-                                                    <option value="increase">Increase by</option>
-                                                  </select>
-                                                  <input
-                                                    type="number"
-                                                    className="form-control"
-                                                    value={formData.warrant_adjustment_percent || ""}
-                                                    onChange={(e) => handleInputChange("warrant_adjustment_percent", e.target.value)}
-                                                    placeholder="e.g., 20"
-                                                    min="0"
-                                                    max="100"
-                                                    step="0.1"
-                                                  />
-                                                  <span className="input-group-text">%</span>
-                                                </div>
-                                              </div>
-                                              <div className="col-md-6">
-                                                <label className="form-label">Example Calculation</label>
-                                                <div className="form-control bg-light">
-                                                  {formData.warrant_adjustment_percent ? (
-                                                    <small>
-                                                      If next round price = $10 and adjustment = {formData.warrant_adjustment_percent}% {formData.warrant_adjustment_direction === "decrease" ? "decrease" : "increase"}<br />
-                                                      → Exercise price = ${formData.warrant_adjustment_direction === "decrease" ? (10 * (1 - formData.warrant_adjustment_percent / 100)).toFixed(2) : (10 * (1 + formData.warrant_adjustment_percent / 100)).toFixed(2)}
-                                                    </small>
-                                                  ) : (
-                                                    <small className="text-muted">Enter adjustment % to see example</small>
-                                                  )}
-                                                </div>
-                                              </div>
-                                            </div>
-
-                                            <div className="mt-2">
-                                              <div className="alert alert-info small mb-0">
-                                                <i className="bi bi-lightbulb me-1"></i>
-                                                <strong>Note:</strong> Warrant exercise price will be automatically calculated when the next priced equity round is created.
-                                              </div>
-                                            </div>
+                                            <small className="text-muted d-block mt-1">
+                                              If not specified, warrants will expire in 10 years from issuance
+                                            </small>
                                           </div>
                                         </div>
-                                      </div>
 
-                                      {/* 🔹 EXPIRATION DATE (Optional) */}
-                                      <div className="row mb-3">
-                                        <div className="col-md-6">
-                                          <label className="form-label">Expiration Date (Optional)</label>
-                                          <input
-                                            type="date"
-                                            className="form-control"
-                                            value={formData.expirationDate_preferred || ""}
-                                            onChange={(e) => handleInputChange("expirationDate_preferred", e.target.value)}
-                                          />
-                                          <small className="text-muted">If not specified, warrants expire in 10 years</small>
-                                        </div>
-                                      </div>
-
-                                      {/* 🔹 WARRANT TYPE (Only Call Warrant as per Client) */}
-                                      <div className="mb-3">
-                                        <label className="form-label">Type of Warrant</label>
-                                        <div className="border rounded p-3 bg-white">
-                                          <div className="form-check">
-                                            <input
-                                              className="form-check-input"
-                                              type="radio"
-                                              name="warrantType_preferred"
-                                              id="warrantTypeCall"
-                                              value="CALL"
-                                              checked={(formData.warrantType_preferred || "CALL") === "CALL"}
-                                              onChange={(e) => handleInputChange("warrantType_preferred", e.target.value)}
+                                        {/* 🔹 WARRANT NOTES */}
+                                        <div className="row mb-4">
+                                          <div className="col-md-12">
+                                            <label className="form-label">Additional Warrant Terms (Optional)</label>
+                                            <textarea
+                                              className="form-control"
+                                              rows="3"
+                                              value={formData.warrant_notes || ""}
+                                              onChange={(e) => handleInputChange("warrant_notes", e.target.value)}
+                                              placeholder="Enter any additional terms or conditions for these warrants..."
                                             />
-                                            <label className="form-check-label fw-bold" htmlFor="warrantTypeCall">
-                                              Call Warrant (Investor can BUY shares in next round)
-                                            </label>
-                                            <div className="form-text ms-4">
-                                              This is the standard structure per client requirements.
-                                            </div>
-                                          </div>
-
-                                          <div className="form-check mt-2">
-                                            <input
-                                              className="form-check-input"
-                                              type="radio"
-                                              name="warrantType_preferred"
-                                              id="warrantTypePut"
-                                              value="PUT"
-                                              checked={formData.warrantType_preferred === "PUT"}
-                                              onChange={(e) => handleInputChange("warrantType_preferred", e.target.value)}
-                                              disabled
-                                            />
-                                            <label className="form-check-label text-muted" htmlFor="warrantTypePut">
-                                              Put Warrant (Not allowed per client requirements)
-                                            </label>
-                                            <div className="form-text ms-4 text-danger">
-                                              <i className="bi bi-exclamation-triangle me-1"></i>
-                                              Put warrants are not included in client specifications.
-                                            </div>
+                                            <small className="text-muted d-block mt-1">
+                                              Any special conditions, vesting schedules, or restrictions
+                                            </small>
                                           </div>
                                         </div>
-                                      </div>
 
-                                      {/* 🔹 SUMMARY OF WARRANT TERMS */}
-                                      <div className="alert alert-success">
-                                        <h6 className="fw-bold">
-                                          <i className="bi bi-check-circle me-2"></i>
-                                          Warrant Summary
-                                        </h6>
-                                        <ul className="mb-0 small">
-                                          <li>Coverage: {formData.warrant_coverage_percentage || "___"}% of investment amount</li>
-                                          <li>
-                                            Exercise: At next priced round price
-                                            {formData.warrant_adjustment_percent ?
-                                              ` ${formData.warrant_adjustment_direction === "decrease" ? "minus" : "plus"} ${formData.warrant_adjustment_percent}%`
-                                              : ""}
-                                          </li>
-                                          <li>Shares calculated automatically when next round is created</li>
-                                          <li>Warrants will dilute existing shareholders upon exercise</li>
-                                        </ul>
-                                      </div>
-                                    </div>
-                                  )}
+                                        {/* 🔹 WARRANT SUMMARY */}
+                                        <div className="alert alert-success">
+                                          <h6 className="fw-bold mb-2">
+                                            <i className="bi bi-check-circle me-2"></i>
+                                            Warrant Terms Summary
+                                          </h6>
+                                          <ul className="mb-0 small">
+                                            <li>
+                                              <strong>Coverage:</strong> {formData.warrant_coverage_percentage || "___"}% of next round's new shares
+                                            </li>
+                                            <li>
+                                              <strong>Exercise Method:</strong>{" "}
+                                              {formData.warrant_exercise_type === "next_round"
+                                                ? "At next priced round price (no adjustment)"
+                                                : formData.warrant_exercise_type === "next_round_adjusted"
+                                                  ? `At next priced round price ${formData.warrant_adjustment_direction === "decrease" ? "minus" : "plus"} ${formData.warrant_adjustment_percent || "___"}%`
+                                                  : "Not selected"}
+                                            </li>
+                                            <li>
+                                              <strong>Exercise Timing:</strong> Warrants will be exercised automatically in the next priced equity round
+                                            </li>
+                                            <li>
+                                              <strong>Share Calculation:</strong> Number of warrant shares will be calculated when next round closes
+                                            </li>
+                                            <li>
+                                              <strong>Dilution Effect:</strong> Warrant exercise will dilute all existing shareholders proportionally
+                                            </li>
+                                          </ul>
+                                        </div>
+
+                                        {/* Important Note */}
+                                        <div className="alert alert-warning">
+                                          <strong>⚠️ Important:</strong> The exact number of warrant shares and exercise price will be calculated automatically when the next priced equity round is created. This ensures accurate pricing based on the actual next round terms.
+                                        </div>
+                                      </>
+                                    )}
+                                  </div>
                                 </div>
                               )}
 
@@ -2881,32 +3552,53 @@ export default function Recordround() {
 
                                     // Conditional validations per instrument
                                     switch (formData.instrumentType) {
-                                      // case "Common Stock":
-                                      //   if (!formData.common_stock_valuation || Number(formData.common_stock_valuation) <= 0) {
-                                      //     newErrors.common_stock_valuation = "Company valuation is required and must be greater than 0";
-                                      //   }
-                                      //   break;
                                       case "Preferred Equity":
-                                        if (!formData.preferred_valuation || Number(formData.preferred_valuation) <= 0) {
-                                          newErrors.preferred_valuation = "Company Valuation is required and must be greater than 0";
+                                        // ✅ WARRANT VALIDATION (only if warrants are enabled)
+                                        if (formData.hasWarrants_preferred) {
+                                          // Coverage percentage is required
+                                          if (!formData.warrant_coverage_percentage || formData.warrant_coverage_percentage <= 0) {
+                                            newErrors.warrant_coverage_percentage = "Warrant coverage percentage is required and must be greater than 0";
+                                          } else if (formData.warrant_coverage_percentage > 100) {
+                                            newErrors.warrant_coverage_percentage = "Warrant coverage cannot exceed 100%";
+                                          }
+
+                                          // Exercise type is required
+                                          if (!formData.warrant_exercise_type) {
+                                            newErrors.warrant_exercise_type = "Please select a warrant exercise method";
+                                          }
+
+                                          // If adjusted type, adjustment percent is required
+                                          if (formData.warrant_exercise_type === "next_round_adjusted") {
+                                            if (!formData.warrant_adjustment_percent || formData.warrant_adjustment_percent <= 0) {
+                                              newErrors.warrant_adjustment_percent = "Adjustment percentage is required when using adjusted exercise price";
+                                            } else if (formData.warrant_adjustment_percent > 100) {
+                                              newErrors.warrant_adjustment_percent = "Adjustment percentage cannot exceed 100%";
+                                            }
+
+                                            if (!formData.warrant_adjustment_direction) {
+                                              newErrors.warrant_adjustment_direction = "Please select increase or decrease";
+                                            }
+                                          }
                                         }
                                         break;
+
                                       case "Safe":
                                         if (!formData.valuationCap) newErrors.valuationCap = "This field is required";
                                         if (!formData.discountRate) newErrors.discountRate = "This field is required";
-                                        //if (!formData.safeType) newErrors.safeType = "This field is required";
                                         break;
+
                                       case "Convertible Note":
                                         if (!formData.valuationCap_note) newErrors.valuationCap_note = "This field is required";
                                         if (!formData.discountRate_note) newErrors.discountRate_note = "This field is required";
                                         if (!formData.maturityDate) newErrors.maturityDate = "This field is required";
                                         if (!formData.interestRate_note) newErrors.interestRate_note = "This field is required";
-                                        //if (!formData.convertibleTrigger) newErrors.convertibleTrigger = "This field is required";
                                         break;
+
                                       case "Venture/Bank DEBT":
                                         if (!formData.repaymentSchedule) newErrors.repaymentSchedule = "This field is required";
                                         if (!formData.interestRate) newErrors.interestRate = "This field is required";
                                         break;
+
                                       default:
                                         break;
                                     }
@@ -3267,34 +3959,141 @@ export default function Recordround() {
                                 </div>
 
                                 {/* Option Pool Percentage */}
-                                <div className="col-md-6 mb-4">
-                                  <label className="form-label fw-semibold">
-                                    Pre-Money Option Pool (%){" "}
-                                    <i className="bi bi-info-circle text-muted ms-1" title="Percentage of equity reserved for employees or future hires before this round"></i>
-                                  </label>
-                                  <NumericFormat
-                                    suffix="%"
-                                    decimalScale={2}
-                                    fixedDecimalScale
-                                    allowNegative={false}
-                                    placeholder="Enter option pool % (e.g. 10)"
-                                    value={formData.optionPoolPercent}
-                                    onValueChange={(values) => {
-                                      handleInputChange("optionPoolPercent", values.value);
-                                    }}
-                                    className="textarea_input"
-                                  />
+                                <div className="row">
+                                  {/* PRE-MONEY OPTION POOL */}
+                                  <div className="col-md-6 mb-4">
+                                    <label className="form-label fw-semibold">
+                                      Pre-Money Option Pool (%)
+                                      {selected?.includes("Series") && formData.instrumentType === 'Common Stock' && (
+                                        <span className="badge bg-info ms-2" style={{ fontSize: '0.7em' }}>
+                                          Auto-filled
+                                        </span>
+                                      )}
+                                      <i
+                                        className="bi bi-info-circle text-muted ms-1"
+                                        title={
+                                          selected?.includes("Series") && formData.instrumentType === 'Common Stock'
+                                            ? "Carried over from previous round - This is the existing option pool percentage before Series A investment"
+                                            : "Percentage of equity reserved for employees before this round"
+                                        }
+                                      ></i>
+                                    </label>
+
+                                    {selected?.includes("Series") && formData.instrumentType === 'Common Stock' ? (
+                                      // READ-ONLY for Series rounds
+                                      <>
+                                        <input
+                                          type="text"
+                                          value={formData.optionPoolPercent ? `${formData.optionPoolPercent}%` : "0%"}
+                                          readOnly
+                                          className="form-control bg-light"
+                                          style={{
+                                            backgroundColor: '#f8f9fa',
+                                            cursor: 'not-allowed',
+                                            fontWeight: '500'
+                                          }}
+                                        />
+                                        <small className="text-muted d-block mt-1">
+                                          {formData.optionPoolPercent > 0
+                                            ? `✓ Carried over from previous round (${formData.optionPoolPercent}%)`
+                                            : "No option pool from previous round"
+                                          }
+                                        </small>
+                                      </>
+                                    ) : (
+                                      // EDITABLE for Seed rounds
+                                      <>
+                                        <NumericFormat
+                                          thousandSeparator={true}
+                                          decimalScale={2}
+                                          fixedDecimalScale={true}
+                                          allowNegative={false}
+                                          placeholder="Enter option pool % (e.g. 10)"
+                                          value={formData.optionPoolPercent}
+                                          onValueChange={(values) => {
+                                            handleInputChange("optionPoolPercent", values.floatValue);
+                                          }}
+                                          className="textarea_input"
+                                        />
+                                        <small className="text-muted d-block mt-1">
+                                          Option pool percentage before investment (Pre-Money)
+                                        </small>
+                                      </>
+                                    )}
+                                  </div>
+
+                                  {/* POST-MONEY OPTION POOL (Only for Series rounds) */}
+                                  {selected?.includes("Series") && formData.instrumentType === 'Common Stock' && (
+                                    <div className="col-md-6 mb-4">
+                                      <label className="form-label fw-semibold">
+                                        Post-Money Option Pool Target (%)
+                                        <span className="text-danger ms-1">*</span>
+                                        <i
+                                          className="bi bi-info-circle text-muted ms-1"
+                                          title="Target percentage of equity reserved for employees after this investment round. If higher than existing pool, additional shares will be created."
+                                        ></i>
+                                      </label>
+
+                                      <NumericFormat
+                                        suffix="%"
+                                        decimalScale={2}
+                                        fixedDecimalScale
+                                        allowNegative={false}
+                                        placeholder="Enter target pool % (e.g. 20)"
+                                        value={formData.optionPoolPercent_post}
+                                        onValueChange={(values) => {
+                                          handleInputChange("optionPoolPercent_post", values.value);
+                                        }}
+                                        className="textarea_input"
+                                      />
+
+                                      <small className="text-muted d-block mt-1">
+                                        Target option pool percentage after investment (Post-Money)
+                                      </small>
+
+                                      {/* Top-up Status Alert */}
+                                      {formData.optionPoolPercent && formData.optionPoolPercent_post && (
+                                        <div className="mt-2">
+                                          {parseFloat(formData.optionPoolPercent_post) > parseFloat(formData.optionPoolPercent) ? (
+                                            <div className="alert alert-warning py-2 mb-0" style={{ fontSize: '0.85em' }}>
+                                              <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                                              <strong>Top-up needed:</strong> Expanding pool from {formData.optionPoolPercent}% to {formData.optionPoolPercent_post}%
+                                              <br />
+                                              <small className="text-muted">
+                                                Additional option shares will be created
+                                                {calculatedValues?.newOptionShares > 0 && (
+                                                  <> (+{calculatedValues.newOptionShares.toLocaleString()} shares)</>
+                                                )}
+                                              </small>
+                                            </div>
+                                          ) : parseFloat(formData.optionPoolPercent_post) === parseFloat(formData.optionPoolPercent) ? (
+                                            <div className="alert alert-info py-2 mb-0" style={{ fontSize: '0.85em' }}>
+                                              <i className="bi bi-info-circle-fill me-2"></i>
+                                              <strong>No change:</strong> Maintaining {formData.optionPoolPercent}% pool
+                                            </div>
+                                          ) : (
+                                            <div className="alert alert-success py-2 mb-0" style={{ fontSize: '0.85em' }}>
+                                              <i className="bi bi-check-circle-fill me-2"></i>
+                                              <strong>No top-up needed:</strong> Existing {formData.optionPoolPercent}% pool is sufficient
+                                              <br />
+                                              <small className="text-muted">
+                                                No additional option shares will be created
+                                              </small>
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
                                 </div>
-                                {(selected !== "Pre-Seed" && selected !== "Seed" && selected !== "Post-Seed" && selected !== "Advisor Shares") ? (
+                                {/* {(selected !== "Pre-Seed" && selected !== "Seed" && selected !== "Post-Seed" && selected !== "Advisor Shares") ? (
                                   <div className="col-md-6 mb-4">
                                     <label className="form-label fw-semibold">
                                       Post-Money Option Pool (%){" "}
                                       <i className="bi bi-info-circle text-muted ms-1"
                                         title="Option pool created AFTER this investment round (dilutes all shareholders including new investors)">
                                       </i>
-                                      {/* {selected.includes("Series") && (
-                                        <span className="text-danger fs-5 ms-1">*</span>
-                                      )} */}
+                                      
                                     </label>
                                     <NumericFormat
                                       suffix="%"
@@ -3315,22 +4114,10 @@ export default function Recordround() {
                                         {errors.optionPoolPercent_post}
                                       </div>
                                     )}
-                                    {/* <div className="form-text">
-                                      {selected.includes("Series") ? (
-                                        <span className="text-primary">
-                                          <i className="bi bi-info-circle me-1"></i>
-                                          Required for {selected} rounds (Standard: 15-20%)
-                                        </span>
-                                      ) : selected && (
-                                        <span className="text-muted">
-                                          <i className="bi bi-info-circle me-1"></i>
-                                          Optional for {selected} rounds
-                                        </span>
-                                      )}
-                                    </div> */}
+                                    
                                   </div>
                                 ) : (
-                                  /* For Pre-Seed, Seed, Post-Seed, Advisor Shares - show info message */
+                                  
                                   <div className="col-md-6 mb-4">
                                     <div className="alert alert-info p-3">
                                       <div className="d-flex align-items-center">
@@ -3346,7 +4133,36 @@ export default function Recordround() {
                                       </div>
                                     </div>
                                   </div>
-                                )}
+                                )} */}
+                                {/* <div className="col-md-6 mb-4">
+                                  <label className="form-label fw-semibold">
+                                    Post-Money Option Pool (%){" "}
+                                    <i className="bi bi-info-circle text-muted ms-1"
+                                      title="Option pool created AFTER this investment round (dilutes all shareholders including new investors)">
+                                    </i>
+
+                                  </label>
+                                  <NumericFormat
+                                    suffix="%"
+                                    decimalScale={2}
+                                    fixedDecimalScale
+                                    allowNegative={false}
+                                    placeholder={selected.includes("Series") ? "e.g. 20 (Required)" : "e.g. 20 (Optional)"}
+                                    value={formData.optionPoolPercent_post}
+                                    onValueChange={(values) => {
+                                      handleInputChange("optionPoolPercent_post", values.value);
+                                    }}
+                                    className={`textarea_input ${errors.optionPoolPercent_post ? 'is-invalid' : ''}`}
+                                    disabled={selected === "Pre-Seed" || selected === "Seed" || selected === "Post-Seed" || selected === "Advisor Shares"}
+                                  />
+                                  {errors.optionPoolPercent_post && (
+                                    <div className="text-danger small mt-1">
+                                      <i className="bi bi-exclamation-circle me-1"></i>
+                                      {errors.optionPoolPercent_post}
+                                    </div>
+                                  )}
+                                 
+                                </div> */}
                                 <div className="col-md-6 mb-4">
                                   <label className="form-label fw-semibold">
                                     Total Shares Issued in this Round{" "}
@@ -3383,6 +4199,66 @@ export default function Recordround() {
 
 
                               </div>
+                              {/* <div className="calculation-results mt-4 p-4 border rounded bg-light">
+                                <h5 className="mb-3">Round Calculations</h5>
+
+                                <div className="row">
+                                  <div className="col-md-6">
+                                    <div className="mb-2">
+                                      <strong>Share Price:</strong> {CurrDisplay} {calculatedValues.sharePrice || '0.0000'}
+                                    </div>
+                                    <div className="mb-2">
+                                      <strong>New Shares Issued:</strong> {calculatedValues.newSharesIssued.toLocaleString()}
+                                    </div>
+                                    <div className="mb-2">
+                                      <strong>Post-Money Valuation:</strong> {CurrDisplay} {calculatedValues.postMoneyValuation || '0.00'}
+                                    </div>
+                                    <div className="mb-2">
+                                      <strong>Investor Ownership:</strong> {calculatedValues.investorOwnershipPercent || '0.00'}%
+                                    </div>
+                                  </div>
+
+                                  <div className="col-md-6">
+                                    
+                                    {selected?.includes("Series") && formData.optionPoolPercent_post && (
+                                      <>
+                                        <div className="mb-2">
+                                          <strong>Existing Option Pool:</strong> {calculatedValues.existingOptionPoolPercent}%
+                                        </div>
+                                        <div className="mb-2">
+                                          <strong>Target Option Pool:</strong> {formData.optionPoolPercent_post}%
+                                        </div>
+
+                                        {calculatedValues.doc4Action === 'TOP_UP' ? (
+                                          <div className="alert alert-warning p-2 mb-2">
+                                            <small>
+                                              <i className="bi bi-exclamation-triangle me-1"></i>
+                                              <strong>TOP-UP REQUIRED</strong><br />
+                                              Need to increase from {calculatedValues.existingOptionPoolPercent}% to {formData.optionPoolPercent_post}%<br />
+                                              New option shares: {calculatedValues.newOptionShares.toLocaleString()}
+                                            </small>
+                                          </div>
+                                        ) : calculatedValues.doc4Action === 'NO_ACTION' ? (
+                                          <div className="alert alert-success p-2 mb-2">
+                                            <small>
+                                              <i className="bi bi-check-circle me-1"></i>
+                                              <strong>NO ACTION NEEDED</strong><br />
+                                              Existing pool ({calculatedValues.existingOptionPoolPercent}%) is sufficient
+                                            </small>
+                                          </div>
+                                        ) : null}
+                                      </>
+                                    )}
+
+                                    
+                                    {selected === "Seed" || selected === "Pre-Seed" ? (
+                                      <div className="mb-2">
+                                        <strong>Employee Option Pool:</strong> {calculatedValues.employeeOptionShares.toLocaleString()} shares
+                                      </div>
+                                    ) : null}
+                                  </div>
+                                </div>
+                              </div> */}
 
                               {/* Investment Round Information */}
                               {/* <div className="alert alert-info mt-3">

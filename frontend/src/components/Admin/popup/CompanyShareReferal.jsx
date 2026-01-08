@@ -14,7 +14,7 @@ import DataTable from "react-data-table-component";
 import SuccessAlert from "../../../components/Admin/SuccessAlert";
 import DangerAlert from "../../../components/Admin/DangerAlert";
 const CompanyShareReferal = ({ onClose, codeid, returnrefresh, RowId }) => {
-  var apiURLINFile = "http://localhost:5000/api/admin/module/";
+  var apiURLINFile = "https://capavate.com/api/admin/module/";
   const [emails, setEmails] = useState([""]);
   const [searchQuery, setSearchQuery] = useState("");
   const [spinners, setspinners] = useState(false);

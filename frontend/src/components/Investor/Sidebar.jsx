@@ -27,6 +27,7 @@ import {
   RiFolderChartLine,
   RiVideoLine,
 } from "react-icons/ri";
+import IPAddress from "../IPAddress";
 
 const menuItems = [
   {
@@ -35,7 +36,7 @@ const menuItems = [
     icon: <RiDashboardLine size={18} />,
   },
   {
-    label: "Company",
+    label: "Portfolio Companies",
     href: "/investor/company-list",
     icon: <Building2 size={18} />,
   },
@@ -77,7 +78,7 @@ function SideBar({
   }, [internalIsCollapsed]);
 
   const [isHovered, setIsHovered] = useState(false);
-  const apiURL = "http://localhost:5000/api/user/";
+  const apiURL = "https://capavate.com/api/user/";
 
   // Determine which state to use (props or internal)
   const isCollapsed =
@@ -160,13 +161,13 @@ function SideBar({
             }`}
         >
           {!isCollapsed && (
-            <a href="/" className="logo">
+            <Link to="/investor/dashboard" className="logo">
               <img
                 className="w-100 h-100 object-fit-contain"
                 src="/logos/capavate.png"
                 alt="logo"
               />
-            </a>
+            </Link>
           )}
 
           <MenuButtonWrapper className="d-flex justify-content-end">
@@ -319,19 +320,25 @@ function SideBar({
             })}
           </NavList>
         </NavContainer>
-        <div
-          className={`d-flex  align-items-end gap-2 h-100 ${isCollapsed ? "justify-content-center" : "justify-content-end"
-            }`}
-        >
-          <Link
-            title="Logout"
-            to="javascript:void(0)"
-            onClick={handleLogout}
-            className="logout_investor_global "
+        <div className="d-flex flex-column gap-2 mt-auto">
+          <IPAddress />
+
+          <div
+            className={`d-flex  align-items-end gap-2 ${isCollapsed ? "justify-content-center" : "justify-content-end"
+              }`}
           >
-            <FiLogOut width={14} />
-          </Link>
+            <Link
+              title="Logout"
+              to="javascript:void(0)"
+              onClick={handleLogout}
+              className="logout_investor_global "
+            >
+              <FiLogOut width={14} />
+            </Link>
+          </div>
+
         </div>
+
       </div>
 
       <style jsx>{`

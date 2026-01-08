@@ -16,7 +16,7 @@ export default function Documentview() {
   const navigate = useNavigate();
   const [records, setrecords] = useState([]);
   const [IsModalOpenShareReport, setIsModalOpenShareReport] = useState(false);
-  var apiURLINFile = "http://localhost:5000/api/user/investorreport/";
+  var apiURLINFile = "https://capavate.com/api/user/investorreport/";
   const [userdataa, setuserdataa] = useState("");
   const [datalist, setdatalist] = useState("");
   const storedUsername = localStorage.getItem("InvestorData");

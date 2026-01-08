@@ -14,7 +14,7 @@ function AdminTrackingReferralCodeview() {
   useEffect(() => {
     document.title = "Referral Tracking Table - Admin";
   }, []);
-  const apiUrl = "http://localhost:5000/api/admin/module/";
+  const apiUrl = "https://capavate.com/api/admin/module/";
   const [searchQuery, setSearchQuery] = useState("");
   const [DiscountCode, setDiscountCode] = useState([]);
   const [CodeId, setCodeId] = useState("");

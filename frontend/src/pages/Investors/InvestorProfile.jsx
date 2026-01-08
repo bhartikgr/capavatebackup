@@ -11,13 +11,13 @@ import axios from "axios";
 import {
   ModalContainer1,
   ModalTitle,
-  DropArea,
   ModalBtn,
   ButtonGroup,
 } from "../../components/Styles/DataRoomStyle.js";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import { useNavigate } from "react-router-dom";
+import IndustryExpertiseSelect from "../../components/Investor/popup/IndustryExpertiseSelect.js";
 function InvestorProfile() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const storedUsername = localStorage.getItem("InvestorData");
@@ -31,9 +31,27 @@ function InvestorProfile() {
   const [allcountry, setallcountry] = useState([]);
   const [successmessage, setsuccessmessage] = useState("");
   const [errr, seterrr] = useState(false);
+  const [IndustryExpertise, setIndustryExpertise] = useState([]);
   document.title = "Investor Profile";
-  var apiURLUser = "http://localhost:5000/api/user/";
-  var apiURL = "http://localhost:5000/api/user/capitalround/";
+  var apiURLUser = "https://capavate.com/api/user/";
+  var apiURL = "https://capavate.com/api/user/capitalround/";
+  useEffect(() => {
+    getIndustryExpertise();
+  }, []);
+  const getIndustryExpertise = async () => {
+    let formData = {
+      investor_id: userLogin.id,
+    };
+    try {
+      const res = await axios.post(apiURL + "getIndustryExpertise", formData, {
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      });
+      setIndustryExpertise(res.data.results);
+    } catch (err) { }
+  };
   useEffect(() => {
     getinvestorprofile();
     getallcountry();
@@ -161,7 +179,99 @@ function InvestorProfile() {
     return /\.(jpg|jpeg|png|gif)$/i.test(file);
   };
   const baseUrl =
-    "http://localhost:5000/api/upload/investor/inv_" + userLogin.id;
+    "https://capavate.com/api/upload/investor/inv_" + userLogin.id;
+
+
+  // Add these state variables
+  const [showPopup, setShowPopup] = useState(false);
+  const [industryInputs, setIndustryInputs] = useState([{ id: 1, name: '' }]);
+
+  // Add new input field
+  const handleAddMoreInput = () => {
+    const newId = industryInputs.length > 0
+      ? Math.max(...industryInputs.map(input => input.id)) + 1
+      : 1;
+
+    setIndustryInputs([
+      ...industryInputs,
+      { id: newId, name: '' }
+    ]);
+  };
+
+  // Remove input field
+  const handleRemoveInput = (id) => {
+    if (industryInputs.length === 1) {
+      // If only one input remains, just clear it
+      setIndustryInputs([{ id: 1, name: '' }]);
+    } else {
+      setIndustryInputs(industryInputs.filter(input => input.id !== id));
+    }
+  };
+
+  // Update input value
+  const handleInputChange = (id, value) => {
+    setIndustryInputs(
+      industryInputs.map(input =>
+        input.id === id ? { ...input, name: value } : input
+      )
+    );
+  };
+
+  // Save all industries
+  const handleSaveAllIndustries = async () => {
+    const validInputs = industryInputs.filter(input => input.name.trim());
+
+    if (validInputs.length === 0) return;
+
+
+
+    try {
+      const savedItems = [];
+
+      // Har industry ko individually save karo
+      for (const input of validInputs) {
+        try {
+          const formData = {
+            name: input.name.trim()
+          };
+
+          const res = await axios.post(apiURL + "addIndustryExpertise", formData, {
+            headers: {
+              Accept: "application/json",
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (res.data.success) {
+            savedItems.push(res.data.data);
+          }
+        } catch (err) {
+          console.error(`Error saving ${input.name}:`, err);
+        }
+      }
+
+      // Success message
+      if (savedItems.length > 0) {
+        // Refresh industry list
+        getIndustryExpertise();
+        setsuccessmessage(`${savedItems.length} industry expertise added successfully!`);
+        setTimeout(() => {
+          setsuccessmessage("");
+        }, 3500);
+
+      }
+
+      // Close popup
+      setShowPopup(false);
+      setIndustryInputs([{ id: 1, name: '' }]);
+
+    } catch (error) {
+      console.error('Error saving industry expertise:', error);
+      setsuccessmessage('Error saving industry expertise');
+    } finally {
+
+    }
+  };
   return (
     <Wrapper className="investor-login-wrapper">
       <div className="fullpage d-block">
@@ -200,7 +310,7 @@ function InvestorProfile() {
                     </div>
                     <div className="profile-title">
                       <h2>Profile Settings</h2>
-                      <p>Manage your company profile information</p>
+                      <p>Manage your investor profile information</p>
                     </div>
                   </div>
 
@@ -393,155 +503,36 @@ function InvestorProfile() {
                         </div>
 
                         <div className="form-group">
-                          <label htmlFor="email" className="form-label">
-                            Industry Expertise{" "}
+                          <label htmlFor="industry_expertise" className="form-label">
+                            Industry Expertise
                           </label>
-                          <select
-                            name="industry_expertise"
-                            value={companydata.industry_expertise || ""}
-                            className="form-select"
-                            placeholder=""
-                            onChange={(e) =>
-                              setcompanydata({
-                                ...companydata,
-                                industry_expertise: e.target.value,
-                              })
-                            }
-                          >
-                            <option value="">--Select--</option>
-                            <option value="Aerospace & Defense">
-                              Aerospace & Defense
-                            </option>
-                            <option value="Agriculture & Farming">
-                              Agriculture & Farming
-                            </option>
-                            <option value="Artificial Intelligence & Machine Learning">
-                              Artificial Intelligence & Machine Learning
-                            </option>
-                            <option value="Automotive">Automotive</option>
-                            <option value="Banking & Financial Services">
-                              Banking & Financial Services
-                            </option>
-                            <option value="Biotechnology">Biotechnology</option>
-                            <option value="Chemical Industry">
-                              Chemical Industry
-                            </option>
-                            <option value="Construction & Engineering">
-                              Construction & Engineering
-                            </option>
-                            <option value="Consumer Goods">
-                              Consumer Goods
-                            </option>
-                            <option value="Cybersecurity">Cybersecurity</option>
-                            <option value="Data Storage & Management">
-                              Data Storage & Management
-                            </option>
-                            <option value="Education & Training">
-                              Education & Training
-                            </option>
-                            <option value="Electric Vehicles & Sustainable Transportation">
-                              Electric Vehicles & Sustainable Transportation
-                            </option>
-                            <option value="Energy & Utilities">
-                              Energy & Utilities
-                            </option>
-                            <option value="Entertainment & Media">
-                              Entertainment & Media
-                            </option>
-                            <option value="Environmental Services & Sustainability">
-                              Environmental Services & Sustainability
-                            </option>
-                            <option value="Fashion & Apparel">
-                              Fashion & Apparel
-                            </option>
-                            <option value="Fintech & Digital Payments">
-                              Fintech & Digital Payments
-                            </option>
-                            <option value="Food & Beverage">
-                              Food & Beverage
-                            </option>
-                            <option value="Gaming & Esports">
-                              Gaming & Esports
-                            </option>
-                            <option value="Healthcare & Pharmaceuticals">
-                              Healthcare & Pharmaceuticals
-                            </option>
-                            <option value="Heavy Industry">
-                              Heavy Industry
-                            </option>
-                            <option value="Hospitality & Tourism">
-                              Hospitality & Tourism
-                            </option>
-                            <option value="Information Technology (IT)">
-                              Information Technology (IT)
-                            </option>
-                            <option value="Insurance">Insurance</option>
-                            <option value="Jewelry & Luxury Goods">
-                              Jewelry & Luxury Goods
-                            </option>
-                            <option value="Legal Services">
-                              Legal Services
-                            </option>
-                            <option value="Logistics & Supply Chain">
-                              Logistics & Supply Chain
-                            </option>
-                            <option value="Manufacturing">Manufacturing</option>
-                            <option value="Mining & Metals">
-                              Mining & Metals
-                            </option>
-                            <option value="Nanotechnology">
-                              Nanotechnology
-                            </option>
-                            <option value="Pet Care & Supplies">
-                              Pet Care & Supplies
-                            </option>
-                            <option value="Public Administration & Government Services">
-                              Public Administration & Government Services
-                            </option>
-                            <option value="Quantum Computing">
-                              Quantum Computing
-                            </option>
-                            <option value="Real Estate & Property Management">
-                              Real Estate & Property Management
-                            </option>
-                            <option value="Retail & E-commerce">
-                              Retail & E-commerce
-                            </option>
-                            <option value="Robotics">Robotics</option>
-                            <option value="Security & Surveillance">
-                              Security & Surveillance
-                            </option>
-                            <option value="Social Media & Digital Marketing">
-                              Social Media & Digital Marketing
-                            </option>
-                            <option value="Space Exploration & Satellite Technology">
-                              Space Exploration & Satellite Technology
-                            </option>
-                            <option value="Sports & Fitness">
-                              Sports & Fitness
-                            </option>
-                            <option value="Supply Chain & Procurement">
-                              Supply Chain & Procurement
-                            </option>
-                            <option value="Telecommunications">
-                              Telecommunications
-                            </option>
-                            <option value="Traditional Crafts & Artisanal Goods">
-                              Traditional Crafts & Artisanal Goods
-                            </option>
-                            <option value="Transportation & Logistics">
-                              Transportation & Logistics
-                            </option>
-                            <option value="Venture Capital & Private Equity">
-                              Venture Capital & Private Equity
-                            </option>
-                            <option value="Video Game Industry">
-                              Video Game Industry
-                            </option>
-                            <option value="Waste Management">
-                              Waste Management
-                            </option>
-                          </select>
+                          <div className="input-group">
+                            <select
+                              name="industry_expertise"
+                              value={companydata.industry_expertise || ""}
+                              className="form-select"
+                              onChange={(e) =>
+                                setcompanydata({
+                                  ...companydata,
+                                  industry_expertise: e.target.value,
+                                })
+                              }
+                            >
+                              <option value="">--Select--</option>
+                              {IndustryExpertise.map((industry, index) => (
+                                <option key={index} value={industry.value || industry.name}>
+                                  {industry.name}
+                                </option>
+                              ))}
+                            </select>
+                            <button
+                              type="button"
+                              className="btn btn-outline-primary"
+                              onClick={() => setShowPopup(true)}
+                            >
+                              Add+
+                            </button>
+                          </div>
                         </div>
                         <div className="form-group">
                           <label htmlFor="email" className="form-label">
@@ -674,6 +665,81 @@ function InvestorProfile() {
           </div>
         </div>
       </div>
+      {showPopup && (
+        <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-lg">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Add New Industry Expertise</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => {
+                    setShowPopup(false);
+                    setIndustryInputs([{ id: 1, name: '' }]); // Reset on close
+                  }}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <div className="mb-3">
+                  <label className="form-label">
+                    Add Multiple Industry Expertise (Enter each on new line)
+                  </label>
+
+                  {industryInputs.map((input, index) => (
+                    <div key={input.id} className="input-group mb-2">
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={input.name}
+                        onChange={(e) => handleInputChange(input.id, e.target.value)}
+                        placeholder={`Enter industry name ${index + 1}`}
+                      />
+                      {industryInputs.length > 1 && (
+                        <button
+                          type="button"
+                          className="btn btn-outline-danger"
+                          onClick={() => handleRemoveInput(input.id)}
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                  ))}
+
+                  <button
+                    type="button"
+                    className="btn btn-outline-primary mt-2"
+                    onClick={handleAddMoreInput}
+                  >
+                    Add More
+                  </button>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    setShowPopup(false);
+                    setIndustryInputs([{ id: 1, name: '' }]);
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handleSaveAllIndustries}
+                  disabled={!industryInputs.some(input => input.name.trim())}
+                >
+                  Save All
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {isOpen && (
         <div className="main_popup-overlay">
           <ModalContainer1>

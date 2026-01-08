@@ -67,7 +67,7 @@ const ViewSignature = ({ onClose, ViewData }) => {
                 <div className="mt-2">
                   {ViewData.type === "upload" && (
                     <img
-                      src={`http://localhost:5000/api/upload/docs/doc_${ViewData.company_id}/signatory/${ViewData.signature}`}
+                      src={`https://capavate.com/api/upload/docs/doc_${ViewData.company_id}/signatory/${ViewData.signature}`}
                       alt="Uploaded Signature"
                       style={{ maxWidth: "300px" }}
                     />

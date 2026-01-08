@@ -1,4 +1,4 @@
-// InvestorReportPortal.jsx
+// InvestorReportPortal.jsx - Fixed Version
 import React, { useState, useEffect } from "react";
 import TopBar from "../../../components/Users/TopBar";
 import ModuleSideNav from "../../../components/Users/ModuleSideNav.jsx";
@@ -11,6 +11,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { API_BASE_URL } from "../../../config/config.js";
+
 export default function InvestorReportPortal() {
   const navigate = useNavigate();
   const storedUsername = localStorage.getItem("SignatoryLoginData");
@@ -71,58 +72,67 @@ export default function InvestorReportPortal() {
     const grouped = {};
 
     investments.forEach((investment) => {
-      const roundKey = investment.roundrecord_id || investment.nameOfRound;
-      const roundName = investment.nameOfRound || "Unnamed Round";
+      // Use roundrecord_id as the unique identifier
+      const roundId = investment.roundrecord_id;
 
+      if (!roundId) {
+        console.warn("Investment without roundrecord_id:", investment);
+        return;
+      }
+
+      const roundKey = `round_${roundId}`;
+
+      // Initialize round if it doesn't exist
       if (!grouped[roundKey]) {
-        // Get round data
         const roundSize = parseFloat(investment.roundsize || 0);
         const issuedShares = parseFloat(investment.issuedshares || 0);
 
-        // Calculate price per share: roundSize / issuedShares (from doc 1 formula)
+        // Calculate price per share
         let pricePerShare = 0;
         if (roundSize > 0 && issuedShares > 0) {
           pricePerShare = roundSize / issuedShares;
         }
 
         grouped[roundKey] = {
-          id: roundKey,
-          name: roundName,
+          id: roundId,
+          name: investment.nameOfRound || "Unnamed Round",
           company_name: investment.company_name,
           shareClassType: investment.shareClassType,
           instrumentType: investment.instrumentType,
           currency: investment.currency || "USD",
-          roundSize: roundSize, // Target amount
-          issuedShares: issuedShares, // Total shares issued in this round
+          roundSize: roundSize,
+          issuedShares: issuedShares,
           pricePerShare: pricePerShare,
           investors: [],
-          totalInvestment: 0, // Actual raised from confirmed investors
+          totalInvestment: 0,
           confirmedInvestment: 0,
           totalInvestors: 0,
           confirmedInvestors: 0,
           pendingInvestors: 0,
-          totalSharesFromInvestors: 0, // Sum of shares owned by investors in this round
+          rejectedInvestors: 0,
+          totalSharesFromInvestors: 0,
         };
       }
 
-      // Get shares from investment data
-      let shares = parseFloat(investment.shares || 0);
+      // Add investor to this round
       const investmentAmount = parseFloat(investment.investment_amount || 0);
 
-      // If shares are 0 but we have investment amount and price per share, calculate
+      // Calculate shares: use shares from API if available, otherwise calculate
+      let shares = parseFloat(investment.shares || 0);
       if (shares === 0 && investmentAmount > 0 && grouped[roundKey].pricePerShare > 0) {
         shares = investmentAmount / grouped[roundKey].pricePerShare;
       }
 
-      // Add investor to this round
       const investor = {
         id: investment.id,
         investor_id: investment.investor_id,
+        roundrecord_id: investment.roundrecord_id,
         name: investment.investor_name,
         email: investment.investor_email,
         phone: investment.investor_phone,
         investment_amount: investmentAmount,
         shares: shares,
+        ownershipPercentage: investment.ownershipPercentage || "0.00",
         request_confirm: investment.request_confirm,
         instrumentType: investment.instrumentType,
         currency: investment.currency || "USD"
@@ -140,6 +150,8 @@ export default function InvestorReportPortal() {
         grouped[roundKey].confirmedInvestors++;
       } else if (investor.request_confirm === "No") {
         grouped[roundKey].pendingInvestors++;
+      } else if (investor.request_confirm === "Rejected") {
+        grouped[roundKey].rejectedInvestors++;
       }
     });
 
@@ -234,17 +246,15 @@ export default function InvestorReportPortal() {
       );
 
       if (response.data.message) {
-        // Refresh data after status update
         fetchInvestorData();
-        // Also refresh the modal if it's open
-        if (selectedRound) {
-          const roundKey = Object.keys(groupedRounds).find(key =>
-            groupedRounds[key].investors.some(inv => inv.id === requestId)
-          );
-          if (roundKey && showInvestorModal) {
+
+        if (selectedRound && showInvestorModal) {
+          const roundKey = `round_${selectedRound.id}`;
+          if (groupedRounds[roundKey]) {
             handleViewRoundDetails(roundKey);
           }
         }
+
         alert(
           `Investment ${status === "Yes"
             ? "approved"
@@ -260,12 +270,8 @@ export default function InvestorReportPortal() {
     }
   };
 
-  // In your main component's handleViewRoundDetails function:
   const handleViewRoundDetails = (roundKey) => {
     const round = groupedRounds[roundKey];
-    console.log("Round data for modal:", round);
-    console.log("Issued shares:", round?.issuedShares);
-    console.log("Investors:", round?.investors);
 
     if (round) {
       setSelectedRound({
@@ -277,7 +283,7 @@ export default function InvestorReportPortal() {
         currency: round.currency,
         roundSize: round.roundSize,
         pricePerShare: round.pricePerShare,
-        issuedShares: round.issuedShares || round.totalShares, // Use issuedShares if available, otherwise totalShares
+        issuedShares: round.issuedShares,
         totalInvestment: round.totalInvestment
       });
       setSelectedRoundInvestors(round.investors);
@@ -289,25 +295,6 @@ export default function InvestorReportPortal() {
     setShowInvestorModal(false);
     setSelectedRound(null);
     setSelectedRoundInvestors([]);
-  };
-
-  const getStatusBadge = (status) => {
-    const statusConfig = {
-      Yes: { class: "badge bg-success", text: "Confirmed", icon: "✓" },
-      No: { class: "badge bg-warning text-dark", text: "Pending", icon: "⏳" },
-      Rejected: { class: "badge bg-danger", text: "Rejected", icon: "✗" },
-    };
-    const config = statusConfig[status] || statusConfig["No"];
-    return (
-      <span className={config.class}>
-        {config.icon} {config.text}
-      </span>
-    );
-  };
-
-  const calculateOwnership = (shares, totalShares) => {
-    if (!shares || !totalShares) return "0";
-    return ((parseFloat(shares) / parseFloat(totalShares)) * 100).toFixed(2);
   };
 
   const formatCurrency = (amount, currency = "USD") => {
@@ -382,12 +369,6 @@ export default function InvestorReportPortal() {
         </div>
       );
     }
-    const threeDigitPrice = (price) => {
-      return price.toLocaleString(undefined, {
-        minimumFractionDigits: 3,
-        maximumFractionDigits: 3
-      });
-    };
 
     return (
       <div className="table-responsive">
@@ -405,12 +386,10 @@ export default function InvestorReportPortal() {
             {rounds.map((round, index) => {
               const roundKey = Object.keys(groupedRounds)[index];
 
-              // Calculate completion percentages
               const investorCompletionRate = round.totalInvestors > 0
                 ? Math.round((round.confirmedInvestors / round.totalInvestors) * 100)
                 : 0;
 
-              // Calculate funding completion: how much of target is raised
               const fundingCompletionRate = round.roundSize > 0
                 ? Math.round((round.totalInvestment / round.roundSize) * 100)
                 : 0;
@@ -432,14 +411,12 @@ export default function InvestorReportPortal() {
                   </td>
                   <td>
                     <div>
-                      {/* Target राउंड size */}
                       <div className="fw-semibold text-primary">
-                        Target: {round.currency}{" "}{round.roundSize.toFixed(2)}
+                        Target: {formatCurrency(round.roundSize, round.currency)}
                       </div>
 
-                      {/* Raised amount */}
                       <div className="text-muted">
-                        Raised: {round.currency}{" "}{round.totalInvestment.toFixed(2)}
+                        Raised: {formatCurrency(round.totalInvestment, round.currency)}
                         {round.roundSize > 0 && (
                           <span className="ms-2">
                             ({fundingCompletionRate}% of target)
@@ -447,23 +424,17 @@ export default function InvestorReportPortal() {
                         )}
                       </div>
 
-                      {/* Confirmed investments */}
                       <div className="text-muted small">
-                        Confirmed: {round.currency}{" "}{round.confirmedInvestment.toFixed(2)}
+                        Confirmed: {formatCurrency(round.confirmedInvestment, round.currency)}
                       </div>
 
-                      {/* Shares information */}
                       <div className="text-muted small">
                         {Math.round(round.issuedShares).toLocaleString()} shares issued
                       </div>
 
-                      {/* Price per share */}
                       {round.pricePerShare > 0 && (
                         <div className="text-muted small">
-                          Price/share: {round.currency}{" "}{round.pricePerShare.toLocaleString(undefined, {
-                            minimumFractionDigits: 3,
-                            maximumFractionDigits: 3
-                          })}
+                          Price/share: {formatCurrency(round.pricePerShare, round.currency)}
                         </div>
                       )}
                     </div>
@@ -475,12 +446,12 @@ export default function InvestorReportPortal() {
                       </div>
                       <div className="text-muted small">
                         {round.confirmedInvestors} confirmed • {round.pendingInvestors} pending
+                        {round.rejectedInvestors > 0 && ` • ${round.rejectedInvestors} rejected`}
                       </div>
                     </div>
                   </td>
                   <td>
                     <div>
-                      {/* Show both investor completion and funding completion */}
                       <div className="mb-1">
                         {investorCompletionRate === 100 ? (
                           <span className="badge bg-success">
@@ -497,9 +468,8 @@ export default function InvestorReportPortal() {
                         )}
                       </div>
 
-                      {/* Funding status */}
                       <div>
-                        {fundingCompletionRate === 100 ? (
+                        {fundingCompletionRate >= 100 ? (
                           <span className="badge bg-success">
                             <i className="fas fa-trophy me-1"></i> Fully Funded
                           </span>
@@ -534,7 +504,7 @@ export default function InvestorReportPortal() {
       </div>
     );
   };
-  console.log(investorData)
+
   return (
     <Wrapper>
       <div className="fullpage d-block">
@@ -547,7 +517,6 @@ export default function InvestorReportPortal() {
             <TopBar />
             <SectionWrapper className="d-block p-md-4 p-3">
               <div className="container-fluid">
-                {/* Header */}
                 <div className="titleroom d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
                   <div>
                     <h3 className="text-lg font-bold mb-1">Investor Portal</h3>
@@ -565,6 +534,7 @@ export default function InvestorReportPortal() {
                     </h4>
                   </div>
                 </div>
+
                 <div className="row g-3 mb-4">
                   <div className="col-md-6">
                     <div className="card border-0 shadow-sm h-100">
@@ -578,10 +548,10 @@ export default function InvestorReportPortal() {
                               Total Target
                             </h6>
                             <h4 className="card-title mb-0">
-                              {investorData.investments?.length > 0 ? (
+                              {Object.values(groupedRounds).length > 0 ? (
                                 formatCurrency(
-                                  investorData.investments.reduce((sum, inv) =>
-                                    sum + parseFloat(inv.roundsize || 0), 0
+                                  Object.values(groupedRounds).reduce((sum, round) =>
+                                    sum + parseFloat(round.roundSize || 0), 0
                                   )
                                 )
                               ) : (
@@ -609,10 +579,10 @@ export default function InvestorReportPortal() {
                               Completion Rate
                             </h6>
                             <h4 className="card-title mb-0">
-                              {investorData.investments?.length > 0 ? (
+                              {Object.values(groupedRounds).length > 0 ? (
                                 (() => {
-                                  const totalTarget = investorData.investments.reduce((sum, inv) =>
-                                    sum + parseFloat(inv.roundsize || 0), 0
+                                  const totalTarget = Object.values(groupedRounds).reduce((sum, round) =>
+                                    sum + parseFloat(round.roundSize || 0), 0
                                   );
                                   const totalRaised = investorData.stats.totalInvestment;
                                   return totalTarget > 0 ?
@@ -624,12 +594,12 @@ export default function InvestorReportPortal() {
                               )}
                             </h4>
                             <small className="text-muted">
-                              {investorData.investments?.length > 0 && (
+                              {Object.values(groupedRounds).length > 0 && (
                                 <>
                                   {formatCurrency(investorData.stats.totalInvestment)} raised of {
                                     formatCurrency(
-                                      investorData.investments.reduce((sum, inv) =>
-                                        sum + parseFloat(inv.roundsize || 0), 0
+                                      Object.values(groupedRounds).reduce((sum, round) =>
+                                        sum + parseFloat(round.roundSize || 0), 0
                                       )
                                     )
                                   } target
@@ -642,7 +612,7 @@ export default function InvestorReportPortal() {
                     </div>
                   </div>
                 </div>
-                {/* Stats Cards */}
+
                 <div className="row g-3 mb-4">
                   <div className="col-md-3 col-6">
                     <div className="card border-0 shadow-sm h-100">
@@ -725,7 +695,6 @@ export default function InvestorReportPortal() {
                   </div>
                 </div>
 
-                {/* Main Content */}
                 <div className="card shadow-sm">
                   <div className="card-header bg-white d-flex justify-content-between align-items-center">
                     <h5 className="mb-0">
@@ -769,7 +738,6 @@ export default function InvestorReportPortal() {
         </div>
       </div>
 
-      {/* Investor Details Modal */}
       <InvestorPortalDetailsModal
         show={showInvestorModal}
         onClose={handleCloseModal}

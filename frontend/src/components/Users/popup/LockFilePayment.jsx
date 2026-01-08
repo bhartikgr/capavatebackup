@@ -22,9 +22,9 @@ const stripePromise = loadStripe(
   "pk_test_51RUJzWAx6rm2q3pys9SgKUPRxNxPZ4P1X6EazNQvnPuHKOOfzGsbylaTLUktId9ANHULkwBk67jnp5aqZ9Dlm6PR00jKdDwvSq"
 );
 const LockFilePayment = ({ onClose }) => {
-  var apiURL = "http://localhost:5000/api/user/aifile/";
-  const apiUrlModule = "http://localhost:5000/api/admin/module/";
-  var apiURLAiFile = "http://localhost:5000/api/user/aifile/";
+  var apiURL = "https://capavate.com/api/user/aifile/";
+  const apiUrlModule = "https://capavate.com/api/admin/module/";
+  var apiURLAiFile = "https://capavate.com/api/user/aifile/";
   const storedUsername = localStorage.getItem("CompanyLoginData");
   const userLogin = JSON.parse(storedUsername);
   const [getDataroompay, setgetDataroompay] = useState("");

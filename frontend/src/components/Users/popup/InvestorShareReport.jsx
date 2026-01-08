@@ -16,7 +16,7 @@ const InvestorShareReport = ({
   allinvestor,
   returnrefresh,
 }) => {
-  var apiURLInvestor = "http://localhost:5000/api/user/investor/";
+  var apiURLInvestor = "https://capavate.com/api/user/investor/";
   const storedUsername = localStorage.getItem("SignatoryLoginData");
   const userLogin = JSON.parse(storedUsername);
   const [emails, setEmails] = useState([""]);

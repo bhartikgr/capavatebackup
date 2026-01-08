@@ -19,7 +19,7 @@ function AdminCompanyInvestorDetail() {
   const [successMessage, setsuccessMessage] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const { id } = useParams();
-  const apiUrl = "http://localhost:5000/api/admin/company/";
+  const apiUrl = "https://capavate.com/api/admin/company/";
   const [Investorinfo, setInvestorinfo] = useState("");
   document.title = "Investor Information - Admin";
   useEffect(() => {
@@ -75,7 +75,7 @@ function AdminCompanyInvestorDetail() {
   const isImage = (file) => {
     return /\.(jpg|jpeg|png|gif)$/i.test(file);
   };
-  const baseUrl = "http://localhost:5000/api/upload/investor/inv_" + id;
+  const baseUrl = "https://capavate.com/api/upload/investor/inv_" + id;
   return (
     <>
       <div>

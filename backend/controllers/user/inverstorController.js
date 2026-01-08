@@ -191,9 +191,9 @@ exports.Addnewinvenstor = (req, res) => {
                         .status(500)
                         .json({ message: "DB insert error", error: err });
                     if (invt_result.is_register === "Yes") {
-                      var url = "http://localhost:5000/investor/login";
+                      var url = "https://capavate.com/investor/login";
                     } else {
-                      var url = `http://localhost:5000/investor/information/${token}`;
+                      var url = `https://capavate.com/investor/information/${token}`;
                     }
 
                     // Send invite email for existing investor
@@ -274,7 +274,7 @@ exports.Addnewinvenstor = (req, res) => {
                     email,
                     first_name + " " + last_name,
                     companyName,
-                    `http://localhost:5000/investor/information/${token}`,
+                    `https://capavate.com/investor/information/${token}`,
                     false // not registered
                   );
 
@@ -365,7 +365,7 @@ const sendInvestorInviteEmail = (
       <table style="width:100%; border-collapse: collapse;">
         <tr>
           <td style="background:#efefef; padding:10px; text-align:center;">
-            <img src="http://localhost:5000/api/upload/images/logo.png" alt="logo" style="width:130px;" />
+            <img src="https://capavate.com/api/upload/images/logo.png" alt="logo" style="width:130px;" />
           </td>
         </tr>
         <tr>
@@ -646,8 +646,8 @@ exports.SendreportToinvestor = async (req, res) => {
       ({ report, email, first_name, last_name, unique_code }) => {
         const url =
           report.type === "Due Diligence Document"
-            ? `http://localhost:5000/investor/company/duediligence-reportlist/${company_id}`
-            : `http://localhost:5000/investor/company/reportlist/${company_id}`;
+            ? `https://capavate.com/investor/company/duediligence-reportlist/${company_id}`
+            : `https://capavate.com/investor/company/reportlist/${company_id}`;
 
         const mailOptions = {
           from: '"Capavate" <scale@blueprintcatalyst.com>',
@@ -852,7 +852,7 @@ exports.getInvestorReportUpdate = (req, res) => {
     var pathname = "upload/docs/doc_" + company_id;
     const updatedResults = results.map((doc) => ({
       ...doc,
-      downloadUrl: `http://localhost:5000/api/${pathname}/investor_report/${doc.document_name}`,
+      downloadUrl: `https://capavate.com/api/${pathname}/investor_report/${doc.document_name}`,
     }));
     res.status(200).json({
       message: "",
@@ -896,7 +896,7 @@ exports.getInvestorReportDuediligence = (req, res) => {
     var pathname = "upload/docs/doc_" + company_id;
     const updatedResults = results.map((doc) => ({
       ...doc,
-      downloadUrl: `http://localhost:5000/api/${pathname}/investor_report/${doc.document_name}`,
+      downloadUrl: `https://capavate.com/api/${pathname}/investor_report/${doc.document_name}`,
     }));
     res.status(200).json({
       message: "",
@@ -926,7 +926,7 @@ exports.getinvestorReportsLock = (req, res) => {
     var pathname = "upload/docs/doc_" + company_id;
     const updatedResults = results.map((doc) => ({
       ...doc,
-      downloadUrl: `http://localhost:5000/api/${pathname}/investor_report/${doc.document_name}`,
+      downloadUrl: `https://capavate.com/api/${pathname}/investor_report/${doc.document_name}`,
     }));
 
     res.status(200).json({
@@ -955,7 +955,7 @@ exports.getDuediligenceDataroomLock = (req, res) => {
     var pathname = "upload/docs/doc_" + company_id;
     const updatedResults = results.map((doc) => ({
       ...doc,
-      downloadUrl: `http://localhost:5000/api/${pathname}/investor_report/${doc.document_name}`,
+      downloadUrl: `https://capavate.com/api/${pathname}/investor_report/${doc.document_name}`,
     }));
 
     res.status(200).json({
@@ -1011,7 +1011,7 @@ exports.getInvestorReportslist = async (req, res) => {
         var pathname = "upload/docs/doc_" + company_id;
         const updatedResults = results.map((doc) => ({
           ...doc,
-          downloadUrl: `http://localhost:5000/api/${pathname}/investor_report/${doc.document_name}`,
+          downloadUrl: `https://capavate.com/api/${pathname}/investor_report/${doc.document_name}`,
         }));
 
         res.status(200).json({
@@ -1434,7 +1434,7 @@ exports.InvestorAuthorizeConfimataion = (req, res) => {
                                 <tr>
                       <td>
                         <div style="padding:0 20px 20px 20px;">
-                          <a href="http://localhost:5000/investor/company/capital-round-list/${
+                          <a href="https://capavate.com/investor/company/capital-round-list/${
                             dataa.user_id
                           }" 
                             style="background:#ff3c3e;color:#fff;text-decoration:none;font-size:14px;padding:10px 30px;border-radius:10px;display:inline-block;">
@@ -1931,7 +1931,7 @@ function sendEmailToInvestment_Verify(
       <table style="width:100%; border-collapse: collapse;">
         <tr>
           <td style="background:#efefef; padding:10px; text-align:center;">
-            <img src="http://localhost:5000/api/upload/images/logo.png" alt="logo" style="width:130px;" />
+            <img src="https://capavate.com/api/upload/images/logo.png" alt="logo" style="width:130px;" />
           </td>
         </tr>
         <tr>
@@ -1971,6 +1971,7 @@ function sendEmailToInvestment_Verify(
 }
 
 // Node.js API Implementation
+// Backend API - Fixed fetchInvestorData
 exports.fetchInvestorData = (req, res) => {
   const { company_id } = req.body;
 
@@ -1983,7 +1984,13 @@ exports.fetchInvestorData = (req, res) => {
 
   const fetchQuery = `
     SELECT 
-      investorrequest_company.*,
+      investorrequest_company.id,
+      investorrequest_company.roundrecord_id,
+      investorrequest_company.investor_id,
+      investorrequest_company.company_id,
+      investorrequest_company.investment_amount,
+      investorrequest_company.request_confirm,
+      investorrequest_company.created_at,
       investor_information.first_name,
       investor_information.last_name,
       investor_information.email,
@@ -2001,8 +2008,8 @@ exports.fetchInvestorData = (req, res) => {
       roundrecord.description,
       roundrecord.created_at AS round_created_at,
       company.company_name
-    FROM roundrecord
-    LEFT JOIN investorrequest_company ON roundrecord.id = investorrequest_company.roundrecord_id
+    FROM investorrequest_company
+    LEFT JOIN roundrecord ON roundrecord.id = investorrequest_company.roundrecord_id
     LEFT JOIN investor_information ON investor_information.id = investorrequest_company.investor_id
     LEFT JOIN company ON company.id = investorrequest_company.company_id
     WHERE investorrequest_company.company_id = ? 
@@ -2034,26 +2041,31 @@ exports.fetchInvestorData = (req, res) => {
       });
     }
 
-    // --- Group rounds & investors ---
+    // Group by round and calculate shares
     const roundsMap = {};
     const pendingConversions = { safes: [], convertibleNotes: [] };
-    const allStakeholders = new Set(["Founders"]);
 
     results.forEach((row) => {
-      if (!roundsMap[row.roundrecord_id]) {
+      const roundId = row.roundrecord_id;
+
+      // Initialize round if not exists
+      if (!roundsMap[roundId]) {
         let instrumentData = {};
         try {
-          if (row.instrument_type_data)
+          if (row.instrument_type_data) {
             instrumentData = JSON.parse(row.instrument_type_data);
-        } catch (e) {}
+          }
+        } catch (e) {
+          console.error("Error parsing instrument_type_data:", e);
+        }
 
         const shareClassName =
           row.shareClassType !== "OTHER"
             ? row.shareClassType
             : row.shareclassother || "Common";
 
-        roundsMap[row.roundrecord_id] = {
-          id: row.roundrecord_id,
+        roundsMap[roundId] = {
+          id: roundId,
           name: row.nameOfRound || shareClassName,
           issuedShares: parseFloat(row.issuedshares || 0),
           roundSize: parseFloat(row.roundsize || 0),
@@ -2065,30 +2077,32 @@ exports.fetchInvestorData = (req, res) => {
         };
       }
 
+      // Add investor to round
       if (row.investor_id) {
         const investorName =
           `${row.first_name || ""} ${row.last_name || ""}`.trim() ||
           `Investor ${row.investor_id}`;
 
-        // Calculate shares based on investment amount and round price
-        let shares = 0;
         const investmentAmount = parseFloat(row.investment_amount || 0);
 
+        // Calculate shares based on round size and issued shares
+        let shares = 0;
         if (
           investmentAmount > 0 &&
-          roundsMap[row.roundrecord_id].roundSize > 0 &&
-          roundsMap[row.roundrecord_id].issuedShares > 0
+          roundsMap[roundId].roundSize > 0 &&
+          roundsMap[roundId].issuedShares > 0
         ) {
           const pricePerShare =
-            roundsMap[row.roundrecord_id].roundSize /
-            roundsMap[row.roundrecord_id].issuedShares;
+            roundsMap[roundId].roundSize / roundsMap[roundId].issuedShares;
           if (pricePerShare > 0) {
             shares = investmentAmount / pricePerShare;
           }
         }
 
-        roundsMap[row.roundrecord_id].investors.push({
-          id: row.investor_id,
+        roundsMap[roundId].investors.push({
+          request_id: row.id,
+          investor_id: row.investor_id,
+          roundrecord_id: roundId,
           name: investorName,
           shares: shares,
           investmentAmount: investmentAmount,
@@ -2119,15 +2133,15 @@ exports.fetchInvestorData = (req, res) => {
             currency: row.currency || "USD",
           });
         }
-
-        allStakeholders.add(investorName);
       }
     });
 
+    // Sort rounds by creation date
     const rounds = Object.values(roundsMap).sort(
       (a, b) => new Date(a.created_at) - new Date(b.created_at)
     );
 
+    // Calculate cumulative shares and ownership
     let cumulativeTotalShares = 0;
     const stakeholderShares = {};
     const stakeholderInvestments = {};
@@ -2141,7 +2155,7 @@ exports.fetchInvestorData = (req, res) => {
           ? round.roundSize / round.issuedShares
           : 0;
 
-      // --- Convert SAFE / Convertible Notes properly ---
+      // Convert SAFE / Convertible Notes
       const convertInstruments = (instruments) => {
         instruments.forEach((inst) => {
           let conversionPrice = pricePerShare;
@@ -2168,10 +2182,9 @@ exports.fetchInvestorData = (req, res) => {
               (stakeholderShares[inst.investorName] || 0) + shares;
             stakeholderInvestments[inst.investorName] =
               (stakeholderInvestments[inst.investorName] || 0) + inst.amount;
-            allStakeholders.add(inst.investorName);
           }
         });
-        instruments.length = 0; // clear after conversion
+        instruments.length = 0;
       };
 
       convertInstruments(pendingConversions.safes);
@@ -2191,26 +2204,26 @@ exports.fetchInvestorData = (req, res) => {
         }
       });
 
-      // Update cumulative shares after round + conversions
+      // Update cumulative shares
       cumulativeTotalShares +=
         round.issuedShares + additionalSharesFromConversions;
 
-      // Founder shares for this round
+      // Calculate founder shares
       const founderSharesThisRound =
         round.issuedShares - totalInvestorSharesThisRound;
       stakeholderShares["Founders"] =
         (stakeholderShares["Founders"] || 0) + founderSharesThisRound;
     });
 
-    // --- Build formatted results for API response ---
-    // --- Build formatted results for API response ---
+    // Build formatted results
     const formattedResults = [];
 
     results.forEach((row) => {
-      if (row.investor_id) {
+      if (row.investor_id && row.roundrecord_id) {
         const investorName =
           `${row.first_name || ""} ${row.last_name || ""}`.trim() ||
           `Investor ${row.investor_id}`;
+
         const investorShares = stakeholderShares[investorName] || 0;
         const ownershipPercentage =
           cumulativeTotalShares > 0
@@ -2222,6 +2235,7 @@ exports.fetchInvestorData = (req, res) => {
         formattedResults.push({
           id: row.id,
           investor_id: row.investor_id,
+          roundrecord_id: row.roundrecord_id,
           investor_name: investorName,
           investor_email: row.email,
           investor_phone: row.phone,
@@ -2234,8 +2248,8 @@ exports.fetchInvestorData = (req, res) => {
           shareClassType: row.shareClassType,
           investment_amount: parseFloat(row.investment_amount || 0),
           shares: investorShares,
-          issuedshares: row.issuedshares,
-          roundsize: parseFloat(row.roundsize || 0), // यहाँ roundsize add करें
+          issuedshares: parseFloat(row.issuedshares || 0),
+          roundsize: parseFloat(row.roundsize || 0),
           currency: row.currency || "USD",
           instrumentType: row.instrumentType,
           request_confirm: row.request_confirm,
@@ -2246,9 +2260,8 @@ exports.fetchInvestorData = (req, res) => {
       }
     });
 
-    // --- Stats ---
+    // Calculate stats
     let stats = {
-      currency: "",
       totalInvestment: 0,
       activeInvestments: 0,
       totalShares: Math.round(cumulativeTotalShares),
@@ -2259,15 +2272,18 @@ exports.fetchInvestorData = (req, res) => {
 
     formattedResults.forEach((inv) => {
       const amount = parseFloat(inv.investment_amount) || 0;
-      stats.currency += inv.currency;
+
       if (inv.request_confirm === "Yes") {
         stats.totalInvestment += amount;
         stats.confirmedInvestments += 1;
-        if (["Active", "Fundraising", "Open"].includes(inv.roundStatus))
+        if (["Active", "Fundraising", "Open"].includes(inv.roundStatus)) {
           stats.activeInvestments += 1;
-      } else if (inv.request_confirm === "No") stats.pendingRequests += 1;
-      else if (inv.request_confirm === "Rejected")
+        }
+      } else if (inv.request_confirm === "No") {
+        stats.pendingRequests += 1;
+      } else if (inv.request_confirm === "Rejected") {
         stats.rejectedInvestments += 1;
+      }
     });
 
     return res.status(200).json({

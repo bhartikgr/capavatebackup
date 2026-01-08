@@ -1,0 +1,1128 @@
+@font-face {
+  font-family: "Fraunces";
+  src: url("./assets/fonts/Fraunces72pt-BlackItalic.eot");
+  src: url("./assets/fonts/Fraunces72pt-BlackItalic.eot?#iefix")
+      format("embedded-opentype"),
+    url("./assets/fonts/Fraunces72pt-BlackItalic.woff2") format("woff2"),
+    url("./assets/fonts/Fraunces72pt-BlackItalic.woff") format("woff"),
+    url("./assets/fonts/Fraunces72pt-BlackItalic.ttf") format("truetype"),
+    url("./assets/fonts/Fraunces72pt-BlackItalic.svg#Fraunces72pt-BlackItalic")
+      format("svg");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Fraunces";
+  src: url("./assets/fonts/Fraunces72pt-BoldItalic.eot");
+  src: url("./assets/fonts/Fraunces72pt-BoldItalic.eot?#iefix")
+      format("embedded-opentype"),
+    url("./assets/fonts/Fraunces72pt-BoldItalic.woff2") format("woff2"),
+    url("./assets/fonts/Fraunces72pt-BoldItalic.woff") format("woff"),
+    url("./assets/fonts/Fraunces72pt-BoldItalic.ttf") format("truetype"),
+    url("./assets/fonts/Fraunces72pt-BoldItalic.svg#Fraunces72pt-BoldItalic")
+      format("svg");
+  font-weight: bold;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Fraunces";
+  src: url("./assets/fonts/Fraunces72pt-Italic.eot");
+  src: url("./assets/fonts/Fraunces72pt-Italic.eot?#iefix")
+      format("embedded-opentype"),
+    url("./assets/fonts/Fraunces72pt-Italic.woff2") format("woff2"),
+    url("./assets/fonts/Fraunces72pt-Italic.woff") format("woff"),
+    url("./assets/fonts/Fraunces72pt-Italic.ttf") format("truetype"),
+    url("./assets/fonts/Fraunces72pt-Italic.svg#Fraunces72pt-Italic")
+      format("svg");
+  font-weight: normal;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Fraunces";
+  src: url("./assets/fonts/Fraunces72pt-Light.eot");
+  src: url("./assets/fonts/Fraunces72pt-Light.eot?#iefix")
+      format("embedded-opentype"),
+    url("./assets/fonts/Fraunces72pt-Light.woff2") format("woff2"),
+    url("./assets/fonts/Fraunces72pt-Light.woff") format("woff"),
+    url("./assets/fonts/Fraunces72pt-Light.ttf") format("truetype"),
+    url("./assets/fonts/Fraunces72pt-Light.svg#Fraunces72pt-Light")
+      format("svg");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Fraunces";
+  src: url("./assets/fonts/Fraunces72pt-LightItalic.eot");
+  src: url("./assets/fonts/Fraunces72pt-LightItalic.eot?#iefix")
+      format("embedded-opentype"),
+    url("./assets/fonts/Fraunces72pt-LightItalic.woff2") format("woff2"),
+    url("./assets/fonts/Fraunces72pt-LightItalic.woff") format("woff"),
+    url("./assets/fonts/Fraunces72pt-LightItalic.ttf") format("truetype"),
+    url("./assets/fonts/Fraunces72pt-LightItalic.svg#Fraunces72pt-LightItalic")
+      format("svg");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Fraunces";
+  src: url("./assets/fonts/Fraunces72pt-Bold.eot");
+  src: url("./assets/fonts/Fraunces72pt-Bold.eot?#iefix")
+      format("embedded-opentype"),
+    url("./assets/fonts/Fraunces72pt-Bold.woff2") format("woff2"),
+    url("./assets/fonts/Fraunces72pt-Bold.woff") format("woff"),
+    url("./assets/fonts/Fraunces72pt-Bold.ttf") format("truetype"),
+    url("./assets/fonts/Fraunces72pt-Bold.svg#Fraunces72pt-Bold") format("svg");
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Fraunces";
+  src: url("./assets/fonts/Fraunces72pt-SemiBold.eot");
+  src: url("./assets/fonts/Fraunces72pt-SemiBold.eot?#iefix")
+      format("embedded-opentype"),
+    url("./assets/fonts/Fraunces72pt-SemiBold.woff2") format("woff2"),
+    url("./assets/fonts/Fraunces72pt-SemiBold.woff") format("woff"),
+    url("./assets/fonts/Fraunces72pt-SemiBold.ttf") format("truetype"),
+    url("./assets/fonts/Fraunces72pt-SemiBold.svg#Fraunces72pt-SemiBold")
+      format("svg");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Fraunces";
+  src: url("./assets/fonts/Fraunces72pt-ThinItalic.eot");
+  src: url("./assets/fonts/Fraunces72pt-ThinItalic.eot?#iefix")
+      format("embedded-opentype"),
+    url("./assets/fonts/Fraunces72pt-ThinItalic.woff2") format("woff2"),
+    url("./assets/fonts/Fraunces72pt-ThinItalic.woff") format("woff"),
+    url("./assets/fonts/Fraunces72pt-ThinItalic.ttf") format("truetype"),
+    url("./assets/fonts/Fraunces72pt-ThinItalic.svg#Fraunces72pt-ThinItalic")
+      format("svg");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Fraunces";
+  src: url("./assets/fonts/Fraunces72pt-Thin.eot");
+  src: url("./assets/fonts/Fraunces72pt-Thin.eot?#iefix")
+      format("embedded-opentype"),
+    url("./assets/fonts/Fraunces72pt-Thin.woff2") format("woff2"),
+    url("./assets/fonts/Fraunces72pt-Thin.woff") format("woff"),
+    url("./assets/fonts/Fraunces72pt-Thin.ttf") format("truetype"),
+    url("./assets/fonts/Fraunces72pt-Thin.svg#Fraunces72pt-Thin") format("svg");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Fraunces";
+  src: url("./assets/fonts/Fraunces72pt-Regular.eot");
+  src: url("./assets/fonts/Fraunces72pt-Regular.eot?#iefix")
+      format("embedded-opentype"),
+    url("./assets/fonts/Fraunces72pt-Regular.woff2") format("woff2"),
+    url("./assets/fonts/Fraunces72pt-Regular.woff") format("woff"),
+    url("./assets/fonts/Fraunces72pt-Regular.ttf") format("truetype"),
+    url("./assets/fonts/Fraunces72pt-Regular.svg#Fraunces72pt-Regular")
+      format("svg");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Fraunces";
+  src: url("./assets/fonts/Fraunces72pt-SemiBoldItalic.eot");
+  src: url("./assets/fonts/Fraunces72pt-SemiBoldItalic.eot?#iefix")
+      format("embedded-opentype"),
+    url("./assets/fonts/Fraunces72pt-SemiBoldItalic.woff2") format("woff2"),
+    url("./assets/fonts/Fraunces72pt-SemiBoldItalic.woff") format("woff"),
+    url("./assets/fonts/Fraunces72pt-SemiBoldItalic.ttf") format("truetype"),
+    url("./assets/fonts/Fraunces72pt-SemiBoldItalic.svg#Fraunces72pt-SemiBoldItalic")
+      format("svg");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Avenir LT Std";
+  src: url("./assets/fonts/AvenirLTStd-Light.eot");
+  src: url("./assets/fonts/AvenirLTStd-Light.eot?#iefix")
+      format("embedded-opentype"),
+    url("./assets/fonts/AvenirLTStd-Light.woff2") format("woff2"),
+    url("./assets/fonts/AvenirLTStd-Light.woff") format("woff"),
+    url("./assets/fonts/AvenirLTStd-Light.ttf") format("truetype"),
+    url("./assets/fonts/AvenirLTStd-Light.svg#AvenirLTStd-Light") format("svg");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Avenir LT Std";
+  src: url("./assets/fonts/AvenirLTStd-Oblique.eot");
+  src: url("./assets/fonts/AvenirLTStd-Oblique.eot?#iefix")
+      format("embedded-opentype"),
+    url("./assets/fonts/AvenirLTStd-Oblique.woff2") format("woff2"),
+    url("./assets/fonts/AvenirLTStd-Oblique.woff") format("woff"),
+    url("./assets/fonts/AvenirLTStd-Oblique.ttf") format("truetype"),
+    url("./assets/fonts/AvenirLTStd-Oblique.svg#AvenirLTStd-Oblique")
+      format("svg");
+  font-weight: normal;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Avenir LT Std";
+  src: url("./assets/fonts/AvenirLTStd-BookOblique.eot");
+  src: url("./assets/fonts/AvenirLTStd-BookOblique.eot?#iefix")
+      format("embedded-opentype"),
+    url("./assets/fonts/AvenirLTStd-BookOblique.woff2") format("woff2"),
+    url("./assets/fonts/AvenirLTStd-BookOblique.woff") format("woff"),
+    url("./assets/fonts/AvenirLTStd-BookOblique.ttf") format("truetype"),
+    url("./assets/fonts/AvenirLTStd-BookOblique.svg#AvenirLTStd-BookOblique")
+      format("svg");
+  font-weight: normal;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Avenir LT Std";
+  src: url("./assets/fonts/AvenirLTStd-Book.eot");
+  src: url("./assets/fonts/AvenirLTStd-Book.eot?#iefix")
+      format("embedded-opentype"),
+    url("./assets/fonts/AvenirLTStd-Book.woff2") format("woff2"),
+    url("./assets/fonts/AvenirLTStd-Book.woff") format("woff"),
+    url("./assets/fonts/AvenirLTStd-Book.ttf") format("truetype"),
+    url("./assets/fonts/AvenirLTStd-Book.svg#AvenirLTStd-Book") format("svg");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Avenir LT Std";
+  src: url("./assets/fonts/AvenirLTStd-Roman.eot");
+  src: url("./assets/fonts/AvenirLTStd-Roman.eot?#iefix")
+      format("embedded-opentype"),
+    url("./assets/fonts/AvenirLTStd-Roman.woff2") format("woff2"),
+    url("./assets/fonts/AvenirLTStd-Roman.woff") format("woff"),
+    url("./assets/fonts/AvenirLTStd-Roman.ttf") format("truetype"),
+    url("./assets/fonts/AvenirLTStd-Roman.svg#AvenirLTStd-Roman") format("svg");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Avenir LT Std";
+  src: url("./assets/fonts/AvenirLTStd-Black.eot");
+  src: url("./assets/fonts/AvenirLTStd-Black.eot?#iefix")
+      format("embedded-opentype"),
+    url("./assets/fonts/AvenirLTStd-Black.woff2") format("woff2"),
+    url("./assets/fonts/AvenirLTStd-Black.woff") format("woff"),
+    url("./assets/fonts/AvenirLTStd-Black.ttf") format("truetype"),
+    url("./assets/fonts/AvenirLTStd-Black.svg#AvenirLTStd-Black") format("svg");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Avenir LT Std";
+  src: url("./assets/fonts/AvenirLTStd-Medium.eot");
+  src: url("./assets/fonts/AvenirLTStd-Medium.eot?#iefix")
+      format("embedded-opentype"),
+    url("./assets/fonts/AvenirLTStd-Medium.woff2") format("woff2"),
+    url("./assets/fonts/AvenirLTStd-Medium.woff") format("woff"),
+    url("./assets/fonts/AvenirLTStd-Medium.ttf") format("truetype"),
+    url("./assets/fonts/AvenirLTStd-Medium.svg#AvenirLTStd-Medium")
+      format("svg");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Avenir LT Std";
+  src: url("./assets/fonts/AvenirLTStd-Heavy.eot");
+  src: url("./assets/fonts/AvenirLTStd-Heavy.eot?#iefix")
+      format("embedded-opentype"),
+    url("./assets/fonts/AvenirLTStd-Heavy.woff2") format("woff2"),
+    url("./assets/fonts/AvenirLTStd-Heavy.woff") format("woff"),
+    url("./assets/fonts/AvenirLTStd-Heavy.ttf") format("truetype"),
+    url("./assets/fonts/AvenirLTStd-Heavy.svg#AvenirLTStd-Heavy") format("svg");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Avenir LT Std";
+  src: url("./assets/fonts/AvenirLTStd-HeavyOblique.eot");
+  src: url("./assets/fonts/AvenirLTStd-HeavyOblique.eot?#iefix")
+      format("embedded-opentype"),
+    url("./assets/fonts/AvenirLTStd-HeavyOblique.woff2") format("woff2"),
+    url("./assets/fonts/AvenirLTStd-HeavyOblique.woff") format("woff"),
+    url("./assets/fonts/AvenirLTStd-HeavyOblique.ttf") format("truetype"),
+    url("./assets/fonts/AvenirLTStd-HeavyOblique.svg#AvenirLTStd-HeavyOblique")
+      format("svg");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Avenir LT Std";
+  src: url("./assets/fonts/AvenirLTStd-MediumOblique.eot");
+  src: url("./assets/fonts/AvenirLTStd-MediumOblique.eot?#iefix")
+      format("embedded-opentype"),
+    url("./assets/fonts/AvenirLTStd-MediumOblique.woff2") format("woff2"),
+    url("./assets/fonts/AvenirLTStd-MediumOblique.woff") format("woff"),
+    url("./assets/fonts/AvenirLTStd-MediumOblique.ttf") format("truetype"),
+    url("./assets/fonts/AvenirLTStd-MediumOblique.svg#AvenirLTStd-MediumOblique")
+      format("svg");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Avenir LT Std";
+  src: url("./assets/fonts/AvenirLTStd-BlackOblique.eot");
+  src: url("./assets/fonts/AvenirLTStd-BlackOblique.eot?#iefix")
+      format("embedded-opentype"),
+    url("./assets/fonts/AvenirLTStd-BlackOblique.woff2") format("woff2"),
+    url("./assets/fonts/AvenirLTStd-BlackOblique.woff") format("woff"),
+    url("./assets/fonts/AvenirLTStd-BlackOblique.ttf") format("truetype"),
+    url("./assets/fonts/AvenirLTStd-BlackOblique.svg#AvenirLTStd-BlackOblique")
+      format("svg");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+/********placeHolder********/
+input,
+textarea,
+select,
+ol,
+ul,
+li,
+a,
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+  text-decoration: none;
+  outline: none;
+  list-style: none;
+  padding: 0;
+}
+
+a,
+a:hover,
+a:focus,
+*:focus-visible {
+  cursor: pointer;
+  transition: all 0.4s ease 0s;
+  text-decoration: none;
+  outline: none;
+}
+
+button:focus {
+  outline: none;
+  border: none;
+}
+
+button:focus,
+input:focus {
+  box-shadow: none !important;
+}
+
+button {
+  cursor: pointer;
+}
+
+*,
+*:after,
+*:before {
+  box-sizing: border-box;
+}
+
+section {
+  overflow-x: hidden;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: #fff;
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+}
+
+.fit-img {
+  width: 100%;
+  height: 100%;
+  -o-object-fit: cover;
+  object-fit: cover;
+}
+
+.cheader .navbar-brand {
+  display: block;
+  width: 390px;
+}
+
+.hero_banner {
+  margin: 54px 0px 36px calc((100% - 980px) * 0.5);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.hero_banner .hero_png {
+  width: 390px;
+}
+
+.hero_banner h1 {
+  font-size: 50px;
+  letter-spacing: -1px;
+  font-weight: 400;
+  color: #cc0000;
+  font-family: "Fraunces";
+}
+
+.hero_banner h2 {
+  font-size: 80px;
+  font-style: italic;
+  font-weight: 400;
+  color: #cc0000;
+  font-family: "Fraunces";
+}
+
+.hero_banner h3 {
+  font-size: 50px;
+  font-weight: 400;
+  color: #041e42;
+  font-family: "Fraunces";
+  line-height: 64.8px;
+}
+
+.hero_banner p {
+  font-size: 32px;
+  line-height: 44.8px;
+  color: #041e42;
+  font-family: "Avenir LT Std";
+  letter-spacing: -0.32px;
+  font-weight: 300;
+}
+
+.hero_banner .bn_top {
+  padding: 0px 0px 35px calc((100% - 980px) * 0);
+  border-bottom: 1px solid #000000;
+}
+
+.journey {
+  padding-bottom: 39px;
+}
+
+.journey p {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+  color: #041e42;
+  font-family: "Avenir LT Std";
+  font-style: italic;
+}
+
+.lglobal_btn {
+  padding: 10px 40px;
+  color: #fff;
+  font-size: 25px;
+  line-height: 35px;
+  font-family: "Avenir LT Std";
+  font-weight: 300;
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6), 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+
+.lglobal_btn:hover {
+  background-color: #fff;
+  color: #000;
+}
+
+.lglobal_btn::after {
+  content: "";
+  background: url("../public/assets/images/arrow-left.png") no-repeat;
+  bottom: -27px;
+  height: 26px;
+  pointer-events: none;
+  position: absolute;
+  width: 165px;
+  background-position: 100% 0;
+  right: -20px;
+  z-index: 0;
+}
+
+.lglobal_btn::before {
+  content: "";
+  background: url("../public/assets/images/arrow-right.png") no-repeat;
+  bottom: -27px;
+  height: 26px;
+  pointer-events: none;
+  position: absolute;
+  width: 165px;
+  background-position: 0 0;
+  left: -20px;
+  z-index: 0;
+}
+
+.bg_red {
+  background-color: rgb(204, 0, 0);
+  border: solid 1px rgb(193, 195, 206);
+}
+
+.bg_blue {
+  background-color: rgb(15, 29, 86);
+  border: solid 1px rgb(193, 195, 206);
+  width: 600px;
+  text-align: center;
+}
+
+.bg_red:hover {
+  border: solid 1px rgb(15, 29, 86);
+}
+
+.bg_blue:hover {
+  border: solid 1px rgb(15, 29, 86);
+}
+
+.experiences {
+  background-color: #001d40;
+}
+.management {
+  background-color: rgb(204, 0, 0);
+}
+.management h4 {
+  color: #fff;
+  font-size: 25px;
+  line-height: 30px;
+  font-family: "Fraunces";
+  font-weight: 500;
+  letter-spacing: -0.5px;
+  text-align: center;
+  margin: 32px 0px 35px calc((100% - 980px) * 0.5);
+}
+
+.management h5 {
+  color: #041e42;
+  font-size: 55px;
+  line-height: 66px;
+  font-family: "Fraunces";
+  font-weight: 500;
+  letter-spacing: -0.5px;
+  text-align: center;
+  margin: 32px 0px 35px calc((100% - 980px) * 0.5);
+}
+
+.experiences h4 {
+  color: #fff;
+  font-size: 25px;
+  line-height: 30px;
+  font-family: "Fraunces";
+  font-weight: 500;
+  letter-spacing: -0.5px;
+  text-align: center;
+  margin: 32px 0px 35px calc((100% - 980px) * 0.5);
+}
+
+.education .education_left {
+  margin: 74px 0px 74px calc((100% - 489px) * 0.5);
+}
+
+.education .education_left h5 {
+  font-size: 56px;
+  font-weight: 400;
+  color: rgb(204, 0, 0);
+  font-family: "Fraunces";
+  line-height: 73px;
+}
+
+.education .education_left p {
+  font-size: 18px;
+  font-weight: 300;
+  color: rgb(4, 30, 66);
+  font-family: "Avenir LT Std";
+  line-height: 32px;
+}
+
+.card_blur {
+  background-image: url("../public/assets/images/blur_card.avif");
+  background-position: center;
+  background-size: cover;
+  min-height: 420px;
+}
+
+.card_blur .card_main {
+  margin: 61px 0px 61px calc((100% - 980px) * 0.5);
+  width: 100%;
+  background: rgba(255, 255, 255, 0.34);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(18.5px);
+  -webkit-backdrop-filter: blur(18.5px);
+  padding: 30px 80px;
+}
+
+.card_blur .card_main h6 {
+  font-size: 56px;
+  font-family: "Fraunces";
+  font-weight: 500;
+  color: #041e42;
+}
+
+.card_blur .card_main p {
+  font-size: 16px;
+  line-height: 29px;
+  font-family: "Avenir LT Std";
+  font-weight: 300;
+  color: #041e42;
+}
+
+.m_84 {
+  margin-top: 30px;
+}
+
+.international {
+  padding: 40px 0px;
+}
+
+.international h4 {
+  font-size: 56px;
+  font-family: "Fraunces";
+  font-weight: 500;
+  letter-spacing: -1.68px;
+  color: rgb(204, 0, 0);
+}
+
+.pricing h4 {
+  font-size: 56px;
+  font-family: "Fraunces";
+  font-weight: 500;
+  letter-spacing: -1.68px;
+  color: rgb(204, 0, 0);
+}
+.pricing ul li {
+  font-size: 15px;
+  line-height: 20px;
+  letter-spacing: -0.2px;
+  color: #041e42;
+  font-weight: 300;
+  font-family: "Avenir LT Std";
+}
+.pricing h5 {
+  font-size: 26px;
+  line-height: 36.4px;
+  letter-spacing: -0.78px;
+  color: #041e42;
+  font-family: "Avenir LT Std";
+}
+.pricing h6 {
+  font-size: 16px;
+  line-height: 20.4px;
+  color: #cc0000;
+  font-family: "Avenir LT Std";
+  font-weight: 500;
+}
+.pricing .plan {
+  padding: 10px 50px 40px 50px;
+  border: 1px solid #cc0000;
+  background: #fff;
+}
+.pricing .plan .top_list li p {
+  font-size: 17px;
+  line-height: 31px;
+  color: rgb(4, 30, 66);
+  font-style: italic;
+  font-weight: 300;
+  font-family: "Avenir LT Std";
+}
+.pricing .plan h4 {
+  font-size: 17px;
+  line-height: 29px;
+  color: rgb(4, 30, 66);
+  font-weight: 600;
+  letter-spacing: normal;
+  text-align: start;
+  font-family: "Avenir LT Std";
+}
+.pricing .plan .listed {
+  padding-left: 20px;
+}
+.pricing .plan .listed li {
+  list-style: disc;
+  text-align: start;
+}
+.pricing .plan .listed li b {
+  font-weight: 600;
+}
+.pricing .plan .listed li p {
+  font-size: 17px;
+  line-height: 26px;
+  color: rgb(4, 30, 66);
+  font-weight: 300;
+}
+.international .top_p {
+  font-size: 20px;
+  line-height: 28px;
+  letter-spacing: -0.2px;
+  color: #041e42;
+  font-weight: 400;
+  font-family: "Avenir LT Std";
+}
+
+.international .inter_card {
+  background: #001d40;
+  padding: 40px 35px;
+  height: 100%;
+}
+
+.international .inter_card .number_count {
+  width: 85px;
+  height: 85px;
+  background: rgb(204, 0, 0);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 38px;
+  font-weight: 600;
+  color: #041e42;
+  font-family: "Avenir LT Std";
+  margin-top: -65px;
+}
+
+.international .inter_card h5 {
+  font-size: 20px;
+  line-height: 28px;
+  font-family: "Avenir LT Std";
+  font-weight: 500;
+  color: #fff;
+}
+
+.international .inter_card p {
+  font-size: 16px;
+  line-height: 29px;
+  font-weight: 300;
+  color: #fff;
+  font-family: "Avenir LT Std";
+  text-align: center;
+}
+
+.international .inter_card p a {
+  text-decoration: underline;
+  color: #fff;
+}
+.test_slider .slider_main {
+  margin: 99px 0px;
+}
+.test_slider .slider_main h5 {
+  font-size: 26px;
+  line-height: normal;
+  font-weight: 600;
+  color: rgb(204, 0, 0);
+  font-family: "Avenir LT Std";
+  text-align: center;
+  margin-bottom: 33px;
+}
+.test_slider .slider_main p {
+  font-size: 20px;
+  line-height: 26px;
+  font-weight: 300;
+  color: #041e42;
+  font-family: "Avenir LT Std";
+  text-align: center;
+}
+
+.lsticky {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 333;
+  background: white;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+}
+
+.anim-t {
+  animation: stick 0.6s linear !important;
+}
+
+@keyframes stick {
+  0% {
+    opacity: 0%;
+  }
+  50% {
+    opacity: 50%;
+  }
+  100% {
+    opacity: 100%;
+  }
+}
+.test_slider,
+.pricing {
+  background: #fafafa;
+}
+.test_slider_main .slick-arrow {
+  position: absolute;
+  z-index: 5;
+  top: 50%;
+  transform: translateY(-50%);
+  color: black;
+  border: none;
+  opacity: 0.7;
+  transition: all 0.3s ease-in-out;
+}
+
+.test_slider_main .slick-list {
+  overflow: visible !important;
+}
+.test_slider_main .slick-prev {
+  left: 0% !important;
+  transform: translate(-47%, -50%);
+}
+.test_slider_main .slick-next {
+  right: 0% !important;
+  transform: translate(47%, -50%);
+}
+.test_slider_main .slick-prev:hover:before,
+.test_slider_main .slick-prev:focus:before,
+.test_slider_main .slick-next:hover:before,
+.test_slider_main .slick-next:focus:before {
+  display: none;
+}
+.test_slider_main .slick-arrow {
+  width: 35px;
+  height: 35px;
+  color: #000;
+}
+.test_slider_main .slick-prev {
+  background: url("../public/assets/images/left-chevron.png") no-repeat;
+  opacity: 1;
+  z-index: 4;
+  background-size: contain;
+}
+.test_slider_main .slick-next {
+  background: url("../public/assets/images/chevron.png") no-repeat;
+  opacity: 1;
+  z-index: 4;
+  background-size: contain;
+}
+.test_slider_main .slick-prev:before {
+  display: none;
+}
+.test_slider_main .slick-next:before {
+  display: none;
+}
+.test_slider_main .slick-slider {
+  position: unset !important;
+}
+.test_slider_main .slick-dots {
+  left: 0px;
+  bottom: 50px !important;
+}
+
+.test_slider_main .slick-dots li.slick-active button {
+  color: #041e42;
+  width: 8px;
+  height: 8px;
+  background-color: white;
+  border-radius: 50px;
+  border: 2px solid #041e42;
+  font-size: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 3px;
+}
+
+.test_slider_main .slick-dots li button {
+  color: #041e42;
+  width: 6px;
+  height: 6px;
+  background-color: #041e42;
+  border-radius: 50px;
+  font-size: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  top: 50%;
+  transform: translateY(-50%);
+  position: absolute;
+  padding: 0;
+}
+
+.test_slider_main .slick-dots li button:before {
+  display: none;
+}
+.test_slider_main .slick-dots {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  justify-content: center !important;
+}
+.test_slider_main .slick-dots li {
+  position: relative;
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin: 0 5px;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.contact {
+  margin: 75px 120px -2px 120px;
+}
+.contact .contact_main {
+  border-top: 1px solid #041e42;
+  border-bottom: 1px solid #041e42;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+.contact .contact_main .flogo {
+  margin: 18px 0px 46px calc((100% - 490px) * 0);
+  width: 479px;
+}
+
+.contact .contact_main ul li {
+  font-size: 17px;
+  line-height: 26px;
+  font-weight: 300;
+  color: rgb(4, 30, 66);
+  font-family: "Avenir LT Std";
+}
+
+.contact .contact_main ul li span {
+  color: #cc0000;
+}
+.contact .contact_main .link-ad {
+  font-size: 17px;
+  line-height: 26px;
+  font-weight: 300;
+  color: #cc0000;
+  font-family: "Avenir LT Std";
+}
+
+.contact .contact_main .linked_img {
+  width: 24px;
+  height: 24px;
+}
+
+.contact .contact_main .pli-ad {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 300;
+  color: rgb(4, 30, 66);
+  font-family: "Avenir LT Std";
+  font-style: italic;
+}
+.accent_text {
+  font-size: 17px;
+  line-height: 26px;
+  font-weight: 300;
+  color: rgb(4, 30, 66);
+  font-family: "Avenir LT Std";
+}
+.contact .contact_main .contact_right {
+  background-color: #041e42;
+}
+
+.contact .contact_main .contact_right h4 {
+  font-size: 22px;
+  line-height: 31px;
+  font-weight: 500;
+  color: rgb(204, 0, 0);
+  font-family: "Avenir LT Std";
+}
+
+.contact .contact_main .contact_right h6 {
+  font-size: 22px;
+  line-height: 31px;
+  font-weight: 500;
+  color: rgb(255, 255, 255);
+  font-family: "Avenir LT Std";
+  font-style: italic;
+}
+
+.contact .contact_main .contact_right p {
+  font-size: 22px;
+  line-height: 31px;
+  font-weight: 300;
+  color: rgb(255, 255, 255);
+  font-family: "Avenir LT Std";
+}
+.ft_last .ft_last_main {
+  padding: 23px 120px 23px 120px;
+}
+
+.ft_last .ft_last_main h5 {
+  font-size: 10px;
+  line-height: 13px;
+  font-weight: 600;
+  color: #041e42;
+  font-family: "Avenir LT Std";
+}
+
+.ft_last .ft_last_main p {
+  font-size: 8px;
+  line-height: 10px;
+  font-weight: 400;
+  color: #041e42;
+  font-family: "Avenir LT Std";
+}
+.contact_prsnt {
+  padding: 18px 25px;
+}
+.lbtnlog {
+  background-color: #cc0000;
+  color: #fff;
+  border-radius: 4px;
+  padding: 4px 8px;
+  display: inline-block;
+  border: none;
+}
+@media (max-width: 768px) {
+  .cheader {
+    padding-top: 25px;
+  }
+  .hero_banner .hero_png {
+    width: -webkit-fill-available;
+  }
+  .cheader .navbar-brand {
+    width: 250px;
+  }
+  .hero_banner {
+    margin: 54px 0px;
+  }
+  .bn_top {
+    padding: 0;
+  }
+  .hero_banner h1,
+  .hero_banner h3,
+  .education .education_left h5,
+  .card_blur .card_main h6,
+  .international h4,
+  .pricing h4,
+  .management h5 {
+    font-size: 35px;
+  }
+  .hero_banner h2 {
+    font-size: 50px;
+  }
+  .hero_banner p {
+    font-size: 25px;
+    line-height: 35.8px;
+  }
+  .experiences h4 {
+    margin: 0;
+    padding: 40px 0px;
+  }
+  .education .education_left {
+    margin: 0;
+    padding: 40px 0px;
+  }
+  .card_blur .card_main {
+    padding: 30px 30px;
+  }
+  .m_84 {
+    margin-top: 30px;
+  }
+  .bg_blue {
+    width: fit-content;
+  }
+  .lglobal_btn {
+    margin: 23px 0px;
+  }
+  .test_slider .slider_main {
+    margin: 40px 0px;
+  }
+  .pricing .plan {
+    padding: 10px 25px 40px 25px;
+  }
+  .management h4 {
+    margin: 32px 0px;
+  }
+  .management h5 {
+    margin: 32px 0px;
+    line-height: 45px;
+  }
+  .contact {
+    margin-top: 75px;
+    margin-left: 0px;
+    margin-right: 0px;
+    margin-bottom: 0px;
+  }
+  .contact .contact_main .flogo {
+    margin: 18px 0px 46px 0px;
+    width: 200px;
+  }
+
+  .ft_last .ft_last_main {
+    padding: 23px 0px;
+  }
+  .ft_last .ft_last_main h5 {
+    font-size: 15px;
+    line-height: 19px;
+  }
+  .ft_last .ft_last_main p {
+    font-size: 14px;
+    line-height: 18px;
+  }
+  .test_slider_main .slick-arrow {
+    width: 25px;
+    height: 25px;
+  }
+  .test_slider_main .slick-next {
+    right: 3% !important;
+  }
+  .test_slider_main .slick-prev {
+    left: 3% !important;
+  }
+  .test_slider .slider_main {
+    padding: 0 15px;
+  }
+}
+@media (max-width: 360px) {
+  .cheader .navbar-brand {
+    width: 120px;
+  }
+}

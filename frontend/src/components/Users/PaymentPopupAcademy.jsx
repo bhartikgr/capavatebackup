@@ -12,7 +12,7 @@ import {
 import stripePromise from "../../config/stripe";
 
 const PaymentPopupAcademy = ({ paytmmodule, show, onClose }) => {
-  var apiURLAiFile = "http://localhost:5000/api/user/aifile/";
+  var apiURLAiFile = "https://capavate.com/api/user/aifile/";
 
   const storedUsername = localStorage.getItem("SignatoryLoginData");
 

@@ -14,7 +14,7 @@ import { FaEllipsis } from "react-icons/fa6";
 
 function AdminCompanyRecordRound({ ReportId, onClose }) {
   const [ReportDetails, setReportDetails] = useState(null);
-  const apiUrl = "http://localhost:5000/api/admin/company/";
+  const apiUrl = "https://capavate.com/api/admin/company/";
 
   useEffect(() => {
     if (ReportId) totalDocs();

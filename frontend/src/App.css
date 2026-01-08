@@ -2145,6 +2145,15 @@ button.activate_btn.border-0.active_sb {
   font-size: 20px !important;
 }
 
+.ipaddbox {
+  border: 1px solid #d40209;
+  background: #fff;
+  border-radius: 4px;
+}
+.ipaddbox h4 {
+  font-size: 12px;
+  color: #000;
+}
 @media (max-width: 768px) {
   .contact-hero .overlay-content {
     border-radius: 0px;

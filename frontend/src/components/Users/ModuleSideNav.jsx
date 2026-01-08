@@ -282,7 +282,7 @@ export default function ModuleSideNav({
   }, [internalIsCollapsed]);
 
   const [isHovered, setIsHovered] = useState(false);
-  const apiURL = "http://localhost:5000/api/user/";
+  const apiURL = "https://capavate.com/api/user/";
 
   // Determine which state to use (props or internal)
   const isCollapsed =
@@ -407,13 +407,13 @@ export default function ModuleSideNav({
             }`}
         >
           {!isCollapsed && (
-            <a href="/" className="logo">
+            <Link to="/dashboard" className="logo">
               <img
                 className="w-100 h-100 object-fit-contain"
                 src="/logos/capavate.png"
                 alt="logo"
               />
-            </a>
+            </Link>
           )}
 
           <MenuButtonWrapper className="d-flex justify-content-end">

@@ -32,7 +32,7 @@ function AdminDuediligenceCategorynewadd() {
   const toggleNavAdmin = () => {
     setIsOpen(!isOpen); // Toggle the state between true and false
   };
-  const apiUrl = "http://localhost:5000/api/admin/module/";
+  const apiUrl = "https://capavate.com/api/admin/module/";
   const [records, setRecords] = useState([]);
   const { id } = useParams();
   document.title = "Data Rooms Add Category - Admin";

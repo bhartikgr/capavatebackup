@@ -19,7 +19,6 @@ import {
   Legend,
 } from "chart.js";
 import { Bar } from "react-chartjs-2";
-import SAFERoundTable from "../../../components/Round/SAFERoundTable.jsx";
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -412,7 +411,6 @@ export default function RecordRoundCaptable() {
               </div>
             </div>
 
-            {/* Important Notes - CLIENT REQUIREMENTS के according */}
             <div className="row mt-4">
               <div className="col-md-6">
                 <div className="alert alert-info">
@@ -452,12 +450,8 @@ export default function RecordRoundCaptable() {
     );
   };
 
-  // ENHANCED Round 1 Frontend Component with Founder Names Display
-  // Replace your existing renderSeedRoundTable function with this
-
-  // CORRECT Round 1 Frontend - This will show ALL shareholders including founders
   const renderSeedRoundTable = () => {
-    console.log(capTableData)
+
     if (!capTableData || !capTableData.calculations) return null;
 
     const calc = capTableData.calculations;
@@ -989,144 +983,64 @@ export default function RecordRoundCaptable() {
 
   const renderSAFERoundTable = () => {
     if (!capTableData || !capTableData.calculations) return null;
-    console.log('ss')
+
     const calc = capTableData.calculations;
     const currency = capTableData.currency || "USD";
-
-    // Check if this is a SAFE round with pre/post tables
-    const hasPrePostTables = capTableData.hasPrePostTables ||
-      (capTableData.preSAFECapTable && capTableData.postSAFECapTable);
-
-    if (!hasPrePostTables) {
-      return renderSeedRoundTable(); // Fallback to regular display
-    }
-
-    const preSAFECalc = {
-      totalShares: capTableData.preSAFECapTable.totalShares,
-      totalValue: capTableData.preSAFECapTable.totalValue,
-      foundersOwnership: (capTableData.preSAFECapTable.shareholders || [])
-        .filter(sh => sh.type === "Founder")
-        .reduce((sum, sh) => sum + sh.ownership, 0),
-      poolOwnership: (capTableData.preSAFECapTable.shareholders || [])
-        .filter(sh => sh.type === "Options Pool")
-        .reduce((sum, sh) => sum + sh.ownership, 0)
-    };
-
-    const postSAFECalc = {
-      totalShares: capTableData.postSAFECapTable.totalShares,
-      totalValue: capTableData.postSAFECapTable.totalValue,
-      foundersOwnership: (capTableData.postSAFECapTable.shareholders || [])
-        .filter(sh => sh.type === "Founder")
-        .reduce((sum, sh) => sum + sh.ownership, 0),
-      poolOwnership: (capTableData.postSAFECapTable.shareholders || [])
-        .filter(sh => sh.type === "Options Pool")
-        .reduce((sum, sh) => sum + sh.ownership, 0),
-      investorOwnership: (capTableData.postSAFECapTable.shareholders || [])
-        .filter(sh => sh.type === "Investor" || sh.type === "SAFE Investor")
-        .reduce((sum, sh) => sum + sh.ownership, 0)
-    };
-
-    const conversionDetails = capTableData.conversionDetails || {};
+    const currentTable = capTableData.currentCapTable;
 
     return (
       <div className="cap-table-section">
         <div className="card mb-4">
           <div className="card-header bg-warning text-dark">
             <h4 className="mb-0">{capTableData.roundType}</h4>
-            <small className="opacity-75">SAFE Round - Pre & Post Conversion Cap Tables</small>
+            <small>SAFE Round - Conversion Pending</small>
           </div>
           <div className="card-body">
             {/* Platform Inputs */}
-            <h5 className="mb-3">Platform Inputs</h5>
+            <h5 className="mb-3">SAFE Investment Details</h5>
             <div className="row mb-4">
-              <div className="col-md-3">
+              <div className="col-md-4">
                 <div className="info-box p-3 border rounded bg-light">
                   <small className="text-muted">Total SAFE Investment</small>
                   <h5>{formatCurrency(calc.totalSafeInvestment, currency)}</h5>
                 </div>
               </div>
-              <div className="col-md-3">
+              <div className="col-md-4">
                 <div className="info-box p-3 border rounded bg-light">
                   <small className="text-muted">Valuation Cap</small>
                   <h5>{formatCurrency(calc.valuationCap, currency)}</h5>
                 </div>
               </div>
-              <div className="col-md-3">
+              <div className="col-md-4">
                 <div className="info-box p-3 border rounded bg-light">
                   <small className="text-muted">Discount Rate</small>
                   <h5>{formatPercentage(calc.discountRate)}</h5>
                 </div>
               </div>
-              <div className="col-md-3">
-                <div className="info-box p-3 border rounded bg-light">
-                  <small className="text-muted">SAFE Type</small>
-                  <h5>{calc.safeType || "PRE_MONEY"}</h5>
-                </div>
-              </div>
             </div>
 
-            {/* Platform Outputs */}
-            <h5 className="mb-3">Platform Outputs</h5>
-            <div className="row mb-4">
-              <div className="col-md-2">
-                <div className="info-box p-3 border rounded bg-primary text-white">
-                  <small>Post-Money Valuation</small>
-                  <h6>{formatCurrency(conversionDetails.postMoneyValuation, currency)}</h6>
-                </div>
-              </div>
-              <div className="col-md-2">
-                <div className="info-box p-3 border rounded bg-info text-white">
-                  <small>Conversion Price</small>
-                  <h6>{formatCurrencyPricePerShare(conversionDetails.conversionPrice, currency)}</h6>
-                </div>
-              </div>
-              <div className="col-md-2">
-                <div className="info-box p-3 border rounded bg-warning text-dark">
-                  <small>Potential Shares</small>
-                  <h6>{formatNumber(conversionDetails.potentialShares)}</h6>
-                </div>
-              </div>
-              <div className="col-md-2">
-                <div className="info-box p-3 border rounded bg-success text-white">
-                  <small>Investor Post-Conversion</small>
-                  <h6>{formatPercentage(conversionDetails.postConversionOwnership)}</h6>
-                </div>
-              </div>
-              <div className="col-md-2">
-                <div className="info-box p-3 border rounded bg-secondary text-white">
-                  <small>Founders Post-Conversion</small>
-                  <h6>{formatPercentage(conversionDetails.foundersPostConversionOwnership)}</h6>
-                </div>
-              </div>
-              <div className="col-md-2">
-                <div className="info-box p-3 border rounded bg-dark text-white">
-                  <small>Pool Post-Conversion</small>
-                  <h6>{formatPercentage(conversionDetails.poolPostConversionOwnership)}</h6>
-                </div>
-              </div>
-            </div>
-
-            {/* Conversion Details */}
-            <div className="alert alert-info mb-4">
-              <h6 className="alert-heading">🔗 SAFE Conversion Details</h6>
+            {/* ⚠️ IMPORTANT NOTICE */}
+            <div className="alert alert-warning mb-4">
+              <h6 className="alert-heading">⚠️ SAFE Notes Have NOT Converted Yet</h6>
               <p className="mb-2">
-                SAFE investors will convert at the next priced equity round.
-                {conversionDetails.discountRate > 0 && ` Conversion includes a ${formatPercentage(conversionDetails.discountRate)} discount.`}
+                SAFE notes will convert into equity shares at the <strong>next priced equity round</strong> (typically Series A).
               </p>
-              {conversionDetails.conversionPrice > 0 && (
-                <p className="mb-0">
-                  <strong>Expected conversion price:</strong> {formatCurrencyPricePerShare(conversionDetails.conversionPrice, currency)} per share
-                </p>
-              )}
+              <p className="mb-0">
+                <strong>Conversion Price:</strong> Will be calculated as the LOWER of:
+                <ul className="mb-0 mt-2">
+                  <li>Next round price × (1 - {formatPercentage(calc.discountRate)})</li>
+                  <li>Valuation Cap ÷ Total Shares = {formatCurrency(calc.valuationCap / calc.totalSharesIncludingPool, currency)}</li>
+                </ul>
+              </p>
             </div>
 
-            {/* ========== PRE-SAFE CAP TABLE ========== */}
+            {/* CURRENT CAP TABLE */}
             <div className="row mb-5">
               <div className="col-md-12">
                 <div className="card">
                   <div className="card-header bg-primary text-white">
-                    <h5 className="mb-0">Pre-SAFE Cap Table (Current)</h5>
-                    <small>Before SAFE conversion - No shares issued to SAFE investors yet</small>
+                    <h5 className="mb-0">Current Cap Table (Pre-Conversion)</h5>
+                    <small>✅ SAFE investors have 0 shares until next priced round</small>
                   </div>
                   <div className="card-body">
                     <div className="table-responsive">
@@ -1137,108 +1051,98 @@ export default function RecordRoundCaptable() {
                             <th className="text-center">Contact Info</th>
                             <th className="text-center">Common Shares</th>
                             <th className="text-center">Fully Diluted Ownership %</th>
-                            <th className="text-center">Currency Value</th>
+                            <th className="text-center">Value</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {capTableData.preSAFECapTable.shareholders && capTableData.preSAFECapTable.shareholders.length > 0 ? (
-                            capTableData.preSAFECapTable.shareholders.map((sh, idx) => (
-                              <tr key={idx}>
-                                <td>
-                                  <div>
-                                    <strong className={sh.type === "Founder" ? "text-danger" :
+                          {currentTable.shareholders.map((sh, idx) => (
+                            <tr key={idx}>
+                              <td>
+                                <div>
+                                  <strong className={
+                                    sh.type === "Founder" ? "text-danger" :
                                       sh.type === "Options Pool" ? "text-warning" :
-                                        "text-info"}>
-                                      {sh.name}
-                                    </strong>
-                                    {sh.fullName && sh.fullName !== sh.name && (
-                                      <div className="small fw-bold text-dark">{sh.fullName}</div>
-                                    )}
-                                    {sh.type === "Founder" && (
-                                      <span className="badge bg-success mt-1">Founder</span>
-                                    )}
-                                    {sh.type === "Options Pool" && (
-                                      <span className="badge bg-warning text-dark mt-1">Option Pool</span>
-                                    )}
-                                    {sh.type === "SAFE Investor" && (
-                                      <span className="badge bg-info mt-1">SAFE Investor</span>
-                                    )}
-                                  </div>
-                                </td>
-                                <td className="text-center small">
-                                  {sh.email && sh.email !== "-" && (
-                                    <div className="text-muted mb-1">
-                                      📧 {sh.email}
-                                    </div>
+                                        "text-info"
+                                  }>
+                                    {sh.name}
+                                  </strong>
+                                  {sh.fullName && sh.fullName !== sh.name && (
+                                    <div className="small fw-bold text-dark">{sh.fullName}</div>
                                   )}
-                                  {sh.phone && sh.phone !== "-" && (
-                                    <div className="text-muted">
-                                      📱 {sh.phone}
-                                    </div>
-                                  )}
-                                  {(!sh.email || sh.email === "-") && (!sh.phone || sh.phone === "-") && (
-                                    <span className="text-muted">-</span>
-                                  )}
-                                </td>
-                                <td className="text-center">
-                                  <strong>{formatNumber(sh.shares)}</strong>
-                                  {sh.type === "SAFE Investor" && sh.investmentAmount > 0 && (
-                                    <div className="small text-success">
-                                      Invested: {formatCurrency(sh.investmentAmount, currency)}
-                                    </div>
-                                  )}
-                                </td>
-                                <td className="text-center">
-                                  <span className={`fSize-16 badge ${sh.type === "Founder" ? "bg-danger" :
+                                  <span className={`badge mt-1 ${sh.type === "Founder" ? "bg-success" :
                                     sh.type === "Options Pool" ? "bg-warning text-dark" :
-                                      "bg-info"}`}>
-                                    {formatPercentage(sh.ownership)}
+                                      "bg-info"
+                                    }`}>
+                                    {sh.type}
                                   </span>
-                                </td>
-                                <td className="text-center">
-                                  <strong>{formatCurrency(sh.value, currency)}</strong>
-                                  {sh.type === "SAFE Investor" && (
-                                    <div className="small text-muted">
-                                      SAFE Note - 0 shares issued
-                                    </div>
-                                  )}
-                                </td>
-                              </tr>
-                            ))
-                          ) : (
-                            <tr>
-                              <td colSpan="5" className="text-center text-danger">
-                                <strong>⚠️ No shareholders data available</strong>
+                                </div>
+                              </td>
+                              <td className="text-center small">
+                                {sh.email && sh.email !== "-" && (
+                                  <div className="text-muted mb-1">📧 {sh.email}</div>
+                                )}
+                                {sh.phone && sh.phone !== "-" && (
+                                  <div className="text-muted">📱 {sh.phone}</div>
+                                )}
+                                {(!sh.email || sh.email === "-") && (!sh.phone || sh.phone === "-") && (
+                                  <span className="text-muted">-</span>
+                                )}
+                              </td>
+                              <td className="text-center">
+                                <strong>{formatNumber(sh.shares)}</strong>
+                                {sh.type === "SAFE Investor" && (
+                                  <div className="small text-danger">
+                                    ⚠️ 0 shares - Not converted yet
+                                  </div>
+                                )}
+                                {sh.investmentAmount > 0 && (
+                                  <div className="small text-success">
+                                    SAFE: {formatCurrency(sh.investmentAmount, currency)}
+                                  </div>
+                                )}
+                              </td>
+                              <td className="text-center">
+                                <span className={`fSize-16 badge ${sh.type === "Founder" ? "bg-danger" :
+                                  sh.type === "Options Pool" ? "bg-warning text-dark" :
+                                    "bg-secondary"
+                                  }`}>
+                                  {formatPercentage(sh.ownership)}
+                                </span>
+                              </td>
+                              <td className="text-center">
+                                <strong>{formatCurrency(sh.value, currency)}</strong>
+                                {sh.note && (
+                                  <div className="small text-muted">{sh.note}</div>
+                                )}
                               </td>
                             </tr>
-                          )}
+                          ))}
 
                           {/* TOTAL ROW */}
                           <tr className="table-secondary fw-bold">
                             <td colSpan="2">TOTAL</td>
-                            <td className="text-center">{formatNumber(preSAFECalc.totalShares)}</td>
+                            <td className="text-center">{formatNumber(currentTable.totalShares)}</td>
                             <td className="text-center">{formatPercentage(100)}</td>
-                            <td className="text-center">{formatCurrency(preSAFECalc.totalValue, currency)}</td>
+                            <td className="text-center">{formatCurrency(currentTable.totalValue, currency)}</td>
                           </tr>
                         </tbody>
                       </table>
                     </div>
 
-                    {/* Summary Cards */}
+                    {/* Summary */}
                     <div className="row mt-3">
-                      <div className="col-md-4">
+                      <div className="col-md-6">
                         <div className="alert alert-primary mb-0">
-                          <strong>Total Founders:</strong> {formatPercentage(preSAFECalc.foundersOwnership)}
+                          <strong>Total Founders:</strong> {formatPercentage(
+                            currentTable.shareholders
+                              .filter(sh => sh.type === "Founder")
+                              .reduce((sum, sh) => sum + sh.ownership, 0)
+                          )}
                         </div>
                       </div>
-                      <div className="col-md-4">
+                      <div className="col-md-6">
                         <div className="alert alert-warning mb-0">
-                          <strong>Option Pool:</strong> {formatPercentage(preSAFECalc.poolOwnership)}
-                        </div>
-                      </div>
-                      <div className="col-md-4">
-                        <div className="alert alert-info mb-0">
-                          <strong>SAFE Investment:</strong> {formatCurrency(calc.totalSafeInvestment, currency)}
+                          <strong>Total SAFE Investment:</strong> {formatCurrency(calc.totalSafeInvestment, currency)}
                         </div>
                       </div>
                     </div>
@@ -1247,13 +1151,201 @@ export default function RecordRoundCaptable() {
               </div>
             </div>
 
-            {/* ========== POST-SAFE CAP TABLE (Potential) ========== */}
-            <div className="row">
+            {/* PROJECTION (Optional - for illustration only) */}
+            {capTableData.projectedConversion && (
+              <div className="alert alert-secondary">
+                <h6 className="alert-heading">📊 Estimated Conversion (Projection Only)</h6>
+                <p className="mb-2">
+                  {capTableData.projectedConversion.note}
+                </p>
+                <div className="row small">
+                  <div className="col-md-4">
+                    <strong>Estimated Shares:</strong><br />
+                    ~{formatNumber(capTableData.projectedConversion.estimatedShares)}
+                  </div>
+                  <div className="col-md-4">
+                    <strong>Estimated Ownership:</strong><br />
+                    ~{formatPercentage(capTableData.projectedConversion.estimatedOwnership)}
+                  </div>
+                  <div className="col-md-4">
+                    <strong>Note:</strong><br />
+                    Actual values determined at Series A
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderSeriesATable = () => {
+    if (!capTableData || !capTableData.calculations) return null;
+
+    const calc = capTableData.calculations;
+    const currency = capTableData.currency || "USD";
+
+    if (capTableData.error) {
+      return (
+        <div className="alert alert-danger">
+          <h5>Calculation Error</h5>
+          <p>{capTableData.error}</p>
+          {capTableData.details && (
+            <pre className="small">{JSON.stringify(capTableData.details, null, 2)}</pre>
+          )}
+        </div>
+      );
+    }
+
+    const isPostMoneyOptionPool = capTableData.isPostMoneyOptionPool || calc.needsExpansion;
+
+    // ✅ FIX: Calculate foundersSeedShares if not provided
+    const foundersSeedShares = calc.foundersSeedShares ||
+      (calc.preInvestmentTotalShares - calc.existingOptionPoolShares);
+    console.log(capTableData);
+    return (
+      <div className="cap-table-section">
+        <div className="card mb-4">
+          <div className="card-header bg-warning text-dark">
+            <h4 className="mb-0">{capTableData.roundType || "Series A Round"}</h4>
+            <small className="opacity-75">
+              {isPostMoneyOptionPool ? "Post-Money Option Pool Calculation" : "Standard Calculation"}
+            </small>
+          </div>
+
+          <div className="card-body">
+            {/* SERIES A INPUTS */}
+            <h5 className="mb-3">Series A Inputs</h5>
+            <div className="row mb-4">
+              <div className="col-md-3">
+                <div className="info-box p-3 border rounded bg-light">
+                  <small className="text-muted">Investment Size</small>
+                  <h5>{formatCurrency(calc.investmentSize, currency)}</h5>
+                </div>
+              </div>
+              <div className="col-md-3">
+                <div className="info-box p-3 border rounded bg-light">
+                  <small className="text-muted">Pre-Money Valuation</small>
+                  <h5>{formatCurrency(calc.preMoneyValuation, currency)}</h5>
+                </div>
+              </div>
+              <div className="col-md-3">
+                <div className="info-box p-3 border rounded bg-light">
+                  <small className="text-muted">Existing Option Pool %</small>
+                  <h5>{formatPercentage(calc.existingOptionPoolPercent)}</h5>
+                  <small className="text-muted">(Before Series A)</small>
+                </div>
+              </div>
+              <div className="col-md-3">
+                <div className="info-box p-3 border rounded bg-light">
+                  <small className="text-muted">Target Option Pool %</small>
+                  <h5 className="text-success">{formatPercentage(calc.optionPoolPercentPost)}</h5>
+                  <small className="text-success">(Post-Money Target)</small>
+                </div>
+              </div>
+            </div>
+
+            {/* SERIES A OUTPUTS */}
+            <h5 className="mb-3">Calculated Outputs</h5>
+            <div className="row mb-4">
+              <div className="col-md-2">
+                <div className="info-box p-3 border rounded bg-primary text-white">
+                  <small>Post-Money Valuation</small>
+                  <h6>{formatCurrency(calc.postMoneyValuation, currency)}</h6>
+                </div>
+              </div>
+              <div className="col-md-2">
+                <div className="info-box p-3 border rounded bg-success text-white">
+                  <small>Share Price</small>
+                  <h6>{formatCurrencyPricePerShare(calc.sharePrice, currency)}</h6>
+                  <small className="opacity-75">per share</small>
+                </div>
+              </div>
+              <div className="col-md-2">
+                <div className="info-box p-3 border rounded bg-info text-white">
+                  <small>Pre-Investment Shares</small>
+                  <h6>{formatNumber(calc.preInvestmentTotalShares)}</h6>
+                  <small className="opacity-75">Before Series A</small>
+                </div>
+              </div>
+              <div className="col-md-2">
+                <div className="info-box p-3 border rounded bg-warning text-dark">
+                  <small>New Shares Issued</small>
+                  <h6>{formatNumber(calc.totalNewShares)}</h6>
+                  <small className="opacity-75">Total new shares</small>
+                </div>
+              </div>
+              <div className="col-md-2">
+                <div className="info-box p-3 border rounded bg-dark text-white">
+                  <small>Post-Investment Shares</small>
+                  <h6>{formatNumber(calc.postInvestmentTotalShares)}</h6>
+                  <small className="opacity-75">After Series A</small>
+                </div>
+              </div>
+              <div className="col-md-2">
+                <div className="info-box p-3 border rounded bg-secondary text-white">
+                  <small>Investor Ownership</small>
+                  <h6>{formatPercentage(calc.investorOwnershipPercent)}</h6>
+                  <small className="opacity-75">Series A %</small>
+                </div>
+              </div>
+            </div>
+
+            {/* NEW SHARES BREAKDOWN */}
+            <div className="row mb-4">
+              <div className="col-md-6">
+                <div className="alert alert-warning">
+                  <h6 className="alert-heading">📊 New Shares Breakdown</h6>
+                  <div className="row">
+                    <div className="col-6">
+                      <strong>Series A Investors:</strong>
+                      <div className="h5 mb-0">{formatNumber(calc.seriesAInvestorShares)}</div>
+                    </div>
+                    <div className="col-6">
+                      <strong>Option Pool Expansion:</strong>
+                      <div className="h5 mb-0">{formatNumber(calc.additionalOptionPoolShares)}</div>
+                    </div>
+                  </div>
+                  <hr />
+                  <div className="d-flex justify-content-between">
+                    <strong>Total New Shares:</strong>
+                    <strong>{formatNumber(calc.totalNewShares)}</strong>
+                  </div>
+                </div>
+              </div>
+              <div className="col-md-6">
+                <div className="alert alert-info">
+                  <h6 className="alert-heading">🎯 Option Pool Status</h6>
+                  <div className="mb-2">
+                    <strong>Existing Pool:</strong> {formatNumber(calc.existingOptionPoolShares)} shares
+                    ({formatPercentage(calc.existingOptionPoolPercent)})
+                  </div>
+                  <div className="mb-2">
+                    <strong>Additional:</strong> {formatNumber(calc.additionalOptionPoolShares)} shares
+                  </div>
+                  <hr />
+                  <div className="d-flex justify-content-between">
+                    <strong>Total Pool (Post):</strong>
+                    <strong>{formatNumber(calc.totalOptionPoolShares)}
+                      ({formatPercentage(calc.optionPoolPercentPost)})</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* OWNERSHIP CHART */}
+            <div className="mb-4">
+              <RoundCapChart chartData={capTableData.chartData} />
+            </div>
+
+            {/* ========== PRE-SERIES A CAP TABLE ========== */}
+            <div className="row mb-5">
               <div className="col-md-12">
                 <div className="card">
-                  <div className="card-header bg-success text-white">
-                    <h5 className="mb-0">Post-SAFE Cap Table (Potential)</h5>
-                    <small>After SAFE conversion at next priced round</small>
+                  <div className="card-header bg-primary text-white">
+                    <h5 className="mb-0">📋 Pre-Series A Cap Table</h5>
+                    <small>Before Series A Investment | Pre-Money Valuation: {formatCurrency(calc.preMoneyValuation, currency)}</small>
                   </div>
                   <div className="card-body">
                     <div className="table-responsive">
@@ -1261,94 +1353,55 @@ export default function RecordRoundCaptable() {
                         <thead className="table-dark">
                           <tr>
                             <th>Shareholder</th>
-                            <th className="text-center">Contact Info</th>
-                            <th className="text-center">Existing Shares</th>
-                            <th className="text-center">New Shares</th>
-                            <th className="text-center">Total Shares</th>
+                            <th className="text-center">Type</th>
+                            <th className="text-center">Common Shares</th>
                             <th className="text-center">Fully Diluted Ownership %</th>
-                            <th className="text-center">Currency Value</th>
+                            <th className="text-center">Value ({currency})</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {capTableData.postSAFECapTable.shareholders && capTableData.postSAFECapTable.shareholders.length > 0 ? (
-                            capTableData.postSAFECapTable.shareholders.map((sh, idx) => (
+                          {capTableData.preSeriesAShareholders && capTableData.preSeriesAShareholders.length > 0 ? (
+                            capTableData.preSeriesAShareholders.map((sh, idx) => (
                               <tr key={idx}>
                                 <td>
-                                  <div>
-                                    <strong className={sh.type === "Founder" ? "text-danger" :
-                                      sh.type === "Options Pool" ? "text-warning" :
-                                        "text-success"}>
-                                      {sh.name}
-                                    </strong>
-                                    {sh.fullName && sh.fullName !== sh.name && (
-                                      <div className="small fw-bold text-dark">{sh.fullName}</div>
-                                    )}
-                                    {sh.type === "Founder" && (
-                                      <span className="badge bg-primary mt-1">Founder</span>
-                                    )}
-                                    {sh.type === "Options Pool" && (
-                                      <span className="badge bg-warning text-dark mt-1">Option Pool</span>
-                                    )}
-                                    {sh.type === "Investor" && (
-                                      <span className="badge bg-success mt-1">Investor (SAFE Converted)</span>
-                                    )}
-                                  </div>
-                                </td>
-                                <td className="text-center small">
-                                  {sh.email && sh.email !== "-" && (
-                                    <div className="text-muted mb-1">
-                                      📧 {sh.email}
-                                    </div>
-                                  )}
-                                  {sh.phone && sh.phone !== "-" && (
-                                    <div className="text-muted">
-                                      📱 {sh.phone}
-                                    </div>
-                                  )}
-                                  {(!sh.email || sh.email === "-") && (!sh.phone || sh.phone === "-") && (
-                                    <span className="text-muted">-</span>
+                                  <strong>{sh.name}</strong>
+                                  {sh.source && (
+                                    <div className="small text-muted">Source: {sh.source}</div>
                                   )}
                                 </td>
                                 <td className="text-center">
-                                  {sh.type === "Investor" ? (
-                                    <span className="text-muted">-</span>
-                                  ) : (
-                                    <strong>{formatNumber(sh.shares - (sh.newShares || 0))}</strong>
+                                  {sh.type === "Founder" && (
+                                    <span className="badge bg-primary">Founder</span>
                                   )}
-                                </td>
-                                <td className="text-center">
-                                  {sh.newShares > 0 ? (
-                                    <span className="badge bg-warning text-dark">
-                                      {formatNumber(sh.newShares)}
+                                  {sh.type === "Options Pool" && (
+                                    <span className="badge bg-warning text-dark">Option Pool</span>
+                                  )}
+                                  {sh.type === "Investor" && (
+                                    <span className="badge bg-success">
+                                      {sh.originalType === "Seed Investor" ? "Seed Investor" : "Investor"}
                                     </span>
-                                  ) : (
-                                    <span className="text-muted">-</span>
                                   )}
                                 </td>
                                 <td className="text-center">
                                   <strong>{formatNumber(sh.shares)}</strong>
                                 </td>
                                 <td className="text-center">
-                                  <span className={`fSize-16 badge ${sh.type === "Founder" ? "bg-danger" :
+                                  <span className={`badge ${sh.type === "Founder" ? "bg-primary" :
                                     sh.type === "Options Pool" ? "bg-warning text-dark" :
-                                      "bg-success"}`}>
+                                      "bg-success"
+                                    }`}>
                                     {formatPercentage(sh.ownership)}
                                   </span>
                                 </td>
                                 <td className="text-center">
                                   <strong>{formatCurrency(sh.value, currency)}</strong>
-                                  {sh.type === "Investor" && sh.investmentAmount > 0 && (
-                                    <div className="small text-success">
-                                      SAFE converted: {formatCurrency(sh.investmentAmount, currency)}
-                                    </div>
-                                  )}
                                 </td>
                               </tr>
                             ))
                           ) : (
                             <tr>
-                              <td colSpan="7" className="text-center text-danger">
-                                <strong>⚠️ No shareholders data available</strong>
+                              <td colSpan="5" className="text-center text-danger">
+                                <strong>⚠️ No pre-Series A shareholders data available</strong>
                               </td>
                             </tr>
                           )}
@@ -1356,82 +1409,303 @@ export default function RecordRoundCaptable() {
                           {/* TOTAL ROW */}
                           <tr className="table-secondary fw-bold">
                             <td colSpan="2">TOTAL</td>
-                            <td className="text-center">{formatNumber(preSAFECalc.totalShares)}</td>
-                            <td className="text-center">{formatNumber(conversionDetails.potentialShares)}</td>
-                            <td className="text-center">{formatNumber(postSAFECalc.totalShares)}</td>
-                            <td className="text-center">{formatPercentage(100)}</td>
-                            <td className="text-center">{formatCurrency(postSAFECalc.totalValue, currency)}</td>
+                            <td className="text-center">{formatNumber(calc.preInvestmentTotalShares)}</td>
+                            <td className="text-center">
+                              <span className="badge bg-dark">{formatPercentage(100)}</span>
+                            </td>
+                            <td className="text-center">{formatCurrency(calc.preMoneyValuation, currency)}</td>
                           </tr>
                         </tbody>
                       </table>
                     </div>
 
-                    {/* Summary Cards */}
+                    {/* Pre-Series A Summary */}
+                    <div className="row mt-3">
+                      <div className="col-md-4">
+                        <div className="alert alert-primary mb-0">
+                          <strong>Founders:</strong> {formatPercentage(
+                            (capTableData.preSeriesAShareholders || [])
+                              .filter(sh => sh.type === "Founder")
+                              .reduce((sum, sh) => sum + sh.ownership, 0)
+                          )}
+                        </div>
+                      </div>
+                      <div className="col-md-4">
+                        <div className="alert alert-warning mb-0">
+                          <strong>Employee Option Pool:</strong> {formatPercentage(
+                            (capTableData.preSeriesAShareholders || [])
+                              .filter(sh => sh.type === "Options Pool")
+                              .reduce((sum, sh) => sum + sh.ownership, 0)
+                          )}
+                        </div>
+                      </div>
+                      <div className="col-md-4">
+                        <div className="alert alert-success mb-0">
+                          <strong>Seed Investors:</strong> {formatPercentage(
+                            (capTableData.preSeriesAShareholders || [])
+                              .filter(sh => sh.type === "Investor")
+                              .reduce((sum, sh) => sum + sh.ownership, 0)
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ========== POST-SERIES A CAP TABLE ========== */}
+            <div className="row">
+              <div className="col-md-12">
+                <div className="card">
+                  <div className="card-header bg-success text-white">
+                    <h5 className="mb-0">📊 Post-Series A Cap Table</h5>
+                    <small>After Series A Investment | Post-Money Valuation: {formatCurrency(calc.postMoneyValuation, currency)}</small>
+                  </div>
+                  <div className="card-body">
+                    <div className="table-responsive">
+                      <table className="table table-bordered table-hover">
+                        <thead className="table-dark">
+                          <tr>
+                            <th>Shareholder</th>
+                            <th className="text-center">Type</th>
+                            <th className="text-center">Common Shares</th>
+                            <th className="text-center">New Shares</th>
+                            <th className="text-center">Total Shares</th>
+                            <th className="text-center">Fully Diluted Ownership %</th>
+                            <th className="text-center">Value ({currency})</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {capTableData.shareholders && capTableData.shareholders.length > 0 ? (
+                            capTableData.shareholders.map((sh, idx) => {
+                              const existingShares = sh.preSeriesAShares || 0;
+                              const newShares = sh.newShares || 0;
+
+                              return (
+                                <tr key={idx}>
+                                  <td>
+                                    <strong>{sh.name}</strong>
+                                    {sh.source && (
+                                      <div className="small text-muted">Source: {sh.source}</div>
+                                    )}
+                                    {sh.email && (
+                                      <div className="small text-muted">📧 {sh.email}</div>
+                                    )}
+                                  </td>
+                                  <td className="text-center">
+                                    {sh.type === "Founder" && (
+                                      <span className="badge bg-primary">Founder</span>
+                                    )}
+                                    {sh.type === "Options Pool" && (
+                                      <span className="badge bg-warning text-dark">
+                                        {newShares > 0 ? "Option Pool (Expanded)" : "Option Pool"}
+                                      </span>
+                                    )}
+                                    {sh.type === "Investor" && (
+                                      <span className={`badge ${sh.originalType === "Seed Investor" ? "bg-info" : "bg-danger"
+                                        }`}>
+                                        {sh.originalType === "Seed Investor" ? "Seed Investor" : "Series A Investor"}
+                                      </span>
+                                    )}
+                                  </td>
+                                  <td className="text-center">
+                                    {existingShares > 0 ? (
+                                      <strong>{formatNumber(existingShares)}</strong>
+                                    ) : (
+                                      <span className="text-muted">—</span>
+                                    )}
+                                  </td>
+                                  <td className="text-center">
+                                    {newShares > 0 ? (
+                                      <span className="badge bg-warning text-dark">
+                                        +{formatNumber(newShares)}
+                                      </span>
+                                    ) : (
+                                      <span className="text-muted">—</span>
+                                    )}
+                                  </td>
+                                  <td className="text-center">
+                                    <strong>{formatNumber(sh.shares)}</strong>
+                                  </td>
+                                  <td className="text-center">
+                                    <span className={`badge ${sh.type === "Founder" ? "bg-primary" :
+                                      sh.type === "Options Pool" ? "bg-warning text-dark" :
+                                        sh.originalType === "Seed Investor" ? "bg-info" :
+                                          "bg-danger"
+                                      }`}>
+                                      {formatPercentage(sh.ownership)}
+                                    </span>
+                                  </td>
+                                  <td className="text-center">
+                                    <strong>{formatCurrency(sh.value, currency)}</strong>
+                                    {sh.investmentAmount && sh.investmentAmount > 0 && (
+                                      <div className="small text-success">
+                                        💰 Invested: {formatCurrency(sh.investmentAmount, currency)}
+                                      </div>
+                                    )}
+                                  </td>
+                                </tr>
+                              );
+                            })
+                          ) : (
+                            <tr>
+                              <td colSpan="7" className="text-center text-danger">
+                                <strong>⚠️ No post-Series A shareholders data available</strong>
+                              </td>
+                            </tr>
+                          )}
+
+                          {/* TOTAL ROW */}
+                          <tr className="table-secondary fw-bold">
+                            <td colSpan="2">TOTAL</td>
+                            <td className="text-center">{formatNumber(calc.preInvestmentTotalShares)}</td>
+                            <td className="text-center">
+                              <span className="badge bg-warning text-dark">
+                                +{formatNumber(calc.totalNewShares)}
+                              </span>
+                            </td>
+                            <td className="text-center">{formatNumber(calc.postInvestmentTotalShares)}</td>
+                            <td className="text-center">
+                              <span className="badge bg-dark">{formatPercentage(100)}</span>
+                            </td>
+                            <td className="text-center">{formatCurrency(calc.postMoneyValuation, currency)}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Post-Series A Summary */}
                     <div className="row mt-3">
                       <div className="col-md-3">
                         <div className="alert alert-primary mb-0">
-                          <strong>Founders (Post):</strong> {formatPercentage(postSAFECalc.foundersOwnership)}
-                          <div className="small">
-                            Was: {formatPercentage(preSAFECalc.foundersOwnership)}
-                          </div>
+                          <strong>Founders:</strong> {formatPercentage(
+                            (capTableData.shareholders || [])
+                              .filter(sh => sh.type === "Founder")
+                              .reduce((sum, sh) => sum + sh.ownership, 0)
+                          )}
                         </div>
                       </div>
                       <div className="col-md-3">
                         <div className="alert alert-warning mb-0">
-                          <strong>Option Pool (Post):</strong> {formatPercentage(postSAFECalc.poolOwnership)}
-                          <div className="small">
-                            Was: {formatPercentage(preSAFECalc.poolOwnership)}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="col-md-3">
-                        <div className="alert alert-success mb-0">
-                          <strong>Investors (Post):</strong> {formatPercentage(postSAFECalc.investorOwnership)}
+                          <strong>Option Pool:</strong> {formatPercentage(
+                            (capTableData.shareholders || [])
+                              .filter(sh => sh.type === "Options Pool")
+                              .reduce((sum, sh) => sum + sh.ownership, 0)
+                          )}
                         </div>
                       </div>
                       <div className="col-md-3">
                         <div className="alert alert-info mb-0">
-                          <strong>Post-Conversion Value:</strong> {formatCurrency(postSAFECalc.totalValue, currency)}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Formula Verification */}
-                    <div className="alert alert-dark mt-3">
-                      <h6 className="alert-heading">🔍 SAFE Conversion Formulas</h6>
-                      <div className="row small">
-                        <div className="col-md-4">
-                          <strong>Conversion Price:</strong><br />
-                          {calc.safeType === "POST_MONEY" ? (
-                            <>
-                              {formatCurrency(calc.valuationCap, currency)} ÷ {formatNumber(postSAFECalc.totalShares)} = {formatCurrencyPricePerShare(conversionDetails.conversionPrice, currency)}
-                            </>
-                          ) : (
-                            <>
-                              {formatCurrency(calc.valuationCap, currency)} ÷ {formatNumber(preSAFECalc.totalShares)} = {formatCurrencyPricePerShare(conversionDetails.conversionPrice, currency)}
-                            </>
+                          <strong>Seed Investors:</strong> {formatPercentage(
+                            (capTableData.shareholders || [])
+                              .filter(sh => sh.type === "Investor" && sh.originalType === "Seed Investor")
+                              .reduce((sum, sh) => sum + sh.ownership, 0)
                           )}
                         </div>
-                        <div className="col-md-4">
-                          <strong>Investor Shares:</strong><br />
-                          {formatCurrency(calc.totalSafeInvestment, currency)} ÷ {formatCurrencyPricePerShare(conversionDetails.conversionPrice, currency)} = {formatNumber(conversionDetails.potentialShares)}
+                      </div>
+                      <div className="col-md-3">
+                        <div className="alert alert-danger mb-0">
+                          <strong>Series A Investors:</strong> {formatPercentage(
+                            (capTableData.shareholders || [])
+                              .filter(sh => sh.type === "Investor" && sh.originalType === "Series A Investor")
+                              .reduce((sum, sh) => sum + sh.ownership, 0)
+                          )}
                         </div>
-                        <div className="col-md-4">
-                          <strong>Total Post-Conversion:</strong><br />
-                          {formatNumber(preSAFECalc.totalShares)} + {formatNumber(conversionDetails.potentialShares)} = {formatNumber(postSAFECalc.totalShares)}
+                      </div>
+                    </div>
+
+                    {/* ✅ CORRECTED CALCULATION FORMULAS */}
+                    <div className="alert alert-dark mt-4">
+                      <h6 className="alert-heading">📐 Series A Calculation Formulas</h6>
+
+                      <div className="mb-3">
+                        <strong className="badge bg-warning text-dark fSize-14">Post-Money Option Pool Method</strong>
+                        {/* <div className="small text-muted">
+                          When target option pool (20%) {'>'} existing pool (8%), additional shares are created
+                        </div> */}
+                      </div>
+
+                      <div className="row small mb-3">
+                        <div className="col-md-6">
+                          <strong>1. Post-Money Valuation:</strong><br />
+                          <code className="bg-light p-1 rounded">
+                            Investment + Pre-Money = Post-Money<br />
+                            {formatCurrency(calc.investmentSize, currency)} + {formatCurrency(calc.preMoneyValuation, currency)}
+                            = {formatCurrency(calc.postMoneyValuation, currency)}
+                          </code>
+                        </div>
+                        <div className="col-md-6">
+                          <strong>2. Investor Ownership %:</strong><br />
+                          <code className="bg-light p-1 rounded">
+                            Investment ÷ Post-Money<br />
+                            {formatCurrency(calc.investmentSize, currency)} ÷ {formatCurrency(calc.postMoneyValuation, currency)}
+                            = {formatPercentage(calc.investorOwnershipPercent)}
+                          </code>
                         </div>
                       </div>
 
-                      {/* Discount Information */}
-                      {calc.discountRate > 0 && (
-                        <div className="mt-2 p-2 bg-warning text-dark rounded">
-                          <strong>🎯 Discount Applied:</strong> SAFE investors receive {formatPercentage(calc.discountRate)} discount on conversion price.
-                          <div className="small">
-                            Effective price: {formatCurrencyPricePerShare(conversionDetails.conversionPrice, currency)} per share
-                          </div>
+                      <div className="row small mb-3">
+                        <div className="col-md-6">
+                          <strong>3. Founders + Seed Ownership %:</strong><br />
+                          <code className="bg-light p-1 rounded">
+                            100% - Investor% - Target Pool%<br />
+                            100% - {formatPercentage(calc.investorOwnershipPercent)} - {formatPercentage(calc.optionPoolPercentPost)}
+                            = {formatPercentage(calc.existingShareholdersPercent)}
+                          </code>
                         </div>
-                      )}
+                        <div className="col-md-6">
+                          <strong>4. Post-Investment Total Shares:</strong><br />
+                          <code className="bg-light p-1 rounded">
+                            {/* ✅ CORRECTED FORMULA */}
+                            Founders+Seed Shares ÷ Founders+Seed %<br />
+                            {formatNumber(foundersSeedShares)} ÷ {formatPercentage(calc.existingShareholdersPercent)}
+                            = {formatNumber(calc.postInvestmentTotalShares)}
+                          </code>
+                        </div>
+                      </div>
+
+                      <div className="row small mb-3">
+                        <div className="col-md-6">
+                          <strong>5. Total New Shares Needed:</strong><br />
+                          <code className="bg-light p-1 rounded">
+                            Post-Investment Total - Existing Total<br />
+                            {formatNumber(calc.postInvestmentTotalShares)} - {formatNumber(calc.preInvestmentTotalShares)}
+                            = {formatNumber(calc.totalNewShares)}
+                          </code>
+                        </div>
+                        <div className="col-md-6">
+                          <strong>6. Additional Option Pool Shares:</strong><br />
+                          <code className="bg-light p-1 rounded">
+                            (Target% × Post Total) - Existing Pool<br />
+                            ({formatPercentage(calc.optionPoolPercentPost)} × {formatNumber(calc.postInvestmentTotalShares)})
+                            - {formatNumber(calc.existingOptionPoolShares)} = {formatNumber(calc.additionalOptionPoolShares)}
+                          </code>
+                        </div>
+                      </div>
+
+                      <div className="row small">
+                        <div className="col-md-6">
+                          <strong>7. Series A Investor Shares:</strong><br />
+                          <code className="bg-light p-1 rounded">
+                            Total New Shares - Additional Option Shares<br />
+                            {formatNumber(calc.totalNewShares)} - {formatNumber(calc.additionalOptionPoolShares)}
+                            = {formatNumber(calc.seriesAInvestorShares)}
+                          </code>
+                        </div>
+                        <div className="col-md-6">
+                          <strong>8. Share Price:</strong><br />
+                          <code className="bg-light p-1 rounded">
+                            Pre-Money ÷ (Existing + New Option Shares)<br />
+                            {formatCurrency(calc.preMoneyValuation, currency)} ÷
+                            ({formatNumber(calc.preInvestmentTotalShares)} + {formatNumber(calc.additionalOptionPoolShares)})
+                            = {formatCurrencyPricePerShare(calc.sharePrice, currency)}
+                          </code>
+                        </div>
+                      </div>
                     </div>
+
+
                   </div>
                 </div>
               </div>
@@ -1441,8 +1715,439 @@ export default function RecordRoundCaptable() {
       </div>
     );
   };
-  // SAFE Round Frontend Renderer
-  console.log(capTableData)
+  const PreferredEquityCapTable = ({ capTableData }) => {
+    if (!capTableData || !capTableData.calculations) {
+      return (
+        <div className="alert alert-warning">
+          <h5>⚠️ No Data Available</h5>
+          <p>Cap table data is not available for this round.</p>
+        </div>
+      );
+    }
+
+    const calc = capTableData.calculations;
+    const currency = capTableData.currency || "USD";
+
+    if (capTableData.error) {
+      return (
+        <div className="alert alert-danger">
+          <h5>❌ Calculation Error</h5>
+          <p>{capTableData.error}</p>
+          {capTableData.details && (
+            <pre className="small">{JSON.stringify(capTableData.details, null, 2)}</pre>
+          )}
+        </div>
+      );
+    }
+
+    // Get data from backend response structure
+    const preCapTable = capTableData.preSeriesACapTable || {};
+    const postCapTable = capTableData.postSeriesACapTable || {};
+
+    const preSeriesAShareholders = preCapTable.shareholders || [];
+    const postSeriesAShareholders = postCapTable.shareholders || [];
+
+    const totalPreShares = preCapTable.totalShares || 0;
+    const totalPostSharesBeforeWarrants = postCapTable.totalSharesBeforeWarrants || 0;
+    const totalPostSharesAfterWarrants = postCapTable.totalSharesAfterWarrants || 0;
+
+    // Group shareholders by type
+    const founders = postSeriesAShareholders.filter(sh => sh.type === "Founder") || [];
+    const optionPool = postSeriesAShareholders.filter(sh => sh.type === "Options Pool") || [];
+    const seedInvestors = postSeriesAShareholders.filter(sh => sh.originalType === "Seed Investor") || [];
+    const seriesAInvestors = postSeriesAShareholders.filter(sh => sh.originalType === "Series A Investor") || [];
+    const warrantHolders = postSeriesAShareholders.filter(sh => sh.type === "Warrant") || [];
+
+    return (
+      <div className="container-fluid py-4" style={{ backgroundColor: '#f8f9fa' }}>
+        {/* Header */}
+        <div className="card mb-4 shadow">
+          <div className="card-header text-white" style={{ backgroundColor: '#6f42c1' }}>
+            <h3 className="mb-0">💎 {capTableData.roundType || "Preferred Equity Round"}</h3>
+            <small className="opacity-75">
+              {capTableData.hasConversions && "With Convertible Note Conversions"}
+              {capTableData.hasWarrants && " | Includes Warrants"}
+            </small>
+          </div>
+
+          <div className="card-body">
+            {/* Investment Overview */}
+            <h5 className="mb-3 text-primary">📊 Investment Overview</h5>
+            <div className="row mb-4">
+              <div className="col-md-3">
+                <div className="p-3 border rounded" style={{ backgroundColor: '#e3f2fd' }}>
+                  <small className="text-muted d-block">Investment Amount</small>
+                  <h5 className="mb-0">{formatCurrency(calc.investmentSize, currency)}</h5>
+                </div>
+              </div>
+              <div className="col-md-3">
+                <div className="p-3 border rounded" style={{ backgroundColor: '#f3e5f5' }}>
+                  <small className="text-muted d-block">Pre-Money Valuation</small>
+                  <h5 className="mb-0">{formatCurrency(calc.preMoneyValuation, currency)}</h5>
+                </div>
+              </div>
+              <div className="col-md-3">
+                <div className="p-3 border rounded" style={{ backgroundColor: '#e8f5e9' }}>
+                  <small className="text-muted d-block">Post-Money Valuation</small>
+                  <h5 className="mb-0">{formatCurrency(calc.postMoneyValuation, currency)}</h5>
+                </div>
+              </div>
+              <div className="col-md-3">
+                <div className="p-3 border rounded" style={{ backgroundColor: '#fff3e0' }}>
+                  <small className="text-muted d-block">Share Price</small>
+                  <h5 className="mb-0">{formatCurrencyPricePerShare(calc.sharePrice, currency)}</h5>
+                </div>
+              </div>
+            </div>
+
+            {/* Key Metrics */}
+            <div className="row mb-4">
+              <div className="col-md-3">
+                <div className="p-3 border rounded bg-white">
+                  <small className="text-muted d-block">Series A Shares</small>
+                  <h6 className="mb-0">{formatNumber(calc.seriesAShares)}</h6>
+                </div>
+              </div>
+              <div className="col-md-3">
+                <div className="p-3 border rounded bg-white">
+                  <small className="text-muted d-block">Converted Shares (Seed)</small>
+                  <h6 className="mb-0">{formatNumber(calc.convertibleNoteShares)}</h6>
+                </div>
+              </div>
+              <div className="col-md-3">
+                <div className="p-3 border rounded bg-white">
+                  <small className="text-muted d-block">New Option Shares</small>
+                  <h6 className="mb-0">{formatNumber(calc.newOptionShares)}</h6>
+                </div>
+              </div>
+              <div className="col-md-3">
+                <div className="p-3 border rounded bg-white">
+                  <small className="text-muted d-block">Total Post Shares</small>
+                  <h6 className="mb-0">{formatNumber(totalPostSharesAfterWarrants)}</h6>
+                </div>
+              </div>
+            </div>
+
+            {/* Warrants Alert */}
+            {capTableData.hasWarrants && capTableData.warrants?.length > 0 && (
+              <div className="alert alert-info mb-4">
+                <h6 className="alert-heading">📜 Warrants Exercised</h6>
+                {capTableData.warrants.map((warrant, idx) => (
+                  <div key={idx}>
+                    <strong>Warrant #{warrant.id}:</strong> {warrant.coverage}% coverage |
+                    Exercise Price: {formatCurrencyPricePerShare(warrant.exercisePrice, currency)} |
+                    Shares: {formatNumber(warrant.shares)} |
+                    Status: {warrant.status}
+                  </div>
+                ))}
+                <div className="mt-2 small text-muted">
+                  Total Warrant Value: {formatCurrency(calc.warrantValue, currency)}
+                </div>
+              </div>
+            )}
+
+            {/* Convertible Note Conversion Details */}
+            {calc.convertibleNoteShares > 0 && (
+              <div className="alert alert-success mb-4">
+                <h6 className="alert-heading">💰 Convertible Note Conversion</h6>
+                <div className="row">
+                  <div className="col-md-3">
+                    <strong>Original Investment:</strong><br />
+                    {formatCurrency(calc.convertibleNotePrincipal, currency)}
+                  </div>
+                  <div className="col-md-3">
+                    <strong>Principal + Interest:</strong><br />
+                    {formatCurrency(calc.convertibleNotePrincipalPlusInterest, currency)}
+                  </div>
+                  <div className="col-md-3">
+                    <strong>Converted Shares:</strong><br />
+                    {formatNumber(calc.convertibleNoteShares)}
+                  </div>
+                  <div className="col-md-3">
+                    <strong>Current Value:</strong><br />
+                    {formatCurrency(calc.convertibleNoteValue, currency)}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* PRE-INVESTMENT CAP TABLE */}
+            <div className="card mb-4 shadow-sm">
+              <div className="card-header bg-info text-white">
+                <h5 className="mb-0">📋 Pre-{capTableData.roundType} Cap Table</h5>
+                <small>Before Investment | Pre-Money: {formatCurrency(calc.preMoneyValuation, currency)}</small>
+              </div>
+              <div className="card-body">
+                <div className="table-responsive">
+                  <table className="table table-bordered table-hover">
+                    <thead style={{ backgroundColor: '#343a40', color: 'white' }}>
+                      <tr>
+                        <th>Shareholder</th>
+                        <th className="text-center">Type</th>
+                        <th className="text-center">Shares</th>
+                        <th className="text-center">Ownership %</th>
+                        <th className="text-center">Value ({currency})</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {preSeriesAShareholders.length > 0 ? (
+                        preSeriesAShareholders.map((sh, idx) => (
+                          <tr key={idx}>
+                            <td>
+                              <strong>{sh.name}</strong>
+                              {sh.note && <div className="small text-muted">{sh.note}</div>}
+                            </td>
+                            <td className="text-center">
+                              <span className={`badge ${sh.type === "Founder" ? "bg-primary" :
+                                sh.type === "Options Pool" ? "bg-warning text-dark" :
+                                  "bg-success"
+                                }`}>
+                                {sh.type}
+                              </span>
+                            </td>
+                            <td className="text-center"><strong>{formatNumber(sh.shares)}</strong></td>
+                            <td className="text-center">
+                              <span className="badge bg-secondary">{formatPercentage(sh.ownership)}</span>
+                            </td>
+                            <td className="text-center"><strong>{formatCurrency(sh.value, currency)}</strong></td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="5" className="text-center text-muted">No pre-investment data available</td>
+                        </tr>
+                      )}
+
+                      {/* TOTAL ROW */}
+                      {totalPreShares > 0 && (
+                        <tr style={{ backgroundColor: '#e9ecef', fontWeight: 'bold' }}>
+                          <td colSpan="2">TOTAL</td>
+                          <td className="text-center">{formatNumber(totalPreShares)}</td>
+                          <td className="text-center">
+                            <span className="badge bg-dark">{formatPercentage(100)}</span>
+                          </td>
+                          <td className="text-center">{formatCurrency(calc.preMoneyValuation, currency)}</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pre-Investment Summary */}
+                {preSeriesAShareholders.length > 0 && (
+                  <div className="row mt-3">
+                    <div className="col-md-4">
+                      <div className="alert alert-primary mb-0">
+                        <strong>Founders:</strong> {formatPercentage(
+                          preSeriesAShareholders
+                            .filter(sh => sh.type === "Founder")
+                            .reduce((sum, sh) => sum + sh.ownership, 0)
+                        )}
+                      </div>
+                    </div>
+                    <div className="col-md-4">
+                      <div className="alert alert-warning mb-0">
+                        <strong>Employee:</strong> {formatPercentage(
+                          preSeriesAShareholders
+                            .filter(sh => sh.type === "Options Pool")
+                            .reduce((sum, sh) => sum + sh.ownership, 0)
+                        )}
+                      </div>
+                    </div>
+                    <div className="col-md-4">
+                      <div className="alert alert-success mb-0">
+                        <strong>Seed Investors:</strong> {formatPercentage(
+                          preSeriesAShareholders
+                            .filter(sh => sh.type === "Investor")
+                            .reduce((sum, sh) => sum + sh.ownership, 0)
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* POST-INVESTMENT CAP TABLE */}
+            <div className="card shadow-sm mb-4">
+              <div className="card-header bg-success text-white">
+                <h5 className="mb-0">📊 Post-{capTableData.roundType} Cap Table</h5>
+                <small>After Investment | Post-Money: {formatCurrency(calc.postMoneyValuation, currency)}</small>
+              </div>
+              <div className="card-body">
+                <div className="table-responsive">
+                  <table className="table table-bordered table-hover">
+                    <thead style={{ backgroundColor: '#343a40', color: 'white' }}>
+                      <tr>
+                        <th>Shareholder</th>
+                        <th className="text-center">Type</th>
+                        <th className="text-center">Existing Shares</th>
+                        <th className="text-center">New Shares</th>
+                        <th className="text-center">Total Shares</th>
+                        <th className="text-center">Ownership %</th>
+                        <th className="text-center">Value ({currency})</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {postSeriesAShareholders.length > 0 ? (
+                        postSeriesAShareholders.map((sh, idx) => (
+                          <tr key={idx}>
+                            <td>
+                              <strong>{sh.name}</strong>
+                              {sh.email && sh.email !== "-" && (
+                                <div className="small text-muted">📧 {sh.email}</div>
+                              )}
+                              {sh.moic && (
+                                <div className="small text-success">
+                                  MOIC: {sh.moic}x
+                                </div>
+                              )}
+                              {sh.note && (
+                                <div className="small text-info">{sh.note}</div>
+                              )}
+                            </td>
+                            <td className="text-center">
+                              <span className={`badge ${sh.type === "Founder" ? "bg-primary" :
+                                sh.type === "Options Pool" ? "bg-warning text-dark" :
+                                  sh.type === "Warrant" ? "bg-secondary" :
+                                    sh.originalType === "Seed Investor" ? "bg-info" :
+                                      "bg-danger"
+                                }`}>
+                                {sh.originalType || sh.type}
+                              </span>
+                            </td>
+                            <td className="text-center">
+                              {sh.existingShares > 0 ? formatNumber(sh.existingShares) : "—"}
+                            </td>
+                            <td className="text-center">
+                              {sh.newShares > 0 ? (
+                                <span className="badge bg-warning text-dark">+{formatNumber(sh.newShares)}</span>
+                              ) : "—"}
+                            </td>
+                            <td className="text-center"><strong>{formatNumber(sh.shares)}</strong></td>
+                            <td className="text-center">
+                              <span className={`badge ${sh.type === "Founder" ? "bg-primary" :
+                                sh.type === "Options Pool" ? "bg-warning text-dark" :
+                                  sh.type === "Warrant" ? "bg-secondary" :
+                                    sh.originalType === "Seed Investor" ? "bg-info" :
+                                      "bg-danger"
+                                }`}>
+                                {formatPercentage(sh.ownership)}
+                              </span>
+                            </td>
+                            <td className="text-center">
+                              <strong>{formatCurrency(sh.value, currency)}</strong>
+                              {sh.investmentAmount && sh.investmentAmount > 0 && (
+                                <div className="small text-success">
+                                  💰 Invested: {formatCurrency(sh.investmentAmount, currency)}
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="7" className="text-center text-muted">No post-investment data available</td>
+                        </tr>
+                      )}
+
+                      {/* TOTAL ROW */}
+                      {totalPostSharesAfterWarrants > 0 && (
+                        <tr style={{ backgroundColor: '#e9ecef', fontWeight: 'bold' }}>
+                          <td colSpan="2">TOTAL</td>
+                          <td className="text-center">{formatNumber(totalPreShares)}</td>
+                          <td className="text-center">
+                            <span className="badge bg-warning text-dark">
+                              +{formatNumber(totalPostSharesAfterWarrants - totalPreShares)}
+                            </span>
+                          </td>
+                          <td className="text-center">{formatNumber(totalPostSharesAfterWarrants)}</td>
+                          <td className="text-center">
+                            <span className="badge bg-dark">{formatPercentage(100)}</span>
+                          </td>
+                          <td className="text-center">{formatCurrency(calc.postMoneyValuation, currency)}</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Post-Investment Summary */}
+                {postSeriesAShareholders.length > 0 && (
+                  <div className="row mt-3">
+                    <div className="col-md-3">
+                      <div className="alert alert-primary mb-0">
+                        <strong>Founders:</strong> {formatPercentage(calc.foundersOwnership)}
+                      </div>
+                    </div>
+                    <div className="col-md-3">
+                      <div className="alert alert-warning mb-0">
+                        <strong>Employee:</strong> {formatPercentage(calc.poolOwnership)}
+                      </div>
+                    </div>
+                    <div className="col-md-3">
+                      <div className="alert alert-info mb-0">
+                        <strong>Seed Investors:</strong> {formatPercentage(calc.seedInvestorsOwnership)}
+                      </div>
+                    </div>
+                    <div className="col-md-3">
+                      <div className="alert alert-danger mb-0">
+                        <strong>Series A Investors:</strong> {formatPercentage(calc.seriesAInvestorsOwnership)}
+                      </div>
+                    </div>
+                    {calc.warrantHoldersOwnership > 0 && (
+                      <div className="col-md-3 mt-2">
+                        <div className="alert alert-secondary mb-0">
+                          <strong>Warrant Holders:</strong> {formatPercentage(calc.warrantHoldersOwnership)}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* CALCULATION FORMULAS */}
+            <div className="alert alert-dark">
+              <h6 className="alert-heading">📐 Calculation Formulas</h6>
+
+              <div className="row small mb-3">
+                <div className="col-md-6">
+                  <strong>1. Share Price:</strong><br />
+                  <code style={{ backgroundColor: '#f8f9fa', padding: '4px 8px', borderRadius: '4px', display: 'block' }}>
+                    Pre-Money ÷ Total Shares from Seed Round<br />
+                    {formatCurrency(calc.preMoneyValuation, currency)} ÷ {formatNumber(totalPreShares)}
+                    = {formatCurrencyPricePerShare(calc.sharePrice, currency)}
+                  </code>
+                </div>
+                <div className="col-md-6">
+                  <strong>2. Series A Shares:</strong><br />
+                  <code style={{ backgroundColor: '#f8f9fa', padding: '4px 8px', borderRadius: '4px', display: 'block' }}>
+                    Investment ÷ Share Price<br />
+                    {formatCurrency(calc.investmentSize, currency)} ÷ {formatCurrencyPricePerShare(calc.sharePrice, currency)}
+                    = {formatNumber(calc.seriesAShares)}
+                  </code>
+                </div>
+              </div>
+
+              <div className="row small">
+                <div className="col-md-6">
+                  <strong>3. Post-Money Valuation:</strong><br />
+                  <code style={{ backgroundColor: '#f8f9fa', padding: '4px 8px', borderRadius: '4px', display: 'block' }}>
+                    Total Shares × Share Price<br />
+                    {formatNumber(totalPostSharesBeforeWarrants)} × {formatCurrencyPricePerShare(calc.sharePrice, currency)}
+                    = {formatCurrency(calc.postMoneyValuation, currency)}
+                  </code>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <Wrapper>
       <div className="fullpage d-block">
@@ -1489,10 +2194,16 @@ export default function RecordRoundCaptable() {
                       renderRoundZeroTable()
                     ) : capTableData.instrumentType?.toLowerCase() === "safe" ||
                       capTableData.isSAFERound ? (
-                      // SAFE Round ke liye
                       renderSAFERoundTable()
+                    ) : capTableData.instrumentType?.toLowerCase() === "preferred equity" ||
+                      capTableData.instrumentType?.toLowerCase().includes("preferred") ? (
+                      <PreferredEquityCapTable capTableData={capTableData} />
+                    ) : capTableData.isSeriesA ||
+                      capTableData.roundType?.toLowerCase().includes("series a") ||
+                      (capTableData.calculations?.optionPoolPercentPost &&
+                        capTableData.calculations.optionPoolPercentPost > 0) ? (
+                      renderSeriesATable()
                     ) : (
-                      // Normal Seed/Series Round ke liye
                       renderSeedRoundTable()
                     )}
                   </>

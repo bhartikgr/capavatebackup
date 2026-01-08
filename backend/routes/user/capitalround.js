@@ -78,5 +78,22 @@ router.post(
   capitalroundController.getRoundCapTableSingleRecord
 );
 router.post("/checkExistingRounds", capitalroundController.checkExistingRounds);
+router.post(
+  "/getPreviousRoundOptionPool",
+  capitalroundController.getPreviousRoundOptionPool
+);
+router.post(
+  "/getPreviousRoundForAutoFill",
+  capitalroundController.getPreviousRoundForAutoFill
+);
+router.post(
+  "/getIndustryExpertise",
+  capitalroundController.getIndustryExpertise
+);
+router.post(
+  "/addIndustryExpertise",
+  capitalroundController.addIndustryExpertise
+);
+router.post("/createWarrant", capitalroundController.createWarrant);
 
 module.exports = router;
