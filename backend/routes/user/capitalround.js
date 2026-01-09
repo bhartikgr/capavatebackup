@@ -95,5 +95,6 @@ router.post(
   capitalroundController.addIndustryExpertise
 );
 router.post("/createWarrant", capitalroundController.createWarrant);
+router.post("/warrantDataUpdate", capitalroundController.warrantDataUpdate);
 
 module.exports = router;

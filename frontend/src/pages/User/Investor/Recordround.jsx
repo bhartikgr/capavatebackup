@@ -717,15 +717,46 @@ export default function Recordround() {
         };
 
         // Save warrant to warrants table
-        await axios.post(
-          apiUrlRound + "createWarrant",
-          warrantData,
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
+        if (!id) {
+
+
+          await axios.post(
+            apiUrlRound + "createWarrant",
+            warrantData,
+            {
+              headers: {
+                "Content-Type": "application/json",
+              },
+            }
+          );
+        } else {
+          const warrantDataUpdate = {
+            roundrecord_id: id,
+            company_id: userLogin.companies[0].id,
+            investor_id: 0, // Will be updated when investor confirms
+            warrant_coverage_percentage: parseFloat(formData.warrant_coverage_percentage) || 0,
+            warrant_exercise_type: formData.warrant_exercise_type || "next_round_adjusted",
+            warrant_adjustment_percent: parseFloat(formData.warrant_adjustment_percent) || 0,
+            warrant_adjustment_direction: formData.warrant_adjustment_direction || "decrease",
+            calculated_exercise_price: null, // Calculated when exercised
+            calculated_warrant_shares: null, // Calculated when exercised
+            warrant_coverage_amount: null, // Calculated when exercised
+            warrant_status: "pending",
+            issued_date: formData.dateroundclosed || new Date().toISOString().split('T')[0],
+            expiration_date: formData.expirationDate_preferred || null,
+            notes: formData.warrant_notes || null
+          };
+
+          await axios.post(
+            apiUrlRound + "warrantDataUpdate",
+            warrantDataUpdate,
+            {
+              headers: {
+                "Content-Type": "application/json",
+              },
+            }
+          );
+        }
       }
       setIsLoading(false);
       seterrr(false);

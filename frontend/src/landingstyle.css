@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Wix+Madefor+Text:ital,wght@0,400..800;1,400..800&display=swap");
+
 @font-face {
   font-family: "Fraunces";
   src: url("./assets/fonts/Fraunces72pt-BlackItalic.eot");
@@ -507,7 +509,7 @@ body {
 }
 
 .bg_blue {
-  background-color: rgb(15, 29, 86);
+  background-color: #001c3e;
   border: solid 1px rgb(193, 195, 206);
   width: 600px;
   text-align: center;
@@ -1020,15 +1022,66 @@ body {
   display: inline-block;
   border: none;
 }
+
+.wix_header {
+  background: #eff1f2;
+  border-bottom: 1px solid #166aea;
+  box-sizing: border-box;
+  display: flex;
+  height: 50px;
+  width: 100%;
+}
+.wix_header .wix_top .wix_image {
+  margin: 0 10px;
+  padding-right: 8px;
+  border-right: 1px solid #000;
+}
+.wix_header .wix_top p {
+  color: #20303c;
+  display: flex;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  font-family: "Wix Madefor Text", sans-serif;
+}
+.wix_header .get_started_btn {
+  margin-left: 16px;
+  align-items: center;
+  border: 1px solid #166aea;
+  border-radius: 17px;
+  color: #166aea;
+  display: inline-flex;
+  font-size: 14px;
+  height: 25px;
+  font-weight: 400;
+  justify-content: center;
+  text-align: center;
+  width: 112px;
+  transition: 0.3s all ease-in-out;
+  font-family: "Wix Madefor Text", sans-serif;
+}
+.wix_header .get_started_btn:hover {
+  background-color: #166aea;
+  color: #fff;
+  transition: 0.3s all ease-in-out;
+}
 @media (max-width: 768px) {
   .cheader {
     padding-top: 25px;
   }
+
   .hero_banner .hero_png {
     width: -webkit-fill-available;
   }
   .cheader .navbar-brand {
     width: 250px;
+  }
+  .wix_header .wix_top p {
+    color: #000;
+    display: flex;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 15px;
   }
   .hero_banner {
     margin: 54px 0px;

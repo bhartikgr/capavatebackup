@@ -4693,3 +4693,199 @@ exports.getcountrySymbolLocal = (req, res) => {
     }
   );
 };
+// Controller: registerController.contactform
+exports.contactform = async (req, res) => {
+  console.log(req.body);
+  try {
+    const {
+      firstName,
+      lastName,
+      email,
+      mobile,
+      companyName,
+      companyWebsite,
+      city,
+      country,
+      sectorFocus,
+      message,
+    } = req.body;
+
+    // Validation
+    if (!firstName || !lastName || !email || !mobile) {
+      return res.status(400).json({
+        success: false,
+        message: "Please fill all required fields",
+      });
+    }
+
+    // Send email - wrapped in try-catch and awaited if async
+    try {
+      await sendContactFormEmail({
+        firstName,
+        lastName,
+        email,
+        mobile,
+        companyName,
+        companyWebsite,
+        city,
+        country,
+        sectorFocus,
+        message,
+      });
+    } catch (emailError) {
+      console.error("Email sending error:", emailError);
+      // Continue anyway - you might want to log this but still return success
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Your inquiry has been submitted successfully!",
+    });
+  } catch (error) {
+    console.error("Contact form error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong. Please try again later.",
+    });
+  }
+};
+function sendContactFormEmail(data) {
+  const {
+    firstName,
+    lastName,
+    email,
+    mobile,
+    companyName,
+    companyWebsite,
+    city,
+    country,
+    sectorFocus,
+    message,
+  } = data;
+
+  const subject = `New Contact Form Inquiry - ${firstName} ${lastName}`;
+
+  // Format sector focus array
+  const sectors = Array.isArray(sectorFocus)
+    ? sectorFocus.map((s) => s.label || s.value || s).join(", ")
+    : sectorFocus || "Not specified";
+
+  const htmlBody = `
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>New Contact Inquiry</title>
+  </head>
+  <body>
+    <div style="width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden; font-family: Verdana, Geneva, sans-serif;">
+      <table style="width:100%; border-collapse: collapse;">
+        <tr>
+          <td style="background:#efefef; padding:10px; text-align:center;">
+            <img src="https://capavate.com/api/upload/images/logo.png" alt="logo" style="width:130px;" />
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:20px;">
+            <h2 style="font-size:18px; color:#111; margin-bottom:20px;">New Contact Form Submission</h2>
+            
+            <table style="width:100%; font-size:14px; color:#111;">
+              <tr>
+                <td style="padding:8px 0; font-weight:bold; width:40%;">Name:</td>
+                <td style="padding:8px 0;">${firstName} ${lastName}</td>
+              </tr>
+              <tr style="background:#f9f9f9;">
+                <td style="padding:8px 0; font-weight:bold;">Email:</td>
+                <td style="padding:8px 0;">${email}</td>
+              </tr>
+              <tr>
+                <td style="padding:8px 0; font-weight:bold;">Mobile:</td>
+                <td style="padding:8px 0;">${mobile}</td>
+              </tr>
+              ${
+                companyName
+                  ? `
+              <tr style="background:#f9f9f9;">
+                <td style="padding:8px 0; font-weight:bold;">Company Name:</td>
+                <td style="padding:8px 0;">${companyName}</td>
+              </tr>
+              `
+                  : ""
+              }
+              ${
+                companyWebsite
+                  ? `
+              <tr>
+                <td style="padding:8px 0; font-weight:bold;">Company Website:</td>
+                <td style="padding:8px 0;"><a href="${companyWebsite}" target="_blank">${companyWebsite}</a></td>
+              </tr>
+              `
+                  : ""
+              }
+              ${
+                city
+                  ? `
+              <tr style="background:#f9f9f9;">
+                <td style="padding:8px 0; font-weight:bold;">City:</td>
+                <td style="padding:8px 0;">${city}</td>
+              </tr>
+              `
+                  : ""
+              }
+              ${
+                country
+                  ? `
+              <tr>
+                <td style="padding:8px 0; font-weight:bold;">Country:</td>
+                <td style="padding:8px 0;">${country}</td>
+              </tr>
+              `
+                  : ""
+              }
+              <tr style="background:#f9f9f9;">
+                <td style="padding:8px 0; font-weight:bold;">Sector Focus:</td>
+                <td style="padding:8px 0;">${sectors}</td>
+              </tr>
+              ${
+                message
+                  ? `
+              <tr>
+                <td style="padding:8px 0; font-weight:bold; vertical-align:top;">Message:</td>
+                <td style="padding:8px 0;">${message}</td>
+              </tr>
+              `
+                  : ""
+              }
+            </table>
+
+            <p style="font-size:14px; color:#111; margin-top:20px;">
+              Submitted on: ${new Date().toLocaleString("en-US", {
+                dateStyle: "full",
+                timeStyle: "short",
+              })}
+            </p>
+          </td>
+        </tr>
+      </table>
+      <div style="text-align:center; font-size:12px; color:#999; padding:10px 0;">
+        Capavate. Powered by Blueprint Catalyst Limited
+      </div>
+    </div>
+  </body>
+  </html>
+  `;
+
+  const mailOptions = {
+    from: '"Capavate Contact Form" <scale@blueprintcatalyst.com>',
+    to: "venture@capavate.com",
+    replyTo: email, // Allows you to reply directly to the user
+    subject,
+    html: htmlBody,
+  };
+
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) console.error("Error sending contact form email:", error);
+    else console.log("Contact form email sent:", info.response);
+  });
+}

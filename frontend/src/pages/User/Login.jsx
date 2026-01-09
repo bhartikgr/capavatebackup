@@ -305,7 +305,7 @@ export default function Login() {
                   <div className="d-flex flex-column gap-5 p-md-5 px-3 py-5 h-100 m-auto justify-content-center ">
                     <div className="d-flex flex-column gap-1">
                       <div className="d-flex justify-content-center align-items-center">
-                        <a href="/" className="logo">
+                        <a href="/user/login" className="logo">
                           <img
                             className="w-100 h-100 object-fit-contain"
                             src="/logos/capavate.png"

@@ -1224,7 +1224,7 @@ function CapitalRoundView() {
 
                                 <div className="form-check mb-3">
                                   <input
-                                    className="form-check-input"
+                                    className="form-check-input inv-checkbox"
                                     type="checkbox"
                                     id="termsCheck3"
                                     checked={termsChecked.acceptAll || records.termsChecked} style={{

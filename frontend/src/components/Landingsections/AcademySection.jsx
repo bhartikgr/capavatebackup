@@ -12,8 +12,8 @@ export default function AcademySection() {
     infinite: true,
     fade: false,
     speed: 500,
-    autoplaySpeed: 500,
-    autoplay: false,
+    autoplaySpeed: 2000,
+    autoplay: true,
     responsive: [
       { breakpoint: 992, settings: { slidesToShow: 1, dots: false } }, // Tablet
       { breakpoint: 576, settings: { slidesToShow: 1, dots: false } }, // Mobile

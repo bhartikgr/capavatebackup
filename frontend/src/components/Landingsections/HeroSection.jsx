@@ -40,7 +40,7 @@ export default function HeroSection() {
           <div class="row gy-4 align-items-center justify-content-between">
             <div class="col-md-5 pe-md-5">
               <div class="d-flex justify-content-center justify-content-md-end align-items-end">
-                <a href="#" class="lglobal_btn bg_red">
+                <a href="/user/login" target="_blank" class="lglobal_btn bg_red">
                   Start Your Journey
                 </a>
               </div>

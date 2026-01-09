@@ -327,20 +327,20 @@ exports.CreateOrUpdateCapitalRound = (req, res) => {
             `;
 
             let executiveSummary = "";
-            // try {
-            //   const aiRes = await openai.chat.completions.create({
-            //     model: "gpt-4-turbo",
-            //     messages: [
-            //       {
-            //         role: "system",
-            //         content: "You summarize investment rounds.",
-            //       },
-            //       { role: "user", content: prompt },
-            //     ],
-            //     max_tokens: 500,
-            //   });
-            //   executiveSummary = aiRes.choices[0].message.content.trim();
-            // } catch (e) {}
+            try {
+              const aiRes = await openai.chat.completions.create({
+                model: "gpt-4-turbo",
+                messages: [
+                  {
+                    role: "system",
+                    content: "You summarize investment rounds.",
+                  },
+                  { role: "user", content: prompt },
+                ],
+                max_tokens: 500,
+              });
+              executiveSummary = aiRes.choices[0].message.content.trim();
+            } catch (e) {}
 
             await db
               .promise()
@@ -502,17 +502,17 @@ exports.CreateOrUpdateCapitalRound = (req, res) => {
         `;
 
         let executiveSummary = "";
-        // try {
-        //   const aiRes = await openai.chat.completions.create({
-        //     model: "gpt-4-turbo",
-        //     messages: [
-        //       { role: "system", content: "You summarize investment rounds." },
-        //       { role: "user", content: prompt },
-        //     ],
-        //     max_tokens: 500,
-        //   });
-        //   executiveSummary = aiRes.choices[0].message.content.trim();
-        // } catch (e) {}
+        try {
+          const aiRes = await openai.chat.completions.create({
+            model: "gpt-4-turbo",
+            messages: [
+              { role: "system", content: "You summarize investment rounds." },
+              { role: "user", content: prompt },
+            ],
+            max_tokens: 500,
+          });
+          executiveSummary = aiRes.choices[0].message.content.trim();
+        } catch (e) {}
 
         await db
           .promise()
@@ -5483,6 +5483,70 @@ exports.createWarrant = (req, res) => {
       success: true,
       message: "Warrant created successfully",
       warrantId: result.insertId,
+    });
+  });
+};
+
+exports.warrantDataUpdate = (req, res) => {
+  const {
+    roundrecord_id,
+    company_id,
+    investor_id,
+    warrant_coverage_percentage,
+    warrant_exercise_type,
+    warrant_adjustment_percent,
+    warrant_adjustment_direction,
+    warrant_status,
+    issued_date,
+    expiration_date,
+    notes,
+  } = req.body;
+
+  const sql = `
+    UPDATE warrants 
+    SET 
+     
+      company_id = ?,
+      investor_id = ?,
+      warrant_coverage_percentage = ?,
+      warrant_exercise_type = ?,
+      warrant_adjustment_percent = ?,
+      warrant_adjustment_direction = ?,
+      warrant_status = ?,
+      issued_date = ?,
+      expiration_date = ?,
+      notes = ?,
+      updated_at = NOW()
+    WHERE roundrecord_id = ?
+  `;
+
+  const values = [
+    company_id,
+    investor_id || 0,
+    warrant_coverage_percentage || 0,
+    warrant_exercise_type || "next_round_adjustment",
+    warrant_adjustment_percent || 0,
+    warrant_adjustment_direction || "decrease",
+    warrant_status || "pending",
+    issued_date || new Date(),
+    expiration_date || null,
+    notes || null,
+    roundrecord_id, // WHERE clause के लिए last में
+  ];
+  db.query(sql, values, (err, result) => {
+    if (err) {
+      console.error("Error updating warrant:", err);
+      return res.status(500).json({
+        success: false,
+        message: "Error updating warrant",
+        error: err,
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      // message: "Warrant updated successfully",
+      // affectedRows: result.affectedRows,
     });
   });
 };

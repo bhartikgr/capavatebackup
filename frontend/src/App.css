@@ -2154,6 +2154,69 @@ button.activate_btn.border-0.active_sb {
   font-size: 12px;
   color: #000;
 }
+.inv-checkbox {
+  border: 1px solid black;
+}
+/* Investment Ecosystem Section Styling */
+.investment-ecosystem-section {
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  border-radius: 10px;
+}
+
+.border-none {
+  border: none !important;
+}
+
+.investment-ecosystem-section h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.investment-ecosystem-section h2 {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.investment-ecosystem-section p {
+  font-size: 1.25rem;
+  line-height: 1.6;
+  color: #555;
+  max-width: 900px;
+  margin: 0 auto 30px;
+}
+
+.features-list {
+  text-align: left;
+  display: inline-block;
+  margin: 20px 0;
+}
+
+.features-list div {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.features-list span {
+  font-size: 1.1rem;
+}
+
+.checkmark {
+  color: #28a745;
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+.industry-partners-section {
+  padding-top: 40px;
+  border-top: 1px solid #e0e0e0;
+  width: 100%;
+}
+
 @media (max-width: 768px) {
   .contact-hero .overlay-content {
     border-radius: 0px;
@@ -2162,4 +2225,94 @@ button.activate_btn.border-0.active_sb {
     transform: translate(0%, 0%);
     z-index: 3;
   }
+}
+
+.contact-popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 40%;
+  height: fit-content;
+  overflow: auto;
+  transform: translate(-50%, -50%);
+  background: var(--card-bg);
+  border-radius: 16px;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+  z-index: 9999;
+  overflow: auto;
+}
+
+.contact-header {
+  background: var(--primary);
+  color: #fff;
+  padding: 16px;
+}
+
+.contact-header h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.contact-header p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+.contact-form {
+  padding: 16px;
+}
+
+.form-row {
+  display: flex;
+  gap: 10px;
+}
+
+.contact-form input,
+.contact-form textarea,
+.contact-form select {
+  width: 100%;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  font-size: 14px;
+  background: #fff;
+}
+.close_btn_tp {
+  border: none;
+  width: fit-content;
+  color: #fff;
+  background-color: transparent;
+}
+.contact-form input:focus,
+.contact-form textarea:focus,
+.contact-form select:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.multi-select {
+  height: 90px;
+}
+
+.contact-form textarea {
+  resize: none;
+}
+
+.contact-form button {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  background: var(--primary);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.contact-form button:hover {
+  background: #e63234;
 }

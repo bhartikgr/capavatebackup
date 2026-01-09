@@ -3,17 +3,17 @@ import React from "react";
 export default function FooterSection() {
   return (
     <>
-     <section className="d-block management">
-    <div className="container-xl">
-      <div className="row">
-        <div className="col-md-11">
-          <h4>
-            Cap Table Management + Start/Manage Rounds + Investor CRM + Dataroom + Entrepreneur Academy </h4>
-          <h5>Will. Knowldege. Action.</h5>
+      <section className="d-block management">
+        <div className="container-xl">
+          <div className="row">
+            <div className="col-md-11">
+              <h4>
+                Cap Table Management + Start/Manage Rounds + Investor CRM + Dataroom + Entrepreneur Academy </h4>
+              <h5>Will. Knowldege. Action.</h5>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-  </section>
+      </section>
       <section className="d-block contact">
         <div className="container-xl">
           <div className="row gy-5 contact_main">
@@ -194,7 +194,7 @@ export default function FooterSection() {
               and expenses (including reasonable legal fees) arising out of or
               related to your use of the Capavate Platform, your reliance on its
               content, your breach of applicable law or Capavate’s terms and
-              policies, or any dispute between you and any third party.​
+              policies, or any dispute between you and any third party.
               Capavate’s failure to enforce any right is not a waiver, any
               invalid or unenforceable provision shall be enforced to the
               maximum extent permissible with the remainder in full force,
@@ -202,7 +202,7 @@ export default function FooterSection() {
               notice, and by accessing or using any part of the Capavate
               Platform you confirm that you have read, understood, and agreed to
               the then‑current version and that you assume full responsibility
-              and risk for your use.​
+              and risk for your use.
             </p>
           </div>
         </div>
