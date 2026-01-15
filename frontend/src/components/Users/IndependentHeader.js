@@ -16,7 +16,7 @@ export default function IndependentHeader() {
   const [userdataa, setuserdataa] = useState("");
   const navigate = useNavigate();
   const [getdatamodule, setgetdatamodule] = useState([]);
-  var apiURL = "https://capavate.com/api/user/";
+  var apiURL = "http://localhost:5000/api/user/";
 
   const storedUsername = localStorage.getItem("CompanyLoginData");
   const userLogin = JSON.parse(storedUsername);

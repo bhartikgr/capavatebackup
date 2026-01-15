@@ -19,7 +19,7 @@ function Dashboard() {
   const [TotalDataroomReport, setTotalDataroomReport] = useState("");
   const storedUsername = localStorage.getItem("InvestorData");
   const userLogin = JSON.parse(storedUsername);
-  var apiURL = "https://capavate.com/api/user/capitalround/";
+  var apiURL = "http://localhost:5000/api/user/capitalround/";
   document.title = "Investor Dashboard Page";
   useEffect(() => {
     getTotalcompany();

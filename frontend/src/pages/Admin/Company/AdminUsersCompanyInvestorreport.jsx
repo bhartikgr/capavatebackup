@@ -10,7 +10,7 @@ import AdminCompanyInvestorReporting from "../../../components/Admin/company/Adm
 function AdminUsersCompanyInvestorreport() {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
-  const apiUrl = "https://capavate.com/api/admin/company/";
+  const apiUrl = "http://localhost:5000/api/admin/company/";
   const [records, setRecords] = useState([]);
   const toggleNavAdmin = () => {
     setIsOpen(!isOpen); // Toggle the state between true and false

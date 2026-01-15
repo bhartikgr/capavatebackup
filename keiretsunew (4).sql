@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 06, 2025 at 12:08 PM
+-- Generation Time: Jan 15, 2026 at 11:45 AM
 -- Server version: 10.4.32-MariaDB
--- PHP Version: 8.0.30
+-- PHP Version: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -81,7 +81,164 @@ INSERT INTO `access_logs_company_round` (`id`, `user_id`, `user_role`, `company_
 (34, 2, 'signatory', 2, 'CREATE', 'roundrecord', 1, 'Created round record: Founding Share Allocation', '223.178.211.217', '2025-11-06 04:29:29'),
 (35, 2, 'signatory', 2, 'UPDATE', 'roundrecord', 1, 'Updated round record: Founding Share Allocation', '223.178.211.217', '2025-11-06 04:30:12'),
 (36, 2, 'signatory', 2, 'CREATE', 'roundrecord', 2, 'Created round record: Founding Share Allocation', '223.178.211.217', '2025-11-06 04:33:37'),
-(37, 2, 'signatory', 2, 'UPDATE', 'roundrecord', 2, 'Updated round record: Founding Share Allocation', '223.178.211.217', '2025-11-06 04:39:37');
+(37, 2, 'signatory', 2, 'UPDATE', 'roundrecord', 2, 'Updated round record: Founding Share Allocation', '223.178.211.217', '2025-11-06 04:39:37'),
+(38, 1, 'signatory', 1, 'CREATE', 'roundrecord', 3, 'Created round record: Founding Share Allocation', '223.178.213.71', '2025-11-10 05:55:27'),
+(39, 1, 'signatory', 1, 'CREATE', 'roundrecord', 4, 'Created round record: Founding Share Allocation', '223.178.213.71', '2025-11-10 06:57:28'),
+(40, 1, 'signatory', 1, 'CREATE', 'roundrecord', 5, 'Created round record: Founding Share Allocation', '223.178.213.71', '2025-11-10 07:18:08'),
+(41, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 5, 'Updated round record: Founding Share Allocation', '223.178.213.71', '2025-11-10 07:31:32'),
+(42, 1, 'signatory', 1, 'CREATE', 'roundrecord', 6, 'Created round record: Founding Share Allocation', '223.178.213.71', '2025-11-10 08:44:08'),
+(43, 1, 'signatory', 1, 'CREATE', 'roundrecord', 7, 'Created round record: Founding Share Allocation', '223.178.213.71', '2025-11-10 10:41:35'),
+(44, 1, 'signatory', 1, 'CREATE', 'roundrecord', 1, 'Created round record: Founding Share Allocation', '223.178.209.221', '2025-11-11 05:27:51'),
+(45, 1, 'signatory', 1, 'CREATE', 'roundrecord', 2, 'Created round record: Founding Share Allocation', '223.178.209.221', '2025-11-11 06:33:58'),
+(46, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 2, 'Updated round record: Founding Share Allocation', '223.178.209.221', '2025-11-11 06:37:09'),
+(47, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 2, 'Updated round record: Founding Share Allocation', '223.178.209.221', '2025-11-11 10:16:13'),
+(48, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 2, 'Updated round record: Founding Share Allocation', '223.178.209.221', '2025-11-11 10:16:35'),
+(49, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 2, 'Updated round record: Founding Share Allocation', '223.178.209.221', '2025-11-11 10:44:45'),
+(50, 1, 'signatory', 1, 'CREATE', 'roundrecord', 1, 'Created round record: Founding Share Allocation', '223.178.209.221', '2025-11-11 10:50:09'),
+(51, 1, 'signatory', 1, 'CREATE', 'roundrecord', 2, 'Created round record: Founding Share Allocation', '223.178.209.221', '2025-11-11 11:12:46'),
+(52, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 2, 'Updated round record: Founding Share Allocation', '223.178.209.221', '2025-11-11 12:09:48'),
+(53, 1, 'signatory', 1, 'CREATE', 'roundrecord', 1, 'Created round record: Founding Share Allocation', '223.181.18.222', '2025-11-26 05:59:08'),
+(54, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 1, 'Updated round record: Founding Share Allocation', '223.181.18.222', '2025-11-26 06:27:52'),
+(55, 1, 'signatory', 1, 'CREATE', 'roundrecord', 2, 'Created round record: Founding Share Allocation', '223.181.18.222', '2025-11-26 06:31:17'),
+(56, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 1, 'Updated round record: Founding Share Allocation', '223.181.18.222', '2025-11-26 07:52:38'),
+(57, 1, 'signatory', 1, 'CREATE', 'roundrecord', 3, 'Created round record: Founding Share Allocation', '223.181.18.222', '2025-11-26 08:44:02'),
+(58, 1, 'signatory', 1, 'CREATE', 'roundrecord', 4, 'Created round record: Founding Share Allocation', '223.181.18.222', '2025-11-26 09:34:37'),
+(59, 1, 'signatory', 1, 'CREATE', 'roundrecord', 5, 'Created round record: Series A', '223.181.18.222', '2025-11-26 10:32:44'),
+(60, 1, 'signatory', 1, 'CREATE', 'roundrecord', 1, 'Created round record: Founding Share Allocation', '223.181.18.222', '2025-11-26 10:52:51'),
+(61, 1, 'signatory', 1, 'CREATE', 'roundrecord', 2, 'Created round record: Founding Share Allocation', '223.181.18.222', '2025-11-26 11:06:43'),
+(62, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 1, 'Updated round record: Founding Share Allocation', '223.181.18.222', '2025-11-26 11:12:26'),
+(63, 1, 'signatory', 1, 'CREATE', 'roundrecord', 3, 'Created round record: Founding Share Allocation', '223.181.18.222', '2025-11-26 11:13:34'),
+(64, 1, 'signatory', 1, 'CREATE', 'roundrecord', 4, 'Created round record: Founding Share Allocation', '223.181.18.222', '2025-11-26 11:41:52'),
+(65, 1, 'signatory', 1, 'CREATE', 'roundrecord', 1, 'Created round record: Founding Share Allocation', '49.43.110.78', '2025-11-27 05:24:48'),
+(66, 1, 'signatory', 1, 'CREATE', 'roundrecord', 2, 'Created round record: Founding Share Allocation', '223.181.16.148', '2025-11-27 06:52:09'),
+(67, 1, 'signatory', 1, 'CREATE', 'roundrecord', 3, 'Created round record: Seed Round', '223.181.16.148', '2025-11-27 07:10:18'),
+(68, 1, 'signatory', 1, 'CREATE', 'roundrecord', 4, 'Created round record: Founding Share Allocation', '223.181.16.148', '2025-11-27 09:10:21'),
+(69, 1, 'signatory', 1, 'CREATE', 'roundrecord', 1, 'Created round record: Founding Share Allocation', '223.181.16.148', '2025-11-27 09:59:16'),
+(70, 1, 'signatory', 1, 'CREATE', 'roundrecord', 2, 'Created round record: Founding Share Allocation', '223.181.16.148', '2025-11-27 10:01:58'),
+(71, 1, 'signatory', 1, 'CREATE', 'roundrecord', 3, 'Created round record: Founding Share Allocation', '223.181.16.148', '2025-11-27 10:04:10'),
+(72, 1, 'signatory', 1, 'CREATE', 'roundrecord', 4, 'Created round record: Founding Share Allocation', '223.181.16.148', '2025-11-27 10:25:12'),
+(73, 1, 'signatory', 1, 'CREATE', 'roundrecord', 5, 'Created round record: Founding Share Allocation', '223.181.22.230', '2025-11-28 07:13:06'),
+(74, 1, 'signatory', 1, 'CREATE', 'roundrecord', 1, 'Created round record: Founding Share Allocation', '223.181.22.230', '2025-11-28 08:58:33'),
+(75, 1, 'signatory', 1, 'CREATE', 'roundrecord', 2, 'Created round record: Seed', '223.181.22.230', '2025-11-28 09:06:24'),
+(76, 1, 'signatory', 1, 'CREATE', 'roundrecord', 3, 'Created round record: Safe Seed', '223.181.22.230', '2025-11-28 09:18:31'),
+(77, 1, 'signatory', 1, 'CREATE', 'roundrecord', 4, 'Created round record: Seed Convertible Notes', '223.181.22.230', '2025-11-28 09:30:21'),
+(78, 1, 'signatory', 1, 'CREATE', 'roundrecord', 5, 'Created round record: Founding Share Allocation', '223.181.18.94', '2025-12-02 05:51:26'),
+(79, 1, 'signatory', 1, 'CREATE', 'roundrecord', 6, 'Created round record: Founding Share Allocation', '223.181.18.94', '2025-12-02 07:18:14'),
+(80, 1, 'signatory', 1, 'CREATE', 'roundrecord', 7, 'Created round record: Founding Share Allocation', '223.181.18.94', '2025-12-02 07:22:42'),
+(81, 1, 'signatory', 1, 'CREATE', 'roundrecord', 8, 'Created round record: Founding Share Allocation', '223.181.18.94', '2025-12-02 07:43:26'),
+(82, 1, 'signatory', 1, 'CREATE', 'roundrecord', 9, 'Created round record: Seed Round', '223.181.18.94', '2025-12-02 07:45:46'),
+(83, 1, 'signatory', 1, 'CREATE', 'roundrecord', 10, 'Created round record: Seed Round', '223.181.18.94', '2025-12-02 07:49:45'),
+(84, 1, 'signatory', 1, 'CREATE', 'roundrecord', 11, 'Created round record: Founding Share Allocation', '223.181.18.94', '2025-12-02 09:17:42'),
+(85, 1, 'signatory', 1, 'CREATE', 'roundrecord', 12, 'Created round record: Founding Share Allocation', '223.181.18.94', '2025-12-02 10:28:54'),
+(86, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 12, 'Updated round record: Founding Share Allocation', '223.181.18.94', '2025-12-02 10:29:17'),
+(87, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 12, 'Updated round record: Founding Share Allocation', '223.181.18.94', '2025-12-02 10:42:35'),
+(88, 1, 'signatory', 1, 'CREATE', 'roundrecord', 13, 'Created round record: Convertible', '223.181.22.83', '2025-12-03 05:12:36'),
+(89, 1, 'signatory', 1, 'CREATE', 'roundrecord', 16, 'Created round record: Founding Share Allocation', '223.181.23.130', '2025-12-10 05:49:10'),
+(90, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 16, 'Updated round record: Founding Share Allocation', '223.181.23.130', '2025-12-10 05:54:01'),
+(91, 1, 'signatory', 1, 'CREATE', 'roundrecord', 17, 'Created round record: Founding Share Allocation', '223.181.23.130', '2025-12-10 06:02:05'),
+(92, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 17, 'Updated round record: Founding Share Allocation', '223.181.23.130', '2025-12-10 06:04:37'),
+(93, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 17, 'Updated round record: Founding Share Allocation', '223.181.23.130', '2025-12-10 06:14:54'),
+(94, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 17, 'Updated round record: Founding Share Allocation', '223.181.23.130', '2025-12-10 06:18:15'),
+(95, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 11, 'Updated round record: Founding Share Allocation', '223.181.23.130', '2025-12-10 06:19:26'),
+(96, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 17, 'Updated round record: Founding Share Allocation', '223.181.23.130', '2025-12-10 06:34:24'),
+(97, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 17, 'Updated round record: Founding Share Allocation', '223.181.23.130', '2025-12-10 06:38:54'),
+(98, 1, 'signatory', 1, 'CREATE', 'roundrecord', 18, 'Created round record: Pre seed', '223.181.23.130', '2025-12-10 08:34:31'),
+(99, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 18, 'Updated round record: Pre seed', '223.181.23.130', '2025-12-10 09:54:21'),
+(100, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 18, 'Updated round record: Pre seed', '223.181.23.130', '2025-12-10 09:57:11'),
+(101, 1, 'signatory', 1, 'CREATE', 'roundrecord', 19, 'Created round record: Founding Share Allocation', '223.181.23.130', '2025-12-10 10:50:31'),
+(102, 1, 'signatory', 1, 'CREATE', 'roundrecord', 20, 'Created round record: Series 1', '223.181.23.130', '2025-12-10 10:54:06'),
+(103, 1, 'signatory', 1, 'CREATE', 'roundrecord', 21, 'Created round record: Series A', '223.181.23.130', '2025-12-10 10:55:56'),
+(104, 1, 'signatory', 1, 'CREATE', 'roundrecord', 22, 'Created round record: Founding Share Allocation', '223.181.23.130', '2025-12-10 11:56:43'),
+(105, 5, 'signatory', 3, 'CREATE', 'roundrecord', 23, 'Created round record: Founding Share Allocation', '223.181.21.166', '2025-12-12 04:48:55'),
+(106, 5, 'signatory', 3, 'CREATE', 'roundrecord', 24, 'Created round record: seed', '223.181.21.166', '2025-12-12 05:02:21'),
+(107, 5, 'signatory', 3, 'UPDATE', 'roundrecord', 23, 'Updated round record: Founding Share Allocation', '223.181.21.166', '2025-12-12 05:03:25'),
+(108, 5, 'signatory', 3, 'CREATE', 'roundrecord', 25, 'Created round record: Seed', '223.181.21.166', '2025-12-12 05:09:39'),
+(109, 5, 'signatory', 3, 'UPDATE', 'roundrecord', 25, 'Updated round record: Seed', '223.181.21.166', '2025-12-12 05:18:47'),
+(110, 5, 'signatory', 3, 'CREATE', 'roundrecord', 26, 'Created round record: seed', '223.181.21.166', '2025-12-12 06:24:40'),
+(111, 5, 'signatory', 3, 'CREATE', 'roundrecord', 27, 'Created round record: Series A', '223.181.21.166', '2025-12-12 06:29:33'),
+(112, 5, 'signatory', 3, 'UPDATE', 'roundrecord', 27, 'Updated round record: Series A', '223.181.21.166', '2025-12-12 07:05:08'),
+(113, 5, 'signatory', 3, 'CREATE', 'roundrecord', 28, 'Created round record: Seed', '223.181.21.166', '2025-12-12 07:17:35'),
+(114, 5, 'signatory', 3, 'CREATE', 'roundrecord', 29, 'Created round record: Founding Share Allocation', '223.181.21.166', '2025-12-12 08:43:18'),
+(115, 5, 'signatory', 3, 'CREATE', 'roundrecord', 30, 'Created round record: seed', '223.181.21.166', '2025-12-12 09:02:46'),
+(116, 5, 'signatory', 3, 'CREATE', 'roundrecord', 31, 'Created round record: Founding Share Allocation', '223.181.21.166', '2025-12-12 09:08:17'),
+(117, 5, 'signatory', 3, 'CREATE', 'roundrecord', 32, 'Created round record: Convertible', '223.181.21.166', '2025-12-12 09:28:49'),
+(118, 5, 'signatory', 3, 'CREATE', 'roundrecord', 33, 'Created round record: Founding Share Allocation', '223.181.21.166', '2025-12-12 09:35:09'),
+(119, 1, 'signatory', 1, 'CREATE', 'roundrecord', 34, 'Created round record: Founding Share Allocation', '27.60.49.194', '2025-12-28 07:33:12'),
+(120, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 19, 'Updated round record: Founding Share Allocation', '49.43.142.12', '2026-01-02 09:27:17'),
+(121, 1, 'signatory', 1, 'CREATE', 'roundrecord', 35, 'Created round record: Founding Share Allocation', '49.43.142.12', '2026-01-02 09:38:49'),
+(122, 1, 'signatory', 1, 'CREATE', 'roundrecord', 36, 'Created round record: Founding Share Allocation', '49.43.142.12', '2026-01-02 09:41:31'),
+(123, 1, 'signatory', 1, 'CREATE', 'roundrecord', 37, 'Created round record: Founding Share Allocation', '49.43.142.12', '2026-01-02 10:03:53'),
+(124, 1, 'signatory', 1, 'CREATE', 'roundrecord', 38, 'Created round record: Founding Share Allocation', '49.43.142.12', '2026-01-02 10:22:50'),
+(125, 1, 'signatory', 1, 'CREATE', 'roundrecord', 39, 'Created round record: Founding Share Allocation', '49.43.142.12', '2026-01-02 10:35:19'),
+(126, 1, 'signatory', 1, 'CREATE', 'roundrecord', 40, 'Created round record: Founding Share Allocation', '49.43.142.12', '2026-01-02 10:36:10'),
+(127, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 19, 'Updated round record: Founding Share Allocation', '49.43.142.12', '2026-01-02 10:55:52'),
+(128, 1, 'signatory', 1, 'CREATE', 'roundrecord', 41, 'Created round record: Founding Share Allocation', '49.43.142.12', '2026-01-02 10:57:11'),
+(129, 1, 'signatory', 1, 'CREATE', 'roundrecord', 42, 'Created round record: Founding Share Allocation', '49.43.142.12', '2026-01-02 11:02:19'),
+(130, 1, 'signatory', 1, 'CREATE', 'roundrecord', 43, 'Created round record: Founding Share Allocation', '223.181.18.191', '2026-01-03 05:53:11'),
+(131, 1, 'signatory', 1, 'CREATE', 'roundrecord', 44, 'Created round record: Founding Share Allocation', '223.181.18.191', '2026-01-03 06:15:15'),
+(132, 1, 'signatory', 1, 'CREATE', 'roundrecord', 45, 'Created round record: Founding Share Allocation', '223.181.23.203', '2026-01-05 04:48:16'),
+(133, 1, 'signatory', 1, 'CREATE', 'roundrecord', 46, 'Created round record: Founding Share Allocation', '223.181.23.203', '2026-01-05 04:58:12'),
+(134, 1, 'signatory', 1, 'CREATE', 'roundrecord', 47, 'Created round record: Founding Share Allocation', '223.181.23.203', '2026-01-05 05:27:52'),
+(135, 1, 'signatory', 1, 'CREATE', 'roundrecord', 48, 'Created round record: Founding Share Allocation', '223.181.20.99', '2026-01-06 06:41:11'),
+(136, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 19, 'Updated round record: Founding Share Allocation', '223.181.20.99', '2026-01-06 07:01:24'),
+(137, 1, 'signatory', 1, 'CREATE', 'roundrecord', 49, 'Created round record: Founding Share Allocation', '223.181.20.99', '2026-01-06 07:03:56'),
+(138, 1, 'signatory', 1, 'CREATE', 'roundrecord', 50, 'Created round record: Founding Share Allocation', '223.181.20.99', '2026-01-06 07:14:10'),
+(139, 1, 'signatory', 1, 'CREATE', 'roundrecord', 51, 'Created round record: Founding Share Allocation', '223.181.20.99', '2026-01-06 09:11:00'),
+(140, 1, 'signatory', 1, 'CREATE', 'roundrecord', 52, 'Created round record: Founding Share Allocation', '223.181.20.99', '2026-01-06 10:23:57'),
+(141, 1, 'signatory', 1, 'CREATE', 'roundrecord', 53, 'Created round record: Founding Share Allocation', '223.181.21.25', '2026-01-07 04:57:02'),
+(142, 1, 'signatory', 1, 'CREATE', 'roundrecord', 54, 'Created round record: Founding Share Allocation', '223.181.21.25', '2026-01-07 05:30:35'),
+(143, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 54, 'Updated round record: Founding Share Allocation', '223.181.21.25', '2026-01-07 06:04:15'),
+(144, 1, 'signatory', 1, 'CREATE', 'roundrecord', 55, 'Created round record: Founding Share Allocation', '223.181.21.25', '2026-01-07 09:05:49'),
+(145, 1, 'signatory', 1, 'CREATE', 'roundrecord', 56, 'Created round record: Founding Share Allocation', '223.181.21.25', '2026-01-07 09:08:22'),
+(146, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 55, 'Updated round record: Founding Share Allocation', '223.181.21.25', '2026-01-07 09:19:50'),
+(147, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 55, 'Updated round record: Founding Share Allocation', '223.181.21.25', '2026-01-07 09:30:37'),
+(148, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 56, 'Updated round record: Founding Share Allocation', '223.181.21.180', '2026-01-09 09:33:40'),
+(149, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 56, 'Updated round record: Founding Share Allocation', '223.181.21.180', '2026-01-09 09:39:11'),
+(150, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 56, 'Updated round record: Founding Share Allocation', '223.181.21.180', '2026-01-09 09:41:42'),
+(151, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 56, 'Updated round record: Founding Share Allocation', '223.181.21.180', '2026-01-09 09:42:15'),
+(152, 1, 'signatory', 1, 'CREATE', 'roundrecord', 57, 'Created round record: Safe', '223.181.22.8', '2026-01-12 04:35:10'),
+(153, 1, 'signatory', 1, 'CREATE', 'roundrecord', 58, 'Created round record: Convertible', '223.181.22.8', '2026-01-12 09:23:41'),
+(154, 1, 'signatory', 1, 'CREATE', 'roundrecord', 59, 'Created round record: Safe', '223.181.22.8', '2026-01-12 09:29:08'),
+(155, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 59, 'Updated round record: Safe', '223.181.22.8', '2026-01-12 09:32:46'),
+(156, 1, 'signatory', 1, 'CREATE', 'roundrecord', 60, 'Created round record: Safe', '223.181.22.8', '2026-01-12 09:36:08'),
+(157, 1, 'signatory', 1, 'CREATE', 'roundrecord', 61, 'Created round record: Safe seed', '223.181.22.8', '2026-01-12 10:08:24'),
+(158, 1, 'signatory', 1, 'CREATE', 'roundrecord', 62, 'Created round record: Safe', '223.181.22.8', '2026-01-12 10:20:13'),
+(159, 1, 'signatory', 1, 'CREATE', 'roundrecord', 63, 'Created round record: Seed safe', '223.181.22.8', '2026-01-12 10:59:35'),
+(160, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 63, 'Updated round record: Seed safe', '223.181.22.8', '2026-01-12 11:34:25'),
+(161, 1, 'signatory', 1, 'CREATE', 'roundrecord', 64, 'Created round record: Founding Share Allocation', '223.181.22.8', '2026-01-12 12:28:41'),
+(162, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 63, 'Updated round record: Seed safe', '223.181.22.244', '2026-01-13 05:33:53'),
+(163, 1, 'signatory', 1, 'CREATE', 'roundrecord', 65, 'Created round record: Founding Share Allocation', '223.181.22.244', '2026-01-13 05:42:08'),
+(164, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 65, 'Updated round record: Founding Share Allocation', '223.181.22.244', '2026-01-13 05:52:55'),
+(165, 1, 'signatory', 1, 'CREATE', 'roundrecord', 66, 'Created round record: Safe series', '223.181.22.244', '2026-01-13 06:20:32'),
+(166, 1, 'signatory', 1, 'CREATE', 'roundrecord', 67, 'Created round record: Seed safe', '223.181.22.244', '2026-01-13 07:44:04'),
+(167, 1, 'signatory', 1, 'CREATE', 'roundrecord', 68, 'Created round record: Series A safe', '223.181.22.244', '2026-01-13 07:45:11'),
+(168, 1, 'signatory', 1, 'CREATE', 'roundrecord', 69, 'Created round record: Seed Round', '223.181.22.244', '2026-01-13 07:51:48'),
+(169, 1, 'signatory', 1, 'CREATE', 'roundrecord', 70, 'Created round record: Founding Share Allocation', '223.181.22.244', '2026-01-13 08:57:48'),
+(170, 1, 'signatory', 1, 'CREATE', 'roundrecord', 71, 'Created round record: Founding Share Allocation', '223.181.22.244', '2026-01-13 09:20:31'),
+(171, 1, 'signatory', 1, 'CREATE', 'roundrecord', 72, 'Created round record: Founding Share Allocation', '223.181.22.244', '2026-01-13 09:34:21'),
+(172, 1, 'signatory', 1, 'CREATE', 'roundrecord', 73, 'Created round record: Series A Note', '223.181.22.244', '2026-01-13 09:35:38'),
+(173, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 72, 'Updated round record: Founding Share Allocation', '223.181.22.244', '2026-01-13 10:03:14'),
+(174, 1, 'signatory', 1, 'CREATE', 'roundrecord', 74, 'Created round record: Convertible Note', '223.181.22.244', '2026-01-13 10:04:54'),
+(175, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 74, 'Updated round record: Convertible Note', '223.181.22.244', '2026-01-13 10:08:26'),
+(176, 1, 'signatory', 1, 'CREATE', 'roundrecord', 75, 'Created round record: Founding Share Allocation', '223.181.22.244', '2026-01-13 11:05:38'),
+(177, 1, 'signatory', 1, 'CREATE', 'roundrecord', 76, 'Created round record: Safe Seed', '223.181.22.244', '2026-01-13 12:28:40'),
+(178, 1, 'signatory', 1, 'CREATE', 'roundrecord', 77, 'Created round record: Seed safe', '223.181.22.244', '2026-01-13 12:31:45'),
+(179, 1, 'signatory', 1, 'CREATE', 'roundrecord', 78, 'Created round record: safe', '223.181.22.244', '2026-01-13 12:46:42'),
+(180, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 78, 'Updated round record: safe', '223.181.22.244', '2026-01-13 12:47:26'),
+(181, 1, 'signatory', 1, 'CREATE', 'roundrecord', 79, 'Created round record: Founding Share Allocation', '223.181.22.244', '2026-01-13 12:51:38'),
+(182, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 72, 'Updated round record: Founding Share Allocation', '223.181.22.244', '2026-01-13 12:53:38'),
+(183, 1, 'signatory', 1, 'CREATE', 'roundrecord', 80, 'Created round record: Series A Common Stock', '223.181.17.237', '2026-01-14 05:22:11'),
+(184, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 79, 'Updated round record: Safe Series A', '223.181.17.237', '2026-01-14 07:25:30'),
+(185, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 75, 'Updated round record: Convertible Series A', '223.181.17.237', '2026-01-14 07:26:12'),
+(186, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 72, 'Updated round record: Convertible Seed', '223.181.17.237', '2026-01-14 07:26:38'),
+(187, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 77, 'Updated round record: Seed safe', '223.181.23.82', '2026-01-15 04:42:01'),
+(188, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 72, 'Updated round record: Convertible Seed', '223.181.23.82', '2026-01-15 04:43:41'),
+(189, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 79, 'Updated round record: Safe Series A', '223.181.23.82', '2026-01-15 04:49:11'),
+(190, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 80, 'Updated round record: Series A Common Stock', '223.181.23.82', '2026-01-15 05:55:55'),
+(191, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 80, 'Updated round record: Series A Common Stock', '223.181.23.82', '2026-01-15 05:56:46'),
+(192, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 79, 'Updated round record: Safe Series A', '223.181.23.82', '2026-01-15 06:15:11'),
+(193, 1, 'signatory', 1, 'UPDATE', 'roundrecord', 80, 'Updated round record: Series A Common Stock', '223.181.23.82', '2026-01-15 07:35:26'),
+(194, 1, 'signatory', 1, 'CREATE', 'roundrecord', 81, 'Created round record: Founding Share Allocation', '223.181.23.82', '2026-01-15 08:58:11');
 
 -- --------------------------------------------------------
 
@@ -136,7 +293,51 @@ INSERT INTO `access_logs_investor` (`id`, `investor_id`, `user_id`, `company_id`
 (26, 1, 1, 1, NULL, 'INVESTMENT_REQUEST', 'Capital Round', 'Investor requested 25 shares for 2500', NULL, '{\"requestId\":28}', '2025-10-24 06:34:06'),
 (27, 1, 1, 1, NULL, 'INVESTMENT_REQUEST', 'Capital Round', 'Investor requested 25 shares for 2500', NULL, '{\"requestId\":29}', '2025-10-24 06:40:05'),
 (28, 1, 1, 1, NULL, 'INVESTMENT_REQUEST', 'Capital Round', 'Investor requested 39 shares for 4500', NULL, '{\"requestId\":30}', '2025-10-24 07:05:56'),
-(29, 1, 1, 1, NULL, 'INVESTMENT_REQUEST', 'Capital Round', 'Investor requested 22.59 shares for 230', NULL, '{\"requestId\":31}', '2025-10-24 07:15:29');
+(29, 1, 1, 1, NULL, 'INVESTMENT_REQUEST', 'Capital Round', 'Investor requested 22.59 shares for 230', NULL, '{\"requestId\":31}', '2025-10-24 07:15:29'),
+(30, 1, 1, 1, NULL, 'INVESTMENT_REQUEST', 'Capital Round', 'Investor requested 0 shares for 2000', NULL, '{\"requestId\":1}', '2025-11-26 07:25:43'),
+(31, 1, 1, 1, NULL, 'INVESTMENT_REQUEST', 'Capital Round', 'Investor requested 0 shares for 1000', NULL, '{\"requestId\":1}', '2025-11-26 07:30:30'),
+(32, 1, 1, 1, NULL, 'INVESTMENT_REQUEST', 'Capital Round', 'Investor requested 625 shares for 50000', NULL, '{\"requestId\":2}', '2025-11-26 09:07:07'),
+(33, 1, 1, 1, NULL, 'INVESTMENT_REQUEST', 'Capital Round', 'Investor requested 40000 shares for 40000', NULL, '{\"requestId\":3}', '2025-11-26 09:35:27'),
+(34, 1, 1, 1, NULL, 'INVESTMENT_REQUEST', 'Capital Round', 'Investor requested 500 shares for 40000', NULL, '{\"requestId\":4}', '2025-11-26 10:16:39'),
+(35, 1, 1, 1, NULL, 'INVESTMENT_REQUEST', 'Capital Round', 'Investor requested 0 shares for 50000', NULL, '{\"requestId\":5}', '2025-11-26 10:35:12'),
+(36, 1, 1, 1, NULL, 'INVESTMENT_REQUEST', 'Capital Round', 'Investor requested 0 shares for 278', NULL, '{\"requestId\":1}', '2025-11-26 11:14:49'),
+(37, 1, 1, 1, NULL, 'INVESTMENT_REQUEST', 'Capital Round', 'Investor requested 12000 shares for 120000', NULL, '{\"requestId\":1}', '2025-11-27 08:58:02'),
+(38, 1, 1, 1, NULL, 'INVESTMENT_REQUEST', 'Capital Round', 'Investor requested 0 shares for 10000', NULL, '{\"requestId\":2}', '2025-11-27 08:58:15'),
+(39, 1, 1, 1, NULL, 'INVESTMENT_REQUEST', 'Capital Round', 'Investor requested 0 shares for 10000', NULL, '{\"requestId\":3}', '2025-11-27 10:05:46'),
+(40, 1, 1, 1, NULL, 'INVESTMENT_REQUEST', 'Capital Round', 'Investor requested 203703.5 shares for 12000', NULL, '{\"requestId\":4}', '2025-11-27 10:06:04'),
+(41, 1, 1, 1, NULL, 'INVESTMENT_REQUEST', 'Capital Round', 'Investor requested 4.88 shares for 4000', NULL, '{\"requestId\":1}', '2025-11-28 05:35:38'),
+(42, 1, 1, 1, NULL, 'INVESTMENT_REQUEST', 'Capital Round', 'Investor requested 12.22 shares for 10000', NULL, '{\"requestId\":2}', '2025-11-28 05:37:28'),
+(43, 1, 1, 1, NULL, 'INVESTMENT_REQUEST', 'Capital Round', 'Investor requested 6.11 shares for 5000', NULL, '{\"requestId\":3}', '2025-11-28 06:24:05'),
+(44, 1, 1, 1, NULL, 'INVESTMENT_REQUEST', 'Capital Round', 'Investor requested 0 shares for 200', NULL, '{\"requestId\":4}', '2025-11-28 07:14:12'),
+(45, 1, 1, 1, 'My corp', 'REGISTER', NULL, 'New investor Test test registered.', '2401:4900:8fe0:b02a:b063:b4ca:c7c7:ded1', '{\"email\":\"avinayquicktech+001@gmail.com\"}', '2025-12-02 09:30:44'),
+(46, 1, 1, 1, NULL, 'INVESTMENT_REQUEST', 'Capital Round', 'Investor requested 0 shares for 500', NULL, '{\"requestId\":1}', '2025-12-02 10:30:54'),
+(47, 2, 1, 1, 'My corp', 'REGISTER', NULL, 'New investor hy h registered.', '223.181.19.73', '{\"email\":\"avinayquicktech+033@gmail.com\"}', '2025-12-09 06:52:29'),
+(48, 1, 1, 1, NULL, 'INVESTMENT_REQUEST', 'Capital Round', 'Investor requested 0 shares for 1500', NULL, '{\"requestId\":2}', '2025-12-09 07:20:44'),
+(49, 2, 1, 1, NULL, 'INVESTMENT_REQUEST', 'Capital Round', 'Investor requested 0 shares for 400', NULL, '{\"requestId\":3}', '2025-12-09 07:32:48'),
+(50, 2, 1, 1, NULL, 'INVESTMENT_REQUEST', 'Capital Round', 'Investor requested 0 shares for 500', NULL, '{\"requestId\":4}', '2025-12-09 07:34:41'),
+(51, 1, 1, 1, NULL, 'INVESTMENT_REQUEST', 'Capital Round', 'Investor requested 203.68 shares for 16666.66', NULL, '{\"requestId\":5}', '2025-12-09 09:19:38'),
+(52, 1, 1, 1, NULL, 'INVESTMENT_REQUEST', 'Capital Round', 'Investor requested 1466.52 shares for 120000', NULL, '{\"requestId\":6}', '2025-12-09 09:20:26'),
+(53, 1, 1, 1, NULL, 'INVESTMENT_REQUEST', 'Capital Round', 'Investor requested 0 shares for 1200', NULL, '{\"requestId\":1}', '2025-12-09 09:41:07'),
+(54, 1, 1, 1, NULL, 'INVESTMENT_REQUEST', 'Capital Round', 'Investor requested 125 shares for 250', NULL, '{\"requestId\":2}', '2025-12-10 08:36:02'),
+(55, 1, 1, 1, NULL, 'INVESTMENT_REQUEST', 'Capital Round', 'Investor requested 125 shares for 250', NULL, '{\"requestId\":3}', '2025-12-10 08:37:20'),
+(56, 1, 1, 1, NULL, 'INVESTMENT_REQUEST', 'Capital Round', 'Investor requested 125 shares for 250', NULL, '{\"requestId\":4}', '2025-12-10 09:06:54'),
+(57, 1, 1, 1, NULL, 'INVESTMENT_REQUEST', 'Capital Round', 'Investor requested 465.79 shares for 2500', NULL, '{\"requestId\":5}', '2025-12-10 09:46:20'),
+(58, 1, 1, 1, NULL, 'INVESTMENT_REQUEST', 'Capital Round', 'Investor requested 125 shares for 250', NULL, '{\"requestId\":6}', '2025-12-10 09:48:31'),
+(59, 1, 1, 1, NULL, 'INVESTMENT_REQUEST', 'Capital Round', 'Investor requested 125 shares for 250', NULL, '{\"requestId\":7}', '2025-12-10 09:50:07'),
+(60, 1, 1, 1, NULL, 'INVESTMENT_REQUEST', 'Capital Round', 'Investor requested 125 shares for 250', NULL, '{\"requestId\":8}', '2025-12-10 09:57:41'),
+(61, 1, 1, 1, NULL, 'WARRANT_CREATED', 'Capital Round', 'Warrant created for 9.8% coverage (Amount: 24.5)', NULL, '{\"warrant_id\":1,\"investment_id\":8,\"roundrecord_id\":18,\"instrument_type\":\"Preferred Equity\",\"coverage_percentage\":9.8,\"coverage_amount\":24.5,\"adjustment_percent\":\"10\",\"adjustment_direction\":\"decrease\"}', '2025-12-10 09:57:41'),
+(62, 1, 1, 1, NULL, 'INVESTMENT_REQUEST', 'Capital Round', 'Investor requested 0 shares for 100', NULL, '{\"requestId\":1}', '2025-12-10 12:15:38'),
+(63, 3, 5, 3, 'LookUp', 'REGISTER', NULL, 'New investor fsdf sdf registered.', '223.181.21.166', '{\"email\":\"avinayquicktech+011@gmail.com\"}', '2025-12-12 09:41:38'),
+(64, 3, 5, 3, NULL, 'INVESTMENT_REQUEST', 'Capital Round', 'Investor requested 169753.03 shares for 50000', NULL, '{\"requestId\":2}', '2025-12-12 09:45:47'),
+(65, 4, 1, 1, 'My corp', 'REGISTER', NULL, 'New investor Test t registered.', '49.43.105.30', '{\"email\":\"avinayquicktech+0012@gmail.com\"}', '2026-01-02 07:39:34'),
+(66, 4, 1, 1, 'My corp', 'REGISTER', NULL, 'New investor sds sss registered.', '49.43.105.30', '{\"email\":\"avinayquicktech+0012@gmail.com\"}', '2026-01-02 07:40:47'),
+(67, 4, 1, 1, 'My corp', 'REGISTER', NULL, 'New investor ss a registered.', '49.43.105.30', '{\"email\":\"avinayquicktech+0012@gmail.com\"}', '2026-01-02 07:43:18'),
+(68, 4, 1, 1, 'My corp', 'REGISTER', NULL, 'New investor Test Kumar registered.', '49.43.105.30', '{\"email\":\"avinayquicktech+0012@gmail.com\"}', '2026-01-02 07:44:49'),
+(69, 4, 1, 1, NULL, 'INVESTMENT_REQUEST', 'Capital Round', 'Investor requested 555.54 shares for 10', NULL, '{\"requestId\":1}', '2026-01-02 11:50:33'),
+(70, 4, 1, 1, NULL, 'INVESTMENT_REQUEST', 'Capital Round', 'Investor requested 83333.25 shares for 1500', NULL, '{\"requestId\":1}', '2026-01-03 04:32:06'),
+(71, 4, 1, 1, NULL, 'INVESTMENT_REQUEST', 'Capital Round', 'Investor requested 111111 shares for 2000', NULL, '{\"requestId\":2}', '2026-01-03 04:32:46'),
+(72, 4, 1, 1, NULL, 'INVESTMENT_REQUEST', 'Capital Round', 'Investor requested 99999.9 shares for 1800', NULL, '{\"requestId\":1}', '2026-01-05 07:12:03'),
+(73, 4, 1, 1, NULL, 'INVESTMENT_REQUEST', 'Capital Round', 'Investor requested 72464 shares for 10000', NULL, '{\"requestId\":2}', '2026-01-05 08:42:12');
 
 -- --------------------------------------------------------
 
@@ -157,10 +358,10 @@ CREATE TABLE `access_logs_sigantory_last_login` (
 --
 
 INSERT INTO `access_logs_sigantory_last_login` (`id`, `company_id`, `signatory_email`, `ip_address`, `created_at`) VALUES
-(1, 2, 'avinayquicktech+02@gmail.com', '223.178.211.217', '2025-11-06 09:52:37'),
+(1, 2, 'avinayquicktech+02@gmail.com', '223.181.23.82', '2026-01-15 15:11:26'),
 (7, 1, 'avinayquicktech+03@gmail.com', '223.178.209.117', '2025-10-09 17:50:56'),
-(15, 1, 'avinayquicktech+02@gmail.com', '223.178.212.111', '2025-10-24 12:29:54'),
-(17, 3, 'avinayquicktech+02@gmail.com', '223.178.212.111', '2025-10-24 11:24:30');
+(15, 1, 'avinayquicktech+02@gmail.com', '223.181.23.82', '2026-01-15 15:11:31'),
+(17, 3, 'avinayquicktech+02@gmail.com', '223.181.21.166', '2025-12-12 17:55:25');
 
 -- --------------------------------------------------------
 
@@ -219,7 +420,7 @@ INSERT INTO `audit_logs` (`id`, `user_id`, `created_by_role`, `company_id`, `mod
 (11, 2, NULL, 2, 'package-subscription', 'CREATE', 3, 'Dataroom Management + Investor Reporting', '{\"code\":\"SNNNMT\",\"company_id\":2,\"created_by_id\":2,\"amount\":0,\"clientSecret\":null,\"PayidOnetime\":\"\",\"payment_status\":\"free\",\"discount\":\"100\",\"ip_address\":\"223.178.212.99\"}', '223.178.212.99', '2025-10-16 08:42:09'),
 (12, 2, NULL, 2, 'package-subscription', 'CREATE', 4, 'Dataroom Management + Investor Reporting', '{\"code\":\"SNNNMT\",\"company_id\":2,\"created_by_id\":2,\"amount\":0,\"clientSecret\":null,\"PayidOnetime\":\"\",\"payment_status\":\"free\",\"ip_address\":\"223.178.212.99\"}', '223.178.212.99', '2025-10-16 08:43:36'),
 (13, 2, NULL, 2, 'package-subscription', 'CREATE', 5, 'Dataroom Management + Investor Reporting', '{\"code\":\"SNNNMT\",\"company_id\":2,\"created_by_id\":2,\"amount\":0,\"clientSecret\":\"pi_3SImoCAx6rm2q3py4f2ApGEz_secret_RTOqTejGImiLKBF8QBxhr15xk\",\"PayidOnetime\":\"\",\"payment_status\":\"succeeded\",\"ip_address\":\"223.178.212.99\"}', '223.178.212.99', '2025-10-16 08:45:17'),
-(14, 1, NULL, 3, 'company-profile', 'UPDATE', 3, 'company', '{\"company_id\":\"3\",\"ip_address\":\"223.178.211.174\",\"id\":\"3\",\"user_id\":\"1\",\"company_email\":\"test@gmail.com\",\"company_logo\":\"\",\"company_color_code\":\"#68C63B\",\"phone\":\"+919736244949\",\"company_street_address\":\"vbcbc\",\"company_name\":\"LookUp\",\"year_registration\":\"2000\",\"company_website\":\"https://test.com\",\"employee_number\":\"1-10\",\"company_linkedin\":\"\",\"formally_legally\":\"No\",\"company_wechat\":\"\",\"company_mail_address\":\"\",\"company_state\":\"Jammu and Kashmir\",\"company_city\":\"Gho Brahmanan de\",\"company_postal_code\":\"12123\",\"company_country\":\"India\",\"country_code\":\"IN\",\"state_code\":\"JK\",\"city_code\":\"\",\"gross_revenue\":\"\",\"descriptionStep4\":\"dfs\",\"problemStep4\":\"sdf\",\"solutionStep4\":\"sdfds\",\"company_industory\":\"Data Storage & Management\",\"access_token\":\"\",\"mailing_address\":\"ssss\",\"created_by_type\":\"Admin\",\"created_at\":\"2025-10-01T04:23:02.000Z\",\"articles\":\"articles_1760680100815.jpg\",\"entity_name\":\"dfgdf\",\"business_number\":\"45\",\"jurisdiction_country\":\"Argentina\",\"entity_type\":\"SA (Sociedad Anónima)\",\"date_of_incorporation\":\"2025-10-25\",\"entity_structure\":\"public\",\"office_address\":\"sss\"}', '223.178.211.174', '2025-10-17 05:48:20'),
+(14, 1, NULL, 3, 'company-profile', 'UPDATE', 3, 'company', '{\"company_id\":\"3\",\"ip_address\":\"223.181.21.166\",\"id\":\"3\",\"user_id\":\"1\",\"company_email\":\"test@gmail.com\",\"company_logo\":\"\",\"company_color_code\":\"#68C63B\",\"phone\":\"+919736244949\",\"company_street_address\":\"vbcbc\",\"company_name\":\"LookUp\",\"year_registration\":\"2000\",\"company_website\":\"https://test.com\",\"employee_number\":\"1-10\",\"company_linkedin\":\"\",\"formally_legally\":\"No\",\"company_wechat\":\"\",\"company_mail_address\":\"\",\"company_state\":\"Ontario\",\"company_city\":\"Ballantrae\",\"company_postal_code\":\"12123\",\"company_country\":\"Canada\",\"country_code\":\"CA\",\"state_code\":\"ON\",\"city_code\":\"\",\"gross_revenue\":\"\",\"descriptionStep4\":\"dfs\",\"problemStep4\":\"sdf\",\"solutionStep4\":\"sdfds\",\"company_industory\":\"Data Storage & Management\",\"access_token\":\"\",\"mailing_address\":\"ssss\",\"created_by_type\":\"Admin\",\"created_at\":\"2025-10-01T04:23:02.000Z\",\"articles\":\"articles_1760680100815.jpg\",\"entity_name\":\"dfgdf\",\"business_number\":\"45\",\"jurisdiction_country\":\"Argentina\",\"entity_type\":\"SA (Sociedad Anónima)\",\"date_of_incorporation\":\"2025-10-25\",\"entity_structure\":\"public\",\"office_address\":\"sss\",\"city_step2\":\"Ballantrae\"}', '223.181.21.166', '2025-10-17 05:48:20'),
 (15, 2, NULL, 2, 'package-subscription', 'CREATE', 6, 'Dataroom Management + Investor Reporting', '{\"code\":\"\",\"company_id\":2,\"created_by_id\":2,\"amount\":260,\"clientSecret\":\"pi_3SJ6v3Ax6rm2q3py1c1vgccr_secret_Wxj0ZYBqT3OPi2k1pwVWzYoSd\",\"PayidOnetime\":\"\",\"payment_status\":\"succeeded\",\"discount\":\"\",\"ip_address\":\"223.178.211.174\"}', '223.178.211.174', '2025-10-17 06:13:42'),
 (16, 1, NULL, 1, 'package-subscription', 'CREATE', 7, 'Dataroom Management + Investor Reporting', '{\"code\":\"SNNNMT\",\"company_id\":1,\"created_by_id\":1,\"amount\":0,\"clientSecret\":null,\"PayidOnetime\":\"\",\"payment_status\":\"free\",\"discount\":\"100\",\"ip_address\":\"223.178.209.6\"}', '223.178.209.6', '2025-10-18 06:00:28'),
 (17, 1, NULL, 1, 'package-subscription', 'CREATE', 8, 'Dataroom Management + Investor Reporting', '{\"code\":\"SNNNMT\",\"company_id\":1,\"created_by_id\":1,\"amount\":0,\"clientSecret\":null,\"PayidOnetime\":\"\",\"payment_status\":\"free\",\"discount\":\"100\",\"ip_address\":\"223.178.209.6\"}', '223.178.209.6', '2025-10-18 06:03:33'),
@@ -271,7 +472,158 @@ INSERT INTO `audit_logs` (`id`, `user_id`, `created_by_role`, `company_id`, `mod
 (63, 2, NULL, 2, 'capital_round', 'CREATE', 4, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"\",\"currency\":\"CAD $\",\"round_type\":\"Round 0\",\"total_founder_shares\":1000,\"founder_count\":3}', '223.178.210.26', '2025-11-05 11:10:03'),
 (64, 2, NULL, 2, 'capital_round', 'CREATE', 5, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"1000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.178.210.26', '2025-11-05 11:11:46'),
 (65, 2, NULL, 2, 'capital_round', 'CREATE', 1, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"\",\"currency\":\"CAD $\",\"round_type\":\"Round 0\",\"total_founder_shares\":1000,\"founder_count\":3}', '223.178.211.217', '2025-11-06 04:29:29'),
-(66, 2, NULL, 2, 'capital_round', 'CREATE', 2, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"2000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.178.211.217', '2025-11-06 04:33:37');
+(66, 2, NULL, 2, 'capital_round', 'CREATE', 2, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"2000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.178.211.217', '2025-11-06 04:33:37'),
+(67, 1, NULL, 1, 'capital_round', 'CREATE', 3, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"\",\"currency\":\"CAD $\",\"round_type\":\"Round 0\",\"total_founder_shares\":1000,\"founder_count\":3}', '223.178.213.71', '2025-11-10 05:55:27'),
+(68, 1, NULL, 1, 'capital_round', 'CREATE', 4, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"\",\"currency\":\"CAD $\",\"round_type\":\"Round 0\",\"total_founder_shares\":500,\"founder_count\":1}', '223.178.213.71', '2025-11-10 06:57:28'),
+(69, 1, NULL, 1, 'capital_round', 'CREATE', 5, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"\",\"currency\":\"CAD $\",\"round_type\":\"Round 0\",\"total_founder_shares\":500,\"founder_count\":1}', '223.178.213.71', '2025-11-10 07:18:08'),
+(70, 1, NULL, 1, 'capital_round', 'CREATE', 6, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"\",\"currency\":\"CAD $\",\"round_type\":\"Round 0\",\"total_founder_shares\":1000,\"founder_count\":3}', '223.178.213.71', '2025-11-10 08:44:08'),
+(71, 1, NULL, 1, 'capital_round', 'CREATE', 7, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"2000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.178.213.71', '2025-11-10 10:41:35'),
+(72, 1, NULL, 1, 'capital_round', 'CREATE', 1, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"\",\"currency\":\"CAD $\",\"round_type\":\"Round 0\",\"total_founder_shares\":1000,\"founder_count\":3}', '223.178.209.221', '2025-11-11 05:27:51'),
+(73, 1, NULL, 1, 'capital_round', 'CREATE', 2, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"2000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.178.209.221', '2025-11-11 06:33:58'),
+(74, 1, NULL, 1, 'capital_round', 'CREATE', 1, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"\",\"currency\":\"CAD $\",\"round_type\":\"Round 0\",\"total_founder_shares\":1000,\"founder_count\":3}', '223.178.209.221', '2025-11-11 10:50:09'),
+(75, 1, NULL, 1, 'capital_round', 'CREATE', 2, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"2000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.178.209.221', '2025-11-11 11:12:46'),
+(76, 1, NULL, 1, 'capital_round', 'CREATE', 1, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"\",\"currency\":\"CAD $\",\"round_type\":\"Round 0\",\"total_founder_shares\":100000,\"founder_count\":3}', '223.181.18.222', '2025-11-26 05:59:08'),
+(77, 1, NULL, 1, 'capital_round', 'CREATE', 2, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"2000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.18.222', '2025-11-26 06:31:17'),
+(78, 1, NULL, 1, 'capital_round', 'CREATE', 3, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.18.222', '2025-11-26 08:44:02');
+INSERT INTO `audit_logs` (`id`, `user_id`, `created_by_role`, `company_id`, `module`, `action`, `entity_id`, `entity_type`, `details`, `ip_address`, `created_at`) VALUES
+(79, 1, NULL, 1, 'capital_round', 'CREATE', 4, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"8000000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.18.222', '2025-11-26 09:34:37'),
+(80, 1, NULL, 1, 'capital_round', 'CREATE', 5, 'roundrecord', '{\"nameOfRound\":\"Series A\",\"roundsize\":\"3000000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.18.222', '2025-11-26 10:32:44'),
+(81, 1, NULL, 1, 'capital_round', 'CREATE', 1, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"\",\"currency\":\"CAD $\",\"round_type\":\"Round 0\",\"total_founder_shares\":100000,\"founder_count\":3}', '223.181.18.222', '2025-11-26 10:52:51'),
+(82, 1, NULL, 1, 'capital_round', 'CREATE', 2, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"2000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.18.222', '2025-11-26 11:06:43'),
+(83, 1, NULL, 1, 'capital_round', 'CREATE', 3, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"2000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.18.222', '2025-11-26 11:13:34'),
+(84, 1, NULL, 1, 'capital_round', 'CREATE', 4, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.18.222', '2025-11-26 11:41:52'),
+(85, 1, NULL, 1, 'capital_round', 'CREATE', 1, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"\",\"currency\":\"CAD $\",\"round_type\":\"Round 0\",\"total_founder_shares\":100000,\"founder_count\":3}', '49.43.110.78', '2025-11-27 05:24:48'),
+(86, 1, NULL, 1, 'capital_round', 'CREATE', 2, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.16.148', '2025-11-27 06:52:09'),
+(87, 1, NULL, 1, 'capital_round', 'CREATE', 3, 'roundrecord', '{\"nameOfRound\":\"Seed Round\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.16.148', '2025-11-27 07:10:18'),
+(88, 1, NULL, 1, 'capital_round', 'CREATE', 4, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"\",\"currency\":\"CAD $\",\"round_type\":\"Round 0\",\"total_founder_shares\":100000,\"founder_count\":2}', '223.181.16.148', '2025-11-27 09:10:21'),
+(89, 1, NULL, 1, 'capital_round', 'CREATE', 1, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"\",\"currency\":\"CAD $\",\"round_type\":\"Round 0\",\"total_founder_shares\":1000,\"founder_count\":2}', '223.181.16.148', '2025-11-27 09:59:16'),
+(90, 1, NULL, 1, 'capital_round', 'CREATE', 2, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.16.148', '2025-11-27 10:01:58'),
+(91, 1, NULL, 1, 'capital_round', 'CREATE', 3, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"30.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.16.148', '2025-11-27 10:04:10'),
+(92, 1, NULL, 1, 'capital_round', 'CREATE', 4, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.16.148', '2025-11-27 10:25:12'),
+(93, 1, NULL, 1, 'capital_round', 'CREATE', 5, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"2000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.22.230', '2025-11-28 07:13:06'),
+(94, 1, NULL, 1, 'capital_round', 'CREATE', 1, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"\",\"currency\":\"CAD $\",\"round_type\":\"Round 0\",\"total_founder_shares\":1000,\"founder_count\":3}', '223.181.22.230', '2025-11-28 08:58:33'),
+(95, 1, NULL, 1, 'capital_round', 'CREATE', 2, 'roundrecord', '{\"nameOfRound\":\"Seed\",\"roundsize\":\"2000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.22.230', '2025-11-28 09:06:24'),
+(96, 1, NULL, 1, 'capital_round', 'CREATE', 3, 'roundrecord', '{\"nameOfRound\":\"Safe Seed\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.22.230', '2025-11-28 09:18:31'),
+(97, 1, NULL, 1, 'capital_round', 'CREATE', 4, 'roundrecord', '{\"nameOfRound\":\"Seed Convertible Notes\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.22.230', '2025-11-28 09:30:21'),
+(98, 1, NULL, 1, 'capital_round', 'CREATE', 5, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"\",\"currency\":\"CAD $\",\"round_type\":\"Round 0\",\"total_founder_shares\":1000,\"founder_count\":2}', '223.181.18.94', '2025-12-02 05:51:26'),
+(99, 1, NULL, 1, 'capital_round', 'CREATE', 6, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"2000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.18.94', '2025-12-02 07:18:14'),
+(100, 1, NULL, 1, 'capital_round', 'CREATE', 7, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"2000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.18.94', '2025-12-02 07:22:42'),
+(101, 1, NULL, 1, 'capital_round', 'CREATE', 8, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"\",\"currency\":\"CAD $\",\"round_type\":\"Round 0\",\"total_founder_shares\":1000,\"founder_count\":3}', '223.181.18.94', '2025-12-02 07:43:26'),
+(102, 1, NULL, 1, 'capital_round', 'CREATE', 9, 'roundrecord', '{\"nameOfRound\":\"Seed Round\",\"roundsize\":\"2000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.18.94', '2025-12-02 07:45:46'),
+(103, 1, NULL, 1, 'capital_round', 'CREATE', 10, 'roundrecord', '{\"nameOfRound\":\"Seed Round\",\"roundsize\":\"2000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.18.94', '2025-12-02 07:49:45'),
+(104, 1, NULL, 1, 'capital_round', 'CREATE', 11, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"2000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.18.94', '2025-12-02 09:17:42'),
+(105, 1, NULL, 1, 'Investor Module', 'Add', 1, 'Investor', '{\"email\":\"avinayquicktech+001@gmail.com\",\"first_name\":\"A\",\"last_name\":\"Kumar\",\"company_id\":1,\"created_by_id\":1,\"created_by_role\":\"signatory\",\"ip_address\":\"223.181.18.94\"}', '223.181.18.94', '2025-12-02 09:30:04'),
+(106, 1, NULL, 1, 'capital_round', 'CREATE', 12, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"2000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.18.94', '2025-12-02 10:28:54'),
+(107, 1, NULL, 1, 'capital_round', 'CREATE', 13, 'roundrecord', '{\"nameOfRound\":\"Convertible\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.22.83', '2025-12-03 05:12:36'),
+(108, 1, NULL, 1, 'Investor Module', 'Add', 2, 'Investor', '{\"email\":\"avinayquicktech+033@gmail.com\",\"first_name\":\"Akk\",\"last_name\":\"Kumar\",\"company_id\":1,\"created_by_id\":1,\"created_by_role\":\"signatory\",\"ip_address\":\"223.181.22.83\"}', '223.181.22.83', '2025-12-03 09:16:48'),
+(109, 1, NULL, 1, 'capital_round', 'CREATE', 16, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"2000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.23.130', '2025-12-10 05:49:10'),
+(110, 1, NULL, 1, 'capital_round', 'CREATE', 17, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.23.130', '2025-12-10 06:02:05'),
+(111, 1, NULL, 1, 'capital_round', 'UPDATE', 17, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\"}', '223.181.23.130', '2025-12-10 06:04:37'),
+(112, 1, NULL, 1, 'capital_round', 'UPDATE', 17, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\"}', '223.181.23.130', '2025-12-10 06:14:54'),
+(113, 1, NULL, 1, 'capital_round', 'UPDATE', 17, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\"}', '223.181.23.130', '2025-12-10 06:18:15'),
+(114, 1, NULL, 1, 'capital_round', 'UPDATE', 11, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"2000.00\",\"currency\":\"USD $\",\"round_type\":\"Investment\"}', '223.181.23.130', '2025-12-10 06:19:26'),
+(115, 1, NULL, 1, 'capital_round', 'UPDATE', 17, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\"}', '223.181.23.130', '2025-12-10 06:34:24'),
+(116, 1, NULL, 1, 'capital_round', 'UPDATE', 17, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\"}', '223.181.23.130', '2025-12-10 06:38:54'),
+(117, 1, NULL, 1, 'capital_round', 'CREATE', 18, 'roundrecord', '{\"nameOfRound\":\"Pre seed\",\"roundsize\":\"2000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.23.130', '2025-12-10 08:34:31'),
+(118, 1, NULL, 1, 'capital_round', 'UPDATE', 18, 'roundrecord', '{\"nameOfRound\":\"Pre seed\",\"roundsize\":\"2000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\"}', '223.181.23.130', '2025-12-10 09:54:21'),
+(119, 1, NULL, 1, 'capital_round', 'UPDATE', 18, 'roundrecord', '{\"nameOfRound\":\"Pre seed\",\"roundsize\":\"2000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\"}', '223.181.23.130', '2025-12-10 09:57:11'),
+(120, 1, NULL, 1, 'capital_round', 'CREATE', 19, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"\",\"currency\":\"CAD $\",\"round_type\":\"Round 0\",\"total_founder_shares\":998,\"founder_count\":2}', '223.181.23.130', '2025-12-10 10:50:31'),
+(121, 1, NULL, 1, 'capital_round', 'CREATE', 20, 'roundrecord', '{\"nameOfRound\":\"Series 1\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.23.130', '2025-12-10 10:54:06'),
+(122, 1, NULL, 1, 'capital_round', 'CREATE', 21, 'roundrecord', '{\"nameOfRound\":\"Series A\",\"roundsize\":\"400000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.23.130', '2025-12-10 10:55:56'),
+(123, 1, NULL, 1, 'capital_round', 'CREATE', 22, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"2000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.23.130', '2025-12-10 11:56:43'),
+(124, 5, NULL, 3, 'package-subscription', 'CREATE', 3, 'Dataroom Management + Investor Reporting', '{\"code\":\"\",\"company_id\":3,\"created_by_id\":5,\"amount\":260,\"clientSecret\":\"eyJraWQiOiJjNDRjODVkMDliMDc0NmNlYTIwZmI4NjZlYzI4YWY3ZSIsImFsZyI6IkhTMjU2In0.eyJ0eXBlIjoiY2xpZW50LXNlY3JldCIsImFjY291bnRfaWQiOiJjNjE3MmZjMy03YTMxLTQyNzktYTdkNi1iYjcwZTgyZTlhMjEiLCJpbnRlbnRfaWQiOiJpbnRfaGtkbW5jemtxaGRzc2gyeGd0aiIsImJ1c2luZXNzX25hbWUiOiJCbHVlUHJpbnQgQ2F0YWx5c3QgRGVtbyIsInBhZGMiOiJISyIsImV4cCI6MTc2NTQ1MzQ3MSwiaWF0IjoxNzY1NDQ5ODcxfQ.Qd3e2XaVM3vghEmZSmgLoGqmfOtzwdY1fbElfhdzCys\",\"PayidOnetime\":\"int_hkdmnczkqhdssh2xgtj\",\"payment_status\":\"succeeded\",\"discount\":0,\"ip_address\":\"223.181.17.231\"}', '223.181.17.231', '2025-12-11 10:44:32'),
+(125, 5, NULL, 3, 'capital_round', 'CREATE', 23, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"\",\"currency\":\"CAD $\",\"round_type\":\"Round 0\",\"total_founder_shares\":1000,\"founder_count\":2}', '223.181.21.166', '2025-12-12 04:48:55'),
+(126, 5, NULL, 3, 'capital_round', 'CREATE', 24, 'roundrecord', '{\"nameOfRound\":\"seed\",\"roundsize\":\"2000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.21.166', '2025-12-12 05:02:21'),
+(127, 5, NULL, 3, 'capital_round', 'UPDATE', 23, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"\",\"currency\":\"CAD $\",\"round_type\":\"Round 0\",\"total_founder_shares\":\"100000\",\"founder_count\":\"2\"}', '223.181.21.166', '2025-12-12 05:03:25'),
+(128, 5, NULL, 3, 'capital_round', 'CREATE', 25, 'roundrecord', '{\"nameOfRound\":\"Seed\",\"roundsize\":\"2000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.21.166', '2025-12-12 05:09:39'),
+(129, 5, NULL, 3, 'capital_round', 'UPDATE', 25, 'roundrecord', '{\"nameOfRound\":\"Seed\",\"roundsize\":\"2000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\"}', '223.181.21.166', '2025-12-12 05:18:47'),
+(130, 5, NULL, 3, 'capital_round', 'CREATE', 26, 'roundrecord', '{\"nameOfRound\":\"seed\",\"roundsize\":\"2000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.21.166', '2025-12-12 06:24:40'),
+(131, 5, NULL, 3, 'capital_round', 'CREATE', 27, 'roundrecord', '{\"nameOfRound\":\"Series A\",\"roundsize\":\"15000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.21.166', '2025-12-12 06:29:33'),
+(132, 5, NULL, 3, 'capital_round', 'UPDATE', 27, 'roundrecord', '{\"nameOfRound\":\"Series A\",\"roundsize\":\"15000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\"}', '223.181.21.166', '2025-12-12 07:05:08'),
+(133, 5, NULL, 3, 'capital_round', 'CREATE', 28, 'roundrecord', '{\"nameOfRound\":\"Seed\",\"roundsize\":\"2000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.21.166', '2025-12-12 07:17:35'),
+(134, 5, NULL, 3, 'capital_round', 'CREATE', 29, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"2000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.21.166', '2025-12-12 08:43:18'),
+(135, 5, NULL, 3, 'capital_round', 'CREATE', 30, 'roundrecord', '{\"nameOfRound\":\"seed\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.21.166', '2025-12-12 09:02:46'),
+(136, 5, NULL, 3, 'capital_round', 'CREATE', 31, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.21.166', '2025-12-12 09:08:17'),
+(137, 5, NULL, 3, 'capital_round', 'CREATE', 32, 'roundrecord', '{\"nameOfRound\":\"Convertible\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.21.166', '2025-12-12 09:28:49'),
+(138, 5, NULL, 3, 'capital_round', 'CREATE', 33, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"2000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.21.166', '2025-12-12 09:35:09'),
+(139, 5, NULL, 3, 'Investor Module', 'Add', 3, 'Investor', '{\"email\":\"avinayquicktech+011@gmail.com\",\"first_name\":\"K\",\"last_name\":\"Kumar\",\"company_id\":3,\"created_by_id\":5,\"created_by_role\":\"signatory\",\"ip_address\":\"223.181.21.166\"}', '223.181.21.166', '2025-12-12 09:40:49'),
+(140, 1, NULL, 1, 'capital_round', 'CREATE', 34, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"2000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '27.60.49.194', '2025-12-28 07:33:12'),
+(141, 1, NULL, 1, 'Investor Module', 'Add', 4, 'Investor', '{\"email\":\"avinayquicktech+0012@gmail.com\",\"first_name\":\"j\",\"last_name\":\"k\",\"company_id\":1,\"created_by_id\":1,\"created_by_role\":\"signatory\",\"ip_address\":\"49.43.105.30\"}', '49.43.105.30', '2026-01-02 07:34:27'),
+(142, 1, NULL, 1, 'capital_round', 'UPDATE', 19, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"\",\"currency\":\"CAD $\",\"round_type\":\"Round 0\",\"total_founder_shares\":\"1000\",\"founder_count\":\"2\"}', '49.43.142.12', '2026-01-02 09:27:17'),
+(143, 1, NULL, 1, 'capital_round', 'CREATE', 35, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"2000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '49.43.142.12', '2026-01-02 09:38:49'),
+(144, 1, NULL, 1, 'capital_round', 'CREATE', 36, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"15000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '49.43.142.12', '2026-01-02 09:41:31'),
+(145, 1, NULL, 1, 'capital_round', 'CREATE', 37, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"15000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '49.43.142.12', '2026-01-02 10:03:53'),
+(146, 1, NULL, 1, 'capital_round', 'CREATE', 38, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '49.43.142.12', '2026-01-02 10:22:50'),
+(147, 1, NULL, 1, 'capital_round', 'CREATE', 39, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"2000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '49.43.142.12', '2026-01-02 10:35:19'),
+(148, 1, NULL, 1, 'capital_round', 'CREATE', 40, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"15000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '49.43.142.12', '2026-01-02 10:36:10'),
+(149, 1, NULL, 1, 'capital_round', 'UPDATE', 19, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"\",\"currency\":\"CAD $\",\"round_type\":\"Round 0\",\"total_founder_shares\":\"100000\",\"founder_count\":\"2\"}', '49.43.142.12', '2026-01-02 10:55:52'),
+(150, 1, NULL, 1, 'capital_round', 'CREATE', 41, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"2000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '49.43.142.12', '2026-01-02 10:57:11'),
+(151, 1, NULL, 1, 'capital_round', 'CREATE', 42, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"15000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '49.43.142.12', '2026-01-02 11:02:19'),
+(152, 1, NULL, 1, 'capital_round', 'CREATE', 43, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"2000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.18.191', '2026-01-03 05:53:11'),
+(153, 1, NULL, 1, 'capital_round', 'CREATE', 44, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"15000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.18.191', '2026-01-03 06:15:15'),
+(154, 1, NULL, 1, 'capital_round', 'CREATE', 45, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"15000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.23.203', '2026-01-05 04:48:16'),
+(155, 1, NULL, 1, 'capital_round', 'CREATE', 46, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"2000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.23.203', '2026-01-05 04:58:12'),
+(156, 1, NULL, 1, 'capital_round', 'CREATE', 47, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"15000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.23.203', '2026-01-05 05:27:52'),
+(157, 1, NULL, 1, 'capital_round', 'CREATE', 48, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.20.99', '2026-01-06 06:41:11'),
+(158, 1, NULL, 1, 'capital_round', 'UPDATE', 19, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"\",\"currency\":\"CAD $\",\"round_type\":\"Round 0\",\"total_founder_shares\":\"100000\",\"founder_count\":\"3\"}', '223.181.20.99', '2026-01-06 07:01:24'),
+(159, 1, NULL, 1, 'capital_round', 'CREATE', 49, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.20.99', '2026-01-06 07:03:56'),
+(160, 1, NULL, 1, 'capital_round', 'CREATE', 50, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.20.99', '2026-01-06 07:14:10'),
+(161, 1, NULL, 1, 'capital_round', 'CREATE', 51, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"2000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.20.99', '2026-01-06 09:11:00'),
+(162, 1, NULL, 1, 'capital_round', 'CREATE', 52, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"15000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.20.99', '2026-01-06 10:23:57'),
+(163, 1, NULL, 1, 'capital_round', 'CREATE', 53, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"15000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.21.25', '2026-01-07 04:57:02'),
+(164, 1, NULL, 1, 'capital_round', 'CREATE', 54, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"400000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.21.25', '2026-01-07 05:30:35'),
+(165, 1, NULL, 1, 'capital_round', 'UPDATE', 54, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"400000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\"}', '223.181.21.25', '2026-01-07 06:04:15'),
+(166, 1, NULL, 1, 'capital_round', 'CREATE', 55, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.21.25', '2026-01-07 09:05:49'),
+(167, 1, NULL, 1, 'capital_round', 'CREATE', 56, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"400000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.21.25', '2026-01-07 09:08:22'),
+(168, 1, NULL, 1, 'capital_round', 'UPDATE', 55, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\"}', '223.181.21.25', '2026-01-07 09:19:50'),
+(169, 1, NULL, 1, 'capital_round', 'UPDATE', 55, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\"}', '223.181.21.25', '2026-01-07 09:30:37'),
+(170, 1, NULL, 1, 'capital_round', 'UPDATE', 56, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"400000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\"}', '223.181.21.180', '2026-01-09 09:33:40'),
+(171, 1, NULL, 1, 'capital_round', 'UPDATE', 56, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"400000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\"}', '223.181.21.180', '2026-01-09 09:39:11'),
+(172, 1, NULL, 1, 'capital_round', 'UPDATE', 56, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"400000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\"}', '223.181.21.180', '2026-01-09 09:41:42'),
+(173, 1, NULL, 1, 'capital_round', 'UPDATE', 56, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"400000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\"}', '223.181.21.180', '2026-01-09 09:42:15'),
+(174, 1, NULL, 1, 'capital_round', 'CREATE', 57, 'roundrecord', '{\"nameOfRound\":\"Safe\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.22.8', '2026-01-12 04:35:10'),
+(175, 1, NULL, 1, 'capital_round', 'CREATE', 58, 'roundrecord', '{\"nameOfRound\":\"Convertible\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.22.8', '2026-01-12 09:23:41'),
+(176, 1, NULL, 1, 'capital_round', 'CREATE', 59, 'roundrecord', '{\"nameOfRound\":\"Safe\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.22.8', '2026-01-12 09:29:08'),
+(177, 1, NULL, 1, 'capital_round', 'UPDATE', 59, 'roundrecord', '{\"nameOfRound\":\"Safe\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\"}', '223.181.22.8', '2026-01-12 09:32:46'),
+(178, 1, NULL, 1, 'capital_round', 'CREATE', 60, 'roundrecord', '{\"nameOfRound\":\"Safe\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.22.8', '2026-01-12 09:36:08'),
+(179, 1, NULL, 1, 'capital_round', 'CREATE', 61, 'roundrecord', '{\"nameOfRound\":\"Safe seed\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.22.8', '2026-01-12 10:08:24'),
+(180, 1, NULL, 1, 'capital_round', 'CREATE', 62, 'roundrecord', '{\"nameOfRound\":\"Safe\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.22.8', '2026-01-12 10:20:13'),
+(181, 1, NULL, 1, 'capital_round', 'CREATE', 63, 'roundrecord', '{\"nameOfRound\":\"Seed safe\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.22.8', '2026-01-12 10:59:35'),
+(182, 1, NULL, 1, 'capital_round', 'UPDATE', 63, 'roundrecord', '{\"nameOfRound\":\"Seed safe\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\"}', '223.181.22.8', '2026-01-12 11:34:25'),
+(183, 1, NULL, 1, 'capital_round', 'CREATE', 64, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"400000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.22.8', '2026-01-12 12:28:41'),
+(184, 1, NULL, 1, 'capital_round', 'UPDATE', 63, 'roundrecord', '{\"nameOfRound\":\"Seed safe\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\"}', '223.181.22.244', '2026-01-13 05:33:53'),
+(185, 1, NULL, 1, 'capital_round', 'CREATE', 65, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"400000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.22.244', '2026-01-13 05:42:08'),
+(186, 1, NULL, 1, 'capital_round', 'UPDATE', 65, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"400000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\"}', '223.181.22.244', '2026-01-13 05:52:55'),
+(187, 1, NULL, 1, 'capital_round', 'CREATE', 66, 'roundrecord', '{\"nameOfRound\":\"Safe series\",\"roundsize\":\"400000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.22.244', '2026-01-13 06:20:32'),
+(188, 1, NULL, 1, 'capital_round', 'CREATE', 67, 'roundrecord', '{\"nameOfRound\":\"Seed safe\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.22.244', '2026-01-13 07:44:04'),
+(189, 1, NULL, 1, 'capital_round', 'CREATE', 68, 'roundrecord', '{\"nameOfRound\":\"Series A safe\",\"roundsize\":\"400000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.22.244', '2026-01-13 07:45:11'),
+(190, 1, NULL, 1, 'capital_round', 'CREATE', 69, 'roundrecord', '{\"nameOfRound\":\"Seed Round\",\"roundsize\":\"2000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.22.244', '2026-01-13 07:51:48'),
+(191, 1, NULL, 1, 'capital_round', 'CREATE', 70, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.22.244', '2026-01-13 08:57:48'),
+(192, 1, NULL, 1, 'capital_round', 'CREATE', 71, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"400000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.22.244', '2026-01-13 09:20:31'),
+(193, 1, NULL, 1, 'capital_round', 'CREATE', 72, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.22.244', '2026-01-13 09:34:21'),
+(194, 1, NULL, 1, 'capital_round', 'CREATE', 73, 'roundrecord', '{\"nameOfRound\":\"Series A Note\",\"roundsize\":\"400000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.22.244', '2026-01-13 09:35:38'),
+(195, 1, NULL, 1, 'capital_round', 'UPDATE', 72, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\"}', '223.181.22.244', '2026-01-13 10:03:14'),
+(196, 1, NULL, 1, 'capital_round', 'CREATE', 74, 'roundrecord', '{\"nameOfRound\":\"Convertible Note\",\"roundsize\":\"400000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.22.244', '2026-01-13 10:04:54'),
+(197, 1, NULL, 1, 'capital_round', 'UPDATE', 74, 'roundrecord', '{\"nameOfRound\":\"Convertible Note\",\"roundsize\":\"400000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\"}', '223.181.22.244', '2026-01-13 10:08:26'),
+(198, 1, NULL, 1, 'capital_round', 'CREATE', 75, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"400000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.22.244', '2026-01-13 11:05:38'),
+(199, 1, NULL, 1, 'capital_round', 'CREATE', 76, 'roundrecord', '{\"nameOfRound\":\"Safe Seed\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.22.244', '2026-01-13 12:28:40'),
+(200, 1, NULL, 1, 'capital_round', 'CREATE', 77, 'roundrecord', '{\"nameOfRound\":\"Seed safe\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.22.244', '2026-01-13 12:31:45'),
+(201, 1, NULL, 1, 'capital_round', 'CREATE', 78, 'roundrecord', '{\"nameOfRound\":\"safe\",\"roundsize\":\"400000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.22.244', '2026-01-13 12:46:42'),
+(202, 1, NULL, 1, 'capital_round', 'UPDATE', 78, 'roundrecord', '{\"nameOfRound\":\"safe\",\"roundsize\":\"400000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\"}', '223.181.22.244', '2026-01-13 12:47:26'),
+(203, 1, NULL, 1, 'capital_round', 'CREATE', 79, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"400000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.22.244', '2026-01-13 12:51:38'),
+(204, 1, NULL, 1, 'capital_round', 'UPDATE', 72, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\"}', '223.181.22.244', '2026-01-13 12:53:38'),
+(205, 1, NULL, 1, 'capital_round', 'CREATE', 80, 'roundrecord', '{\"nameOfRound\":\"Series A Common Stock\",\"roundsize\":\"15000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.17.237', '2026-01-14 05:22:11'),
+(206, 1, NULL, 1, 'capital_round', 'UPDATE', 79, 'roundrecord', '{\"nameOfRound\":\"Safe Series A\",\"roundsize\":\"400000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\"}', '223.181.17.237', '2026-01-14 07:25:30'),
+(207, 1, NULL, 1, 'capital_round', 'UPDATE', 75, 'roundrecord', '{\"nameOfRound\":\"Convertible Series A\",\"roundsize\":\"400000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\"}', '223.181.17.237', '2026-01-14 07:26:12'),
+(208, 1, NULL, 1, 'capital_round', 'UPDATE', 72, 'roundrecord', '{\"nameOfRound\":\"Convertible Seed\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\"}', '223.181.17.237', '2026-01-14 07:26:38'),
+(209, 1, NULL, 1, 'capital_round', 'UPDATE', 77, 'roundrecord', '{\"nameOfRound\":\"Seed safe\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\"}', '223.181.23.82', '2026-01-15 04:42:01'),
+(210, 1, NULL, 1, 'capital_round', 'UPDATE', 72, 'roundrecord', '{\"nameOfRound\":\"Convertible Seed\",\"roundsize\":\"120000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\"}', '223.181.23.82', '2026-01-15 04:43:41'),
+(211, 1, NULL, 1, 'capital_round', 'UPDATE', 79, 'roundrecord', '{\"nameOfRound\":\"Safe Series A\",\"roundsize\":\"400000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\"}', '223.181.23.82', '2026-01-15 04:49:11'),
+(212, 1, NULL, 1, 'capital_round', 'UPDATE', 80, 'roundrecord', '{\"nameOfRound\":\"Series A Common Stock\",\"roundsize\":\"15000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\"}', '223.181.23.82', '2026-01-15 05:55:55'),
+(213, 1, NULL, 1, 'capital_round', 'UPDATE', 80, 'roundrecord', '{\"nameOfRound\":\"Series A Common Stock\",\"roundsize\":\"15000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\"}', '223.181.23.82', '2026-01-15 05:56:46'),
+(214, 1, NULL, 1, 'capital_round', 'UPDATE', 79, 'roundrecord', '{\"nameOfRound\":\"Safe Series A\",\"roundsize\":\"400000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\"}', '223.181.23.82', '2026-01-15 06:15:11'),
+(215, 1, NULL, 1, 'capital_round', 'UPDATE', 80, 'roundrecord', '{\"nameOfRound\":\"Series A Common Stock\",\"roundsize\":\"15000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\"}', '223.181.23.82', '2026-01-15 07:35:26'),
+(216, 1, NULL, 1, 'capital_round', 'CREATE', 81, 'roundrecord', '{\"nameOfRound\":\"Founding Share Allocation\",\"roundsize\":\"2000.00\",\"currency\":\"CAD $\",\"round_type\":\"Investment\",\"total_founder_shares\":null,\"founder_count\":null}', '223.181.23.82', '2026-01-15 08:58:11');
 
 -- --------------------------------------------------------
 
@@ -370,7 +722,7 @@ CREATE TABLE `company` (
 INSERT INTO `company` (`id`, `user_id`, `company_email`, `company_logo`, `company_color_code`, `phone`, `company_street_address`, `company_name`, `year_registration`, `company_website`, `employee_number`, `company_linkedin`, `formally_legally`, `company_wechat`, `company_mail_address`, `company_state`, `company_city`, `company_postal_code`, `company_country`, `country_code`, `state_code`, `city_code`, `gross_revenue`, `descriptionStep4`, `problemStep4`, `solutionStep4`, `company_industory`, `access_token`, `mailing_address`, `created_by_type`, `created_at`) VALUES
 (1, 1, 'avinayquicktech@gmail.com', NULL, '#13961C', '+14334334343', 'gdfg', 'My corp', '2000', 'http://test.com', '1-10', NULL, 'No', NULL, NULL, 'Haryana', 'Dharuhera', '456456456', 'India', 'IN', 'HR', NULL, NULL, 'xcvdfv', 'dfgdgf', 'dfgdfg', 'Data Storage & Management', NULL, NULL, 'Admin', '2025-09-24 05:30:27'),
 (2, 1, 'avinayquicktech+011@gmail.com', NULL, '#8E320B', '+14334334343', 'sss', 'Neuo', '2000', 'http://test.com', '1-10', NULL, 'No', NULL, NULL, 'Gjirokastër County', NULL, '435345', 'Albania', 'AL', '05', NULL, NULL, 'fdghgfh', 'gfgg', 'gggg', 'Data Storage & Management', NULL, NULL, 'Admin', '2025-09-24 05:50:30'),
-(3, 1, 'test@gmail.com', NULL, '#68C63B', '+919736244949', 'vbcbc', 'LookUp', '2000', 'https://test.com', '1-10', NULL, 'No', NULL, NULL, 'Jammu and Kashmir', 'Gho Brahmanan de', '12123', 'India', 'IN', 'JK', NULL, NULL, 'dfs', 'sdf', 'sdfds', 'Data Storage & Management', NULL, NULL, 'Admin', '2025-10-01 04:23:02'),
+(3, 1, 'test@gmail.com', NULL, '#68C63B', '+919736244949', 'vbcbc', 'LookUp', '2000', 'https://test.com', '1-10', NULL, 'No', NULL, NULL, 'Ontario', 'Ballantrae', '12123', 'Canada', 'CA', 'ON', NULL, NULL, 'dfs', 'sdf', 'sdfds', 'Data Storage & Management', NULL, NULL, 'Admin', '2025-10-01 04:23:02'),
 (6, 3, NULL, NULL, '#98E22D', '+14805555555', 's', 'Test', '2000', 'https://test.com', '11-50', NULL, 'No', NULL, NULL, 'Jowzjan', 'Darzāb', '176208', 'Afghanistan', 'AF', 'JOW', NULL, NULL, 'fggf', 'fgfg', 'fgfgf', 'Cybersecurity', NULL, NULL, 'Admin', '2025-10-09 12:19:11'),
 (7, 1, NULL, NULL, '#6ED8F0', '+1212122222', 'f', 'ddd', '2222', 'http://test.com', '1-10', NULL, 'Yes', NULL, NULL, 'Béjaïa', 'Seddouk', '12123', 'Algeria', 'DZ', '06', NULL, NULL, 'df', 'df', 'df', 'Electric Vehicles & Sustainable Transportation', NULL, NULL, 'Admin', '2025-10-21 07:14:57'),
 (8, 1, NULL, NULL, '#03A727', '+1212122222', 'ss', 'ss@gmail.com', '2006', 'http://test.com', '11-50', NULL, 'Yes', NULL, NULL, 'Berat County', NULL, '12123', 'Albania', 'AL', '01', NULL, NULL, 'sws', 's', 's', 'Agriculture & Farming', NULL, NULL, 'Admin', '2025-10-21 07:18:20'),
@@ -456,8 +808,9 @@ CREATE TABLE `company_investor` (
 --
 
 INSERT INTO `company_investor` (`id`, `company_id`, `created_by_id`, `created_by_role`, `investor_id`, `investorType`, `investmentPreference`, `status`, `notes`, `created_at`, `updated_at`) VALUES
-(5, 2, 1, 'signatory', 3, NULL, NULL, NULL, NULL, '2025-09-25 10:06:14', '0000-00-00 00:00:00'),
-(6, 1, 1, 'signatory', 1, NULL, NULL, NULL, NULL, '2025-10-04 13:13:29', '0000-00-00 00:00:00');
+(7, 1, 1, 'signatory', 1, NULL, NULL, NULL, NULL, '2025-12-02 15:00:04', '0000-00-00 00:00:00'),
+(8, 1, 1, 'signatory', 2, NULL, NULL, NULL, NULL, '2025-12-03 14:46:48', '0000-00-00 00:00:00'),
+(11, 1, 1, 'signatory', 4, NULL, NULL, NULL, NULL, '2026-01-02 13:04:27', '0000-00-00 00:00:00');
 
 -- --------------------------------------------------------
 
@@ -486,7 +839,7 @@ CREATE TABLE `company_legal_information` (
 --
 
 INSERT INTO `company_legal_information` (`id`, `user_id`, `company_id`, `articles`, `entity_name`, `business_number`, `jurisdiction_country`, `entity_type`, `date_of_incorporation`, `entity_structure`, `office_address`, `mailing_address`, `created_at`) VALUES
-(1, 1, 3, 'articles_1760680100815.jpg', 'dfgdf', '45', 'Argentina', 'SA (Sociedad Anónima)', '2025-10-25', 'public', 'sss', 'ssss', '2025-10-17 11:29:30');
+(1, 1, 3, 'articles_1760680100815.jpg', 'dfgdf', '45', 'Argentina', 'SA (Sociedad Anónima)', '2025-10-25', 'public', 'sss', 'ssss', '2025-12-12 10:03:37');
 
 -- --------------------------------------------------------
 
@@ -560,11 +913,11 @@ CREATE TABLE `company_signatories` (
 --
 
 INSERT INTO `company_signatories` (`id`, `unique_code`, `company_id`, `user_id`, `first_name`, `last_name`, `signatory_email`, `password`, `viewpassword`, `linked_in`, `signatory_phone`, `signature_role`, `access_status`, `invited_by`, `invited_at`, `accepted_at`, `last_login`) VALUES
-(1, 'ZAR1758691827729134', 1, 1, 'Test', 'kk', 'avinayquicktech+02@gmail.com', '$2b$12$uU2JNi94qY07H.dtQ3QiZ.X9LxBjbU.5y02r.D9wgsnu3q.Iq6v7a', 'Code@2025#', 'Test', '+14805555555', 'Advisory Board Member – Expert advisor guiding strategy, growth, and investor relations', 'active', 1, '2025-09-24 11:00:27', '2025-09-24 11:24:44', '2025-10-24 12:29:54'),
-(2, 'FYX1758693030310796', 2, 1, 'Testttg', 'test', 'avinayquicktech+02@gmail.com', '$2b$12$uU2JNi94qY07H.dtQ3QiZ.X9LxBjbU.5y02r.D9wgsnu3q.Iq6v7a', 'Code@2025#', 'testt', '+14805555555', 'Advisory Board Member – Expert advisor guiding strategy, growth, and investor relations', 'active', 1, '2025-09-24 11:20:30', '2025-10-10 14:12:38', '2025-11-06 09:52:37'),
+(1, 'ZAR1758691827729134', 1, 1, 'Test', 'kk', 'avinayquicktech+02@gmail.com', '$2b$12$uU2JNi94qY07H.dtQ3QiZ.X9LxBjbU.5y02r.D9wgsnu3q.Iq6v7a', 'Code@2025#', 'Test', '+14805555555', 'Advisory Board Member – Expert advisor guiding strategy, growth, and investor relations', 'active', 1, '2025-09-24 11:00:27', '2025-09-24 11:24:44', '2026-01-15 15:11:31'),
+(2, 'FYX1758693030310796', 2, 1, 'Testttg', 'test', 'avinayquicktech+02@gmail.com', '$2b$12$uU2JNi94qY07H.dtQ3QiZ.X9LxBjbU.5y02r.D9wgsnu3q.Iq6v7a', 'Code@2025#', 'testt', '+14805555555', 'Advisory Board Member – Expert advisor guiding strategy, growth, and investor relations', 'active', 1, '2025-09-24 11:20:30', '2025-10-10 14:12:38', '2026-01-15 15:11:26'),
 (3, '5AN1758693030310582', 2, 1, 'fgfg', 'fgfhg', 'avinayquicktech+03@gmail.com', '$2b$12$ybfKGujzuUrWCUYjKOKA5eqpEmmW/mFDMLb/ORcwwdAX/q4AqbcCS', 'Code@2026#', 'http://test.com', '+14334334343', 'Chief People Officer (CPO) – Builds company culture and HR strategy', 'active', 1, '2025-09-24 11:20:30', '2025-10-15 12:25:20', NULL),
 (4, '2F51758698961092614', 1, 1, 'Hi', 'hh', 'avinayquicktech+03@gmail.com', '$2b$12$ybfKGujzuUrWCUYjKOKA5eqpEmmW/mFDMLb/ORcwwdAX/q4AqbcCS', 'Code@2026#', 'tgtgfg', '+14805555555', 'Advisory Board Member – Expert advisor guiding strategy, growth, and investor relations', 'active', 1, '2025-09-24 12:59:21', '2025-09-24 13:00:02', '2025-10-10 14:12:11'),
-(5, '9F01759292582473261', 3, 1, 'Test', 'kumar', 'avinayquicktech+02@gmail.com', '$2b$12$uU2JNi94qY07H.dtQ3QiZ.X9LxBjbU.5y02r.D9wgsnu3q.Iq6v7a', 'Code@2025#', 'fdgf', '+91565556656', 'Chief Investment Officer (CIO) – Manages engagements with investors and shareholders', 'active', 1, '2025-10-01 09:53:02', '2025-10-10 14:12:42', '2025-10-24 11:24:30'),
+(5, '9F01759292582473261', 3, 1, 'Test', 'kumar', 'avinayquicktech+02@gmail.com', '$2b$12$uU2JNi94qY07H.dtQ3QiZ.X9LxBjbU.5y02r.D9wgsnu3q.Iq6v7a', 'Code@2025#', 'fdgf', '+91565556656', 'Chief Investment Officer (CIO) – Manages engagements with investors and shareholders', 'active', 1, '2025-10-01 09:53:02', '2025-10-10 14:12:42', '2025-12-12 17:55:25'),
 (10, 'T7P1760082178918226', 3, 1, 't', 'r', 'avinayquicktech+099@gmail.com', '$2b$12$O2S.LCD3S45Xv4KRjPBqcOZpqUp2LlyjDSIvK/8qzrItmLA.gLbiC', 'Code@2027#', 'df', '+919736244949', 'Other', 'active', 1, '2025-10-10 13:12:58', '2025-10-10 13:13:46', '2025-10-10 14:12:16'),
 (11, 'R3S1761030897032843', 7, 1, 'Avinay', 'Kumar', 'avinayquicktech@gmail.com', NULL, NULL, NULL, '+14805555555', 'Founder and Chief Executive Officer (CEO) – Visionary and strategic leader', 'pending', 1, '2025-10-21 12:44:57', NULL, NULL),
 (12, 'L0C1761031100536162', 8, 1, 'Avinay', 'Kumar', 'avinayquicktech@gmail.com', NULL, NULL, NULL, '+14805555555', 'Founder and Chief Executive Officer (CEO) – Visionary and strategic leader', 'pending', 1, '2025-10-21 12:48:20', NULL, NULL),
@@ -1495,6 +1848,72 @@ CREATE TABLE `entrepreneurs` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `industry_expertise`
+--
+
+CREATE TABLE `industry_expertise` (
+  `id` int(11) NOT NULL,
+  `name` varchar(255) DEFAULT NULL,
+  `value` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `industry_expertise`
+--
+
+INSERT INTO `industry_expertise` (`id`, `name`, `value`) VALUES
+(1, 'Aerospace & Defense', 'Aerospace & Defense'),
+(2, 'Agriculture & Farming', 'Agriculture & Farming'),
+(3, 'Artificial Intelligence & Machine Learning', 'Artificial Intelligence & Machine Learning'),
+(4, 'Automotive', 'Automotive'),
+(5, 'Banking & Financial Services', 'Banking & Financial Services'),
+(6, 'Biotechnology', 'Biotechnology'),
+(7, 'Chemical Industry', 'Chemical Industry'),
+(8, 'Construction & Engineering', 'Construction & Engineering'),
+(9, 'Consumer Goods', 'Consumer Goods'),
+(10, 'Cybersecurity', 'Cybersecurity'),
+(11, 'Data Storage & Management', 'Data Storage & Management'),
+(12, 'Education & Training', 'Education & Training'),
+(13, 'Electric Vehicles & Sustainable Transportation', 'Electric Vehicles & Sustainable Transportation'),
+(14, 'Energy & Utilities', 'Energy & Utilities'),
+(15, 'Entertainment & Media', 'Entertainment & Media'),
+(16, 'Environmental Services & Sustainability', 'Environmental Services & Sustainability'),
+(17, 'Fashion & Apparel', 'Fashion & Apparel'),
+(18, 'Fintech & Digital Payments', 'Fintech & Digital Payments'),
+(19, 'Food & Beverage', 'Food & Beverage'),
+(20, 'Gaming & Esports', 'Gaming & Esports'),
+(21, 'Healthcare & Pharmaceuticals', 'Healthcare & Pharmaceuticals'),
+(22, 'Heavy Industry', 'Heavy Industry'),
+(23, 'Hospitality & Tourism', 'Hospitality & Tourism'),
+(24, 'Information Technology (IT)', 'Information Technology (IT)'),
+(25, 'Insurance', 'Insurance'),
+(26, 'Jewelry & Luxury Goods', 'Jewelry & Luxury Goods'),
+(27, 'Legal Services', 'Legal Services'),
+(28, 'Logistics & Supply Chain', 'Logistics & Supply Chain'),
+(29, 'Manufacturing', 'Manufacturing'),
+(30, 'Mining & Metals', 'Mining & Metals'),
+(31, 'Nanotechnology', 'Nanotechnology'),
+(32, 'Pet Care & Supplies', 'Pet Care & Supplies'),
+(33, 'Public Administration & Government Services', 'Public Administration & Government Services'),
+(34, 'Quantum Computing', 'Quantum Computing'),
+(35, 'Real Estate & Property Management', 'Real Estate & Property Management'),
+(36, 'Retail & E-commerce', 'Retail & E-commerce'),
+(37, 'Robotics', 'Robotics'),
+(38, 'Security & Surveillance', 'Security & Surveillance'),
+(39, 'Social Media & Digital Marketing', 'Social Media & Digital Marketing'),
+(40, 'Space Exploration & Satellite Technology', 'Space Exploration & Satellite Technology'),
+(41, 'Sports & Fitness', 'Sports & Fitness'),
+(42, 'Supply Chain & Procurement', 'Supply Chain & Procurement'),
+(43, 'Telecommunications', 'Telecommunications'),
+(44, 'Traditional Crafts & Artisanal Goods', 'Traditional Crafts & Artisanal Goods'),
+(45, 'Transportation & Logistics', 'Transportation & Logistics'),
+(46, 'Venture Capital & Private Equity', 'Venture Capital & Private Equity'),
+(47, 'Video Game Industry', 'Video Game Industry'),
+(48, 'Waste Management', 'Waste Management');
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `investorrequest_company`
 --
 
@@ -1550,9 +1969,9 @@ CREATE TABLE `investor_information` (
 --
 
 INSERT INTO `investor_information` (`id`, `unique_code`, `company_id`, `created_by_id`, `created_by_role`, `first_name`, `last_name`, `email`, `viewpassword`, `password`, `phone`, `city`, `country`, `type_of_investor`, `full_address`, `country_tax`, `tax_id`, `kyc_document`, `ip_address`, `is_register`, `expired_at`, `created_at`, `updated_at`, `accredited_status`, `linkedIn_profile`, `industry_expertise`) VALUES
-(1, '4868e8cab84992e022522332edd1bdcb', 2, 1, 'signatory', 'Investor', 'Kumar', 'avinayquicktech+001@gmail.com', 'S-OyK$|3', '$2b$12$h2M9nJdsXpCRJzc/aSAgR.Umc/6gENZm9XoYrydTcmB19hDS4Awma', '+1 55555666666', 'dfg', 'IN', 'Government/Grant', 'fh', 'fhg', '34543', '[\"1758705747202-720513004.jpg\"]', '223.178.209.49', 'Yes', '2025-10-24', '2025-09-24 13:16:47', '2025-09-24 14:52:29', 'Accredited Investor', 'fdgh', 'dfgdf'),
-(2, 'e831b14778ad4d6abbce81a6aa8d4834', 2, 1, 'signatory', 'Test', 'Kumar', 'avinayquicktech@gmail.com', 'du@8X>S)', '$2b$12$ASVQ5C5ca77LBa4yuk0dCuWtvDs46YVVnSZzDlTAFVOoqHLFkhmbe', '+14334334343', 'Kangra', 'AL', 'Other', 'Test', 'sss', '', '[]', '223.178.211.133', 'Yes', '2025-10-24', '2025-09-24 13:19:33', '2025-10-03 15:45:06', 'Accredited Investor', '', 'Energy & Utilities'),
-(3, '6d407b52dbd805dc248ee6466963dfec', 2, 1, 'signatory', 'Inesvtro 2sss', 'Kumar', 'avinayquicktech+05@gmail.com', '.|nh8(<X', '$2b$12$ErBUwEQsuOGAA/fG2TM2j.co1PKWH2mCsqHfoel5WJDWeUQ8MDtXS', '+14805555555', 'hhfg', 'HU', 'Bank/Financial Institution', 'abc', '546t4re', 'gdg', '[\"1758775040716-752599709.png\"]', '223.178.212.151', 'Yes', '2025-10-25', '2025-09-25 10:06:14', '2025-09-25 10:07:22', '4rt', 'dfg', 'dffgg');
+(1, '3134bf10ec9797ed11a13bdfee37aee1', 1, 1, 'signatory', 'Test', 'test', 'avinayquicktech+001@gmail.com', 'w57mmE%}', '$2b$12$2t1lgfKK/vaSdMzrVC6QaetKxtYiwtWhN08dmvmI5d0xqxuRsh.l.', '+1212122222', 'test', 'IN', 'Government/Grant', 'VPO\r\n12', 'gh', 'gfhfg', '[\"1764667843013-957906596.pdf\"]', '2401:4900:8fe0:b02a:b063:b4ca:c7c7:ded1', 'Yes', '2026-01-01', '2025-12-02 15:00:04', '2025-12-02 15:00:44', 'Non-Accredited', 'fghfgh', 'Energy & Utilities'),
+(2, 'eec141cf5738532aeab41a487d643ef8', 1, 1, 'signatory', 'hy', 'h', 'avinayquicktech+033@gmail.com', '*)6ohZbp', '$2b$12$wmonmyueFypjtS35VJyTyejfViJGryNor406TbeR1n9iGiJChO9jK', '+14334334343', 'gt', 'UG', 'Co-Founder', 'Test', 'ttt', 'test', '[\"1765263147859-863343426.pdf\"]', '223.181.19.73', 'Yes', '2026-01-02', '2025-12-03 14:46:48', '2025-12-09 12:22:29', 'Accredited Investor', 'Test', 'Cybersecurity'),
+(4, '7db06c2b5095c4ffa67119c10915d0f4', 1, 1, 'signatory', 'Test', 'Kumar', 'avinayquicktech+0012@gmail.com', 'Bh}JY2d^', '$2b$12$/nuvyIrkpUpcLsX1kYeyDObe4squyqHWN6E/9Brwgipy4ReioRlsS', '+1 433 433 4343', 'Kangra', 'AT', 'Government/Grant', 'Test', 'Albania', '', '[]', '49.43.105.30', 'Yes', '2026-02-01', '2026-01-02 13:04:27', '2026-01-02 13:14:49', 'Non-Accredited', '', 'Data Storage & Management');
 
 -- --------------------------------------------------------
 
@@ -1664,8 +2083,12 @@ CREATE TABLE `roundrecord` (
   `instrument_type_data` text DEFAULT NULL,
   `customInstrument` varchar(255) DEFAULT NULL,
   `roundsize` varchar(255) DEFAULT NULL,
+  `pre_money` varchar(255) DEFAULT NULL,
+  `post_money` varchar(255) DEFAULT NULL,
+  `optionPoolPercent` varchar(255) DEFAULT NULL,
   `currency` varchar(255) DEFAULT NULL,
   `issuedshares` varchar(255) DEFAULT NULL,
+  `investorPostMoney` varchar(255) DEFAULT NULL,
   `rights` text DEFAULT NULL,
   `liquidationpreferences` text DEFAULT NULL,
   `liquidation` text DEFAULT NULL,
@@ -1683,16 +2106,39 @@ CREATE TABLE `roundrecord` (
   `created_at` datetime DEFAULT NULL,
   `founder_data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`founder_data`)),
   `total_founder_shares` int(11) DEFAULT NULL,
-  `founder_count` int(11) DEFAULT NULL
+  `founder_count` int(11) DEFAULT NULL,
+  `executive_summary` longtext DEFAULT NULL,
+  `optionPoolPercent_post` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `roundrecord`
 --
 
-INSERT INTO `roundrecord` (`id`, `company_id`, `created_by_id`, `created_by_role`, `updated_by_id`, `updated_by_role`, `round_type`, `nameOfRound`, `shareClassType`, `shareclassother`, `description`, `instrumentType`, `instrument_type_data`, `customInstrument`, `roundsize`, `currency`, `issuedshares`, `rights`, `liquidationpreferences`, `liquidation`, `liquidationOther`, `convertible`, `convertibleType`, `voting`, `termsheetFile`, `subscriptiondocument`, `generalnotes`, `dateroundclosed`, `roundStatus`, `is_shared`, `is_locked`, `created_at`, `founder_data`, `total_founder_shares`, `founder_count`) VALUES
-(1, 2, 2, 'signatory', 2, 'signatory', 'Round 0', 'Founding Share Allocation', 'Common Shares', '', 'aaa', '', '{}', '', '', 'CAD $', '1100', 'sa', '', '', '', '', '', 'Yes', '[]', '[]', 'asd', NULL, '', 'No', 'No', '2025-11-06 09:59:29', '{\"founders\":[{\"shares\":\"500\",\"shareType\":\"common\",\"voting\":\"voting\"},{\"shares\":\"300\",\"shareType\":\"common\",\"voting\":\"voting\"},{\"shares\":\"300\",\"shareType\":\"common\",\"voting\":\"voting\"}],\"totalShares\":1100,\"totalValue\":\"11.00\",\"pricePerShare\":\"0.01\",\"ownershipBreakdown\":[{\"founder\":\"Founder 1\",\"percentage\":\"45.5\"},{\"founder\":\"Founder 2\",\"percentage\":\"27.3\"},{\"founder\":\"Founder 3\",\"percentage\":\"27.3\"}]}', 1100, 3),
-(2, 2, 2, 'signatory', 2, 'signatory', 'Investment', 'Founding Share Allocation', 'Seed', '', 'test', 'Safe', '{\"valuationCap\":\"2000\",\"discountRate\":\"10\",\"safeType\":\"PRE_MONEY\"}', '', '2000.00', 'CAD $', '258.00', 'out dividend preferences, conversion rights, protective provisions', 's', '2x Investor Multiple Preference,Capped Participating', '', 'No', '', 'No', '[\"1762403617163-141705869.docx\"]', '[\"1762403617164-580559449.docx\"]', 'sdf', NULL, 'ACTIVE', 'No', 'No', '2025-11-06 10:03:37', NULL, NULL, NULL);
+INSERT INTO `roundrecord` (`id`, `company_id`, `created_by_id`, `created_by_role`, `updated_by_id`, `updated_by_role`, `round_type`, `nameOfRound`, `shareClassType`, `shareclassother`, `description`, `instrumentType`, `instrument_type_data`, `customInstrument`, `roundsize`, `pre_money`, `post_money`, `optionPoolPercent`, `currency`, `issuedshares`, `investorPostMoney`, `rights`, `liquidationpreferences`, `liquidation`, `liquidationOther`, `convertible`, `convertibleType`, `voting`, `termsheetFile`, `subscriptiondocument`, `generalnotes`, `dateroundclosed`, `roundStatus`, `is_shared`, `is_locked`, `created_at`, `founder_data`, `total_founder_shares`, `founder_count`, `executive_summary`, `optionPoolPercent_post`) VALUES
+(19, 1, 1, 'signatory', 1, 'signatory', 'Round 0', 'Founding Share Allocation', 'Common Shares', '', 'gdf', '', '{}', '', '', NULL, NULL, NULL, 'CAD $', '100000', NULL, 'dfgdf', '', '', '', '', '', '', '[]', '[]', 'is information helps provide context for your ', NULL, '', 'No', 'No', '2025-12-10 16:20:25', '{\"founders\":[{\"shares\":\"50000.00\",\"shareType\":\"common\",\"voting\":\"voting\",\"firstName\":\"F1\",\"lastName\":\"F1\",\"email\":\"f1@gmail.com\",\"phone\":\"888888888\"},{\"shares\":\"30000.00\",\"shareType\":\"common\",\"voting\":\"voting\",\"firstName\":\"F2\",\"lastName\":\"F2\",\"email\":\"f2@gmail.com\",\"phone\":\"4545454545\"},{\"shares\":\"20000.00\",\"shareType\":\"common\",\"voting\":\"voting\",\"firstName\":\"F3\",\"lastName\":\"test\",\"email\":\"test@gmail.com\"}],\"totalShares\":100000,\"totalValue\":\"100.00\",\"pricePerShare\":\"0.001\",\"ownershipBreakdown\":[{\"founder\":\"Founder 1\",\"percentage\":\"50.0\"},{\"founder\":\"Founder 2\",\"percentage\":\"30.0\"},{\"founder\":\"Founder 3\",\"percentage\":\"20.0\"}]}', 100000, 3, 'The executive summary for the \"Founding Share Allocation\" (Round 0) lacks comprehensive financial details such as Pre-Money and Post-Money valuation, making valuation metrics and financial analysis challenging. The round involved issuing 100,000 shares, but the monetary size of the round was not specified. Rights associated with these issued shares are identified as \"dfgdf,\" but without further clarification, the nature of these rights remains unclear. Notably, there are no specifications concerning liquidation preferences, convertibility features, voting rights, or the extent of the option pool. Overall, critical data necessary for informed investment analysis and decision making are missing from the provided documentation. Further detailed information and clarification of the general notes and rights categories would be essential for a comprehensive understanding of this investment round. Additionally, since both investor post-money valuation and the size of the option pool are undefined, potential investors lack insight into their prospective ownership dilution and the impact on shareholder value.', NULL),
+(72, 1, 1, 'signatory', 1, 'signatory', 'Investment', 'Convertible Seed', 'Pre-Seed', '', 'sss', 'Convertible Note', '{\"valuationCap_note\":\"1000000.00\",\"discountRate_note\":\"20\",\"maturityDate\":\"2030-01-13\",\"interestRate_note\":\"10\"}', '', '120000.00', '45000.00', '165000.00', '10', 'CAD $', '', '', 'Be specific about dividend preferences', '', '', '', 'No', '', 'No', '[\"1768296860903-99806318.pdf\"]', '[\"1768296860911-413296214.pdf\"]', 'Be specific about dividend preferences', NULL, 'ACTIVE', 'No', 'No', '2026-01-13 15:04:20', NULL, NULL, NULL, '', ''),
+(75, 1, 1, 'signatory', 1, 'signatory', 'Investment', 'Convertible Series A', 'Series A', '', 'ss', 'Convertible Note', '{\"valuationCap_note\":\"\",\"discountRate_note\":\"\",\"maturityDate\":\"\",\"interestRate_note\":\"\"}', '', '400000.00', '1200000.00', '1600000.00', '0.00', 'CAD $', '81192.00', '20', 'Be specific about dividend preferences,', '', '', '', 'No', '', 'No', '[\"1768302337779-73874889.pdf\"]', '[\"1768302337785-77666080.pdf\"]', 'Be specific about dividend preferences,', NULL, 'ACTIVE', 'No', 'No', '2026-01-13 16:35:37', NULL, NULL, NULL, '', '20.00'),
+(77, 1, 1, 'signatory', 1, 'signatory', 'Investment', 'Seed safe', 'Seed', '', 'ss', 'Safe', '{\"valuationCap\":\"1000000.00\",\"discountRate\":\"20\"}', '', '120000.00', '45000.00', '', '10', 'CAD $', '', '', 'Be specific about dividend', '', '', '', 'No', '', 'No', '[\"1768307505255-567361692.pdf\"]', '[\"1768307505259-73156376.pdf\"]', 'Be specific about dividend', NULL, 'ACTIVE', 'No', 'No', '2026-01-13 18:01:45', NULL, NULL, NULL, '', ''),
+(79, 1, 1, 'signatory', 1, 'signatory', 'Investment', 'Safe Series A', 'Series B', '', 'test', 'Safe', '{\"valuationCap\":\"\",\"discountRate\":\"\"}', '', '400000.00', '1200000.00', '', '7.54', 'CAD $', NULL, '0.00', 'Be specific about dividend preferences, conversion rights, protective provisions, and any special rights.\r\nBack', '', '', '', 'No', '', 'No', '[\"1768308698144-841502670.pdf\"]', '[\"1768308698149-998260653.pdf\"]', 'Be specific about dividend preferences, conversion rights, protective provisions, and any special rights.\r\nBack', NULL, 'ACTIVE', 'No', 'No', '2026-01-13 18:21:38', NULL, NULL, NULL, '', '20.00'),
+(80, 1, 1, 'signatory', 1, 'signatory', 'Investment', 'Preferred Equity', 'Pre-Seed', '', 'test', 'Preferred Equity', '{\"preferred_valuation\":\"\",\"hasWarrants_preferred\":false}', '', '15000.00', '45000.00', '60000.00', '7.54', 'CAD $', '36052', '25.00', 'Be specific about dividend', 'sss', 'Non-Participating', '', 'No', '', 'No', '[\"1768368117356-381048704.pdf\"]', '[\"1768368117361-561018419.pdf\"]', 'Be specific about dividend', NULL, 'ACTIVE', 'No', 'No', '2026-01-14 10:51:57', NULL, NULL, NULL, '', '20.00'),
+(81, 1, 1, 'signatory', 0, NULL, 'Investment', 'Founding Share Allocation', 'Seed', '', 'test', 'OTHER', '{}', 'ss', '2000.00', '8000.00', '10000.00', '10', 'CAD $', '27778.00', '20.00', 'Be specific about dividend ', '', '', '', 'No', '', 'No', '[\"1768467490862-540937513.pdf\"]', '[\"1768467490872-508808840.pdf\"]', 'test', '', 'ACTIVE', 'No', 'No', '2026-01-15 14:28:10', NULL, NULL, NULL, '', '');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `round_currency_conversion`
+--
+
+CREATE TABLE `round_currency_conversion` (
+  `id` int(11) NOT NULL,
+  `round_id` int(11) NOT NULL,
+  `currency` varchar(50) NOT NULL,
+  `amount` decimal(15,2) NOT NULL,
+  `exchange_rate` decimal(10,4) NOT NULL,
+  `amount_cad` decimal(15,2) NOT NULL,
+  `conversion_date` date NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -1752,12 +2198,23 @@ CREATE TABLE `sharerecordround` (
   `access_status` enum('Not View','Only View','Download') NOT NULL,
   `termsheet_status` enum('Not Download','Download') NOT NULL,
   `subscription_status` enum('Not Download','Download') NOT NULL,
+  `signature_type` varchar(255) DEFAULT NULL,
+  `termsChecked` enum('true','false') DEFAULT NULL,
   `signature` longtext DEFAULT NULL,
   `signature_status` enum('No','Yes') NOT NULL,
   `report_status` varchar(255) DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
   `activity_date` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `sharerecordround`
+--
+
+INSERT INTO `sharerecordround` (`id`, `company_id`, `created_by_id`, `created_by_role`, `investor_id`, `roundrecord_id`, `sent_date`, `expired_at`, `date_view`, `access_status`, `termsheet_status`, `subscription_status`, `signature_type`, `termsChecked`, `signature`, `signature_status`, `report_status`, `created_at`, `activity_date`) VALUES
+(1, 1, 1, 'signatory', 4, 41, '2026-01-02', NULL, '2026-01-02', 'Only View', 'Not Download', 'Not Download', NULL, 'true', 'data:image/png;base64,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', 'Yes', NULL, '2026-01-02 17:13:41', '2026-01-02 17:14:25'),
+(2, 1, 1, 'signatory', 4, 46, '2026-01-05', NULL, '2026-01-05', 'Only View', 'Not Download', 'Not Download', NULL, 'true', 'data:image/png;base64,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', 'Yes', NULL, '2026-01-05 12:40:38', '2026-01-05 12:41:16'),
+(3, 1, 1, 'signatory', 4, 47, '2026-01-05', NULL, '2026-01-05', 'Only View', 'Not Download', 'Not Download', NULL, 'true', 'data:image/png;base64,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', 'Yes', NULL, '2026-01-05 14:11:47', '2026-01-05 14:12:04');
 
 -- --------------------------------------------------------
 
@@ -1950,7 +2407,8 @@ CREATE TABLE `users` (
 
 INSERT INTO `users` (`id`, `first_name`, `last_name`, `email`, `password`, `viewpassword`, `phone_number`, `activate_account_code`, `status`, `created_at`) VALUES
 (1, 'Avinay', 'Kumar', 'avinayquicktech@gmail.com', '$2b$12$V0wIjlCxxSyBLTWerpVbSe75pkP0l66PRp6seHj4iK75IO2Q.zPgC', 'Test@123', '+1 480 555 5555', '45b0330b687c2bfa9c96d1eb313f4db84239a91d', 'Active', '2025-09-22'),
-(3, 's', 's', 'test1@gmail.com', '$2b$12$VtWj5K.FNSZ4MKOaK9PKHeIPeax8aj96aB5JZn/yDZE5f83L1y8Xe', 'Abcd@123', '+14805555555', '8abede78816432d0544af657cba5bd6e1247abaa', 'Active', '2025-10-09');
+(3, 's', 's', 'test1@gmail.com', '$2b$12$VtWj5K.FNSZ4MKOaK9PKHeIPeax8aj96aB5JZn/yDZE5f83L1y8Xe', 'Abcd@123', '+14805555555', '8abede78816432d0544af657cba5bd6e1247abaa', 'Active', '2025-10-09'),
+(4, 'Test', 'tt', 'avinayquicktech+022@gmail.com', '$2b$12$6R.OpdaikHUfh72MpOfTK.Hhjz014d/TBQNoSuqA.is7yHwluRktC', 'Code@2025#', '+14805555555', '93cbfe888e55c2901ebd7f2bdcfb8501fd07deed', NULL, '2026-01-15');
 
 -- --------------------------------------------------------
 
@@ -1978,7 +2436,8 @@ CREATE TABLE `usersubscriptiondataroomone_time` (
 
 INSERT INTO `usersubscriptiondataroomone_time` (`id`, `company_id`, `unique_code`, `status`, `price`, `clientSecret`, `payid`, `payment_status`, `start_date`, `end_date`, `created_at`) VALUES
 (1, 2, 'g0hmjM', 'Inactive', 260, 'eyJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X2lkIjoiYzYxNzJmYzMtN2EzMS00Mjc5LWE3ZDYtYmI3MGU4MmU5YTIxIiwiaW50ZW50X2lkIjoiaW50X2hrZG1oemo0NGhjOW1pMmdvamUiLCJidXNpbmVzc19uYW1lIjoiQmx1ZVByaW50IENhdGFseXN0IERlbW8iLCJ0eXBlIjoiY2xpZW50LXNlY3JldCIsInBhZGMiOiJISyIsImlhdCI6MTc2MTEyNjg0MSwiZXhwIjoxNzYxMTMwNDQxfQ.75oY-t8sG6AogMs7_TGlJO7aNTIhiGo8g89brLVVDQ0', 'int_hkdmhzj44hc9mi2goje', 'succeeded', '2025-10-22', '2026-10-22', '2025-10-22'),
-(2, 1, NULL, 'Active', 260, 'eyJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X2lkIjoiYzYxNzJmYzMtN2EzMS00Mjc5LWE3ZDYtYmI3MGU4MmU5YTIxIiwiaW50ZW50X2lkIjoiaW50X2hrZG1zMng3bWhjYm8yc2F0YmYiLCJidXNpbmVzc19uYW1lIjoiQmx1ZVByaW50IENhdGFseXN0IERlbW8iLCJ0eXBlIjoiY2xpZW50LXNlY3JldCIsInBhZGMiOiJISyIsImlhdCI6MTc2MTI4Njk5OSwiZXhwIjoxNzYxMjkwNTk5fQ.gfxRWzuArtwqaKI25QU2u9IWJNFyKLywulHYjOA9TYI', 'int_hkdms2x7mhcbo2satbf', 'succeeded', '2025-10-24', '2026-10-24', '2025-10-24');
+(2, 1, NULL, 'Active', 260, 'eyJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X2lkIjoiYzYxNzJmYzMtN2EzMS00Mjc5LWE3ZDYtYmI3MGU4MmU5YTIxIiwiaW50ZW50X2lkIjoiaW50X2hrZG1zMng3bWhjYm8yc2F0YmYiLCJidXNpbmVzc19uYW1lIjoiQmx1ZVByaW50IENhdGFseXN0IERlbW8iLCJ0eXBlIjoiY2xpZW50LXNlY3JldCIsInBhZGMiOiJISyIsImlhdCI6MTc2MTI4Njk5OSwiZXhwIjoxNzYxMjkwNTk5fQ.gfxRWzuArtwqaKI25QU2u9IWJNFyKLywulHYjOA9TYI', 'int_hkdms2x7mhcbo2satbf', 'succeeded', '2025-10-24', '2026-10-24', '2025-10-24'),
+(3, 3, NULL, 'Active', 260, 'eyJraWQiOiJjNDRjODVkMDliMDc0NmNlYTIwZmI4NjZlYzI4YWY3ZSIsImFsZyI6IkhTMjU2In0.eyJ0eXBlIjoiY2xpZW50LXNlY3JldCIsImFjY291bnRfaWQiOiJjNjE3MmZjMy03YTMxLTQyNzktYTdkNi1iYjcwZTgyZTlhMjEiLCJpbnRlbnRfaWQiOiJpbnRfaGtkbW5jemtxaGRzc2gyeGd0aiIsImJ1c2luZXNzX25hbWUiOiJCbHVlUHJpbnQgQ2F0YWx5c3QgRGVtbyIsInBhZGMiOiJISyIsImV4cCI6MTc2NTQ1MzQ3MSwiaWF0IjoxNzY1NDQ5ODcxfQ.Qd3e2XaVM3vghEmZSmgLoGqmfOtzwdY1fbElfhdzCys', 'int_hkdmnczkqhdssh2xgtj', 'succeeded', '2025-12-11', '2026-12-11', '2025-12-11');
 
 -- --------------------------------------------------------
 
@@ -2070,6 +2529,41 @@ CREATE TABLE `videomanagement` (
   `date` date NOT NULL DEFAULT current_timestamp(),
   `sort_order` int(11) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `warrants`
+--
+
+CREATE TABLE `warrants` (
+  `id` int(11) NOT NULL,
+  `roundrecord_id` int(11) NOT NULL,
+  `company_id` int(11) NOT NULL,
+  `investor_id` int(11) NOT NULL,
+  `warrant_coverage_percentage` decimal(5,2) NOT NULL,
+  `warrant_exercise_type` enum('fixed','next_round','next_round_adjusted') DEFAULT 'next_round_adjusted',
+  `warrant_adjustment_percent` decimal(5,2) DEFAULT 0.00,
+  `warrant_adjustment_direction` enum('increase','decrease') DEFAULT 'decrease',
+  `calculated_exercise_price` decimal(15,4) DEFAULT NULL,
+  `calculated_warrant_shares` decimal(15,4) DEFAULT NULL,
+  `warrant_coverage_amount` decimal(15,4) DEFAULT NULL,
+  `warrant_status` enum('pending','exercised','expired','cancelled') DEFAULT 'pending',
+  `issued_date` datetime DEFAULT current_timestamp(),
+  `exercised_date` datetime DEFAULT NULL,
+  `exercised_in_round_id` int(11) DEFAULT NULL,
+  `expiration_date` date DEFAULT NULL,
+  `notes` text DEFAULT NULL,
+  `created_at` datetime DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `warrants`
+--
+
+INSERT INTO `warrants` (`id`, `roundrecord_id`, `company_id`, `investor_id`, `warrant_coverage_percentage`, `warrant_exercise_type`, `warrant_adjustment_percent`, `warrant_adjustment_direction`, `calculated_exercise_price`, `calculated_warrant_shares`, `warrant_coverage_amount`, `warrant_status`, `issued_date`, `exercised_date`, `exercised_in_round_id`, `expiration_date`, `notes`, `created_at`, `updated_at`) VALUES
+(4, 56, 1, 0, 10.00, 'next_round_adjusted', 30.00, 'increase', NULL, NULL, NULL, 'pending', '2026-01-09 00:00:00', NULL, NULL, '2035-01-07', 'ssw', '2026-01-07 14:38:22', '2026-01-09 15:12:15');
 
 -- --------------------------------------------------------
 
@@ -2296,6 +2790,12 @@ ALTER TABLE `entrepreneurs`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `industry_expertise`
+--
+ALTER TABLE `industry_expertise`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indexes for table `investorrequest_company`
 --
 ALTER TABLE `investorrequest_company`
@@ -2330,6 +2830,13 @@ ALTER TABLE `referralusage`
 --
 ALTER TABLE `roundrecord`
   ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `round_currency_conversion`
+--
+ALTER TABLE `round_currency_conversion`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `round_id` (`round_id`);
 
 --
 -- Indexes for table `session_link_shared`
@@ -2446,6 +2953,16 @@ ALTER TABLE `videomanagement`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `warrants`
+--
+ALTER TABLE `warrants`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_warrants_round` (`roundrecord_id`),
+  ADD KEY `idx_warrants_investor` (`investor_id`),
+  ADD KEY `idx_warrants_company` (`company_id`),
+  ADD KEY `idx_warrants_status` (`warrant_status`);
+
+--
 -- Indexes for table `zoommeeting`
 --
 ALTER TABLE `zoommeeting`
@@ -2465,19 +2982,19 @@ ALTER TABLE `zoommeeting_register`
 -- AUTO_INCREMENT for table `access_logs_company_round`
 --
 ALTER TABLE `access_logs_company_round`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=38;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=195;
 
 --
 -- AUTO_INCREMENT for table `access_logs_investor`
 --
 ALTER TABLE `access_logs_investor`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=30;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=74;
 
 --
 -- AUTO_INCREMENT for table `access_logs_sigantory_last_login`
 --
 ALTER TABLE `access_logs_sigantory_last_login`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=166;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=443;
 
 --
 -- AUTO_INCREMENT for table `admin`
@@ -2489,7 +3006,7 @@ ALTER TABLE `admin`
 -- AUTO_INCREMENT for table `audit_logs`
 --
 ALTER TABLE `audit_logs`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=67;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=217;
 
 --
 -- AUTO_INCREMENT for table `authorized_signature`
@@ -2525,7 +3042,7 @@ ALTER TABLE `company_exchange_world_details`
 -- AUTO_INCREMENT for table `company_investor`
 --
 ALTER TABLE `company_investor`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT for table `company_legal_information`
@@ -2636,6 +3153,12 @@ ALTER TABLE `entrepreneurs`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `industry_expertise`
+--
+ALTER TABLE `industry_expertise`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=53;
+
+--
 -- AUTO_INCREMENT for table `investorrequest_company`
 --
 ALTER TABLE `investorrequest_company`
@@ -2645,7 +3168,7 @@ ALTER TABLE `investorrequest_company`
 -- AUTO_INCREMENT for table `investor_information`
 --
 ALTER TABLE `investor_information`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `investor_updates`
@@ -2669,7 +3192,13 @@ ALTER TABLE `referralusage`
 -- AUTO_INCREMENT for table `roundrecord`
 --
 ALTER TABLE `roundrecord`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=82;
+
+--
+-- AUTO_INCREMENT for table `round_currency_conversion`
+--
+ALTER TABLE `round_currency_conversion`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `session_link_shared`
@@ -2687,7 +3216,7 @@ ALTER TABLE `shared_discount_code`
 -- AUTO_INCREMENT for table `sharerecordround`
 --
 ALTER TABLE `sharerecordround`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `sharereport`
@@ -2747,13 +3276,13 @@ ALTER TABLE `userinvestorreporting_subscription`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `usersubscriptiondataroomone_time`
 --
 ALTER TABLE `usersubscriptiondataroomone_time`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `usersubscriptiondataroom_perinstance`
@@ -2786,6 +3315,12 @@ ALTER TABLE `videomanagement`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `warrants`
+--
+ALTER TABLE `warrants`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
 -- AUTO_INCREMENT for table `zoommeeting`
 --
 ALTER TABLE `zoommeeting`
@@ -2796,6 +3331,16 @@ ALTER TABLE `zoommeeting`
 --
 ALTER TABLE `zoommeeting_register`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- Constraints for dumped tables
+--
+
+--
+-- Constraints for table `round_currency_conversion`
+--
+ALTER TABLE `round_currency_conversion`
+  ADD CONSTRAINT `round_currency_conversion_ibfk_1` FOREIGN KEY (`round_id`) REFERENCES `roundrecord` (`id`);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

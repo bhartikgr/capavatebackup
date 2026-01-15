@@ -64,7 +64,7 @@ function AdminDashboard() {
   );
   const [TotalCountUser, setTotalCountUser] = useState([]);
   document.title = "Admin Dashbord Page";
-  const apiUrl = "https://capavate.com/api/admin/dashboard/";
+  const apiUrl = "http://localhost:5000/api/admin/dashboard/";
   useEffect(() => {
     getTotalUsers();
   }, []);

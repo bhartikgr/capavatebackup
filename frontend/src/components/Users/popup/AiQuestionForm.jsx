@@ -19,7 +19,7 @@ const AiQuestionForm = ({
   DeleteIdDocs,
   AIquestions,
 }) => {
-  var apiURLAiFile = "https://capavate.com/api/user/aifile/";
+  var apiURLAiFile = "http://localhost:5000/api/user/aifile/";
   const storedUsername = localStorage.getItem("SignatoryLoginData");
   const userLogin = JSON.parse(storedUsername);
   const [selectedFiles, setSelectedFiles] = useState([]);

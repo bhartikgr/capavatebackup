@@ -19,7 +19,7 @@ function AdminDiscountAdd() {
   useEffect(() => {
     document.title = "Amount Add DataRoom, Extra Due Diligence - Admin";
   }, []);
-  const apiUrl = "https://capavate.com/api/admin/module/";
+  const apiUrl = "http://localhost:5000/api/admin/module/";
   const [getDataroompay, setgetDataroompay] = useState(null);
   useEffect(() => {
     getDataroompayment();

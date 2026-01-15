@@ -11,7 +11,7 @@ import {
 import { User, Lock } from "lucide-react";
 import { Eye, EyeOff } from "lucide-react";
 function AdminLogin() {
-  var apiURL = "https://capavate.com/api/admin/";
+  var apiURL = "http://localhost:5000/api/admin/";
   const navigate = useNavigate();
   const [spinners, setspinners] = useState(false);
   const [dangerMessage, setdangerMessage] = useState("");

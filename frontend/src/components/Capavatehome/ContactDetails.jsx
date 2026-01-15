@@ -17,7 +17,7 @@ export default function ContactDetails() {
     phone: "",
     message: "",
   });
-  const API_BASE_URL = "https://capavate.com/api/user/";
+  const API_BASE_URL = "http://localhost:5000/api/user/";
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);   // start spinner

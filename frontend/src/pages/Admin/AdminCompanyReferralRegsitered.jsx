@@ -19,7 +19,7 @@ function AdminCompanyReferralRegsitered() {
   };
   const [companydata, setcompanydata] = useState("");
   const { id } = useParams();
-  const apiUrl = "https://capavate.com/api/admin/module/";
+  const apiUrl = "http://localhost:5000/api/admin/module/";
   const [records, setRecords] = useState([]);
   document.title = "Tracking Referral Detail - Admin";
   useEffect(() => {

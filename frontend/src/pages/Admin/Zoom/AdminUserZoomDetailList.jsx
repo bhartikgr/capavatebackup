@@ -19,7 +19,7 @@ function AdminUserZoomDetailList() {
   const [Deleteid, setDeleteid] = useState("");
   const [successMessage, setsuccessMessage] = useState("");
   const [show, setShow] = useState(false);
-  const apiUrl = "https://capavate.com/api/admin/module/";
+  const apiUrl = "http://localhost:5000/api/admin/module/";
   const [records, setRecords] = useState([]);
   document.title = "Zoom Meeting List - Admin";
   useEffect(() => {

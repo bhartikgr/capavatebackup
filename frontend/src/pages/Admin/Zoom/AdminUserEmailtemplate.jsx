@@ -18,7 +18,7 @@ function AdminUserEmailtemplate() {
   const [errorMessagetemplate, seterrorMessagetemplate] = useState("");
   const [show, setShow] = useState(false);
   const [showEdit, setshowEdit] = useState(false);
-  const apiUrl = "https://capavate.com/api/admin/module/";
+  const apiUrl = "http://localhost:5000/api/admin/module/";
   const [records, setRecords] = useState([]);
   const [editdata, seteditdata] = useState("");
 

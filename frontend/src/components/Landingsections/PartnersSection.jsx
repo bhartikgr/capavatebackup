@@ -114,7 +114,7 @@ export default function PartnersSection() {
           </button>
         </div>
       )}
-      <section className="d-block contact">
+      <section className="d-block contact bg_blue_color">
         <div className="container-xl">
           <div className="row gy-5 contact_main border-none">
 
@@ -128,7 +128,7 @@ export default function PartnersSection() {
                 <div className="d-flex flex-column justify-content-center h-100 gap-4 contact_prsnt">
 
                   <div className="text-center">
-                    <h1 className="mb-4" style={{ fontSize: '2.1rem', fontWeight: '600', color: '#fff' }}>
+                    <h1 className="mb-4 top_hdh5">
                       Capavate Ventures
                     </h1>
 
@@ -140,7 +140,7 @@ export default function PartnersSection() {
                       Capavate Ventures partners with a curated, cross-border network of family offices and visionary venture investors to build enduring, multi-generational value across private markets worldwide.
                     </p>
 
-                    <div className="features-list d-flex align-items-center justify-content-center flex-column" style={{ textAlign: 'left', display: 'inline-block' }}>
+                    <div className="features-list d-flex align-items-center justify-content-center flex-column m-0" style={{ textAlign: 'left', display: 'inline-block' }}>
                       <div className="d-flex align-items-center">
                         <span className="me-2" style={{ color: '#fff', fontWeight: 'bold' }}>✓</span>
                         <span style={{ fontSize: '1rem', color: "#fff" }}>Strategic early-stage investments & partnerships</span>
@@ -149,11 +149,11 @@ export default function PartnersSection() {
                         <span className="me-2" style={{ color: '#fff', fontWeight: 'bold' }}>✓</span>
                         <span style={{ fontSize: '1rem', color: "#fff" }}>Global M&A origination and collaboration</span>
                       </div>
-                      <div className="d-flex align-items-center justify-content-center text-center mb-4">
+                      <div className="d-flex align-items-center  mb-2">
                         <span className="me-2" style={{ color: '#fff', fontWeight: 'bold' }}>✓</span>
                         <span style={{ fontSize: '1rem', color: "#fff" }}>Long-term growth-focused advisory services and partnerships</span>
                       </div>
-                      <div className="d-block">
+                      <div className="d-block pt-3">
 
                         <button type="button" onClick={handlephonecall} className="lglobal_btn bg_red">
                           Discover Our Investment Network

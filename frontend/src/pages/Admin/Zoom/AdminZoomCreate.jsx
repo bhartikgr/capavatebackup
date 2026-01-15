@@ -10,7 +10,7 @@ import SuccessAlert from "../../../components/Admin/SuccessAlert";
 import DangerAlert from "../../../components/Admin/DangerAlert";
 function AdminZoomCreate() {
   const navigate = useNavigate();
-  const apiUrl = "https://capavate.com/api/admin/module/";
+  const apiUrl = "http://localhost:5000/api/admin/module/";
   document.title = "Create Zoom Meeting - Admin";
   const { id } = useParams("");
   useEffect(() => {

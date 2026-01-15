@@ -18,7 +18,7 @@ function AdminVideoAdd() {
   useEffect(() => {
     document.title = "Upload Video - Admin";
   }, []);
-  const apiUrl = "https://capavate.com/api/admin/video/";
+  const apiUrl = "http://localhost:5000/api/admin/video/";
   const [records, setRecords] = useState([]);
   useEffect(() => {
     getvideo();

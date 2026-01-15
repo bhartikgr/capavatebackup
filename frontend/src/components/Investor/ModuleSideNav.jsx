@@ -37,7 +37,7 @@ export default function ModuleSideNav({ isOpen }) {
   const [userdataa, setuserdataa] = useState("");
   const [openDropdown, setOpenDropdown] = useState(null);
   const [getdatamodule, setgetdatamodule] = useState([]);
-  const apiURL = "https://capavate.com/api/user/";
+  const apiURL = "http://localhost:5000/api/user/";
 
   useEffect(() => {
     // Check if the username key exists in session storage

@@ -20,7 +20,7 @@ function AdminUserZoomMetting() {
   const toggleNavAdmin = () => {
     setIsOpen(!isOpen); // Toggle the state between true and false
   };
-  const apiUrl = "https://capavate.com/api/admin/module/";
+  const apiUrl = "http://localhost:5000/api/admin/module/";
   const [records, setRecords] = useState([]);
   document.title = "User Zoom Metting - Admin";
   useEffect(() => {

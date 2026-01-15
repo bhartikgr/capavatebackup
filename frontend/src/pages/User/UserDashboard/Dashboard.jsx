@@ -39,8 +39,8 @@ ChartJS.register(
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const apiUrlCompany = "https://capavate.com/api/user/company/";
-  const apiUrlDashbaord = "https://capavate.com/api/user/dashboard/";
+  const apiUrlCompany = "http://localhost:5000/api/user/company/";
+  const apiUrlDashbaord = "http://localhost:5000/api/user/dashboard/";
   const storedUsername = localStorage.getItem("OwnerLoginData");
   const userLogin = JSON.parse(storedUsername);
   const [companyData, setCompanyData] = useState([]);
@@ -108,7 +108,7 @@ export default function Dashboard() {
       console.error("Error generating summary", err);
     }
   };
-  const apiURL_Access = "https://capavate.com/api/user/accesslogs/";
+  const apiURL_Access = "http://localhost:5000/api/user/accesslogs/";
   useEffect(() => {
     if (companyId) {
       getSignatoryActivity();

@@ -23,9 +23,9 @@ export default function Provideform() {
   const storedUsername = localStorage.getItem("InvestorData");
   const userLogin = JSON.parse(storedUsername);
   const [spinners, setspinners] = useState(false);
-  var apiURLINFile = "https://capavate.com/api/user/investorreport/";
-  var apiURL = "https://capavate.com/api/user/";
-  var apiURLIndustry = "https://capavate.com/api/user/capitalround/";
+  var apiURLINFile = "http://localhost:5000/api/user/investorreport/";
+  var apiURL = "http://localhost:5000/api/user/";
+  var apiURLIndustry = "http://localhost:5000/api/user/capitalround/";
   document.title = "Investor Page";
   // Component के top में
   const [formErrors, setFormErrors] = useState({});

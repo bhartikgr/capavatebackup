@@ -558,16 +558,32 @@ export default function Recordround() {
     } else {
       // ROUND 1+ DATA
       formDataToSend.append("round_type", "Investment");
-      formDataToSend.append("investorPostMoney", formData.investorPostMoney);
+      if ((formData.instrumentType === 'Convertible Note' && (formData.shareClassType === "Pre-Seed" || formData.shareClassType === "Post-Seed")) || (formData.instrumentType === 'Safe' && (formData.shareClassType === 'Seed' || formData.shareClassType === "Pre-Seed" || formData.shareClassType === "Post-Seed"))) {
+        formDataToSend.append("investorPostMoney", "");
+      } else {
+        formDataToSend.append("investorPostMoney", formData.investorPostMoney || "");
+      }
+
       formDataToSend.append("shareClassType", selected || "");
       formDataToSend.append("nameOfRound", formData.nameOfRound || "");
-      formDataToSend.append("issuedshares", formData.issuedshares || "");
+      if ((formData.instrumentType === 'Convertible Note' && (formData.shareClassType === 'Seed' || formData.shareClassType === "Pre-Seed" || formData.shareClassType === "Post-Seed")) || (formData.instrumentType === 'Safe' && (formData.shareClassType === 'Seed' || formData.shareClassType === "Pre-Seed" || formData.shareClassType === "Post-Seed"))) {
+        formDataToSend.append("issuedshares", "");
+      } else {
+        formDataToSend.append("issuedshares", formData.issuedshares || "");
+      }
+
+      if (formData.instrumentType === 'Safe') {
+        formDataToSend.append("post_money", "");
+      } else {
+        formDataToSend.append("post_money", formData.post_money || "");
+      }
+
       formDataToSend.append("roundStatus", formData.roundStatus || "");
       formDataToSend.append("instrumentType", formData.instrumentType || "");
       formDataToSend.append("roundsize", formData.roundsize || "");
       formDataToSend.append("currency", formData.currency || "");
       formDataToSend.append("pre_money", formData.pre_money || "");
-      formDataToSend.append("post_money", formData.post_money || "");
+
       formDataToSend.append("optionPoolPercent", formData.optionPoolPercent || "");
       formDataToSend.append("optionPoolPercent_post", formData.optionPoolPercent_post || "");
     }
@@ -1238,12 +1254,6 @@ export default function Recordround() {
     const postMoneyPool = parseFloat(formData.optionPoolPercent_post || 0);
     const existing = parseFloat(existingSharesUse || 0);
 
-    console.log('\n🔵 ========== CALCULATION START ==========');
-    console.log('Investment Amount: $' + roundSize.toLocaleString());
-    console.log('Pre-Money Valuation: $' + preMoney.toLocaleString());
-    console.log('Existing Shares: ' + existing.toLocaleString());
-    console.log('Target Post-Money Pool: ' + postMoneyPool + '%');
-    console.log('Previous Round Option Pool: ' + previousRoundOptionPool + '%');
 
     if (preMoney <= 0 || roundSize <= 0 || existing <= 0) {
       return;
@@ -1262,25 +1272,25 @@ export default function Recordround() {
       let doc4Action = 'NO_ACTION';
 
       if (isSeriesRound && postMoneyPool > 0) {
-        console.log('\n🎯 SERIES ROUND CALCULATION');
+
 
         // ✅ STEP 1: Get existing option pool percentage
         existingOptionPoolPercent = parseFloat(previousRoundOptionPool || 0);
-        console.log('Step 1 - Existing Option Pool: ' + existingOptionPoolPercent + '%');
+
 
         // ✅ STEP 2: Calculate existing option pool shares
         const existingOptionShares = Math.round(existing * (existingOptionPoolPercent / 100));
-        console.log('Step 2 - Existing Option Shares: ' + existingOptionShares.toLocaleString());
+
 
         // ✅ STEP 3: Calculate Founders + Seed shares (non-pool)
         const foundersSeedShares = existing - existingOptionShares;
-        console.log('Step 3 - Founders + Seed Shares: ' + foundersSeedShares.toLocaleString());
+
 
         // Check if top-up needed
         if (existingOptionPoolPercent >= postMoneyPool) {
           // NO TOP-UP NEEDED
           doc4Action = 'NO_ACTION';
-          console.log('✅ NO TOP-UP: Existing pool sufficient');
+
 
           sharePrice = preMoney / existing;
           newSharesIssued = roundSize / sharePrice;
@@ -1290,56 +1300,45 @@ export default function Recordround() {
         } else {
           // TOP-UP NEEDED
           doc4Action = 'TOP_UP';
-          console.log('⚠️ TOP-UP NEEDED: Expanding pool from ' + existingOptionPoolPercent + '% to ' + postMoneyPool + '%');
+
 
           // ✅ STEP 4: Calculate Founders + Seed ownership percentage
           const foundersSeedPercent = 100 - investorOwnershipPercent - postMoneyPool;
-          console.log('Step 4 - Founders + Seed will own: ' + foundersSeedPercent.toFixed(2) + '%');
+
 
           // ✅ STEP 5: Calculate total post-investment shares
           // FORMULA: Founders+Seed Shares / Founders+Seed %
           totalPostShares = Math.round(foundersSeedShares / (foundersSeedPercent / 100));
-          console.log('Step 5 - Total Post Shares: ' + totalPostShares.toLocaleString());
+
 
           // ✅ STEP 6: Calculate total NEW shares needed
           const totalNewShares = totalPostShares - existing;
-          console.log('Step 6 - Total New Shares: ' + totalNewShares.toLocaleString() + ' ✨ THIS IS THE 93,434!');
+
 
           // ✅ STEP 7: Calculate required option pool (post-money)
           const requiredOptionShares = Math.round(totalPostShares * (postMoneyPool / 100));
-          console.log('Step 7 - Required Option Pool: ' + requiredOptionShares.toLocaleString());
+
 
           // ✅ STEP 8: Calculate additional option shares (top-up)
           newOptionShares = Math.max(0, requiredOptionShares - existingOptionShares);
-          console.log('Step 8 - New Option Shares (top-up): ' + newOptionShares.toLocaleString());
+
 
           // ✅ STEP 9: Calculate Series A investor shares
           newSharesIssued = totalNewShares - newOptionShares;
-          console.log('Step 9 - Series A Investor Shares: ' + Math.round(newSharesIssued).toLocaleString());
+
 
           // ✅ STEP 10: Calculate share price
           sharePrice = preMoney / (existing + newOptionShares);
-          console.log('Step 10 - Share Price: $' + sharePrice.toFixed(4));
 
-          // ✅ VERIFICATION
-          console.log('\n📊 VERIFICATION:');
-          console.log('├─ Founders + Seed: ' + foundersSeedShares.toLocaleString() + ' (' + foundersSeedPercent.toFixed(2) + '%)');
-          console.log('├─ Existing Options: ' + existingOptionShares.toLocaleString());
-          console.log('├─ New Options: ' + newOptionShares.toLocaleString());
-          console.log('├─ Total Options: ' + requiredOptionShares.toLocaleString() + ' (' + postMoneyPool + '%)');
-          console.log('├─ Series A Investors: ' + Math.round(newSharesIssued).toLocaleString() + ' (' + investorOwnershipPercent.toFixed(2) + '%)');
-          console.log('└─ TOTAL: ' + totalPostShares.toLocaleString() + ' (100%)');
+
+
 
           // Double-check percentages
           const foundersSeedActual = (foundersSeedShares / totalPostShares) * 100;
           const optionPoolActual = (requiredOptionShares / totalPostShares) * 100;
           const investorActual = (newSharesIssued / totalPostShares) * 100;
 
-          console.log('\n✅ PERCENTAGE CHECK:');
-          console.log('Founders + Seed: ' + foundersSeedActual.toFixed(2) + '% (should be ' + foundersSeedPercent.toFixed(2) + '%)');
-          console.log('Option Pool: ' + optionPoolActual.toFixed(2) + '% (should be ' + postMoneyPool + '%)');
-          console.log('Series A: ' + investorActual.toFixed(2) + '% (should be ' + investorOwnershipPercent.toFixed(2) + '%)');
-          console.log('Total: ' + (foundersSeedActual + optionPoolActual + investorActual).toFixed(2) + '% (should be 100%)');
+
         }
 
       } else {
@@ -1373,14 +1372,7 @@ export default function Recordround() {
       const newIssuedShares = Math.round(newSharesIssued).toString();
       const newSharePrice = sharePrice.toFixed(4);
 
-      console.log('\n🎉 FINAL RESULTS:');
-      console.log('Share Price: $' + newSharePrice);
-      console.log('Shares Issued to Investors: ' + newIssuedShares);
-      console.log('New Option Shares: ' + Math.round(newOptionShares).toLocaleString());
-      console.log('Total Post Shares: ' + Math.round(totalPostShares).toLocaleString());
-      console.log('Existing Option Pool %: ' + existingOptionPoolPercent);
-      console.log('Doc 4 Action: ' + doc4Action);
-      console.log('========== CALCULATION END ==========\n');
+
 
       setCalculatedValues({
         sharePrice: newSharePrice,
@@ -1441,7 +1433,371 @@ export default function Recordround() {
     investorOwnershipPercent: '0.00',
     doc4Action: 'NO_ACTION'
   });
+  //Series A Safe Round
+  const [seriesASafeData, setSeriesASafeData] = useState({
+    // Previous round data (from API)
+    previousTotalShares: 0.00,
+    previousFounderShares: 0.00,
+    previousEmployeeShares: 0.00,
+    previousSeedInvestment: 0.00,
+    previousValuationCap: 0.00,
+    previousDiscountRate: 0.00,
 
+    // Calculation results
+    seriesASharePrice: 0,
+    seedOptimalPrice: 0,
+    seedConversionShares: 0,
+    seedConversionValue: 0,
+    seedMOIC: 0,
+    seriesANewShares: 0,
+    seriesANewValue: 0,
+    seriesAMOIC: 0,
+    totalNewShares: 0,
+    totalExcludingOptions: 0,
+    totalSharesAfterPool: 0,
+    newOptionShares: 0,
+    postMoneyValuationEquity: 0,
+
+    // Ownership %
+    foundersPostOwnership: 0,
+    employeesPostOwnership: 0,
+    seedInvestorsPostOwnership: 0,
+    seriesAInvestorsPostOwnership: 0
+  });
+  const calculateSeriesASafe = () => {
+    const preMoney = parseFloat(formData.pre_money || 0);
+    const investmentSize = parseFloat(formData.roundsize || 0);
+    const optionPoolPost = parseFloat(formData.optionPoolPercent_post || 0); // Can be 0 to 100
+
+    // Previous round data
+    const previousTotalShares = seriesASafeData.previousTotalShares;
+    const previousFounderShares = seriesASafeData.previousFounderShares;
+    const previousEmployeeShares = seriesASafeData.previousEmployeeShares;
+    const previousSeedInvestment = seriesASafeData.previousSeedInvestment;
+    const previousValuationCap = seriesASafeData.previousValuationCap;
+    const previousDiscountRate = seriesASafeData.previousDiscountRate;
+
+    console.log("📊 Input Values:");
+    console.log(`   Pre-Money: $${preMoney.toLocaleString()}`);
+    console.log(`   Investment Size: $${investmentSize.toLocaleString()}`);
+    console.log(`   Post-Money Option Pool: ${optionPoolPost}%`);
+    console.log(`   Previous Total Shares: ${previousTotalShares.toLocaleString()}`);
+
+    if (preMoney <= 0 || investmentSize <= 0 || previousTotalShares <= 0) {
+      console.log("❌ Missing required values");
+      return;
+    }
+
+    // ✅ STEP 1: Series A share price
+    const seriesASharePrice = preMoney / previousTotalShares;
+    console.log(`✅ Series A Share Price: $${seriesASharePrice.toFixed(4)}`);
+
+    // ✅ STEP 2: Seed conversion prices
+    const seedDiscountPrice = seriesASharePrice * (1 - (previousDiscountRate / 100));
+    const seedCapPrice = previousValuationCap / previousTotalShares;
+    console.log(`✅ Seed Discount Price: $${seedDiscountPrice.toFixed(4)}`);
+    console.log(`✅ Seed Cap Price: $${seedCapPrice.toFixed(4)}`);
+
+    // ✅ STEP 3: Optimal purchase price
+    const seedOptimalPrice = Math.min(seedDiscountPrice, seedCapPrice);
+    console.log(`✅ Seed Optimal Price: $${seedOptimalPrice.toFixed(4)}`);
+
+    // ✅ STEP 4: SAFE Notes Conversion
+    const seedConversionShares = previousSeedInvestment / seedOptimalPrice;
+    const seedConversionValue = seedConversionShares * seriesASharePrice;
+    const seedMOIC = seedConversionValue / previousSeedInvestment;
+    console.log(`✅ Seed Conversion Shares: ${Math.round(seedConversionShares).toLocaleString()}`);
+
+    // ✅ STEP 5: Series A Purchase
+    const seriesANewShares = investmentSize / seriesASharePrice;
+    const seriesANewValue = seriesANewShares * seriesASharePrice;
+    console.log(`✅ Series A New Shares: ${Math.round(seriesANewShares).toLocaleString()}`);
+
+    // ✅ STEP 6: Total new shares from this round
+    const totalNewShares = seedConversionShares + seriesANewShares;
+    console.log(`✅ Total New Shares (Conversion + New): ${Math.round(totalNewShares).toLocaleString()}`);
+
+    // ✅ STEP 7: Total shares EXCLUDING NEW option pool
+    const totalExcludingOptions = previousFounderShares + totalNewShares;
+    console.log(`✅ Total Shares (Excluding NEW Options): ${Math.round(totalExcludingOptions).toLocaleString()}`);
+
+    // ✅ STEP 8: **CRITICAL - Handle Option Pool logic**
+    let totalSharesAfterPool;
+    let newOptionShares;
+    let employeesPostOwnership;
+
+    if (optionPoolPost === 0) {
+      // Case 1: No new option pool
+      totalSharesAfterPool = totalExcludingOptions; // No dilution
+      newOptionShares = 0;
+      employeesPostOwnership = (previousEmployeeShares / totalSharesAfterPool) * 100;
+      console.log(`✅ No new option pool (0%)`);
+    } else {
+      // Case 2: With option pool
+      // First calculate what the employee ownership % would be WITHOUT new options
+      const employeesExistingPercent = (previousEmployeeShares / totalExcludingOptions) * 100;
+
+      if (employeesExistingPercent >= optionPoolPost) {
+        // Case 2a: Existing employee pool is already >= target, no new options needed
+        totalSharesAfterPool = totalExcludingOptions;
+        newOptionShares = 0;
+        employeesPostOwnership = employeesExistingPercent;
+        console.log(`✅ Existing pool (${employeesExistingPercent.toFixed(1)}%) already meets target (${optionPoolPost}%)`);
+      } else {
+        // Case 2b: Need to create new options to reach target %
+        totalSharesAfterPool = totalExcludingOptions / (1 - (optionPoolPost / 100));
+        newOptionShares = totalSharesAfterPool - totalExcludingOptions - previousEmployeeShares;
+        employeesPostOwnership = optionPoolPost;
+        console.log(`✅ Creating new options to reach ${optionPoolPost}% target`);
+      }
+    }
+
+    console.log(`✅ Total Shares After ${optionPoolPost}% Pool: ${Math.round(totalSharesAfterPool).toLocaleString()}`);
+    console.log(`✅ New Option Shares: ${Math.round(newOptionShares).toLocaleString()}`);
+
+    // ✅ STEP 9: Post-Money Valuation
+    const postMoneyValuationEquity = totalSharesAfterPool * seriesASharePrice;
+    console.log(`✅ Post-Money Valuation (Equity): $${Math.round(postMoneyValuationEquity).toLocaleString()}`);
+
+    // ✅ STEP 10: Ownership percentages
+    const foundersPostOwnership = (previousFounderShares / totalSharesAfterPool) * 100;
+    const seedInvestorsPostOwnership = (seedConversionShares / totalSharesAfterPool) * 100;
+    const seriesAInvestorsPostOwnership = (seriesANewShares / totalSharesAfterPool) * 100;
+
+    // For 0% case, employeesPostOwnership is already calculated above
+    if (optionPoolPost > 0) {
+      employeesPostOwnership = ((previousEmployeeShares + newOptionShares) / totalSharesAfterPool) * 100;
+    }
+
+    console.log(`✅ Founders: ${foundersPostOwnership.toFixed(1)}%`);
+    console.log(`✅ Employees: ${employeesPostOwnership.toFixed(1)}%`);
+    console.log(`✅ Seed Investors: ${seedInvestorsPostOwnership.toFixed(1)}%`);
+    console.log(`✅ Series A Investors: ${seriesAInvestorsPostOwnership.toFixed(1)}%`);
+
+    // ✅ STEP 11: Total shares issued in THIS round
+    const totalSharesIssuedThisRound = seedConversionShares + seriesANewShares + newOptionShares;
+    console.log(`✅ Total Shares Issued This Round: ${Math.round(totalSharesIssuedThisRound).toLocaleString()}`);
+
+    // ✅ STEP 12: Update state
+    setSeriesASafeData({
+      ...seriesASafeData,
+      seriesASharePrice: seriesASharePrice.toFixed(4),
+      seedOptimalPrice: seedOptimalPrice.toFixed(4),
+      seedConversionShares: Math.round(seedConversionShares),
+      seedConversionValue: Math.round(seedConversionValue),
+      seedMOIC: seedMOIC.toFixed(2),
+      seriesANewShares: Math.round(seriesANewShares),
+      seriesANewValue: Math.round(seriesANewValue),
+      seriesAMOIC: (seriesANewValue / investmentSize).toFixed(2),
+      totalNewShares: Math.round(totalNewShares),
+      totalExcludingOptions: Math.round(totalExcludingOptions),
+      totalSharesAfterPool: Math.round(totalSharesAfterPool),
+      newOptionShares: Math.round(newOptionShares),
+      postMoneyValuationEquity: Math.round(postMoneyValuationEquity),
+      foundersPostOwnership: foundersPostOwnership.toFixed(1),
+      employeesPostOwnership: employeesPostOwnership.toFixed(1),
+      seedInvestorsPostOwnership: seedInvestorsPostOwnership.toFixed(1),
+      seriesAInvestorsPostOwnership: seriesAInvestorsPostOwnership.toFixed(1)
+    });
+
+    // ✅ STEP 13: Update formData
+    setFormData(prev => ({
+      ...prev,
+      issuedshares: Math.round(totalSharesIssuedThisRound).toString(),
+      post_money: (preMoney + investmentSize).toFixed(2),
+      investorPostMoney: seriesAInvestorsPostOwnership.toFixed(2)
+    }));
+  };
+  const [seriesConvertibleData, setSeriesConvertibleData] = useState({
+    // Previous round data (from API)
+    previousTotalShares: 0,
+    previousFounderShares: 0,
+    previousEmployeeShares: 0,
+    previousRoundSize: 0,
+    previousInterestRate: 0,
+    previousValuationCap: 0,
+    previousDiscountRate: 0,
+
+    // Calculated values
+    principalPlusInterest: '0.00',
+    seriesASharePrice: '0.0000',
+    noteOptimalPrice: '0.0000',
+    noteConversionShares: 0,
+    noteConversionValue: 0,
+    noteMOIC: '0.00',
+    seriesANewShares: 0,
+    seriesANewValue: 0,
+    seriesAMOIC: '0.00',
+    totalNewSharesBeforeOptions: 0,
+    totalExcludingOptions: 0,
+    totalSharesAfterPool: 0,
+    newOptionShares: 0,
+    postMoneyValuationEquity: 0,
+    simplePostMoney: 0, // Add this
+    foundersPostOwnership: '0.0',
+    employeesPostOwnership: '0.0',
+    noteInvestorsPostOwnership: '0.0',
+    seriesAInvestorsPostOwnership: '0.0'
+  });
+  const calculateSeriesConvertible = () => {
+    // ✅ Get input values from form
+    const preMoney = parseFloat(formData.pre_money || 0); // $1,200,000
+    const seriesAInvestment = parseFloat(formData.roundsize || 0); // $400,000
+    const optionPoolPost = parseFloat(formData.optionPoolPercent_post || 0); // 20%
+    const yearsBetween = parseFloat(formData.yearsBetween || 2);
+
+    // ✅ Use dynamic data
+    const previousRoundSize = seriesConvertibleData.previousRoundSize || 0; // $120,000
+    const previousInterestRate = seriesConvertibleData.previousInterestRate || 0; // 10%
+    const previousValuationCap = seriesConvertibleData.previousValuationCap || 0; // $1,000,000
+    const previousDiscountRate = seriesConvertibleData.previousDiscountRate || 0; // 20%
+
+    const previousTotalShares = seriesConvertibleData.previousTotalShares || 0; // 111,111
+    const previousFounderShares = seriesConvertibleData.previousFounderShares || 0; // 100,000
+    const previousEmployeeShares = seriesConvertibleData.previousEmployeeShares || 0; // 11,111
+
+    console.log("📊 CORRECTED Series Convertible Note Calculation:");
+
+    // Validation
+    if (preMoney <= 0 || seriesAInvestment <= 0 || previousTotalShares <= 0) {
+      console.log("❌ Missing required values");
+      return;
+    }
+
+    // ✅ STEP 1: Series A share price
+    const seriesASharePrice = preMoney / previousTotalShares;
+    console.log(`✅ Series A Share Price: $${seriesASharePrice.toFixed(4)}`);
+
+    // ✅ STEP 2: Calculate Convertible Note conversion
+    const interestFactor = Math.pow(1 + (previousInterestRate / 100), yearsBetween);
+    const principalPlusInterest = previousRoundSize * interestFactor;
+    console.log(`✅ Principal + Interest: $${principalPlusInterest.toFixed(2)}`);
+
+    // ✅ STEP 3: Convertible Note conversion prices
+    const noteDiscountPrice = seriesASharePrice * (1 - (previousDiscountRate / 100));
+    const noteCapPrice = previousValuationCap / previousTotalShares;
+    console.log(`✅ Note Discount Price: $${noteDiscountPrice.toFixed(4)}`);
+    console.log(`✅ Note Cap Price: $${noteCapPrice.toFixed(4)}`);
+
+    // ✅ STEP 4: Optimal conversion price
+    const noteOptimalPrice = Math.min(noteDiscountPrice, noteCapPrice);
+    console.log(`✅ Note Optimal Price: $${noteOptimalPrice.toFixed(4)}`);
+
+    // ✅ STEP 5: Convertible Note Conversion Shares
+    const noteConversionShares = principalPlusInterest / noteOptimalPrice;
+    console.log(`✅ Note Conversion Shares: ${Math.round(noteConversionShares).toLocaleString()}`);
+
+    // ✅ STEP 6: Series A New Shares
+    const seriesANewShares = seriesAInvestment / seriesASharePrice;
+    console.log(`✅ Series A New Shares: ${Math.round(seriesANewShares).toLocaleString()}`);
+
+    // ✅ STEP 7: Total shares issued in THIS round (BEFORE option pool)
+    const totalNewSharesBeforeOptions = noteConversionShares + seriesANewShares;
+    console.log(`✅ Total New Shares Before Options: ${Math.round(totalNewSharesBeforeOptions).toLocaleString()}`);
+
+    // ✅ STEP 8: CORRECT Option Pool Calculation according to requirements
+    let totalSharesAfterPool;
+    let newOptionShares = 0;
+
+    if (optionPoolPost > 0) {
+      // According to requirements: Total shares excluding option shares
+      // = Founders + SAFE Conversion + Series A New
+      const totalExcludingOptions = previousFounderShares + noteConversionShares + seriesANewShares;
+      console.log(`✅ Total Excluding Options: ${Math.round(totalExcludingOptions).toLocaleString()}`);
+
+      // Calculate total shares after pool
+      totalSharesAfterPool = totalExcludingOptions / (1 - (optionPoolPost / 100));
+      console.log(`✅ Total Shares After ${optionPoolPost}% Pool: ${Math.round(totalSharesAfterPool).toLocaleString()}`);
+
+      // Calculate new option shares
+      // Formula from requirements: New options = Total after pool - Total excluding options - Existing employee shares
+      newOptionShares = totalSharesAfterPool - totalExcludingOptions - previousEmployeeShares;
+
+      // Ensure not negative
+      newOptionShares = Math.max(0, newOptionShares);
+
+      console.log(`✅ New Option Shares: ${Math.round(newOptionShares).toLocaleString()}`);
+    } else {
+      // No option pool
+      totalSharesAfterPool = previousTotalShares + totalNewSharesBeforeOptions;
+    }
+
+    // ✅ STEP 9: Total shares issued in THIS round (AFTER option pool)
+    const totalSharesIssuedThisRound = totalNewSharesBeforeOptions + newOptionShares;
+    console.log(`✅ Total Shares Issued This Round: ${Math.round(totalSharesIssuedThisRound).toLocaleString()}`);
+
+    // ✅ STEP 10: Post-Money Valuation (Equity Value)
+    const postMoneyValuationEquity = totalSharesAfterPool * seriesASharePrice;
+    console.log(`✅ Post-Money Valuation (Equity): $${Math.round(postMoneyValuationEquity).toLocaleString()}`);
+
+    // ✅ STEP 11: Simple Post-Money (without SAFE notes)
+    const simplePostMoney = preMoney + seriesAInvestment;
+    console.log(`✅ Simple Post-Money (without SAFE): $${simplePostMoney.toLocaleString()}`);
+
+    // ✅ STEP 12: Ownership percentages
+    const foundersPostOwnership = (previousFounderShares / totalSharesAfterPool) * 100;
+    const noteInvestorsPostOwnership = (noteConversionShares / totalSharesAfterPool) * 100;
+    const seriesAInvestorsPostOwnership = (seriesANewShares / totalSharesAfterPool) * 100;
+    const employeesPostOwnership = ((previousEmployeeShares + newOptionShares) / totalSharesAfterPool) * 100;
+
+    console.log(`✅ Founders: ${foundersPostOwnership.toFixed(1)}%`);
+    console.log(`✅ Note Investors: ${noteInvestorsPostOwnership.toFixed(1)}%`);
+    console.log(`✅ Series A Investors: ${seriesAInvestorsPostOwnership.toFixed(1)}%`);
+    console.log(`✅ Employees: ${employeesPostOwnership.toFixed(1)}%`);
+
+    // ✅ STEP 13: MOIC calculations
+    const noteConversionValue = noteConversionShares * seriesASharePrice;
+    const noteMOIC = noteConversionValue / previousRoundSize;
+    const seriesANewValue = seriesANewShares * seriesASharePrice;
+    const seriesAMOIC = seriesANewValue / seriesAInvestment;
+
+    // ✅ STEP 14: Update seriesConvertibleData state
+    setSeriesConvertibleData(prev => ({
+      ...prev,
+      // Keep previous data
+      previousTotalShares: previousTotalShares,
+      previousFounderShares: previousFounderShares,
+      previousEmployeeShares: previousEmployeeShares,
+      previousRoundSize: previousRoundSize,
+      previousInterestRate: previousInterestRate,
+      previousValuationCap: previousValuationCap,
+      previousDiscountRate: previousDiscountRate,
+      // Add calculated values
+      principalPlusInterest: principalPlusInterest.toFixed(2),
+      seriesASharePrice: seriesASharePrice.toFixed(4),
+      noteOptimalPrice: noteOptimalPrice.toFixed(4),
+      noteConversionShares: Math.round(noteConversionShares),
+      noteConversionValue: Math.round(noteConversionValue),
+      noteMOIC: noteMOIC.toFixed(2),
+      seriesANewShares: Math.round(seriesANewShares),
+      seriesANewValue: Math.round(seriesANewValue),
+      seriesAMOIC: seriesAMOIC.toFixed(2),
+      totalNewSharesBeforeOptions: Math.round(totalNewSharesBeforeOptions),
+      totalExcludingOptions: Math.round(previousFounderShares + noteConversionShares + seriesANewShares),
+      totalSharesAfterPool: Math.round(totalSharesAfterPool),
+      newOptionShares: Math.round(newOptionShares),
+      postMoneyValuationEquity: Math.round(postMoneyValuationEquity),
+      simplePostMoney: Math.round(simplePostMoney),
+      foundersPostOwnership: foundersPostOwnership.toFixed(1),
+      employeesPostOwnership: employeesPostOwnership.toFixed(1),
+      noteInvestorsPostOwnership: noteInvestorsPostOwnership.toFixed(1),
+      seriesAInvestorsPostOwnership: seriesAInvestorsPostOwnership.toFixed(1)
+    }));
+
+    // ✅ STEP 15: Update formData - IMPORTANT DECISION NEEDED!
+    // Which Post-Money Valuation to show?
+    const showEquityValue = true; // Change to false to show simple post-money
+    setFormData(prev => ({
+      ...prev,
+      issuedshares: Math.round(totalSharesIssuedThisRound).toString(),
+      // Choose which post-money to show:
+      post_money: simplePostMoney.toFixed(2),         // Simple: Pre-money + Series A
+      investorPostMoney: seriesAInvestorsPostOwnership.toFixed(2),
+      sharePrice: seriesASharePrice.toFixed(4)
+    }));
+
+
+  };
   useEffect(() => {
     if (formData.isCalculationSource) {
       return;
@@ -1451,11 +1807,27 @@ export default function Recordround() {
     const roundSize = parseFloat(formData.roundsize || 0);
     const postMoneyPool = parseFloat(formData.optionPoolPercent_post || 0);
     const existing = parseFloat(existingSharesUse || 0);
+    const isSeriesRound = selected?.includes("Series");
+    const isSafeInstrument = formData.instrumentType === "Safe";
+    const isSeriesSafe = isSeriesRound && isSafeInstrument;
+
+    //Convertible
+    const isConvertibleInstrument = formData.instrumentType === "Convertible Note";
+    const isSeriesConvertible = isSeriesRound && isConvertibleInstrument;
     if (preMoney <= 0 || roundSize <= 0 || existing <= 0) {
       console.log('❌ Missing values');
       return;
     }
-
+    if (isSeriesConvertible) {
+      // ✅ Series + Safe ke liye alag calculation
+      calculateSeriesConvertible();
+      return;
+    }
+    if (isSeriesSafe) {
+      // ✅ Series + Safe ke liye alag calculation
+      calculateSeriesASafe();
+      return;
+    }
     try {
       const isSeriesRound = selected?.includes("Series");
       const postMoney = preMoney + roundSize;
@@ -1608,7 +1980,7 @@ export default function Recordround() {
         }
       );
 
-      console.log("📥 Auto-fill response:", res.data);
+
 
       if (res.data.success && res.data.data) {
         const previousData = res.data.data;
@@ -1642,7 +2014,7 @@ export default function Recordround() {
             existingOptionPoolPercent: poolPercent
           }));
 
-          console.log(`✅ Synced all option pool states to: ${poolPercent}%`);
+
         }
 
 
@@ -1665,43 +2037,28 @@ export default function Recordround() {
       autoFillFromPreviousRound();
     } else {
       // ❌ Not Series + Common Stock → reset option pool
-      setFormData(prev => ({
-        ...prev,
-        optionPoolPercent: "0.00"
-      }));
+      // setFormData(prev => ({
+      //   ...prev,
+      //   optionPoolPercent: "0.00"
+      // }));
 
-      setPreviousRoundOptionPool(0);
+      // setPreviousRoundOptionPool(0);
 
-      setCalculatedValues(prev => ({
-        ...prev,
-        existingOptionPoolPercent: 0
-      }));
+      // setCalculatedValues(prev => ({
+      //   ...prev,
+      //   existingOptionPoolPercent: 0
+      // }));
 
       console.log("🚫 Auto-fill skipped, option pool reset to 0%");
     }
   }, [selected, formData.instrumentType]);
 
-
-
-  // getexistingShares function ke baad yeh function add karein (around line 150)
-  const fetchPreviousRoundOptionPool = async () => {
-    if (!selected || selected.includes("Seed") || selected === "Pre-Seed") {
-      setPreviousRoundOptionPool(0);
-      return;
+  useEffect(() => {
+    if (selected?.includes("Series") && formData.instrumentType === "Safe") {
+      fetchPreviousRoundData();
     }
-
-    // ✅ Check if already autofilled
-    const currentPool = parseFloat(formData.optionPoolPercent || 0);
-    if (currentPool > 0) {
-      console.log(`✅ Option pool already set: ${currentPool}%`);
-      if (previousRoundOptionPool !== currentPool) {
-        setPreviousRoundOptionPool(currentPool);
-      }
-      return;
-    }
-
-    console.log('🔍 Fetching previous pool (autofill missed it)...');
-
+  }, [selected, formData.instrumentType]);
+  const fetchPreviousRoundData = async () => {
     try {
       const res = await axios.post(
         apiUrlRound + "getPreviousRoundOptionPool",
@@ -1709,22 +2066,104 @@ export default function Recordround() {
       );
 
       if (res.data.success) {
-        const poolPercent = parseFloat(res.data.existingOptionPoolPercent || 0);
 
-        setPreviousRoundOptionPool(poolPercent);
 
-        setFormData(prev => ({
-          ...prev,
-          optionPoolPercent: poolPercent.toFixed(2)
-        }));
+        const { previousRoundData } = res.data;
 
-        console.log(`✅ Fetched and set pool: ${poolPercent}%`);
+        const isSeriesRound = selected?.includes("Series");
+        const isSeedRound = selected === "Seed";
+
+        if (isSeriesRound) {
+          // Auto-fill Pre-Money pool
+          setFormData(prev => ({
+            ...prev,
+            optionPoolPercent: res.data.existingOptionPoolPercent.toFixed(2)
+          }));
+          setPreviousRoundOptionPool(res.data.existingOptionPoolPercent);
+
+          // ✅ Set previous round data
+          setSeriesASafeData(prev => ({
+            ...prev,
+            previousTotalShares: previousRoundData.totalShares || 0,
+            previousFounderShares: previousRoundData.founderShares || 0,
+            previousEmployeeShares: previousRoundData.employeeShares || 0,
+            previousSeedInvestorShares: 0,
+            previousSeedInvestment: previousRoundData.seedInvestment || 0,
+            previousValuationCap: previousRoundData.valuationCap || 0,
+            previousDiscountRate: previousRoundData.discountRate || 0
+          }));
+
+          console.log("✅ Previous Data Set:", {
+            totalShares: previousRoundData.totalShares,
+            founderShares: previousRoundData.founderShares,
+            employeeShares: previousRoundData.employeeShares,
+            seedInvestment: previousRoundData.seedInvestment,
+            valuationCap: previousRoundData.valuationCap,
+            discountRate: previousRoundData.discountRate
+          });
+
+        } else if (isSeedRound) {
+          setFormData(prev => ({
+            ...prev,
+            optionPoolPercent: "0.00"
+          }));
+        }
+
+        if (previousRoundData.totalShares > 0) {
+          setexistingSharesUse(previousRoundData.totalShares.toString());
+        }
       }
     } catch (err) {
-      console.error("❌ Fetch error:", err);
-      setPreviousRoundOptionPool(0);
+      console.error("❌ Error fetching previous round data:", err);
     }
   };
+
+  //Series A Convertible
+  useEffect(() => {
+    if (selected?.includes("Series") && formData.instrumentType === "Convertible Note") {
+      fetchPreviousRoundForConvertible();
+    }
+  }, [selected, formData.instrumentType]);
+  const fetchPreviousRoundForConvertible = async () => {
+    try {
+      const res = await axios.post(
+        apiUrlRound + "getPreviousRoundForConvertible",
+        {
+          company_id: userLogin.companies[0].id,
+          current_round_id: id || 0,
+          current_round_type: formData.shareClassType // Send current round type
+        }
+      );
+
+      if (res.data.success && res.data.previousRoundData) {
+        const previousData = res.data.previousRoundData;
+
+        setSeriesConvertibleData(prev => ({
+          ...prev,
+          previousTotalShares: previousData.totalShares || 0,
+          previousFounderShares: previousData.founderShares || 0,
+          previousEmployeeShares: previousData.employeeShares || 0,
+          previousRoundSize: previousData.roundSize || 0,
+          previousValuationCap: previousData.valuationCap || 0,
+          previousDiscountRate: previousData.discountRate || 0,
+          previousInterestRate: previousData.interestRate || 0
+        }));
+
+        console.log("✅ Previous round data loaded for convertible calculations:", previousData);
+      }
+    } catch (err) {
+      console.error("❌ Error fetching previous round data for convertible:", err);
+    }
+  };
+  //Series A Convertible
+
+  // Har round change par call karein
+
+
+  // Call this function when needed
+
+  // getexistingShares function ke baad yeh function add karein (around line 150)
+
   // useEffect(() => {
   //   const isSeriesRound = selected?.includes("Series");
   //   const CommonStock = formData.instrumentType;
@@ -3246,7 +3685,7 @@ export default function Recordround() {
                                 </div>
                               )}
 
-                              {formData.instrumentType === "Safe" && (
+                              {formData.instrumentType === "Safe" && (formData.shareClassType === "Seed" || formData.shareClassType === "Pre-Seed" || formData.shareClassType === "Post-Seed") && (
                                 <div className="mt-3 p-3 border rounded bg-light">
                                   <h5>SAFE Details</h5>
                                   <label className="form-label">
@@ -3282,13 +3721,25 @@ export default function Recordround() {
                                   <label className="form-label">
                                     Conversion Discount: (%) <span style={{ color: "var(--primary)" }}>*</span>
                                   </label>
-                                  <input
-                                    type="number"
-                                    className={`form-control mb-3 ${errors.discountRate ? "is-invalid" : ""}`}
-                                    value={formData.discountRate || ""}
-                                    onChange={(e) => handleInputChange("discountRate", e.target.value)}
+                                  <NumericFormat
+                                    decimalScale={2}        // 2 decimal places
+                                    fixedDecimalScale       // hamesha .00 show kare
+                                    allowNegative={false}   // negative values allow nahi
                                     placeholder="Enter Conversion Discount: (10-25%)"
+                                    value={formData.discountRate || ""}
+                                    onValueChange={(values) => {
+                                      handleInputChange("discountRate", values.value);
+
+                                      if (errors.discountRate) {
+                                        setErrors((prev) => ({
+                                          ...prev,
+                                          discountRate: "",
+                                        }));
+                                      }
+                                    }}
+                                    className={`form-control mb-3 ${errors.discountRate ? "is-invalid" : ""}`}
                                   />
+
                                   {errors.discountRate && (
                                     <div className="text-danger small">
                                       <i className="bi bi-exclamation-circle me-1"></i>
@@ -3336,7 +3787,7 @@ export default function Recordround() {
                                 </div>
                               )}
 
-                              {formData.instrumentType === "Convertible Note" && (
+                              {formData.instrumentType === "Convertible Note" && (formData.shareClassType === "Seed" || formData.shareClassType === "Pre-Seed" || formData.shareClassType === "Post-Seed") && (
                                 <div className="mt-3 p-3 border rounded bg-light">
                                   <h5>Convertible Note Details</h5>
                                   <label className="form-label">
@@ -3373,13 +3824,25 @@ export default function Recordround() {
                                   <label className="form-label">
                                     Conversion Discount  (%) <span style={{ color: "var(--primary)" }}>*</span>
                                   </label>
-                                  <input
-                                    type="number"
-                                    className={`form-control mb-3 ${errors.discountRate_note ? "is-invalid" : ""}`}
-                                    value={formData.discountRate_note || ""}
-                                    onChange={(e) => handleInputChange("discountRate_note", e.target.value)}
+                                  <NumericFormat
+                                    decimalScale={2}        // 2 decimal places
+                                    fixedDecimalScale       // hamesha .00 show kare
+                                    allowNegative={false}   // negative values block
                                     placeholder="Enter Conversion Discount (10–30%)"
+                                    value={formData.discountRate_note || ""}
+                                    onValueChange={(values) => {
+                                      handleInputChange("discountRate_note", values.value);
+
+                                      if (errors.discountRate_note) {
+                                        setErrors((prev) => ({
+                                          ...prev,
+                                          discountRate_note: "",
+                                        }));
+                                      }
+                                    }}
+                                    className={`form-control mb-3 ${errors.discountRate_note ? "is-invalid" : ""}`}
                                   />
+
                                   {errors.discountRate_note && (
                                     <div className="text-danger small">
                                       <i className="bi bi-exclamation-circle me-1"></i>
@@ -3402,13 +3865,26 @@ export default function Recordround() {
                                   )}
 
                                   <label className="form-label">Interest Rate (%)</label>
-                                  <input
-                                    type="number"
-                                    className={`form-control mb-3 ${errors.interestRate_note ? "is-invalid" : ""}`}
-                                    value={formData.interestRate_note || ""}
-                                    onChange={(e) => handleInputChange("interestRate_note", e.target.value)}
+                                  <NumericFormat
+                                    thousandSeparator
+                                    decimalScale={2}      // 2 decimal places
+                                    fixedDecimalScale     // hamesha 2 decimal dikhaye
+                                    allowNegative={false} // negative values allow nahi
                                     placeholder="Enter annual interest rate"
+                                    value={formData.interestRate_note || ""}
+                                    onValueChange={(values) => {
+                                      handleInputChange("interestRate_note", values.value);
+
+                                      if (errors.interestRate_note) {
+                                        setErrors((prev) => ({
+                                          ...prev,
+                                          interestRate_note: "",
+                                        }));
+                                      }
+                                    }}
+                                    className={`form-control mb-3 ${errors.interestRate_note ? "is-invalid" : ""}`}
                                   />
+
                                   {errors.interestRate_note && (
                                     <div className="text-danger small">
                                       <i className="bi bi-exclamation-circle me-1"></i>
@@ -3614,15 +4090,19 @@ export default function Recordround() {
                                         break;
 
                                       case "Safe":
-                                        if (!formData.valuationCap) newErrors.valuationCap = "This field is required";
-                                        if (!formData.discountRate) newErrors.discountRate = "This field is required";
+                                        if (formData.instrumentType === "Safe" && (formData.shareClassType === "Seed" || formData.shareClassType === "Pre-Seed" || formData.shareClassType === "Post-Seed")) {
+                                          if (!formData.valuationCap) newErrors.valuationCap = "This field is required";
+                                          if (!formData.discountRate) newErrors.discountRate = "This field is required";
+                                        }
                                         break;
 
                                       case "Convertible Note":
-                                        if (!formData.valuationCap_note) newErrors.valuationCap_note = "This field is required";
-                                        if (!formData.discountRate_note) newErrors.discountRate_note = "This field is required";
-                                        if (!formData.maturityDate) newErrors.maturityDate = "This field is required";
-                                        if (!formData.interestRate_note) newErrors.interestRate_note = "This field is required";
+                                        if (formData.instrumentType === "Convertible Note" && (formData.shareClassType === "Seed" || formData.shareClassType === "Pre-Seed" || formData.shareClassType === "Post-Seed")) {
+                                          if (!formData.valuationCap_note) newErrors.valuationCap_note = "This field is required";
+                                          if (!formData.discountRate_note) newErrors.discountRate_note = "This field is required";
+                                          if (!formData.maturityDate) newErrors.maturityDate = "This field is required";
+                                          if (!formData.interestRate_note) newErrors.interestRate_note = "This field is required";
+                                        }
                                         break;
 
                                       case "Venture/Bank DEBT":
@@ -3915,40 +4395,48 @@ export default function Recordround() {
                                     </div>
                                   )}
                                 </div>
-                                <div className="col-md-5 mb-4">
-                                  <label className="form-label fw-semibold">
-                                    Investor Post-Money Ownership(%)
-                                  </label>
-                                  <NumericFormat
-                                    thousandSeparator={true}
-                                    decimalScale={2}
-                                    fixedDecimalScale={true} disabled
-                                    allowNegative={false}
-                                    placeholder="Enter investor post-money ownership"
-                                    value={formData.investorPostMoney || ""}
-                                    onValueChange={(values) => {
-                                      handleInputChange("investorPostMoney", values.value);
-                                      if (errors.investorPostMoney) {
-                                        setErrors((prev) => ({
-                                          ...prev,
-                                          investorPostMoney: "",
-                                        }));
-                                      }
-                                    }}
-                                    className={`form-control ${errors.investorPostMoney ? "is-invalid" : ""}`}
-                                  />
-                                  {errors.investorPostMoney && (
-                                    <div className="text-danger small mt-1">
-                                      <i className="bi bi-exclamation-circle me-1"></i>
-                                      {errors.investorPostMoney}
+                                {/* ✅ Correct Condition */}
+                                {
+                                  !selected?.includes("Series") &&
+                                  formData.instrumentType !== 'Safe' &&
+                                  formData.instrumentType !== 'Convertible Note' && (
+                                    <div className="col-md-5 mb-4">
+                                      <label className="form-label fw-semibold">
+                                        Investor Post-Money Ownership(%)
+                                      </label>
+                                      <NumericFormat
+                                        thousandSeparator={true}
+                                        decimalScale={2}
+                                        fixedDecimalScale={true}
+                                        disabled
+                                        allowNegative={false}
+                                        placeholder="Enter investor post-money ownership"
+                                        value={formData.investorPostMoney || ""}
+                                        onValueChange={(values) => {
+                                          handleInputChange("investorPostMoney", values.value);
+                                          if (errors.investorPostMoney) {
+                                            setErrors((prev) => ({
+                                              ...prev,
+                                              investorPostMoney: "",
+                                            }));
+                                          }
+                                        }}
+                                        className={`form-control ${errors.investorPostMoney ? "is-invalid" : ""}`}
+                                      />
+                                      {errors.investorPostMoney && (
+                                        <div className="text-danger small mt-1">
+                                          <i className="bi bi-exclamation-circle me-1"></i>
+                                          {errors.investorPostMoney}
+                                        </div>
+                                      )}
                                     </div>
-                                  )}
-                                </div>
+                                  )
+                                }
 
 
 
                                 <div className="col-md-6 mb-4">
-                                  <label className="form-label fw-semibold">{formData.instrumentType === "Convertible Note" || formData.instrumentType === "Safe" ? "Company Value" : "Pre-Money Valuation"} {" "} ({CurrDisplay})</label>
+                                  <label className="form-label fw-semibold">{((formData.shareClassType === "Seed" || formData.shareClassType === "Pre-Seed" || formData.shareClassType === "Post-Seed") && formData.instrumentType === "Safe") || (formData.instrumentType === "Convertible Note" && (formData.shareClassType === "Seed" || formData.shareClassType === "Pre-Seed" || formData.shareClassType === "Post-Seed")) ? "Company Value" : "Pre-Money Valuation"} {" "} ({CurrDisplay})</label>
                                   <NumericFormat
                                     thousandSeparator
                                     decimalScale={2}
@@ -3969,92 +4457,193 @@ export default function Recordround() {
 
 
 
-                                <div className="col-md-6 mb-4">
-                                  <label className="form-label fw-semibold">Post-Money Valuation{" "}({CurrDisplay})</label>
-                                  <NumericFormat
-                                    thousandSeparator
-                                    decimalScale={2} disabled
-                                    fixedDecimalScale
-                                    allowNegative={false}
-                                    placeholder="Enter post-money valuation"
-                                    value={formData.post_money}
-                                    onValueChange={(values) => {
-                                      handleInputChange("post_money", values.value);
-                                      setFormData((prev) => ({
-                                        ...prev,
-                                        isPostEntered: true,
-                                      }));
-                                    }}
-                                    className="textarea_input"
-                                  />
-                                </div>
+                                {(
+
+                                  // Case 2: instrumentType 'Convertible Note' AND shareClassType is Seed/Pre-Seed/Post-Seed
+                                  (formData.instrumentType === 'Safe' && selected?.includes("Series")) ||
+
+                                  // Case 3: instrumentType 'Convertible Note' AND selected includes "Series"
+                                  (formData.instrumentType === 'Convertible Note' && selected?.includes("Series") || (formData.instrumentType === "OTHER"))
+                                ) && (
+                                    <div className="col-md-6 mb-4">
+                                      <label className="form-label fw-semibold">Post-Money Valuation{" "}({CurrDisplay})</label>
+                                      <NumericFormat
+                                        thousandSeparator
+                                        decimalScale={2}
+                                        disabled
+                                        fixedDecimalScale
+                                        allowNegative={false}
+                                        placeholder="Enter post-money valuation"
+                                        value={formData.post_money}
+                                        onValueChange={(values) => {
+                                          handleInputChange("post_money", values.value);
+                                          setFormData((prev) => ({
+                                            ...prev,
+                                            isPostEntered: true,
+                                          }));
+                                        }}
+                                        className="textarea_input"
+                                      />
+                                    </div>
+                                  )}
 
                                 {/* Option Pool Percentage */}
                                 <div className="row">
-                                  {/* PRE-MONEY OPTION POOL */}
-                                  <div className="col-md-6 mb-4">
-                                    <label className="form-label fw-semibold">
-                                      Pre-Money Option Pool (%)
-                                      {selected?.includes("Series") && formData.instrumentType === 'Common Stock' && (
-                                        <span className="badge bg-info ms-2" style={{ fontSize: '0.7em' }}>
-                                          Auto-filled
-                                        </span>
-                                      )}
-                                      <i
-                                        className="bi bi-info-circle text-muted ms-1"
-                                        title={
-                                          selected?.includes("Series") && formData.instrumentType === 'Common Stock'
-                                            ? "Carried over from previous round - This is the existing option pool percentage before Series A investment"
-                                            : "Percentage of equity reserved for employees before this round"
-                                        }
-                                      ></i>
-                                    </label>
+                                  {(
+                                    (selected?.includes("Series") &&
+                                      formData.instrumentType === "Common Stock") ||
+                                    (formData.shareClassType === "Seed" || formData.shareClassType === "Pre-Seed" || formData.shareClassType === "Post-Seed" &&
+                                      formData.instrumentType === "Safe") || (formData.shareClassType === "Seed" || formData.shareClassType === "Pre-Seed" || formData.shareClassType === "Post-Seed" &&
+                                        formData.instrumentType === "OTHER") || (formData.shareClassType === "Seed" || formData.shareClassType === "Pre-Seed" || formData.shareClassType === "Post-Seed" &&
+                                          formData.instrumentType === "Convertible Note")
+                                  ) && (
 
-                                    {selected?.includes("Series") && formData.instrumentType === 'Common Stock' ? (
-                                      // READ-ONLY for Series rounds
-                                      <>
-                                        <input
-                                          type="text"
-                                          value={formData.optionPoolPercent ? `${formData.optionPoolPercent}%` : "0%"}
-                                          readOnly
-                                          className="form-control bg-light"
-                                          style={{
-                                            backgroundColor: '#f8f9fa',
-                                            cursor: 'not-allowed',
-                                            fontWeight: '500'
-                                          }}
-                                        />
-                                        <small className="text-muted d-block mt-1">
-                                          {formData.optionPoolPercent > 0
-                                            ? `✓ Carried over from previous round (${formData.optionPoolPercent}%)`
-                                            : "No option pool from previous round"
-                                          }
-                                        </small>
-                                      </>
-                                    ) : (
-                                      // EDITABLE for Seed rounds
-                                      <>
+                                      <div className="col-md-6 mb-4">
+                                        <label className="form-label fw-semibold">
+                                          Pre-Money Option Pool (%)
+                                          {selected === 'Series A' && formData.instrumentType === 'Common Stock' && (
+                                            <span className="badge bg-info ms-2" style={{ fontSize: '0.7em' }}>
+                                              Auto-filled
+                                            </span>
+                                          )}
+                                          <i
+                                            className="bi bi-info-circle text-muted ms-1"
+                                            title={
+                                              selected === 'Series A' && formData.instrumentType === 'Common Stock'
+                                                ? "Carried over from previous round - This is the existing option pool percentage before Series A investment"
+                                                : "Percentage of equity reserved for employees before this round"
+                                            }
+                                          ></i>
+                                        </label>
+
+                                        {selected === 'Series A' && formData.instrumentType === 'Common Stock' ? (
+
+                                          <>
+                                            <input
+                                              type="text"
+                                              value={formData.optionPoolPercent ? `${formData.optionPoolPercent}%` : "0%"}
+                                              readOnly
+                                              className="form-control bg-light"
+                                              style={{
+                                                backgroundColor: '#f8f9fa',
+                                                cursor: 'not-allowed',
+                                                fontWeight: '500'
+                                              }}
+                                            />
+                                            <small className="text-muted d-block mt-1">
+                                              {formData.optionPoolPercent > 0
+                                                ? `✓ Carried over from previous round (${formData.optionPoolPercent}%)`
+                                                : "No option pool from previous round"
+                                              }
+                                            </small>
+                                          </>
+                                        ) : (
+                                          // EDITABLE for Seed rounds
+                                          <>
+                                            <NumericFormat
+                                              thousandSeparator={true}
+                                              decimalScale={2}
+                                              fixedDecimalScale={true}
+                                              allowNegative={false}
+                                              placeholder="Enter option pool % (e.g. 10)"
+                                              value={formData.optionPoolPercent}
+                                              onValueChange={(values) => {
+                                                handleInputChange("optionPoolPercent", values.floatValue);
+                                              }}
+                                              className="textarea_input"
+                                            />
+                                            {/* <small className="text-muted d-block mt-1">
+                                              Option pool percentage before investment (Pre-Money)
+                                            </small> */}
+                                          </>
+                                        )}
+                                      </div>
+
+
+
+
+
+                                    )}
+                                  {(
+                                    (selected?.includes("Series") && formData.instrumentType === 'Safe') || (selected?.includes("Series") && formData.instrumentType === "Common Stock") ||
+                                    (selected?.includes("Series") && formData.instrumentType === "Convertible Note")
+                                  ) && (
+                                      <div className="col-md-6 mb-4">
+                                        <label className="form-label fw-semibold">
+                                          {((selected?.includes("Series") && formData.instrumentType === 'Safe') ||
+                                            (selected?.includes("Series") && formData.instrumentType === "Convertible Note"))
+                                            ? "Option Pool"
+                                            : "Post-Money Option Pool Target"
+                                          } (%)
+                                          <span className="text-danger ms-1">*</span>
+                                          <i
+                                            className="bi bi-info-circle text-muted ms-1"
+                                            title="Target percentage of equity reserved for employees after this investment round. If higher than existing pool, additional shares will be created."
+                                          ></i>
+                                        </label>
+
                                         <NumericFormat
-                                          thousandSeparator={true}
+                                          suffix="%"
                                           decimalScale={2}
-                                          fixedDecimalScale={true}
+                                          fixedDecimalScale
                                           allowNegative={false}
-                                          placeholder="Enter option pool % (e.g. 10)"
-                                          value={formData.optionPoolPercent}
+                                          placeholder="Enter target pool % (e.g. 20)"
+                                          value={formData.optionPoolPercent_post}
                                           onValueChange={(values) => {
-                                            handleInputChange("optionPoolPercent", values.floatValue);
+                                            handleInputChange("optionPoolPercent_post", values.value);
                                           }}
                                           className="textarea_input"
                                         />
-                                        <small className="text-muted d-block mt-1">
-                                          Option pool percentage before investment (Pre-Money)
-                                        </small>
-                                      </>
-                                    )}
-                                  </div>
+                                        {errors.optionPoolPercent_post && (
+                                          <div className="text-danger small mt-1">
+                                            <i className="bi bi-exclamation-circle me-1"></i>
+                                            {errors.optionPoolPercent_post}
+                                          </div>
+                                        )}
+                                        {formData.instrumentType !== 'Safe' && formData.instrumentType !== 'Convertible Note' && (
+                                          <small className="text-muted d-block mt-1">
+                                            Target option pool percentage after investment (Post-Money)
+                                          </small>
+                                        )}
 
-                                  {/* POST-MONEY OPTION POOL (Only for Series rounds) */}
-                                  {selected?.includes("Series") && formData.instrumentType === 'Common Stock' && (
+                                        {formData.optionPoolPercent && formData.optionPoolPercent_post && (
+                                          <>
+                                            {(formData.instrumentType !== 'Safe' && formData.instrumentType !== 'Convertible Note') && (
+                                              <div className="mt-2">
+                                                {parseFloat(formData.optionPoolPercent_post) > parseFloat(formData.optionPoolPercent) ? (
+                                                  <div className="alert alert-warning py-2 mb-0" style={{ fontSize: '0.85em' }}>
+                                                    <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                                                    <strong>Top-up needed:</strong> Expanding pool from {formData.optionPoolPercent}% to {formData.optionPoolPercent_post}%
+                                                    <br />
+                                                    <small className="text-muted">
+                                                      Additional option shares will be created
+                                                      {calculatedValues?.newOptionShares > 0 && (
+                                                        <> (+{calculatedValues.newOptionShares.toLocaleString()} shares)</>
+                                                      )}
+                                                    </small>
+                                                  </div>
+                                                ) : parseFloat(formData.optionPoolPercent_post) === parseFloat(formData.optionPoolPercent) ? (
+                                                  <div className="alert alert-info py-2 mb-0" style={{ fontSize: '0.85em' }}>
+                                                    <i className="bi bi-info-circle-fill me-2"></i>
+                                                    <strong>No change:</strong> Maintaining {formData.optionPoolPercent}% pool
+                                                  </div>
+                                                ) : (
+                                                  <div className="alert alert-success py-2 mb-0" style={{ fontSize: '0.85em' }}>
+                                                    <i className="bi bi-check-circle-fill me-2"></i>
+                                                    <strong>No top-up needed:</strong> Existing {formData.optionPoolPercent}% pool is sufficient
+                                                    <br />
+                                                    <small className="text-muted">
+                                                      No additional option shares will be created
+                                                    </small>
+                                                  </div>
+                                                )}
+                                              </div>
+                                            )}
+                                          </>
+                                        )}
+                                      </div>
+                                    )}
+                                  {formData.shareClassType === "Post-Seed" || formData.shareClassType === "Pre-Seed" || (formData.shareClassType === "Seed" && formData.instrumentType === 'Common Stock') && (
                                     <div className="col-md-6 mb-4">
                                       <label className="form-label fw-semibold">
                                         Post-Money Option Pool Target (%)
@@ -4081,8 +4670,12 @@ export default function Recordround() {
                                       <small className="text-muted d-block mt-1">
                                         Target option pool percentage after investment (Post-Money)
                                       </small>
-
-                                      {/* Top-up Status Alert */}
+                                      {errors.optionPoolPercent_post && (
+                                        <div className="text-danger small mt-1">
+                                          <i className="bi bi-exclamation-circle me-1"></i>
+                                          {errors.optionPoolPercent_post}
+                                        </div>
+                                      )}
                                       {formData.optionPoolPercent && formData.optionPoolPercent_post && (
                                         <div className="mt-2">
                                           {parseFloat(formData.optionPoolPercent_post) > parseFloat(formData.optionPoolPercent) ? (
@@ -4117,190 +4710,66 @@ export default function Recordround() {
                                     </div>
                                   )}
                                 </div>
-                                {/* {(selected !== "Pre-Seed" && selected !== "Seed" && selected !== "Post-Seed" && selected !== "Advisor Shares") ? (
-                                  <div className="col-md-6 mb-4">
-                                    <label className="form-label fw-semibold">
-                                      Post-Money Option Pool (%){" "}
-                                      <i className="bi bi-info-circle text-muted ms-1"
-                                        title="Option pool created AFTER this investment round (dilutes all shareholders including new investors)">
-                                      </i>
-                                      
-                                    </label>
-                                    <NumericFormat
-                                      suffix="%"
-                                      decimalScale={2}
-                                      fixedDecimalScale
-                                      allowNegative={false}
-                                      placeholder={selected.includes("Series") ? "e.g. 20 (Required)" : "e.g. 20 (Optional)"}
-                                      value={formData.optionPoolPercent_post}
-                                      onValueChange={(values) => {
-                                        handleInputChange("optionPoolPercent_post", values.value);
-                                      }}
-                                      className={`textarea_input ${errors.optionPoolPercent_post ? 'is-invalid' : ''}`}
-                                      disabled={selected === "Pre-Seed" || selected === "Seed" || selected === "Post-Seed" || selected === "Advisor Shares"}
-                                    />
-                                    {errors.optionPoolPercent_post && (
-                                      <div className="text-danger small mt-1">
-                                        <i className="bi bi-exclamation-circle me-1"></i>
-                                        {errors.optionPoolPercent_post}
-                                      </div>
-                                    )}
-                                    
-                                  </div>
-                                ) : (
-                                  
-                                  <div className="col-md-6 mb-4">
-                                    <div className="alert alert-info p-3">
-                                      <div className="d-flex align-items-center">
-                                        <i className="bi bi-info-circle me-2 fs-5"></i>
-                                        <div>
-                                          <strong>Post-Money Option Pool Information</strong>
-                                          <p className="mb-0 small">
-                                            For {selected || "early-stage"} rounds, only Pre-Money Option Pool is applicable.
-                                            <br />
-                                            Post-Money Option Pool is typically used from Series A onwards.
-                                          </p>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                )} */}
-                                {/* <div className="col-md-6 mb-4">
-                                  <label className="form-label fw-semibold">
-                                    Post-Money Option Pool (%){" "}
-                                    <i className="bi bi-info-circle text-muted ms-1"
-                                      title="Option pool created AFTER this investment round (dilutes all shareholders including new investors)">
-                                    </i>
 
-                                  </label>
-                                  <NumericFormat
-                                    suffix="%"
-                                    decimalScale={2}
-                                    fixedDecimalScale
-                                    allowNegative={false}
-                                    placeholder={selected.includes("Series") ? "e.g. 20 (Required)" : "e.g. 20 (Optional)"}
-                                    value={formData.optionPoolPercent_post}
-                                    onValueChange={(values) => {
-                                      handleInputChange("optionPoolPercent_post", values.value);
-                                    }}
-                                    className={`textarea_input ${errors.optionPoolPercent_post ? 'is-invalid' : ''}`}
-                                    disabled={selected === "Pre-Seed" || selected === "Seed" || selected === "Post-Seed" || selected === "Advisor Shares"}
-                                  />
-                                  {errors.optionPoolPercent_post && (
-                                    <div className="text-danger small mt-1">
-                                      <i className="bi bi-exclamation-circle me-1"></i>
-                                      {errors.optionPoolPercent_post}
-                                    </div>
-                                  )}
-                                 
-                                </div> */}
-                                <div className="col-md-6 mb-4">
-                                  <label className="form-label fw-semibold">
-                                    Total Shares Issued in this Round{" "}
-                                    <span className="tooltip-icon ms-2" tabIndex={0}>
-                                      <img
-                                        className="blackdark"
-                                        width="15"
-                                        height="15"
-                                        src="/assets/user/images/question.png"
-                                        alt="Tip"
+
+                                {(() => {
+                                  const isSafe = formData.instrumentType === 'Safe';
+                                  const isConvertibleNote = formData.instrumentType === 'Convertible Note';
+                                  const isSeedType = ["Seed", "Pre-Seed", "Post-Seed"].includes(formData.shareClassType);
+                                  const isSeriesType = selected?.includes("Series");
+
+                                  // Hide if any of these conditions are true
+                                  const shouldHide =
+
+                                    (isSafe && isSeedType) ||     // Safe + Series types
+                                    (isSafe && isSeriesType) ||
+                                    (isConvertibleNote && isSeriesType) ||
+                                    (isConvertibleNote && isSeedType); // Convertible Note + Series types
+
+                                  return !shouldHide && (
+                                    <div className="col-md-6 mb-4">
+                                      <label className="form-label fw-semibold">
+                                        Total Shares Issued in this Round{" "}
+                                        <span className="tooltip-icon ms-2" tabIndex={0}>
+                                          <img
+                                            className="blackdark"
+                                            width="15"
+                                            height="15"
+                                            src="/assets/user/images/question.png"
+                                            alt="Tip"
+                                          />
+                                          <div className="tooltip-text tool-test-white text-white" role="tooltip">
+                                            The number of shares in an early-stage company represents the total units of
+                                            ownership authorized, issued, or outstanding across the cap table...
+                                          </div>
+                                        </span>
+                                      </label>
+                                      <NumericFormat
+                                        thousandSeparator={true}
+                                        decimalScale={2}
+                                        fixedDecimalScale={true}
+                                        allowNegative={false}
+                                        placeholder="Enter # of shares"
+                                        value={formData.issuedshares}
+                                        onValueChange={(values) => {
+                                          handleInputChange("issuedshares", values.value);
+                                          if (errors.issuedshares) {
+                                            setErrors((prev) => ({ ...prev, issuedshares: "" }));
+                                          }
+                                        }}
+                                        className="textarea_input"
                                       />
-                                      <div className="tooltip-text tool-test-white text-white" role="tooltip">
-                                        The number of shares in an early-stage company represents the total units of
-                                        ownership authorized, issued, or outstanding across the cap table...
-                                      </div>
-                                    </span>
-                                  </label>
-                                  <NumericFormat
-                                    thousandSeparator={true}
-                                    decimalScale={2}
-                                    fixedDecimalScale={true}
-                                    allowNegative={false}
-                                    placeholder="Enter # of shares"
-                                    value={formData.issuedshares}
-                                    onValueChange={(values) => {
-                                      handleInputChange("issuedshares", values.value);
-                                      if (errors.issuedshares) {
-                                        setErrors((prev) => ({ ...prev, issuedshares: "" }));
-                                      }
-                                    }}
-                                    className="textarea_input"
-                                  />
-                                </div>
+                                    </div>
+                                  );
+                                })()}
+
+
 
 
                               </div>
-                              {/* <div className="calculation-results mt-4 p-4 border rounded bg-light">
-                                <h5 className="mb-3">Round Calculations</h5>
 
-                                <div className="row">
-                                  <div className="col-md-6">
-                                    <div className="mb-2">
-                                      <strong>Share Price:</strong> {CurrDisplay} {calculatedValues.sharePrice || '0.0000'}
-                                    </div>
-                                    <div className="mb-2">
-                                      <strong>New Shares Issued:</strong> {calculatedValues.newSharesIssued.toLocaleString()}
-                                    </div>
-                                    <div className="mb-2">
-                                      <strong>Post-Money Valuation:</strong> {CurrDisplay} {calculatedValues.postMoneyValuation || '0.00'}
-                                    </div>
-                                    <div className="mb-2">
-                                      <strong>Investor Ownership:</strong> {calculatedValues.investorOwnershipPercent || '0.00'}%
-                                    </div>
-                                  </div>
 
-                                  <div className="col-md-6">
-                                    
-                                    {selected?.includes("Series") && formData.optionPoolPercent_post && (
-                                      <>
-                                        <div className="mb-2">
-                                          <strong>Existing Option Pool:</strong> {calculatedValues.existingOptionPoolPercent}%
-                                        </div>
-                                        <div className="mb-2">
-                                          <strong>Target Option Pool:</strong> {formData.optionPoolPercent_post}%
-                                        </div>
 
-                                        {calculatedValues.doc4Action === 'TOP_UP' ? (
-                                          <div className="alert alert-warning p-2 mb-2">
-                                            <small>
-                                              <i className="bi bi-exclamation-triangle me-1"></i>
-                                              <strong>TOP-UP REQUIRED</strong><br />
-                                              Need to increase from {calculatedValues.existingOptionPoolPercent}% to {formData.optionPoolPercent_post}%<br />
-                                              New option shares: {calculatedValues.newOptionShares.toLocaleString()}
-                                            </small>
-                                          </div>
-                                        ) : calculatedValues.doc4Action === 'NO_ACTION' ? (
-                                          <div className="alert alert-success p-2 mb-2">
-                                            <small>
-                                              <i className="bi bi-check-circle me-1"></i>
-                                              <strong>NO ACTION NEEDED</strong><br />
-                                              Existing pool ({calculatedValues.existingOptionPoolPercent}%) is sufficient
-                                            </small>
-                                          </div>
-                                        ) : null}
-                                      </>
-                                    )}
-
-                                    
-                                    {selected === "Seed" || selected === "Pre-Seed" ? (
-                                      <div className="mb-2">
-                                        <strong>Employee Option Pool:</strong> {calculatedValues.employeeOptionShares.toLocaleString()} shares
-                                      </div>
-                                    ) : null}
-                                  </div>
-                                </div>
-                              </div> */}
-
-                              {/* Investment Round Information */}
-                              {/* <div className="alert alert-info mt-3">
-                                <strong>Investment Round 1:</strong> This represents your Pre-Seed or Seed round.
-                                <br />
-                                <span className="small text-muted">
-                                  {formData.isPostEntered
-                                    ? "Post-Money is entered; Pre-Money auto-calculated."
-                                    : "Pre-Money is entered; Post-Money auto-calculated."}
-                                </span>
-                              </div> */}
                             </div>
 
                           )}
@@ -4332,6 +4801,25 @@ export default function Recordround() {
 
                                   if (!formData.currency || formData.currency.trim() === "") {
                                     newErrors.currency = "Currency selection is required";
+                                  }
+
+                                  // ✅ CONDITIONAL VALIDATION FOR POST-MONEY OPTION POOL
+                                  const isSeriesSafe = selected?.includes("Series") && (formData.instrumentType === 'Safe');
+                                  const isSeriesConvertible = selected?.includes("Series") && formData.instrumentType === 'Convertible Note';
+                                  const isSeedCommonStock = selected === "Seed" && formData.instrumentType === 'Common Stock';
+
+                                  // Only require Post-Money Option Pool for these two conditions
+                                  if ((isSeriesSafe || isSeedCommonStock || isSeriesConvertible) &&
+                                    (!formData.optionPoolPercent_post || formData.optionPoolPercent_post.trim() === "")) {
+                                    newErrors.optionPoolPercent_post = "Post-Money Option Pool Target is required";
+                                  }
+
+                                  // Also validate it's a valid percentage if provided
+                                  if (formData.optionPoolPercent_post && formData.optionPoolPercent_post.trim() !== "") {
+                                    const poolPercent = parseFloat(formData.optionPoolPercent_post);
+                                    if (isNaN(poolPercent) || poolPercent < 0 || poolPercent > 100) {
+                                      newErrors.optionPoolPercent_post = "Please enter a valid percentage between 0 and 100";
+                                    }
                                   }
                                 }
 

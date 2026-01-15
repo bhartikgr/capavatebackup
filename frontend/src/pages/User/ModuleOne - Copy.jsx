@@ -53,8 +53,8 @@ export default function ModuleOne() {
   const storedUsername = localStorage.getItem("CompanyLoginData");
   const userLogin = JSON.parse(storedUsername);
   const [getDataroompay, setgetDataroompay] = useState("");
-  const apiURL = "https://capavate.com/api/user/";
-  const apiUrlModule = "https://capavate.com/api/admin/module/";
+  const apiURL = "http://localhost:5000/api/user/";
+  const apiUrlModule = "http://localhost:5000/api/admin/module/";
   const [errorData, seterrorData] = useState(null);
   const [successData, setSuccessData] = useState(null);
   const [viewMeetData, setviewMeetData] = useState(null);

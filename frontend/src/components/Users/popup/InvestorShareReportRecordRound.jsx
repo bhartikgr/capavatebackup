@@ -15,7 +15,7 @@ const InvestorShareReportRecordRound = ({
   allinvestor,
   returnrefresh,
 }) => {
-  var apiURLInvestor = "https://capavate.com/api/user/capitalround/";
+  var apiURLInvestor = "http://localhost:5000/api/user/capitalround/";
   const storedUsername = localStorage.getItem("SignatoryLoginData");
   const userLogin = JSON.parse(storedUsername);
   const [spinners, setspinners] = useState(false);

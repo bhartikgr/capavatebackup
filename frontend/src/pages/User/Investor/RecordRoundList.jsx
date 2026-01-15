@@ -142,13 +142,13 @@ export default function RecordRoundList() {
 
   const columns = [
     {
-      name: "Rount type",
-      selector: (row) => row.round_type,
+      name: "Round Name",
+      selector: (row) => row.nameOfRound,
       sortable: true,
     },
     {
-      name: "Share Class (Name of Round)",
-      selector: (row) => row.shareClassType + " " + row.nameOfRound,
+      name: "Share Class",
+      selector: (row) => row.shareClassType,
       sortable: true,
     },
     {
@@ -249,13 +249,13 @@ export default function RecordRoundList() {
         return (
           <div className="d-flex gap-2">
             {/* Show Edit only if round is ACTIVE */}
-            <button
+            {/* <button
               className="icon_btn green_clr"
               onClick={() => handleViewsection(row)}
               title="Lock The Document For Sharing"
             >
               <FaEye /> View
-            </button>
+            </button> */}
             <Link
               to={`/record-round-cap-table/${row.id}`}
               title="View Cap Table"

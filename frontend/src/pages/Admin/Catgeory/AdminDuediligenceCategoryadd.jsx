@@ -29,7 +29,7 @@ function AdminDuediligenceCategoryadd() {
   useEffect(() => {
     document.title = "Data Rooms Add Sub Category - Admin";
   }, []);
-  const apiUrl = "https://capavate.com/api/admin/module/";
+  const apiUrl = "http://localhost:5000/api/admin/module/";
   const [records, setRecords] = useState([]);
   useEffect(() => {
     checkCatgeory();

@@ -17,7 +17,7 @@ import DataTable from "react-data-table-component";
 import CompanyShareReferralCodetrack from "../../components/Users/popup/CompanyShareReferralCodetrack.jsx";
 import { Link, useParams, useNavigate } from "react-router-dom";
 export default function ReferralcodeTracking() {
-  var apiUrl = "https://capavate.com/api/user/";
+  var apiUrl = "http://localhost:5000/api/user/";
   document.title = "Tracking Referral Code";
   const navigate = useNavigate();
   const [searchText, setSearchText] = useState("");

@@ -33,7 +33,7 @@ function AdminCompanyCaptable() {
   const navigate = useNavigate();
   const [successMessage, setsuccessMessage] = useState("");
   const { id } = useParams();
-  const apiUrl = "https://capavate.com/api/admin/company/";
+  const apiUrl = "http://localhost:5000/api/admin/company/";
   const [records, setRecords] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -128,8 +128,8 @@ function AdminCompanyCaptable() {
   const [TotalInvestors, setTotalInvestors] = useState("");
   const [shareholderLoading, setShareholderLoading] = useState(false);
   const [shareholderError, setShareholderError] = useState(null);
-  const apiUrlRound = "https://capavate.com/api/user/capitalround/";
-  const apiURLDashboard = "https://capavate.com/api/user/dashboard/";
+  const apiUrlRound = "http://localhost:5000/api/user/capitalround/";
+  const apiURLDashboard = "http://localhost:5000/api/user/dashboard/";
   const shareholderOptions = {
     responsive: true,
     maintainAspectRatio: false,

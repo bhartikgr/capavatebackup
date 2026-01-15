@@ -44,9 +44,9 @@ export default function UserCompanyList() {
   const [messagesuccessError, setmessagesuccessError] = useState("");
   const [errr, seterrr] = useState(false);
   const [allinvestor, setallinvestor] = useState([]);
-  var apiURLAiFile = "https://capavate.com/api/user/aifile/";
-  const apiUrlDashbaord = "https://capavate.com/api/user/dashboard/";
-  const apiUrlCompany = "https://capavate.com/api/user/company/";
+  var apiURLAiFile = "http://localhost:5000/api/user/aifile/";
+  const apiUrlDashbaord = "http://localhost:5000/api/user/dashboard/";
+  const apiUrlCompany = "http://localhost:5000/api/user/company/";
   const [dangerMessage, setdangerMessage] = useState("");
   const [EditEmailPopup, setEditEmailPopup] = useState(false);
   document.title = "All Company List";

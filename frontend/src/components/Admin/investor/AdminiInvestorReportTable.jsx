@@ -9,7 +9,7 @@ function AdminiInvestorReportTable({ id }) {
   const [CompanyName, setCompanyName] = useState("");
   const [ownername, setownername] = useState("");
   const [InvestorDetail, setInvestorDetail] = useState([]);
-  const apiUrlAll = "https://capavate.com/api/admin/adminall/";
+  const apiUrlAll = "http://localhost:5000/api/admin/adminall/";
   useEffect(() => {
     if (id) totalDocs(); // ✅ only run when id is available
   }, [id]);

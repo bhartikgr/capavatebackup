@@ -52,7 +52,7 @@ export default function Register() {
   document.title = "Register Page";
   const queryParams = new URLSearchParams(location.search);
   const referralCode = queryParams.get("ref");
-  var apiURL = "https://capavate.com/api/user/";
+  var apiURL = "http://localhost:5000/api/user/";
   useEffect(() => {
     // Check if the username key exists in session storage
     const storedUsername = localStorage.getItem("OwnerLoginData");

@@ -15,7 +15,7 @@ function AdminDiscountAdd() {
   useEffect(() => {
     document.title = "Add Coupon - Admin";
   }, []);
-  const apiUrl = "https://capavate.com/api/admin/module/";
+  const apiUrl = "http://localhost:5000/api/admin/module/";
   const [getDataroompay, setgetDataroompay] = useState(null);
 
   useEffect(() => {

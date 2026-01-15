@@ -15,8 +15,8 @@ export default function MainHeaderInvestorRegister() {
   const code = useParams();
   const navigate = useNavigate();
   const [getdatamodule, setgetdatamodule] = useState([]);
-  var apiURL = "https://capavate.com/api/user/";
-  var apiURLINFile = "https://capavate.com/api/user/investorreport/";
+  var apiURL = "http://localhost:5000/api/user/";
+  var apiURLINFile = "http://localhost:5000/api/user/investorreport/";
   const [InvestorData, setInvestorData] = useState("");
 
   useEffect(() => {

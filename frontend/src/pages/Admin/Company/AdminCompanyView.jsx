@@ -11,7 +11,7 @@ function AdminCompanyView() {
   const [successMessage, setsuccessMessage] = useState("");
 
   const { id } = useParams();
-  const apiUrl = "https://capavate.com/api/admin/company/";
+  const apiUrl = "http://localhost:5000/api/admin/company/";
   const [records, setRecords] = useState("");
   document.title = "All Registered Companies - Admin";
   useEffect(() => {

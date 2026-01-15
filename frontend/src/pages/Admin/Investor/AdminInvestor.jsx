@@ -26,7 +26,7 @@ function AdminInvestor() {
   const toggleNavAdmin = () => {
     setIsOpen(!isOpen); // Toggle the state between true and false
   };
-  const apiUrl = "https://capavate.com/api/admin/investor/";
+  const apiUrl = "http://localhost:5000/api/admin/investor/";
   const [records, setRecords] = useState([]);
   document.title = "All Investor - Admin";
   useEffect(() => {

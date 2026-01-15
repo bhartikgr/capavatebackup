@@ -25,7 +25,7 @@ export default function ApprovalSignature() {
   const [OpenPupupReason, setOpenPupupReason] = useState(false);
   const [ViewData, setViewData] = useState([]);
   const [errr, seterrr] = useState(false);
-  var apiURL = "https://capavate.com/api/user/";
+  var apiURL = "http://localhost:5000/api/user/";
 
   document.title = "All Signature List";
 

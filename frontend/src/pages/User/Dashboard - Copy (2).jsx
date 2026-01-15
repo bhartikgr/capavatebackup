@@ -36,8 +36,8 @@ ChartJS.register(
 );
 
 export default function Dashboard() {
-  const apiURLDashboard = "https://capavate.com/api/user/dashboard/";
-  const apiUrlRound = "https://capavate.com/api/user/capitalround/";
+  const apiURLDashboard = "http://localhost:5000/api/user/dashboard/";
+  const apiUrlRound = "http://localhost:5000/api/user/capitalround/";
 
   const storedUsername = localStorage.getItem("SignatoryLoginData");
   const userLogin = JSON.parse(storedUsername);

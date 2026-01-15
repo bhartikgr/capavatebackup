@@ -61,7 +61,7 @@ function Reportlist() {
       },
     },
   };
-  var apiURL = "https://capavate.com/api/user/investor/";
+  var apiURL = "http://localhost:5000/api/user/investor/";
 
   const storedUsername = localStorage.getItem("InvestorData");
   const userLogin = JSON.parse(storedUsername);

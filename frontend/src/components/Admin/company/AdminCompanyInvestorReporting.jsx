@@ -14,7 +14,7 @@ import { Building2, User } from "lucide-react";
 function AdminCompanyInvestorReporting({ ReportId, onClose }) {
   const [ReportDetails, setReportDetails] = useState(null);
   const [ReportDetailsInvestor, setReportDetailsInvestor] = useState([]);
-  const apiUrl = "https://capavate.com/api/admin/company/";
+  const apiUrl = "http://localhost:5000/api/admin/company/";
 
   useEffect(() => {
     if (ReportId) totalDocs();

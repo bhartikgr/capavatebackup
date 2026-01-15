@@ -657,19 +657,35 @@ const PreviousSection = ({
             </div>
           )}
 
-          {formData.instrumentType === "Safe" && (
+          {formData.instrumentType === "Safe" && formData.shareClassType === 'Seed' || formData.shareClassType === "Pre-Seed" || formData.shareClassType === "Post-Seed" && (
             <div className="col-12">
               <div className="p-3 border rounded bg-light">
                 <h6>SAFE Details</h6>
                 <div className="row">
                   {formData.valuationCap && (
                     <div className="col-md-6">
-                      <strong>Valuation Cap:</strong> ${Number(formData.valuationCap).toLocaleString()}
+                      <strong>Valuation Cap:</strong> ${
+                        formData.valuationCap || formData.valuationCap === "0"
+                          ? Number(formData.valuationCap).toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })
+                          : <span className="text-muted">Not provided</span>
+                      }
+
                     </div>
                   )}
                   {formData.discountRate && (
                     <div className="col-md-6">
-                      <strong>Discount Rate:</strong> {formData.discountRate}%
+                      <strong>Discount Rate:</strong>{
+                        formData.discountRate || formData.discountRate === "0"
+                          ? Number(formData.discountRate).toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })
+                          : <span className="text-muted">Not provided</span>
+                      }
+                      %
                     </div>
                   )}
                   {formData.safeType && (
@@ -682,19 +698,35 @@ const PreviousSection = ({
             </div>
           )}
 
-          {formData.instrumentType === "Convertible Note" && (
+          {formData.instrumentType === "Convertible Note" && (formData.shareClassType === 'Seed' || formData.shareClassType === "Pre-Seed" || formData.shareClassType === "Post-Seed") && (
             <div className="col-12">
               <div className="p-3 border rounded bg-light">
                 <h6>Convertible Note Details</h6>
                 <div className="row">
                   {formData.valuationCap_note && (
                     <div className="col-md-6">
-                      <strong>Valuation Cap:</strong> ${Number(formData.valuationCap_note).toLocaleString()}
+                      <strong>Valuation Cap:</strong> ${
+                        formData.valuationCap_note || formData.valuationCap_note === "0"
+                          ? Number(formData.valuationCap_note).toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })
+                          : <span className="text-muted">Not provided</span>
+                      }
+
                     </div>
                   )}
                   {formData.discountRate_note && (
                     <div className="col-md-6">
-                      <strong>Discount Rate:</strong> {formData.discountRate_note}%
+                      <strong>Discount Rate:</strong> {
+                        formData.discountRate_note || formData.discountRate_note === "0"
+                          ? Number(formData.discountRate_note).toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })
+                          : <span className="text-muted">Not provided</span>
+                      }
+                      %
                     </div>
                   )}
                   {formData.maturityDate && (
@@ -774,24 +806,39 @@ const PreviousSection = ({
                 Investment Amount:
               </span>
               <p className="mb-0 mt-1 fw-medium text-dark fs-6">
-                {formData.roundsize ? `${formData.currency || '$'}${formData.roundsize}` : (
-                  <span className="text-muted">Not provided</span>
-                )}
+
+                {
+                  formData.roundsize || formData.roundsize === "0"
+                    ? `${formData.currency} ${Number(formData.roundsize).toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}`
+                    : <span className="text-muted">Not provided</span>
+                }
+
               </p>
             </div>
           </div>
-          <div className="col-md-6">
-            <div className="p-3 bg-light rounded-3 h-100">
-              <span className="text-secondary small fw-semibold text-uppercase">
-                Investor Post-Money Ownership(%):
-              </span>
-              <p className="mb-0 mt-1 fw-medium text-dark fs-6">
-                {formData.investorPostMoney ? `${formData.investorPostMoney}` : (
-                  <span className="text-muted">Not provided</span>
-                )}
-              </p>
+          {formData.instrumentType !== 'Convertible Note' && formData.instrumentType !== 'Safe' && (
+            <div className="col-md-6">
+              <div className="p-3 bg-light rounded-3 h-100">
+                <span className="text-secondary small fw-semibold text-uppercase">
+                  Investor Post-Money Ownership(%):
+                </span>
+                <p className="mb-0 mt-1 fw-medium text-dark fs-6">
+                  {
+                    formData.investorPostMoney || formData.investorPostMoney === "0"
+                      ? Number(formData.investorPostMoney).toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })
+                      : <span className="text-muted">Not provided</span>
+                  }
+
+                </p>
+              </div>
             </div>
-          </div>
+          )}
           <div className="col-md-6">
             <div className="p-3 bg-light rounded-3 h-100">
               <span className="text-secondary small fw-semibold text-uppercase">
@@ -806,52 +853,153 @@ const PreviousSection = ({
           </div>
           <div className="col-md-6">
             <div className="p-3 bg-light rounded-3 h-100">
+
               <span className="text-secondary small fw-semibold text-uppercase">
-                Pre-Money Valuation
+                {formData.instrumentType === 'Convertible Note' && formData.shareClassType === 'Seed' || formData.shareClassType === "Pre-Seed" || formData.shareClassType === "Post-Seed" || formData.instrumentType === 'Safe' && formData.shareClassType === 'Seed' ? 'Company Valuation' : 'Pre-Money Valuation'}
               </span>
+
               <p className="mb-0 mt-1 fw-medium text-dark fs-6">
-                {formData.pre_money || (
-                  <span className="text-muted">Not provided</span>
-                )}
+
+                {
+                  formData.pre_money || formData.pre_money === "0"
+                    ? Number(formData.pre_money).toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })
+                    : <span className="text-muted">Not provided</span>
+                }
+
               </p>
             </div>
           </div>
-          <div className="col-md-6">
-            <div className="p-3 bg-light rounded-3 h-100">
-              <span className="text-secondary small fw-semibold text-uppercase">
-                Post-Money Valuation
-              </span>
-              <p className="mb-0 mt-1 fw-medium text-dark fs-6">
-                {formData.post_money || (
-                  <span className="text-muted">Not provided</span>
-                )}
-              </p>
-            </div>
-          </div>
-          <div className="col-md-6">
-            <div className="p-3 bg-light rounded-3 h-100">
-              <span className="text-secondary small fw-semibold text-uppercase">
-                Pre-Money Option Pool (%)
-              </span>
-              <p className="mb-0 mt-1 fw-medium text-dark fs-6">
-                {formData.optionPoolPercent || (
-                  <span className="text-muted">Not provided</span>
-                )}
-              </p>
-            </div>
-          </div>
-          <div className="col-md-6">
-            <div className="p-3 bg-light rounded-3 h-100">
-              <span className="text-secondary small fw-semibold text-uppercase">
-                Total Shares Issued in this Round
-              </span>
-              <p className="mb-0 mt-1 fw-medium text-dark fs-6">
-                {formData.issuedshares || (
-                  <span className="text-muted">Not provided</span>
-                )}
-              </p>
-            </div>
-          </div>
+          {(() => {
+            const isSafe = formData.instrumentType === 'Safe';
+            const isConvertibleNote = formData.instrumentType === 'Convertible Note';
+            const isSeedType = ["Seed", "Pre-Seed", "Post-Seed"].includes(formData.shareClassType);
+            const isSeriesType = selected?.includes("Series");
+
+            // Hide if any of these conditions are true
+            const shouldHide =
+
+              (isSafe && isSeriesType) ||     // Safe + Series types
+              // Convertible Note + Seed types
+              (isConvertibleNote && isSeriesType) || (formData.instrumentType === "OTHER"); // Convertible Note + Series types
+
+            return shouldHide && (
+              <div className="col-md-6">
+                <div className="p-3 bg-light rounded-3 h-100">
+                  <span className="text-secondary small fw-semibold text-uppercase">
+                    Post-Money Valuation
+                  </span>
+                  <p className="mb-0 mt-1 fw-medium text-dark fs-6">
+                    {formData.post_money || formData.post_money === "0"
+                      ? Number(formData.post_money).toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })
+                      : <span className="text-muted">Not provided</span>
+                    }
+                  </p>
+                </div>
+              </div>
+            );
+          })()}
+          {
+            (
+              (formData.instrumentType === 'Safe' && formData.shareClassType === 'Seed' || formData.shareClassType === "Pre-Seed" || formData.shareClassType === "Post-Seed") ||
+              (formData.instrumentType === 'Convertible Note' && formData.shareClassType === 'Seed' || formData.shareClassType === "Pre-Seed" || formData.shareClassType === "Post-Seed")
+            ) && (
+              <div className="col-md-6">
+                <div className="p-3 bg-light rounded-3 h-100">
+                  <span className="text-secondary small fw-semibold text-uppercase">
+                    Pre-Money Option Pool (%)
+                  </span>
+                  <p className="mb-0 mt-1 fw-medium text-dark fs-6">
+                    {formData.optionPoolPercent || formData.optionPoolPercent === "0"
+                      ? Number(formData.optionPoolPercent).toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })
+                      : <span className="text-muted">Not provided</span>}%
+                  </p>
+                </div>
+              </div>
+            )
+          }
+
+          {((formData.instrumentType !== 'Safe' && formData.shareClassType !== 'Seed' && formData.shareClassType !== "Pre-Seed" && formData.shareClassType !== "Post-Seed") ||
+            (formData.instrumentType === 'Safe' && formData.shareClassType?.includes("Series")) ||
+            (formData?.instrumentType === 'Convertible Note' && selected?.includes("Series"))) && (
+              <div className="col-md-6">
+                <div className="p-3 bg-light rounded-3 h-100">
+                  <span className="text-secondary small fw-semibold text-uppercase">
+                    {(formData?.instrumentType === 'Convertible Note' && selected?.includes("Series")) ||
+                      (formData?.instrumentType === 'Safe' && selected?.includes("Series"))
+                      ? 'Option Pool'
+                      : 'Post-Money Option Pool'} (%)
+                  </span>
+                  <p className="mb-0 mt-1 fw-medium text-dark fs-6">
+                    {
+                      formData.optionPoolPercent_post || formData.optionPoolPercent_post === "0"
+                        ? Number(formData.optionPoolPercent_post).toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })
+                        : <span className="text-muted">Not provided</span>
+                    }
+
+                  </p>
+                </div>
+              </div>
+            )}
+          {(() => {
+            const isSafe = formData.instrumentType === 'Safe';
+            const isConvertibleNote = formData.instrumentType === 'Convertible Note';
+            const isSeedType = ["Seed", "Pre-Seed", "Post-Seed"].includes(formData.shareClassType);
+            const isSeriesType = selected?.includes("Series");
+
+            // Hide if any of these conditions are true
+            const shouldHide =
+
+              (isSafe && isSeedType) ||     // Safe + Series types
+              (isSafe && isSeriesType) ||
+              (isConvertibleNote && isSeriesType) ||
+              (isConvertibleNote && isSeedType); // Convertible Note + Series types
+
+            return !shouldHide && (
+              <div className="col-md-6">
+                <div className="p-3 bg-light rounded-3 h-100">
+                  <span className="text-secondary small fw-semibold text-uppercase">
+                    Total Shares Issued in this Round
+                  </span>
+
+                  {/* Show shares for all rounds EXCEPT Seed+Safe */}
+                  {!(selected === 'Seed' && formData.instrumentType === 'Safe') && (
+                    <p className="mb-0 mt-1 fw-medium text-dark fs-6">
+
+                      {
+                        formData.issuedshares || formData.issuedshares === "0"
+                          ? Number(formData.issuedshares).toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })
+                          : <span className="text-muted">Not provided</span>
+                      }
+
+                    </p>
+                  )}
+
+                  {/* Seed+Safe ke liye message show karein */}
+                  {selected === 'Seed' && formData.instrumentType === 'Safe' && (
+                    <p className="mb-0 mt-1 fw-medium text-dark fs-6">
+                      <span className="text-muted">Not applicable for SAFE notes</span>
+                    </p>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+
         </>
       )}
 

@@ -13,7 +13,7 @@ function AdminReferralCodes() {
   }, []);
   const [records, setrecords] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const apiUrl = "https://capavate.com/api/admin/module/";
+  const apiUrl = "http://localhost:5000/api/admin/module/";
   const { code } = useParams();
   useEffect(() => {
     if (code) {

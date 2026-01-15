@@ -6,7 +6,6 @@ import EducationSection from "../components/Landingsections/EducationSection";
 import AcademySection from "../components/Landingsections/AcademySection";
 import PartnersSection from "../components/Landingsections/PartnersSection";
 import FooterSection from "../components/Landingsections/FooterSection";
-import WixHead from "../components/Landingsections/WixHead";
 
 export default function Landing() {
   const [isSticky, setIsSticky] = useState(false);

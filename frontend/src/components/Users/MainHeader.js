@@ -14,8 +14,8 @@ export default function MainHeader() {
   const [userdataa, setuserdataa] = useState("");
   const navigate = useNavigate();
   const [getdatamodule, setgetdatamodule] = useState([]);
-  var apiURL = "https://capavate.com/api/user/";
-  var apiURLAiFile = "https://capavate.com/api/user/aifile/";
+  var apiURL = "http://localhost:5000/api/user/";
+  var apiURLAiFile = "http://localhost:5000/api/user/aifile/";
   useEffect(() => {
     // Check if the username key exists in session storage
     const storedUsername = localStorage.getItem("CompanyLoginData");

@@ -15,7 +15,7 @@ import axios from "axios";
 export default function Profile() {
   const navigate = useNavigate();
   const [records, setrecords] = useState("");
-  var apiURL = "https://capavate.com/api/user/investorreport/";
+  var apiURL = "http://localhost:5000/api/user/investorreport/";
   const storedUsername = localStorage.getItem("InvestorData");
   const userLogin = JSON.parse(storedUsername);
   const [dangerMessage, setdangerMessage] = useState("");

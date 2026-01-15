@@ -15,7 +15,7 @@ import "react-phone-number-input/style.css";
 export default function UserProfileSettings() {
   const storedUsername = localStorage.getItem("OwnerLoginData");
   const userLogin = JSON.parse(storedUsername);
-  const apiURL = "https://capavate.com/api/user/company/";
+  const apiURL = "http://localhost:5000/api/user/company/";
   document.title = "User Profile";
   const [errr, seterrr] = useState(false);
   const [dangerMessage, setdangerMessage] = useState("");

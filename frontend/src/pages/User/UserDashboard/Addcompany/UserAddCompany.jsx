@@ -20,9 +20,9 @@ import "react-tooltip/dist/react-tooltip.css";
 export default function UserAddCompany() {
   const storedUsername = localStorage.getItem("OwnerLoginData");
   const userLogin = JSON.parse(storedUsername);
-  const apiURL = "https://capavate.com/api/user/";
-  const apiUrlCompany = "https://capavate.com/api/user/company/";
-  var apiURLIndustry = "https://capavate.com/api/user/capitalround/";
+  const apiURL = "http://localhost:5000/api/user/";
+  const apiUrlCompany = "http://localhost:5000/api/user/company/";
+  var apiURLIndustry = "http://localhost:5000/api/user/capitalround/";
   document.title = "Add Company";
   const [errr, seterrr] = useState(false);
   const [dangerMessage, setdangerMessage] = useState("");

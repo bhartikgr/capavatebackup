@@ -18,7 +18,7 @@ const UploadModal = ({
   refreshpage,
   lockunlockId,
 }) => {
-  var apiURL = "https://capavate.com/api/user/aifile/";
+  var apiURL = "http://localhost:5000/api/user/aifile/";
   const storedUsername = localStorage.getItem("SignatoryLoginData");
   const userLogin = JSON.parse(storedUsername);
   const [selectedFiles, setSelectedFiles] = useState([]);

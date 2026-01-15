@@ -17,7 +17,7 @@ export default function FooterSection() {
       <section className="d-block contact">
         <div className="container-xl">
           <div className="row gy-5 contact_main">
-            <div className="col-md-6 px-md-0">
+            <div className="col-md-6 px-md-0 order-md-0 order-1">
               <div className="d-flex flex-column gap-4">
                 <a href="#" className="flogo">
                   <img
@@ -83,7 +83,7 @@ export default function FooterSection() {
                 </div>
               </div>
             </div>
-            <div className="col-md-6">
+            <div className="col-md-6 order-md-1 order-0">
               <div className="contact_right">
                 <div className="d-flex flex-column gap-4 contact_prsnt">
                   <div className="d-flex flex-column gap-0">

@@ -13,7 +13,7 @@ import AdminiInvestorDataroomTable from "../../../components/Admin/investor/Admi
 function AdminInvestorView() {
   const { id } = useParams();
   document.title = "Company Detail - Admin";
-  const apiUrlAll = "https://capavate.com/api/admin/adminall/";
+  const apiUrlAll = "http://localhost:5000/api/admin/adminall/";
   const [istotalDocs, settotalDocs] = useState("");
   const [totalsignatory, settotalsignatory] = useState("");
   const [userData, setuserData] = useState("");
@@ -316,7 +316,7 @@ function AdminInvestorView() {
     setOpenDropdown(openDropdown === id ? null : id);
   };
   const [InvestorDetail, setInvestorDetail] = useState([]);
-  const apiUrlCompany = "https://capavate.com/api/admin/investor/";
+  const apiUrlCompany = "http://localhost:5000/api/admin/investor/";
 
   useEffect(() => {
     getcompanyInvestor();

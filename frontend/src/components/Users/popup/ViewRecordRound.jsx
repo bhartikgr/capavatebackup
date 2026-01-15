@@ -372,11 +372,12 @@ const ViewRecordRound = ({ onClose, recordViewData }) => {
     const preMoney = parseFloat(recordViewData.pre_money) || 0;
     const postMoney = parseFloat(recordViewData.post_money) || 0;
     const optionPoolPercent = parseFloat(recordViewData.optionPoolPercent) || 0;
+    const optionPoolPercentPost = parseFloat(recordViewData.optionPoolPercent_post) || 0;
 
     // Parse founder data for cap table calculations
     const founderData = safeJsonParse(recordViewData.founder_data);
     const totalFounderShares = recordViewData.total_founder_shares || founderData.totalShares || 0;
-    console.log(recordViewData)
+
     return (
       <div className="row g-3">
         {/* Round Type */}
@@ -441,52 +442,31 @@ const ViewRecordRound = ({ onClose, recordViewData }) => {
                 <div className="col-md-4">
                   <div className="p-3 bg-white rounded-3 h-100">
                     <span className="text-secondary small fw-semibold text-uppercase">
-                      Round Size:
+                      Investment Amount:
                     </span>
                     <p className="mb-0 mt-1 fw-bold text-dark fs-5">
-                      {recordViewData.currency || '$'}{Number(recordViewData.roundsize).toLocaleString()}
+                      {recordViewData.currency || '$'}
+                      {Number(recordViewData.roundsize).toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+
                     </p>
                   </div>
                 </div>
               )}
 
-              {/* Pre-Money Valuation */}
-              {preMoney > 0 && (
+              {/* Investor Post-Money Ownership (Not for Convertible Note and Safe) */}
+              {(recordViewData.instrumentType !== 'Convertible Note' && recordViewData.instrumentType !== 'Safe') && (
                 <div className="col-md-4">
                   <div className="p-3 bg-white rounded-3 h-100">
                     <span className="text-secondary small fw-semibold text-uppercase">
-                      Pre-Money Valuation:
+                      Investor Post-Money Ownership(%):
                     </span>
                     <p className="mb-0 mt-1 fw-bold text-dark fs-5">
-                      {recordViewData.currency || '$'}{preMoney.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Post-Money Valuation */}
-              {postMoney > 0 && (
-                <div className="col-md-4">
-                  <div className="p-3 bg-white rounded-3 h-100">
-                    <span className="text-secondary small fw-semibold text-uppercase">
-                      Post-Money Valuation:
-                    </span>
-                    <p className="mb-0 mt-1 fw-bold text-dark fs-5">
-                      {recordViewData.currency || '$'}{postMoney.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Option Pool Percentage */}
-              {optionPoolPercent > 0 && (
-                <div className="col-md-4">
-                  <div className="p-3 bg-white rounded-3 h-100">
-                    <span className="text-secondary small fw-semibold text-uppercase">
-                      Option Pool %:
-                    </span>
-                    <p className="mb-0 mt-1 fw-bold text-dark fs-5">
-                      {optionPoolPercent}%
+                      {recordViewData.investorPostMoney ? `${recordViewData.investorPostMoney}%` : (
+                        <span className="text-muted">Not provided</span>
+                      )}
                     </p>
                   </div>
                 </div>
@@ -506,19 +486,141 @@ const ViewRecordRound = ({ onClose, recordViewData }) => {
                 </div>
               )}
 
-              {/* Issued Shares */}
-              {recordViewData.issuedshares && (
+              {/* Pre-Money Valuation - Conditional Label */}
+              {preMoney > 0 && (
                 <div className="col-md-4">
                   <div className="p-3 bg-white rounded-3 h-100">
                     <span className="text-secondary small fw-semibold text-uppercase">
-                      Shares Issued in Round:
+                      {(recordViewData.instrumentType === 'Convertible Note' && recordViewData.shareClassType === 'Seed') ||
+                        (recordViewData.instrumentType === 'Safe' && recordViewData.shareClassType === 'Seed')
+                        ? 'Company Valuation'
+                        : 'Pre-Money Valuation'}
                     </span>
                     <p className="mb-0 mt-1 fw-bold text-dark fs-5">
-                      {Number(recordViewData.issuedshares).toLocaleString("en-US")}
+                      {recordViewData.currency || '$'}
+                      {Number(preMoney).toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+
                     </p>
                   </div>
                 </div>
               )}
+
+              {/* Post-Money Valuation (Not for Safe with Seed) */}
+              {recordViewData.instrumentType === 'Safe' && recordViewData.shareClassType === 'Seed' || recordViewData.instrumentType === 'Convertible Note' && recordViewData.shareClassType === 'Seed' && (
+                <div className="col-md-4">
+                  <div className="p-3 bg-white rounded-3 h-100">
+                    <span className="text-secondary small fw-semibold text-uppercase">
+                      Pre-Money Option Pool (%)
+                    </span>
+                    <p className="mb-0 mt-1 fw-bold text-dark fs-5">
+
+
+                      {
+                        recordViewData.optionPoolPercent || recordViewData.optionPoolPercent === "0"
+                          ? Number(recordViewData.optionPoolPercent).toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })
+                          : <span className="text-muted">Not provided</span>
+                      } %
+
+                    </p>
+                  </div>
+                </div>
+              )}
+              {(recordViewData.instrumentType !== 'Safe' && recordViewData.shareClassType !== 'Seed') || (recordViewData.instrumentType !== 'Convertible Safe' && !recordViewData.shareClassType?.includes("Series")) || (recordViewData.instrumentType !== 'Convertible Safe' && recordViewData.shareClassType === 'Seed') && postMoney > 0 && (
+                <div className="col-md-4">
+                  <div className="p-3 bg-white rounded-3 h-100">
+                    <span className="text-secondary small fw-semibold text-uppercase">
+                      Post-Money Valuation
+                    </span>
+                    <p className="mb-0 mt-1 fw-bold text-dark fs-5">
+                      {recordViewData.currency || '$'}
+                      {Number(postMoney).toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Option Pool Percentage - Conditional */}
+              {/* {
+                (
+                  (recordViewData.instrumentType === 'Safe' && recordViewData.shareClassType === 'Seed') ||
+                  (recordViewData.instrumentType === 'Convertible Note' && recordViewData.shareClassType === 'Seed')
+                ) && (
+                  <div className="col-md-4">
+                    <div className="p-3 bg-white rounded-3 h-100">
+                      <span className="text-secondary small fw-semibold text-uppercase">
+                        Pre-Money Option Pool (%)
+                      </span>
+                      <p className="mb-0 mt-1 fw-bold text-dark fs-5">
+                        {Number(optionPoolPercent).toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}%
+                      </p>
+                    </div>
+                  </div>
+                )
+              } */}
+
+
+              {/* Post-Money Option Pool or Option Pool - Conditional */}
+              {((recordViewData.instrumentType !== 'Safe' && recordViewData.shareClassType !== 'Seed') ||
+                (recordViewData.instrumentType === 'Safe' && recordViewData.shareClassType?.includes("Series")) ||
+                (recordViewData?.instrumentType === 'Convertible Note' && recordViewData.shareClassType?.includes("Series"))) && optionPoolPercentPost > 0 && (
+                  <div className="col-md-4">
+                    <div className="p-3 bg-white rounded-3 h-100">
+                      <span className="text-secondary small fw-semibold text-uppercase">
+                        {(recordViewData?.instrumentType === 'Convertible Note' && recordViewData.shareClassType?.includes("Series")) ||
+                          (recordViewData?.instrumentType === 'Safe' && recordViewData.shareClassType?.includes("Series"))
+                          ? 'Option Pool'
+                          : 'Post-Money Option Pool'} (%)
+                      </span>
+                      <p className="mb-0 mt-1 fw-bold text-dark fs-5">
+                        {Number(optionPoolPercentPost).toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}%
+
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+              {/* Issued Shares (Not for Seed+Safe) */}
+              {recordViewData.instrumentType !== 'Safe' && recordViewData.shareClassType !== 'Seed' || recordViewData.instrumentType === 'Safe' && recordViewData.shareClassType?.includes("Series") && (
+                <div className="col-md-4">
+                  <div className="p-3 bg-white rounded-3 h-100">
+                    <span className="text-secondary small fw-semibold text-uppercase">
+                      Total Shares Issued in this Round
+                    </span>
+
+                    {/* Show shares for all rounds EXCEPT Seed+Safe */}
+                    {!(recordViewData.shareClassType === 'Seed' && recordViewData.instrumentType === 'Safe') ? (
+                      <p className="mb-0 mt-1 fw-bold text-dark fs-5">
+                        {Number(recordViewData.issuedshares).toLocaleString("en-US", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </p>
+                    ) : (
+                      /* Seed+Safe ke liye message show karein */
+                      <p className="mb-0 mt-1 fw-bold text-dark fs-5">
+                        <span className="text-muted">Not applicable for SAFE notes</span>
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
             </div>
           </div>
         </div>
@@ -527,7 +629,7 @@ const ViewRecordRound = ({ onClose, recordViewData }) => {
         {(preMoney > 0 || totalFounderShares > 0) && (
           <div className="col-12">
             <div className="p-3 bg-info bg-opacity-10 rounded-3 border border-info border-opacity-25">
-              <h5 className="text-info mb-3">Cap Table Summary</h5>
+              <h5 className="text-info mb-3"></h5>
               <div className="row">
                 {/* Total Founder Shares from Round 0 */}
                 {totalFounderShares > 0 && (
@@ -544,33 +646,22 @@ const ViewRecordRound = ({ onClose, recordViewData }) => {
                 )}
 
                 {/* Investor Ownership Percentage */}
-                {preMoney > 0 && recordViewData.roundsize && (
-                  <div className="col-md-3">
-                    <div className="p-3 bg-white rounded-3 h-100">
-                      <span className="text-secondary small fw-semibold text-uppercase">
-                        Investor Ownership %:
-                      </span>
-                      <p className="mb-0 mt-1 fw-bold text-dark fs-6">
-                        {((parseFloat(recordViewData.roundsize) / postMoney) * 100).toFixed(1)}%
-                      </p>
+                {recordViewData.instrumentType !== 'Convertible Note' &&
+                  recordViewData.instrumentType !== 'Safe' &&
+                  preMoney > 0 &&
+                  recordViewData.roundsize &&
+                  postMoney > 0 && (
+                    <div className="col-md-3">
+                      <div className="p-3 bg-white rounded-3 h-100">
+                        <span className="text-secondary small fw-semibold text-uppercase">
+                          Investor Ownership %:
+                        </span>
+                        <p className="mb-0 mt-1 fw-bold text-dark fs-6">
+                          {((parseFloat(recordViewData.roundsize) / postMoney) * 100).toFixed(2)}%
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                )}
-
-                {/* Price Per Share Calculation */}
-                {/* {recordViewData.issuedshares && recordViewData.roundsize && (
-                  <div className="col-md-3">
-                    <div className="p-3 bg-white rounded-3 h-100">
-                      <span className="text-secondary small fw-semibold text-uppercase">
-                        Price Per Share:
-                      </span>
-                      <p className="mb-0 mt-1 fw-bold text-dark fs-6">
-                        {recordViewData.currency || '$'}
-                        {(parseFloat(recordViewData.roundsize) / parseFloat(recordViewData.issuedshares)).toFixed(4)}
-                      </p>
-                    </div>
-                  </div>
-                )} */}
+                  )}
 
                 {/* Dilution Impact */}
                 {totalFounderShares > 0 && recordViewData.issuedshares && (
@@ -794,7 +885,6 @@ const ViewRecordRound = ({ onClose, recordViewData }) => {
                   <strong>Created:</strong> {new Date(recordViewData.created_at).toLocaleDateString()}
                 </div>
               )}
-
             </div>
           </div>
         </div>
@@ -810,43 +900,7 @@ const ViewRecordRound = ({ onClose, recordViewData }) => {
       case "Common Stock":
         return (
           <div className="col-12">
-            <div className="p-3 border rounded bg-light">
-              <h5>Common Stock Details</h5>
-              <div className="row">
-                {instrumentData.common_stock_valuation && (
-                  <div className="col-md-6">
-                    <strong>Company Valuation:</strong> ${Number(instrumentData.common_stock_valuation).toLocaleString()}
-                  </div>
-                )}
-                <div className="col-md-6">
-                  <strong>Warrants:</strong> {instrumentData.hasWarrants ? "Yes" : "No"}
-                </div>
-                {instrumentData.hasWarrants && (
-                  <>
-                    {instrumentData.exercisePrice && (
-                      <div className="col-md-6">
-                        <strong>Exercise Price:</strong> ${instrumentData.exercisePrice}
-                      </div>
-                    )}
-                    {instrumentData.expirationDate && (
-                      <div className="col-md-6">
-                        <strong>Expiration Date:</strong> {instrumentData.expirationDate}
-                      </div>
-                    )}
-                    {instrumentData.warrantRatio && (
-                      <div className="col-md-6">
-                        <strong>Warrant Ratio:</strong> {instrumentData.warrantRatio}
-                      </div>
-                    )}
-                    {instrumentData.warrantType && (
-                      <div className="col-md-6">
-                        <strong>Warrant Type:</strong> {instrumentData.warrantType}
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
+
           </div>
         );
 
@@ -912,63 +966,91 @@ const ViewRecordRound = ({ onClose, recordViewData }) => {
       case "Safe":
         return (
           <div className="col-12">
-            <div className="p-3 border rounded bg-light">
-              <h5>SAFE Details</h5>
-              <div className="row">
-                {instrumentData.valuationCap && (
-                  <div className="col-md-6">
-                    <strong>Valuation Cap:</strong> ${Number(instrumentData.valuationCap).toLocaleString()}
-                  </div>
-                )}
-                {instrumentData.discountRate && (
-                  <div className="col-md-6">
-                    <strong>Conversion Discount:</strong> {instrumentData.discountRate}%
-                  </div>
-                )}
-                {/* {instrumentData.safeType && (
+            {
+              recordViewData.instrumentType === "Safe" && (recordViewData.shareClassType === 'Seed' || recordViewData.shareClassType === 'Pre-Seed' || recordViewData.shareClassType === 'Post-Seed') && (
+                <div className="p-3 border rounded bg-light">
+                  <h5>SAFE Details</h5>
+                  <div className="row">
+                    {instrumentData.valuationCap && (
+                      <div className="col-md-6">
+                        <strong>Valuation Cap:</strong> ${Number(instrumentData.valuationCap).toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+
+                      </div>
+                    )}
+                    {instrumentData.discountRate && (
+                      <div className="col-md-6">
+                        <strong>Conversion Discount:</strong> {Number(instrumentData.discountRate).toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                        %
+                      </div>
+                    )}
+                    {/* {instrumentData.safeType && (
                   <div className="col-md-6">
                     <strong>SAFE Type:</strong> {instrumentData.safeType === "PRE_MONEY" ? "Pre-Money" : "Post-Money"}
                   </div>
                 )} */}
-              </div>
-            </div>
+                  </div>
+                </div>
+              )}
           </div>
         );
 
       case "Convertible Note":
         return (
-          <div className="col-12">
-            <div className="p-3 border rounded bg-light">
-              <h5>Convertible Note Details</h5>
-              <div className="row">
-                {instrumentData.valuationCap_note && (
-                  <div className="col-md-6">
-                    <strong>Valuation Cap:</strong> ${Number(instrumentData.valuationCap_note).toLocaleString()}
-                  </div>
-                )}
-                {instrumentData.discountRate_note && (
-                  <div className="col-md-6">
-                    <strong>Conversion Discount:</strong> {instrumentData.discountRate_note}%
-                  </div>
-                )}
-                {instrumentData.maturityDate && (
-                  <div className="col-md-6">
-                    <strong>Maturity Date:</strong> {instrumentData.maturityDate}
-                  </div>
-                )}
-                {instrumentData.interestRate_note && (
-                  <div className="col-md-6">
-                    <strong>Interest Rate:</strong> {instrumentData.interestRate_note}%
-                  </div>
-                )}
-                {/* {instrumentData.convertibleTrigger && (
+          <>
+            {
+              recordViewData.instrumentType === "Convertible Note" && (recordViewData.shareClassType === 'Seed' || recordViewData.shareClassType === 'Pre-Seed' || recordViewData.shareClassType === 'Post-Seed') && (
+                <div className="col-12">
+                  <div className="p-3 border rounded bg-light">
+                    <h5>Convertible Note Details</h5>
+                    <div className="row">
+                      {instrumentData.valuationCap_note && (
+                        <div className="col-md-6">
+                          <strong>Valuation Cap:</strong> ${Number(instrumentData.valuationCap_note).toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </div>
+                      )}
+                      {instrumentData.discountRate_note && (
+                        <div className="col-md-6">
+                          <strong>Conversion Discount:</strong>{Number(instrumentData.discountRate_note).toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                          %
+                        </div>
+                      )}
+                      {instrumentData.maturityDate && (
+                        <div className="col-md-6">
+                          <strong>Maturity Date:</strong> {instrumentData.maturityDate}
+                        </div>
+                      )}
+                      {instrumentData.interestRate_note && (
+                        <div className="col-md-6">
+                          <strong>Interest Rate:</strong> {Number(instrumentData.interestRate_note).toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                          %
+                        </div>
+                      )}
+                      {/* {instrumentData.convertibleTrigger && (
                   <div className="col-md-6">
                     <strong>Conversion Trigger:</strong> {instrumentData.convertibleTrigger.replace(/_/g, " & ")}
                   </div>
                 )} */}
-              </div>
-            </div>
-          </div>
+                    </div>
+                  </div>
+                </div>
+              )
+            }
+          </>
         );
 
       case "Venture/Bank DEBT":
@@ -1037,7 +1119,7 @@ const ViewRecordRound = ({ onClose, recordViewData }) => {
             </span>
             <ul className="mb-0 mt-2 ps-3">
               {files.map((file, index) => {
-                const downloadUrl = `https://capavate.com/api/${pathname}/companyRound/${file}`;
+                const downloadUrl = `http://localhost:5000/api/${pathname}/companyRound/${file}`;
                 return (
                   <li
                     key={index}
@@ -1065,7 +1147,7 @@ const ViewRecordRound = ({ onClose, recordViewData }) => {
       );
     };
 
-    const pathname = `upload/docs/doc_${recordViewData.user_id || userLogin?.id}`;
+    const pathname = `upload/docs/doc_${recordViewData.company_id}`;
 
     return (
       <>

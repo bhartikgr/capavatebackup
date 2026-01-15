@@ -400,7 +400,7 @@ const ViewInvestorInfo = ({ onClose, recordViewData }) => {
                               const fileName = document.includes("/")
                                 ? document.split("/").pop()
                                 : document;
-                              const documentUrl = `https://capavate.com/api/upload/investor/inv_${investor.id
+                              const documentUrl = `http://localhost:5000/api/upload/investor/inv_${investor.id
                                 }/${encodeURIComponent(document)}`;
 
                               return (
