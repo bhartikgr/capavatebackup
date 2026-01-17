@@ -855,7 +855,7 @@ const PreviousSection = ({
             <div className="p-3 bg-light rounded-3 h-100">
 
               <span className="text-secondary small fw-semibold text-uppercase">
-                {formData.instrumentType === 'Convertible Note' && formData.shareClassType === 'Seed' || formData.shareClassType === "Pre-Seed" || formData.shareClassType === "Post-Seed" || formData.instrumentType === 'Safe' && formData.shareClassType === 'Seed' ? 'Company Valuation' : 'Pre-Money Valuation'}
+                {((formData.shareClassType === "Seed" || formData.shareClassType === "Pre-Seed" || formData.shareClassType === "Post-Seed") && formData.instrumentType === "Safe") || (formData.instrumentType === "Convertible Note" && (formData.shareClassType === "Seed" || formData.shareClassType === "Pre-Seed" || formData.shareClassType === "Post-Seed")) ? "Company Valuation" : "Pre-Money Valuation"}
               </span>
 
               <p className="mb-0 mt-1 fw-medium text-dark fs-6">

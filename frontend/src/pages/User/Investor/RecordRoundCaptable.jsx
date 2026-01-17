@@ -1553,7 +1553,7 @@ export default function RecordRoundCaptable() {
                       <div className="col-md-6">
                         <p><strong>1. {capTableData.shareClassType} Share Price:</strong></p>
                         <p className="small">
-                          {formatCurrency(inputs.preMoneyValuation || calc.preMoneyValuation)} ÷ {formatNumber(inputs.roundZeroShares || calc.roundZeroTotalShares + calc.employeeSharesSeedRound)} =
+                          {formatCurrency(inputs.preMoneyValuation || calc.preMoneyValuation)} ÷ {formatNumber(inputs.totalSharesPreSeed || calc.roundZeroTotalShares + calc.employeeSharesSeedRound)} =
                           <span className="fw-bold ms-2">{formatCurrency(calc.sharePrice)}</span>
                         </p>
 
@@ -1607,7 +1607,7 @@ export default function RecordRoundCaptable() {
             )}
 
             {/* OPTION POOL SECTION */}
-            <div className="row mb-4">
+            {/* <div className="row mb-4">
               <div className="col-md-4">
                 <div className="info-box p-3 border rounded bg-light">
                   <small className="text-muted">Existing Option Pool</small>
@@ -1616,7 +1616,7 @@ export default function RecordRoundCaptable() {
                 </div>
               </div>
 
-              {/* <div className="col-md-4">
+              <div className="col-md-4">
                 <div className="info-box p-3 border rounded bg-primary text-white">
                   <small className="text-white">Target Option Pool</small>
                   <h5>{formatPercentage(calc.targetOptionPoolPercent)}</h5>
@@ -1630,8 +1630,8 @@ export default function RecordRoundCaptable() {
                   <h5>{formatNumber(calc.newOptionShares)}</h5>
                   <small>Top-up required</small>
                 </div>
-              </div> */}
-            </div>
+              </div>
+            </div> */}
 
             {/* OPTION POOL CALCULATION EXPLANATION */}
             {calc.newOptionShares > 0 && (
@@ -3369,7 +3369,7 @@ export default function RecordRoundCaptable() {
     );
   };
   const renderConvertibleNoteSeriesRoundTable = () => {
-    console.log("Render Convertible Note Series Round Table Called");
+
 
     if (!capTableData) {
       return <div className="alert alert-warning">No data available</div>;
@@ -3380,17 +3380,29 @@ export default function RecordRoundCaptable() {
     const preTable = capTableData.preSeedCapTable || {};
     const postTable = capTableData.postSeedCapTable || {};
 
-    console.log("Post Table Shareholders:", postTable.shareholders);
+    console.log("Post Table Shareholders:", calc.sharePrice);
 
     // ✅ Helper functions
     const formatCurrency = (amount) => {
       const currency = capTableData.currency || "CAD";
       const currencyCode = currency.split(' ')[0] || 'CAD';
+
+      // For small amounts (< 1000), show 2 decimal places
+      if (Math.abs(amount) < 1000) {
+        return new Intl.NumberFormat('en-CA', {
+          style: 'currency',
+          currency: currencyCode,
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }).format(amount || 0);
+      }
+
+      // For larger amounts, no decimal places
       return new Intl.NumberFormat('en-CA', {
         style: 'currency',
         currency: currencyCode,
         minimumFractionDigits: 0,
-        maximumFractionDigits: 2
+        maximumFractionDigits: 0
       }).format(amount || 0);
     };
 
@@ -3462,7 +3474,18 @@ export default function RecordRoundCaptable() {
         }
       }
     };
+
     var roundname = capTableData.instrumentType + ' ' + capTableData.shareClassType;
+
+    // ✅ Calculate current shares from pre-table for comparison
+    const getPreSharesForShareholder = (name) => {
+      if (!preTable.shareholders) return 0;
+      const shareholder = preTable.shareholders.find(sh =>
+        sh.name.includes(name) || name.includes(sh.name)
+      );
+      return shareholder ? shareholder.shares : 0;
+    };
+
     return (
       <div className="cap-table-section">
         <div className="card mb-4">
@@ -3482,11 +3505,8 @@ export default function RecordRoundCaptable() {
                     </div>
                     <div className="card-body">
                       <div style={{ height: '300px' }}>
-                        {/* Pie Chart के लिए Bar की जगह Pie use करें */}
                         {(() => {
-                          // Temporary - अगर Pie chart नहीं है तो Bar chart show करें
                           try {
-
                             return <Pie data={chartData} options={chartOptions} />;
                           } catch (e) {
                             return <Bar data={chartData} options={chartOptions} />;
@@ -3625,7 +3645,7 @@ export default function RecordRoundCaptable() {
               </div>
             )}
 
-            {/* ✅ POST-SERIES A CAP TABLE */}
+            {/* ✅ POST-SERIES A CAP TABLE WITH 3 COLUMNS */}
             {postTable.shareholders && postTable.shareholders.length > 0 && (
               <div className="card mb-4">
                 <div className="card-header bg-primary text-white">
@@ -3640,66 +3660,89 @@ export default function RecordRoundCaptable() {
                           <th>Shareholder</th>
                           <th className="text-center">Type</th>
                           <th className="text-center">Shares</th>
+                          <th className="text-center">New Shares</th>
+                          <th className="text-center">Total Shares</th>
                           <th className="text-center">Ownership %</th>
                           <th className="text-center">Value</th>
                           <th className="text-center">Investment Details</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {postTable.shareholders.map((sh, idx) => (
-                          <tr key={idx}>
-                            <td>
-                              <strong>{sh.name || `Shareholder ${idx + 1}`}</strong>
-                              {sh.note && <div className="small text-muted">{sh.note}</div>}
-                            </td>
-                            <td className="text-center">
-                              <span className={`badge ${sh.type?.includes("Founder") ? "bg-primary" :
-                                sh.type?.includes("Option") ? "bg-warning text-dark" :
-                                  sh.type?.includes("Convertible") || sh.type?.includes("Seed") ? "bg-info" :
-                                    sh.type?.includes("Series") ? "bg-success" :
-                                      "bg-secondary"
-                                }`}>
-                                {sh.type || "Shareholder"}
-                              </span>
-                            </td>
-                            <td className="text-center">
-                              <strong>{formatNumber(sh.shares || sh.totalShares || 0)}</strong>
-                              {sh.newShares > 0 && (
-                                <div className="small text-success">+{formatNumber(sh.newShares)} new</div>
-                              )}
-                            </td>
-                            <td className="text-center">
-                              <span className="badge bg-dark">
-                                {formatPercentage(sh.ownership || 0)}
-                              </span>
-                            </td>
-                            <td className="text-center">
-                              <strong>{formatCurrency(sh.value || 0)}</strong>
-                            </td>
-                            <td className="text-center">
-                              {sh.conversionPrice ? (
-                                <div className="small">
-                                  @ {formatCurrency(sh.conversionPrice)}/share
-                                  {sh.moic && <div className="text-success">MOIC: {sh.moic}</div>}
-                                </div>
-                              ) : sh.investment ? (
-                                <div className="small">
-                                  Invested: {formatCurrency(sh.investment)}
-                                  {sh.moic && <div className="text-success">MOIC: {sh.moic}</div>}
-                                </div>
-                              ) : sh.originalInvestment ? (
-                                <div className="small">
-                                  Original: {formatCurrency(sh.originalInvestment)}
-                                  {sh.moic && <div className="text-success">MOIC: {sh.moic}</div>}
-                                </div>
-                              ) : (
-                                <span className="text-muted">-</span>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
+                        {postTable.shareholders.map((sh, idx) => {
+                          // Calculate current shares from pre-table
+                          const preShares = getPreSharesForShareholder(sh.name);
+                          const newShares = sh.newShares || (sh.shares - preShares);
+                          const totalShares = sh.shares;
+
+                          return (
+                            <tr key={idx}>
+                              <td>
+                                <strong>{sh.name || `Shareholder ${idx + 1}`}</strong>
+                                {sh.note && <div className="small text-muted">{sh.note}</div>}
+                              </td>
+                              <td className="text-center">
+                                <span className={`badge ${sh.type?.includes("Founder") ? "bg-primary" :
+                                  sh.type?.includes("Option") ? "bg-warning text-dark" :
+                                    sh.type?.includes("Convertible") || sh.type?.includes("Seed") ? "bg-info" :
+                                      sh.type?.includes("Series") ? "bg-success" :
+                                        "bg-secondary"
+                                  }`}>
+                                  {sh.type || "Shareholder"}
+                                </span>
+                              </td>
+                              <td className="text-center">
+                                <strong>{formatNumber(preShares)}</strong>
+                              </td>
+                              <td className="text-center">
+                                {newShares > 0 ? (
+                                  <div className="text-success fw-bold">
+                                    +{formatNumber(newShares)}
+                                  </div>
+                                ) : (
+                                  <span className="text-muted">0</span>
+                                )}
+                              </td>
+                              <td className="text-center">
+                                <strong>{formatNumber(totalShares)}</strong>
+                              </td>
+                              <td className="text-center">
+                                <span className="badge bg-dark">
+                                  {formatPercentage(sh.ownership || 0)}
+                                </span>
+                              </td>
+                              <td className="text-center">
+                                <strong>{formatCurrency(sh.value || 0)}</strong>
+                              </td>
+                              <td className="text-center">
+                                {sh.conversionPrice ? (
+                                  <div className="small">
+                                    @ {formatCurrency(sh.conversionPrice)}/share
+                                    {sh.moic && <div className="text-success">MOIC: {sh.moic}</div>}
+                                    {sh.principalPlusInterest && (
+                                      <div className="text-info">Principal + Interest: {formatCurrency(sh.principalPlusInterest)}</div>
+                                    )}
+                                  </div>
+                                ) : sh.investment ? (
+                                  <div className="small">
+                                    Invested: {formatCurrency(sh.investment)}
+                                    {sh.moic && <div className="text-success">MOIC: {sh.moic}</div>}
+                                  </div>
+                                ) : sh.originalInvestment ? (
+                                  <div className="small">
+                                    Original: {formatCurrency(sh.originalInvestment)}
+                                    {sh.moic && <div className="text-success">MOIC: {sh.moic}</div>}
+                                  </div>
+                                ) : (
+                                  <span className="text-muted">-</span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
                         <tr className="table-primary fw-bold">
                           <td colSpan="2">TOTAL</td>
+                          <td className="text-center">{formatNumber(preTable.totalShares || 0)}</td>
+                          <td className="text-center">{formatNumber(calc.newSharesIssued || 0)}</td>
                           <td className="text-center">{formatNumber(postTable.totalShares || 0)}</td>
                           <td className="text-center">100%</td>
                           <td className="text-center">{formatCurrency(postTable.totalValue || 0)}</td>
@@ -3709,6 +3752,25 @@ export default function RecordRoundCaptable() {
                         </tr>
                       </tbody>
                     </table>
+                  </div>
+
+                  {/* ✅ SUMMARY OF NEW SHARES */}
+                  <div className="alert alert-info mt-3">
+                    <h6>📊 New Shares Summary</h6>
+                    <div className="row">
+                      <div className="col-md-3">
+                        <p><strong>Convertible Note Conversion:</strong> {formatNumber(calc.seedConversionShares || 0)} shares</p>
+                      </div>
+                      <div className="col-md-3">
+                        <p><strong>Series A Investment:</strong> {formatNumber(calc.seriesAShares || 0)} shares</p>
+                      </div>
+                      <div className="col-md-3">
+                        <p><strong>New Option Pool:</strong> {formatNumber(calc.newOptionShares || 0)} shares</p>
+                      </div>
+                      <div className="col-md-3">
+                        <p><strong>Total New Shares:</strong> {formatNumber(calc.newSharesIssued || 0)} shares</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -3736,7 +3798,53 @@ export default function RecordRoundCaptable() {
                 <div className="col-md-4">
                   <p><strong>New Shares Issued:</strong> {formatNumber(calc.newSharesIssued || 0)}</p>
                   <p><strong>Option Pool Created:</strong> {formatNumber(calc.newOptionShares || 0)} shares</p>
-                  <p><strong>Existing Option Pool:</strong> {formatNumber(calc.existingEmployeeShares || 0)} shares</p>
+                  <p><strong>Existing Option Pool:</strong> {formatNumber(calc.employeeSharesSeedRound || 0)} shares</p>
+                </div>
+              </div>
+
+              {/* ✅ NEW: Ownership Summary Section */}
+              <div className="row mt-3">
+                <div className="col-md-12">
+                  <h6>🏢 Ownership Distribution</h6>
+                  <div className="row">
+                    <div className="col-md-3">
+                      <p><strong>Total Founders Ownership:</strong> {
+                        (() => {
+                          // Calculate total founders shares from postSeedShareholders
+                          const founders = postTable.shareholders?.filter(s => s.type === "Founder") || [];
+                          const totalFounderShares = founders.reduce((sum, f) => sum + (f.shares || 0), 0);
+                          const totalPostShares = postTable.totalShares || 1;
+                          const founderPercentage = (totalFounderShares / totalPostShares * 100).toFixed(1);
+                          return `${founderPercentage}%`;
+                        })()
+                      }</p>
+                    </div>
+                    <div className="col-md-3">
+                      <p><strong>Employee Option Pool:</strong> {
+                        (() => {
+                          const optionPool = postTable.shareholders?.find(s => s.type === "Options Pool") || {};
+                          const optionShares = optionPool.shares || 0;
+                          const totalPostShares = postTable.totalShares || 1;
+                          const optionPercentage = (optionShares / totalPostShares * 100).toFixed(1);
+                          return `${optionPercentage}%`;
+                        })()
+                      }</p>
+                    </div>
+                    <div className="col-md-3">
+                      <p><strong>Investor Ownership:</strong> {
+                        (() => {
+                          const investors = postTable.shareholders?.filter(s => s.type === "Investor") || [];
+                          const totalInvestorShares = investors.reduce((sum, inv) => sum + (inv.shares || 0), 0);
+                          const totalPostShares = postTable.totalShares || 1;
+                          const investorPercentage = (totalInvestorShares / totalPostShares * 100).toFixed(1);
+                          return `${investorPercentage}%`;
+                        })()
+                      }</p>
+                    </div>
+                    <div className="col-md-3">
+                      <p><strong>Fully Diluted Total:</strong> 100%</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

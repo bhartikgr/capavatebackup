@@ -327,20 +327,20 @@ exports.CreateOrUpdateCapitalRound = (req, res) => {
             `;
 
             let executiveSummary = "";
-            // try {
-            //   const aiRes = await openai.chat.completions.create({
-            //     model: "gpt-4-turbo",
-            //     messages: [
-            //       {
-            //         role: "system",
-            //         content: "You summarize investment rounds.",
-            //       },
-            //       { role: "user", content: prompt },
-            //     ],
-            //     max_tokens: 500,
-            //   });
-            //   executiveSummary = aiRes.choices[0].message.content.trim();
-            // } catch (e) {}
+            try {
+              const aiRes = await openai.chat.completions.create({
+                model: "gpt-4-turbo",
+                messages: [
+                  {
+                    role: "system",
+                    content: "You summarize investment rounds.",
+                  },
+                  { role: "user", content: prompt },
+                ],
+                max_tokens: 500,
+              });
+              executiveSummary = aiRes.choices[0].message.content.trim();
+            } catch (e) {}
 
             await db
               .promise()
@@ -502,17 +502,17 @@ exports.CreateOrUpdateCapitalRound = (req, res) => {
         `;
 
         let executiveSummary = "";
-        // try {
-        //   const aiRes = await openai.chat.completions.create({
-        //     model: "gpt-4-turbo",
-        //     messages: [
-        //       { role: "system", content: "You summarize investment rounds." },
-        //       { role: "user", content: prompt },
-        //     ],
-        //     max_tokens: 500,
-        //   });
-        //   executiveSummary = aiRes.choices[0].message.content.trim();
-        // } catch (e) {}
+        try {
+          const aiRes = await openai.chat.completions.create({
+            model: "gpt-4-turbo",
+            messages: [
+              { role: "system", content: "You summarize investment rounds." },
+              { role: "user", content: prompt },
+            ],
+            max_tokens: 500,
+          });
+          executiveSummary = aiRes.choices[0].message.content.trim();
+        } catch (e) {}
 
         await db
           .promise()
@@ -2408,7 +2408,7 @@ exports.getRoundCapTableSingleRecord = (req, res) => {
 
               if (
                 round.instrumentType === "Common Stock" &&
-                round.nameOfRound?.toLowerCase().includes("series")
+                round.shareClassType?.toLowerCase().includes("series")
               ) {
                 // Get all previous rounds for Series A calculation
                 // In your API function, add this before calculation:
@@ -3951,17 +3951,17 @@ function handleConvertibleNote_SeriesRoundCalculation(round, company_id, res) {
 
       const roundZero = roundZeroData[0];
 
-      // ✅ Get Convertible Note (Seed round)
+      // ✅ Get Convertible Note round (WITH INTEREST)
       db.query(
         `SELECT * FROM roundrecord WHERE company_id=? AND instrumentType='Convertible Note' AND id < ? ORDER BY id ASC`,
         [company_id, round.id],
-        (err, convertibleNotes) => {
+        (err, convertibleNoteRounds) => {
           if (err)
             return res
               .status(500)
               .json({ success: false, message: "Database error" });
 
-          if (convertibleNotes.length === 0) {
+          if (convertibleNoteRounds.length === 0) {
             return res.status(400).json({
               success: false,
               message:
@@ -3969,7 +3969,7 @@ function handleConvertibleNote_SeriesRoundCalculation(round, company_id, res) {
             });
           }
 
-          const convertibleNoteRound = convertibleNotes[0];
+          const convertibleNoteRound = convertibleNoteRounds[0];
 
           try {
             const noteData =
@@ -3978,12 +3978,18 @@ function handleConvertibleNote_SeriesRoundCalculation(round, company_id, res) {
                 3
               ) || {};
 
-            // ✅ EXTRACT ALL REQUIRED DATA
+            // ✅ EXTRACT CONVERTIBLE NOTE DATA (WITH INTEREST)
             const convertibleNoteData = {
               investment_amount: toNumber(convertibleNoteRound.roundsize, 0),
-              valuation_cap: toNumber(noteData.valuationCap_note, 0),
-              discount_rate: toNumber(noteData.discountRate_note, 0) / 100, // Convert to decimal
-              interest_rate: toNumber(noteData.interestRate_note, 0) / 100, // Convert to decimal
+              valuation_cap: toNumber(
+                noteData.valuationCap_note,
+                noteData.valuationCap,
+                0
+              ),
+              discount_rate:
+                toNumber(noteData.discountRate_note, noteData.discountRate, 0) /
+                100,
+              interest_rate: toNumber(noteData.interestRate_note, 0) / 100,
               years_between: 2, // Default as per requirements
               existing_option_pool: toNumber(
                 convertibleNoteRound.optionPoolPercent,
@@ -4009,47 +4015,85 @@ function handleConvertibleNote_SeriesRoundCalculation(round, company_id, res) {
                   roundZero.founder_data,
                   3
                 );
-                roundZeroTotalShares =
-                  toNumber(founderData.totalShares, 0) ||
-                  toNumber(roundZero.issuedshares, 0);
                 if (
                   founderData.founders &&
                   Array.isArray(founderData.founders)
                 ) {
                   roundZeroFounders = founderData.founders;
+                  // Sum individual founder shares
+                  roundZeroTotalShares = founderData.founders.reduce(
+                    (sum, founder) => {
+                      return sum + toNumber(founder.shares, 0);
+                    },
+                    0
+                  );
+                } else if (founderData.totalShares) {
+                  roundZeroTotalShares = toNumber(founderData.totalShares, 0);
                 }
-              } else {
+              }
+
+              if (roundZeroTotalShares === 0) {
                 roundZeroTotalShares = toNumber(roundZero.issuedshares, 0);
               }
             } catch (error) {
               roundZeroTotalShares = toNumber(roundZero.issuedshares, 0);
             }
 
+            console.log("🔢 INPUT DATA:");
+            console.log(`   Founder shares: ${roundZeroTotalShares}`);
+            console.log(
+              `   Convertible Note investment: $${convertibleNoteData.investment_amount}`
+            );
+            console.log(
+              `   Interest rate: ${(
+                convertibleNoteData.interest_rate * 100
+              ).toFixed(1)}%`
+            );
+            console.log(`   Years: ${convertibleNoteData.years_between}`);
+            console.log(
+              `   Discount rate: ${(
+                convertibleNoteData.discount_rate * 100
+              ).toFixed(1)}%`
+            );
+            console.log(
+              `   Valuation cap: $${convertibleNoteData.valuation_cap}`
+            );
+            console.log(`   Series A investment: $${seriesAInvestment}`);
+            console.log(`   Pre-money valuation: $${preMoneyValuation}`);
+
             // ✅ CALCULATION 1: EMPLOYEE SHARES FROM SEED ROUND
+            let totalSharesBeforeSeriesA = roundZeroTotalShares;
             let employeeSharesSeedRound = 0;
+
             if (
               convertibleNoteData.existing_option_pool > 0 &&
               roundZeroTotalShares > 0
             ) {
-              const totalSharesWithPool = Math.round(
+              // Calculate total shares including seed option pool
+              totalSharesBeforeSeriesA = Math.round(
                 roundZeroTotalShares /
                   (1 - convertibleNoteData.existing_option_pool / 100)
               );
               employeeSharesSeedRound =
-                totalSharesWithPool - roundZeroTotalShares;
+                totalSharesBeforeSeriesA - roundZeroTotalShares;
             }
 
-            // ✅ CALCULATION 2: SERIES A SHARE PRICE (AS PER REQUIREMENTS)
-            // Share Price = Pre-Money Valuation / Total Shares from Previous Round
-            const totalSharesBeforeSeriesA =
-              roundZeroTotalShares + employeeSharesSeedRound;
+            console.log("🔢 SEED OPTION POOL CALCULATION:");
+            console.log(
+              `   Total shares before Series A: ${totalSharesBeforeSeriesA}`
+            );
+            console.log(
+              `   Employee shares from seed: ${employeeSharesSeedRound}`
+            );
+
+            // ✅ CALCULATION 2: SERIES A SHARE PRICE
             const sharePrice =
               totalSharesBeforeSeriesA > 0
                 ? preMoneyValuation / totalSharesBeforeSeriesA
                 : 0;
 
-            // ✅ CALCULATION 3: CONVERTIBLE NOTE CONVERSION
-            // 3a. Principal + Interest = Investment × (1 + Interest Rate)^Years
+            // ✅ CALCULATION 3: CONVERTIBLE NOTE WITH INTEREST
+            // Principal + Interest = Investment × (1 + Interest Rate)^Years
             const principalPlusInterest =
               convertibleNoteData.investment_amount *
               Math.pow(
@@ -4057,43 +4101,50 @@ function handleConvertibleNote_SeriesRoundCalculation(round, company_id, res) {
                 convertibleNoteData.years_between
               );
 
-            // 3b. Discount Price = Series A Price × (1 - Discount Rate)
+            console.log("🔢 CONVERTIBLE NOTE INTEREST:");
+            console.log(
+              `   Original: $${convertibleNoteData.investment_amount}`
+            );
+            console.log(
+              `   After ${convertibleNoteData.years_between} years at ${(
+                convertibleNoteData.interest_rate * 100
+              ).toFixed(1)}%: $${principalPlusInterest.toFixed(2)}`
+            );
+
+            // ✅ CALCULATION 4: CONVERSION PRICES
             const discountPrice =
               sharePrice * (1 - convertibleNoteData.discount_rate);
-
-            // 3c. Cap Price = Valuation Cap / Total Shares from Last Round
             const capPrice =
               convertibleNoteData.valuation_cap > 0
-                ? convertibleNoteData.valuation_cap / roundZeroTotalShares
+                ? convertibleNoteData.valuation_cap / totalSharesBeforeSeriesA
                 : Infinity;
 
-            // 3d. Optimal Price = MIN(Discount Price, Cap Price)
+            // ✅ Optimal Price = MIN(Discount, Cap)
             const optimalPrice = Math.min(
               discountPrice > 0 ? discountPrice : Infinity,
               capPrice > 0 ? capPrice : Infinity
             );
-
             const finalOptimalPrice =
               optimalPrice === Infinity ? sharePrice : optimalPrice;
 
-            // 3e. Seed Conversion Shares = Principal Plus Interest / Optimal Price
-            const seedConversionShares =
+            // ✅ Convertible Note Conversion Shares
+            const noteConversionShares =
               finalOptimalPrice > 0
                 ? Math.round(principalPlusInterest / finalOptimalPrice)
                 : 0;
 
-            // 3f. Seed Conversion Value = Shares × Series A Price
-            const seedConversionValue = seedConversionShares * sharePrice;
+            // ✅ Convertible Note Conversion Value
+            const noteConversionValue = noteConversionShares * sharePrice;
 
-            // 3g. MOIC = Value / Original Investment
-            const seedMOIC =
+            // ✅ MOIC
+            const noteMOIC =
               convertibleNoteData.investment_amount > 0
                 ? (
-                    seedConversionValue / convertibleNoteData.investment_amount
+                    noteConversionValue / convertibleNoteData.investment_amount
                   ).toFixed(2) + "X"
                 : "0X";
 
-            // ✅ CALCULATION 4: SERIES A INVESTOR SHARES
+            // ✅ Series A Investor Shares
             const seriesAShares =
               sharePrice > 0 ? Math.round(seriesAInvestment / sharePrice) : 0;
             const seriesAValue = seriesAShares * sharePrice;
@@ -4102,45 +4153,61 @@ function handleConvertibleNote_SeriesRoundCalculation(round, company_id, res) {
                 ? (seriesAValue / seriesAInvestment).toFixed(2) + "X"
                 : "0X";
 
-            // ✅ CALCULATION 5: OPTION POOL CALCULATION
+            // ✅ CALCULATION 5: OPTION POOL (According to NEW requirements)
+            // Step 1: Total shares excluding new option shares
+            // = Founders (100,000) + Note Conversion (16,806) + Series A (37,037) = 153,843
+            const totalSharesExcludingNewOptions =
+              roundZeroTotalShares + noteConversionShares + seriesAShares;
+
+            console.log("🔢 OPTION POOL CALCULATION:");
+            console.log(`   Founders: ${roundZeroTotalShares}`);
+            console.log(`   Note Conversion: ${noteConversionShares}`);
+            console.log(`   Series A: ${seriesAShares}`);
+            console.log(
+              `   Total excluding new options: ${totalSharesExcludingNewOptions}`
+            );
+
+            // Step 2: Total shares after 20% option pool
+            // Formula: Total excluding options ÷ (1 - 20%) = 153,843 ÷ 0.8 = 192,303
             let totalPostShares = 0;
             let newOptionShares = 0;
-            let finalPostMoneyValuation = 0;
 
             if (targetOptionPoolPercent > 0) {
-              // Total shares excluding option shares
-              const totalSharesExcludingOption =
-                roundZeroTotalShares + seedConversionShares + seriesAShares;
-
-              // Total shares after pool
               totalPostShares = Math.round(
-                totalSharesExcludingOption / (1 - targetOptionPoolPercent / 100)
+                totalSharesExcludingNewOptions /
+                  (1 - targetOptionPoolPercent / 100)
               );
 
-              // New option shares
+              // Step 3: New option shares = Total after pool - Total excluding options - Existing employee shares
+              // = 192,303 - 153,843 - 11,111 = 27,349
               newOptionShares = Math.max(
                 0,
                 totalPostShares -
-                  totalSharesExcludingOption -
+                  totalSharesExcludingNewOptions -
                   employeeSharesSeedRound
               );
-
-              finalPostMoneyValuation = totalPostShares * sharePrice;
             } else {
               totalPostShares =
-                roundZeroTotalShares +
-                employeeSharesSeedRound +
-                seedConversionShares +
-                seriesAShares;
-              finalPostMoneyValuation = totalPostShares * sharePrice;
+                totalSharesBeforeSeriesA + noteConversionShares + seriesAShares;
             }
 
-            // ✅ CALCULATION 6: BUILD CAP TABLES
+            // ✅ Final Post-Money Valuation
+            const finalPostMoneyValuation = totalPostShares * sharePrice;
 
-            // PRE-SERIES A CAP TABLE
+            console.log("🔢 FINAL TOTALS:");
+            console.log(`   Total shares after pool: ${totalPostShares}`);
+            console.log(`   New option shares: ${newOptionShares}`);
+            console.log(
+              `   Post-money valuation: ${finalPostMoneyValuation.toFixed(2)}`
+            );
+            console.log(`   Share price: $${sharePrice.toFixed(4)}`);
+
+            // ✅ BUILD CAP TABLES
+
+            // PRE-SERIES A CAP TABLE (111,111 shares)
             const preSeriesAShareholders = [];
 
-            // Founders
+            // Individual Founders
             roundZeroFounders.forEach((founder, index) => {
               const shares = toNumber(founder.shares, 0);
               const ownership =
@@ -4178,10 +4245,10 @@ function handleConvertibleNote_SeriesRoundCalculation(round, company_id, res) {
               });
             }
 
-            // POST-SERIES A CAP TABLE
+            // POST-SERIES A CAP TABLE (192,303 shares)
             const postSeriesAShareholders = [];
 
-            // Founders
+            // Individual Founders
             roundZeroFounders.forEach((founder, index) => {
               const shares = toNumber(founder.shares, 0);
               const ownership =
@@ -4216,26 +4283,29 @@ function handleConvertibleNote_SeriesRoundCalculation(round, company_id, res) {
                 shares: totalEmployeeShares,
                 ownership: parseFloat(ownership.toFixed(1)),
                 value: Math.round(value),
+                newShares: newOptionShares,
               });
             }
 
             // Convertible Note Investors
-            if (seedConversionShares > 0) {
+            if (noteConversionShares > 0) {
               const ownership =
                 totalPostShares > 0
-                  ? (seedConversionShares / totalPostShares) * 100
+                  ? (noteConversionShares / totalPostShares) * 100
                   : 0;
               const value = (ownership / 100) * finalPostMoneyValuation;
 
               postSeriesAShareholders.push({
                 name: "Convertible Note Investors",
                 type: "Convertible Note Investor",
-                shares: seedConversionShares,
+                shares: noteConversionShares,
                 ownership: parseFloat(ownership.toFixed(1)),
                 value: Math.round(value),
                 originalInvestment: convertibleNoteData.investment_amount,
                 conversionPrice: parseFloat(finalOptimalPrice.toFixed(2)),
-                moic: seedMOIC,
+                moic: noteMOIC,
+                newShares: noteConversionShares,
+                principalPlusInterest: Math.round(principalPlusInterest),
               });
             }
 
@@ -4256,6 +4326,7 @@ function handleConvertibleNote_SeriesRoundCalculation(round, company_id, res) {
                 investment: seriesAInvestment,
                 sharePrice: parseFloat(sharePrice.toFixed(2)),
                 moic: seriesAMOIC,
+                newShares: seriesAShares,
               });
             }
 
@@ -4263,9 +4334,8 @@ function handleConvertibleNote_SeriesRoundCalculation(round, company_id, res) {
             const response = {
               success: true,
               message:
-                "Convertible Note Series A calculation completed successfully",
+                "Convertible Note (with interest) Series A calculation completed successfully",
 
-              // Required fields for frontend
               shareClassType: round.shareClassType,
               roundType: round.nameOfRound,
               instrumentType: round.instrumentType,
@@ -4280,7 +4350,7 @@ function handleConvertibleNote_SeriesRoundCalculation(round, company_id, res) {
                 postMoneyValuation: Math.round(finalPostMoneyValuation),
                 sharePrice: parseFloat(sharePrice.toFixed(4)),
 
-                // Convertible Note
+                // Convertible Note WITH INTEREST
                 seedInvestment: convertibleNoteData.investment_amount,
                 interestRate: (convertibleNoteData.interest_rate * 100).toFixed(
                   1
@@ -4291,9 +4361,9 @@ function handleConvertibleNote_SeriesRoundCalculation(round, company_id, res) {
                   1
                 ),
                 valuationCap: convertibleNoteData.valuation_cap,
-                seedConversionShares,
-                seedConversionValue: Math.round(seedConversionValue),
-                seedMOIC,
+                seedConversionShares: noteConversionShares,
+                seedConversionValue: Math.round(noteConversionValue),
+                seedMOIC: noteMOIC,
 
                 // Series A
                 seriesAInvestment,
@@ -4304,15 +4374,16 @@ function handleConvertibleNote_SeriesRoundCalculation(round, company_id, res) {
                 // Option Pool
                 existingOptionPoolPercent:
                   convertibleNoteData.existing_option_pool,
-                targetOptionPoolPercent: targetOptionPoolPercent,
+                targetOptionPoolPercent,
                 newOptionShares,
 
                 // Totals
                 roundZeroTotalShares,
+                employeeSharesSeedRound,
                 totalSharesPreSeriesA: totalSharesBeforeSeriesA,
                 totalPostShares,
                 newSharesIssued:
-                  seedConversionShares + seriesAShares + newOptionShares,
+                  noteConversionShares + seriesAShares + newOptionShares,
               },
 
               // Cap Tables
@@ -4328,9 +4399,11 @@ function handleConvertibleNote_SeriesRoundCalculation(round, company_id, res) {
                 totalValue: Math.round(finalPostMoneyValuation),
               },
             };
+
             return res.status(200).json({
               success: true,
-              message: "Convertible Note round calculated successfully",
+              message:
+                "Convertible Note (with interest) calculation successful",
               round: round,
               capTable: response,
             });
@@ -6176,6 +6249,9 @@ exports.getPreviousRoundOptionPool = (req, res) => {
         currency: "",
         preMoneyValuation: 0,
         postMoneyValuation: 0,
+        roundZeroTotalShares: 0,
+        employeeSharesSeedRound: 0,
+        totalSharesPreSeed: 0,
       };
 
       // Separate rounds
@@ -6208,6 +6284,17 @@ exports.getPreviousRoundOptionPool = (req, res) => {
 
       if (round0) {
         round0TotalShares = parseInt(round0.issuedshares) || 0;
+        previousRoundData.roundZeroTotalShares = round0TotalShares;
+
+        // DEBUG: Log the founder_data structure
+        console.log(
+          "🔍 Round 0 founder_data structure:",
+          typeof round0.founder_data
+        );
+        console.log(
+          "🔍 Round 0 founder_data raw:",
+          round0.founder_data?.substring(0, 200)
+        );
 
         if (round0.founder_data) {
           try {
@@ -6216,17 +6303,47 @@ exports.getPreviousRoundOptionPool = (req, res) => {
                 ? JSON.parse(round0.founder_data)
                 : round0.founder_data;
 
+            console.log(
+              "🔍 Parsed Founder Data:",
+              JSON.stringify(founderData, null, 2)
+            );
+
+            // Try multiple possible structures
             if (founderData.founders && Array.isArray(founderData.founders)) {
               round0FounderShares = founderData.founders.reduce(
                 (sum, founder) => {
-                  return sum + (parseInt(founder.shares) || 0);
+                  // Try multiple field names for shares
+                  const shares =
+                    parseInt(founder.shares) ||
+                    parseInt(founder.numOfShares) ||
+                    parseInt(founder.issuedShares) ||
+                    parseInt(founder.totalShares) ||
+                    0;
+                  console.log(
+                    `   Founder ${founder.name || "Unnamed"}: ${shares} shares`
+                  );
+                  return sum + shares;
                 },
                 0
               );
+            } else if (founderData.totalShares) {
+              // Alternative: totalShares in root
+              round0FounderShares = parseInt(founderData.totalShares) || 0;
+            } else if (founderData.shares) {
+              // Simple structure
+              round0FounderShares = parseInt(founderData.shares) || 0;
             }
           } catch (e) {
-            console.log("⚠️ Could not parse founder_data:", e);
+            console.log("⚠️ Could not parse founder_data:", e.message);
           }
+        }
+
+        // FALLBACK: If no founder shares found, use all Round 0 shares as founder shares
+        if (round0FounderShares === 0) {
+          round0FounderShares = round0TotalShares;
+          console.log(
+            `⚠️ Using fallback: All ${round0TotalShares} shares as founder shares`
+          );
         }
 
         console.log(`✅ Round 0: ${round0TotalShares} total shares`);
@@ -6249,30 +6366,41 @@ exports.getPreviousRoundOptionPool = (req, res) => {
         const seedPreMoneyPool = parseFloat(seedRound.optionPoolPercent || 0);
         existingOptionPoolPercent = seedPreMoneyPool;
 
-        // ✅ CRITICAL FIX: Calculate total shares AFTER Seed round option pool
-        // Formula: Total Shares = Founder Shares / (1 - Pool%)
+        // 🔥 CRITICAL FIX: Calculate PROPER total shares including option pool
         if (seedPreMoneyPool > 0 && round0FounderShares > 0) {
-          const totalSharesWithPool = Math.round(
+          // Formula: Total Shares After Seed = Founder Shares / (1 - Pool%)
+          // This calculates the total shares INCLUDING the option pool created at Seed
+          const totalSharesAfterSeedPool = Math.round(
             round0FounderShares / (1 - seedPreMoneyPool / 100)
           );
-          const employeeSharesCreated =
-            totalSharesWithPool - round0FounderShares;
 
-          previousRoundData.totalShares = totalSharesWithPool; // 111,111
+          const employeeSharesCreatedInSeed =
+            totalSharesAfterSeedPool - round0FounderShares;
+
+          previousRoundData.totalShares = totalSharesAfterSeedPool; // Should be 111,111
           previousRoundData.founderShares = round0FounderShares; // 100,000
-          previousRoundData.employeeShares = employeeSharesCreated; // 11,111
+          previousRoundData.employeeShares = employeeSharesCreatedInSeed; // 11,111
+          previousRoundData.employeeSharesSeedRound =
+            employeeSharesCreatedInSeed;
+          previousRoundData.totalSharesPreSeed = totalSharesAfterSeedPool;
 
           console.log(
-            `✅ Total Shares (with ${seedPreMoneyPool}% pool): ${totalSharesWithPool}`
+            `🔢 CALCULATION: ${round0FounderShares} ÷ (1 - ${seedPreMoneyPool}%) = ${totalSharesAfterSeedPool}`
+          );
+          console.log(
+            `✅ Total Shares (with ${seedPreMoneyPool}% Seed option pool): ${totalSharesAfterSeedPool}`
           );
           console.log(`✅ Founder Shares: ${round0FounderShares}`);
-          console.log(`✅ Employee Shares Created: ${employeeSharesCreated}`);
+          console.log(
+            `✅ Employee Shares Created in Seed: ${employeeSharesCreatedInSeed}`
+          );
         } else {
-          // If no option pool, use Round 0 values
+          // If no option pool at Seed, just use Round 0 numbers
           previousRoundData.totalShares = round0TotalShares;
           previousRoundData.founderShares = round0FounderShares;
           previousRoundData.employeeShares =
             round0TotalShares - round0FounderShares;
+          previousRoundData.totalSharesPreSeed = round0TotalShares;
         }
 
         // Parse SAFE details if available
@@ -6293,16 +6421,28 @@ exports.getPreviousRoundOptionPool = (req, res) => {
         }
 
         console.log(`✅ Seed Round: ${seedRound.nameOfRound}`);
-        console.log(`✅ Investment: ${previousRoundData.seedInvestment}`);
+        console.log(`✅ Investment: ${previousRoundData}`);
         console.log(`✅ Option Pool: ${existingOptionPoolPercent}%`);
         console.log(`✅ Valuation Cap: ${previousRoundData.valuationCap}`);
         console.log(`✅ Discount Rate: ${previousRoundData.discountRate}%`);
+
+        // If pre-money valuation seems wrong, calculate it properly
+        // if (previousRoundData.preMoneyValuation < 100000) {
+        //   // If less than 100k, it's probably wrong
+        //   // Pre-money = (Founder Shares / Total Shares) * (Something sensible)
+        //   // Or use a sensible default
+        //   previousRoundData.preMoneyValuation = 1200000; // Default for calculation
+        //   console.log(
+        //     `⚠️ Low pre-money detected. Using default: ${previousRoundData.preMoneyValuation}`
+        //   );
+        // }
       } else if (round0) {
         // No Seed round exists, use Round 0 data
         previousRoundData.totalShares = round0TotalShares;
         previousRoundData.founderShares = round0FounderShares;
         previousRoundData.employeeShares =
           round0TotalShares - round0FounderShares;
+        previousRoundData.totalSharesPreSeed = round0TotalShares;
       }
 
       // 3. Get latest Series round data (for next Series round)
@@ -6339,7 +6479,44 @@ exports.getPreviousRoundOptionPool = (req, res) => {
         );
       }
 
-      console.log("📊 Final Previous Round Data:", previousRoundData);
+      // FINAL VALIDATION: If totalShares is still Round 0 value, recalculate
+      if (previousRoundData.totalShares === round0TotalShares && seedRound) {
+        console.log("⚠️ WARNING: totalShares still equals round0TotalShares!");
+        console.log("   Recalculating with seed option pool...");
+
+        if (
+          existingOptionPoolPercent > 0 &&
+          previousRoundData.founderShares > 0
+        ) {
+          const recalculatedTotal = Math.round(
+            previousRoundData.founderShares /
+              (1 - existingOptionPoolPercent / 100)
+          );
+          previousRoundData.totalShares = recalculatedTotal;
+          previousRoundData.employeeShares =
+            recalculatedTotal - previousRoundData.founderShares;
+          previousRoundData.totalSharesPreSeed = recalculatedTotal;
+
+          console.log(`   Recalculated total shares: ${recalculatedTotal}`);
+        }
+      }
+
+      console.log("📊 FINAL Previous Round Data:");
+      console.log("   totalShares:", previousRoundData.totalShares);
+      console.log("   founderShares:", previousRoundData.founderShares);
+      console.log("   employeeShares:", previousRoundData.employeeShares);
+      console.log(
+        "   totalSharesPreSeed:",
+        previousRoundData.totalSharesPreSeed
+      );
+      console.log(
+        "   roundZeroTotalShares:",
+        previousRoundData.roundZeroTotalShares
+      );
+      console.log(
+        "   employeeSharesSeedRound:",
+        previousRoundData.employeeSharesSeedRound
+      );
 
       res.status(200).json({
         success: true,
@@ -6363,10 +6540,15 @@ exports.getPreviousRoundForConvertible = (req, res) => {
     });
   }
 
+  // 🔥 STATIC DEFAULT: 2 years between rounds
+  const years = 2; // Static value as requested
+
   // Get ALL rounds to build the complete cap table
   db.query(
     `SELECT 
       rr.id,
+      rr.optionPoolPercent,
+      rr.optionPoolPercent_post,
       rr.round_type,
       rr.nameOfRound,
       rr.shareClassType,
@@ -6376,22 +6558,31 @@ exports.getPreviousRoundForConvertible = (req, res) => {
       rr.currency,
       rr.pre_money,
       rr.post_money,
-      rr.optionPoolPercent,
-      rr.optionPoolPercent_post,
       rr.instrument_type_data,
       rr.founder_data,
       rr.dateroundclosed,
-      rr.created_at
+      rr.created_at,
+      ROW_NUMBER() OVER (ORDER BY 
+        CASE 
+          WHEN rr.round_type = 'Round 0' THEN 1
+          WHEN rr.shareClassType LIKE '%Seed%' OR rr.nameOfRound LIKE '%Seed%' THEN 2
+          WHEN rr.shareClassType LIKE '%Series%' OR rr.nameOfRound LIKE '%Series%' THEN 3
+          ELSE 4
+        END, 
+        rr.created_at DESC
+      ) as round_order
     FROM roundrecord rr
     WHERE rr.company_id = ?
-      AND rr.id != COALESCE(?, 0)
+      AND rr.round_type IN ('Round 0', 'Investment')
     ORDER BY 
       CASE 
-        WHEN rr.round_type = 'Round 0' THEN 0
-        ELSE 1
+        WHEN rr.round_type = 'Round 0' THEN 1
+        WHEN rr.shareClassType LIKE '%Seed%' OR rr.nameOfRound LIKE '%Seed%' THEN 2
+        WHEN rr.shareClassType LIKE '%Series%' OR rr.nameOfRound LIKE '%Series%' THEN 3
+        ELSE 4
       END,
-      rr.created_at ASC`,
-    [company_id, current_round_id || 0],
+      rr.created_at DESC`,
+    [company_id],
     (err, allResults) => {
       if (err) {
         return res.status(500).json({
@@ -6413,36 +6604,42 @@ exports.getPreviousRoundForConvertible = (req, res) => {
         console.log(
           `${index + 1}. ${round.nameOfRound} (${round.round_type}) - ${
             round.instrumentType
-          }`
+          } - ${round.roundsize || 0}`
         );
       });
 
       // Find Round 0 for founder shares
       const round0 = allResults.find((r) => r.round_type === "Round 0");
-      // Find Seed Convertible Note round
+      // Find Seed Convertible Note round (could be Seed or Pre-Seed)
       const seedConvertibleRound = allResults.find(
         (r) => r.instrumentType === "Convertible Note"
       );
 
-      if (!round0 && !seedConvertibleRound) {
+      if (!round0) {
         return res.status(404).json({
           success: false,
-          message: "No suitable previous round found",
+          message: "Round 0 (Founder round) not found",
         });
       }
 
       // Initialize variables
       let totalShares = 0;
       let founderShares = 0;
-      let employeeShares = 0;
-      let previousRoundSize = 0;
+      let employeeSharesFromSeed = 0;
+      let seedInvestment = 0;
       let valuationCap = 0;
       let discountRate = 0;
       let interestRate = 0;
       let seedOptionPoolPercent = 0;
 
-      // Get founder shares from Round 0
+      // 1. Get founder shares from Round 0
       if (round0) {
+        console.log("🔍 Processing Round 0...");
+
+        // Get total shares issued in Round 0
+        const round0TotalShares = parseInt(round0.issuedshares) || 0;
+
+        // Parse founder data
         if (round0.founder_data) {
           try {
             const founderData =
@@ -6454,24 +6651,31 @@ exports.getPreviousRoundForConvertible = (req, res) => {
               founderShares = founderData.founders.reduce((sum, founder) => {
                 return sum + (parseInt(founder.shares) || 0);
               }, 0);
-
-              console.log(`✅ Founder shares from Round 0: ${founderShares}`);
+            } else if (founderData.totalShares) {
+              founderShares = parseInt(founderData.totalShares) || 0;
             }
           } catch (e) {
             console.log("⚠️ Could not parse Round 0 founder_data:", e);
           }
         }
+
+        // Fallback: if no founder shares parsed, use round0 total shares
+        if (founderShares === 0) {
+          founderShares = round0TotalShares;
+        }
+
+        console.log(`✅ Founder shares from Round 0: ${founderShares}`);
       }
 
-      // Get Seed Convertible Note details
+      // 2. Get Seed Convertible Note details
       if (seedConvertibleRound) {
-        previousRoundSize = parseFloat(seedConvertibleRound.roundsize) || 0;
+        console.log("🔍 Processing Convertible Note Round...");
+
+        seedInvestment = parseFloat(seedConvertibleRound.roundsize) || 0;
         seedOptionPoolPercent =
           parseFloat(seedConvertibleRound.optionPoolPercent) || 0;
 
-        console.log(
-          `✅ Seed Convertible Note Investment: $${previousRoundSize}`
-        );
+        console.log(`✅ Seed Convertible Note Investment: $${seedInvestment}`);
         console.log(`✅ Seed Option Pool: ${seedOptionPoolPercent}%`);
 
         // Parse Convertible Note details
@@ -6482,68 +6686,114 @@ exports.getPreviousRoundForConvertible = (req, res) => {
                 ? JSON.parse(seedConvertibleRound.instrument_type_data)
                 : seedConvertibleRound.instrument_type_data;
 
+            // Look for convertible note specific fields
             valuationCap =
               parseFloat(instrumentData.valuationCap) ||
               parseFloat(instrumentData.valuationCap_note) ||
+              parseFloat(instrumentData.cap) ||
               0;
+
             discountRate =
               parseFloat(instrumentData.discountRate) ||
               parseFloat(instrumentData.discountRate_note) ||
+              parseFloat(instrumentData.discount) ||
               0;
-            interestRate = parseFloat(instrumentData.interestRate_note) || 0;
+
+            interestRate =
+              parseFloat(instrumentData.interestRate_note) ||
+              parseFloat(instrumentData.interestRate) ||
+              parseFloat(instrumentData.interest) ||
+              0;
+
+            console.log(`✅ Convertible Note Terms:`);
+            console.log(`   Valuation Cap: $${valuationCap}`);
+            console.log(`   Discount Rate: ${discountRate}%`);
+            console.log(`   Interest Rate: ${interestRate}%`);
           } catch (e) {
             console.log("⚠️ Could not parse instrument_type_data:", e);
           }
         }
       }
 
-      // ✅ CRITICAL: Calculate total shares as per your requirements
-      // Formula: Total Shares = Founder Shares ÷ (1 - Option Pool %)
+      // 3. CRITICAL: Calculate total shares including Seed option pool
+      // This is the key difference from your example
+      // Total Shares = Founder Shares ÷ (1 - Seed Option Pool %)
       if (seedOptionPoolPercent > 0 && founderShares > 0) {
         totalShares = Math.round(
           founderShares / (1 - seedOptionPoolPercent / 100)
         );
-        employeeShares = totalShares - founderShares;
+        employeeSharesFromSeed = totalShares - founderShares;
 
-        console.log(`📊 Seed Round Calculations:`);
+        console.log(`📊 Seed Round Share Calculations:`);
         console.log(`   Founder Shares: ${founderShares}`);
-        console.log(`   Option Pool: ${seedOptionPoolPercent}%`);
-        console.log(`   Total Shares (with pool): ${totalShares}`);
-        console.log(`   Employee Shares Created: ${employeeShares}`);
-
-        // IMPORTANT: Seed round has 0 issuedshares because it's convertible notes
-        // But we need totalShares = 111,111 for Series A calculations
+        console.log(`   Seed Option Pool: ${seedOptionPoolPercent}%`);
+        console.log(`   Total Shares (including pool): ${totalShares}`);
+        console.log(`   Employee Shares Created: ${employeeSharesFromSeed}`);
       } else {
-        // If no option pool, just use founder shares
+        // If no seed option pool, total shares = founder shares
         totalShares = founderShares;
-        employeeShares = 0;
+        employeeSharesFromSeed = 0;
       }
 
-      console.log("📊 Final Data for Series A:");
-      console.log(`   Total Shares for Series A calculation: ${totalShares}`);
-      console.log(`   Founder Shares: ${founderShares}`);
-      console.log(`   Employee Shares: ${employeeShares}`);
-      console.log(`   Seed Investment: $${previousRoundSize}`);
-      console.log(`   Valuation Cap: $${valuationCap}`);
-      console.log(`   Discount Rate: ${discountRate}%`);
-      console.log(`   Interest Rate: ${interestRate}%`);
+      // 4. Calculate Convertible Note conversion WITH STATIC 2 YEARS
+      let principalPlusInterest = seedInvestment;
+      if (interestRate > 0) {
+        // 🔥 STATIC: Always use 2 years
+        principalPlusInterest =
+          seedInvestment * Math.pow(1 + interestRate / 100, years);
+        console.log(`💰 Convertible Note with Interest (${years} years):`);
+        console.log(`   Original Principal: $${seedInvestment}`);
+        console.log(`   Interest Rate: ${interestRate}%`);
+        console.log(`   Years: ${years} (static)`);
+        console.log(
+          `   Principal + Interest: $${principalPlusInterest.toFixed(2)}`
+        );
+      }
+
+      // Prepare response data
+      const responseData = {
+        // Core data from previous rounds
+        totalShares: totalShares, // Should be 111,111
+        founderShares: founderShares, // Should be 100,000
+        employeeSharesFromSeed: employeeSharesFromSeed, // Should be 11,111
+        seedInvestment: seedInvestment,
+        principalPlusInterest: parseFloat(principalPlusInterest.toFixed(2)),
+        valuationCap: valuationCap,
+        discountRate: discountRate,
+        interestRate: interestRate,
+        seedOptionPoolPercent: seedOptionPoolPercent,
+        yearsBetweenRounds: years, // 🔥 STATIC 2 years
+        instrumentType: seedConvertibleRound?.instrumentType || "",
+        roundName: seedConvertibleRound?.nameOfRound || "",
+
+        // 🔥 Add this important note about static years
+        note: "Using static 2 years between rounds for interest calculation",
+      };
+
+      console.log("📊 Final Data for Series A Calculations:");
+      console.log(
+        `   Total Shares (for Series A): ${responseData.totalShares}`
+      );
+      console.log(`   Founder Shares: ${responseData.founderShares}`);
+      console.log(
+        `   Employee Shares from Seed: ${responseData.employeeSharesFromSeed}`
+      );
+      console.log(`   Seed Investment: $${responseData.seedInvestment}`);
+      console.log(
+        `   Principal + Interest: $${responseData.principalPlusInterest}`
+      );
+      console.log(`   Valuation Cap: $${responseData.valuationCap}`);
+      console.log(`   Discount Rate: ${responseData.discountRate}%`);
+      console.log(`   Interest Rate: ${responseData.interestRate}%`);
+      console.log(
+        `   Years Between Rounds: ${responseData.yearsBetweenRounds} (STATIC)`
+      );
 
       res.status(200).json({
         success: true,
-        previousRoundData: {
-          // For Series A calculations, we need 111,111 shares (NOT 0)
-          totalShares: totalShares || 111111, // Default if calculation fails
-          founderShares: founderShares || 100000,
-          employeeShares: employeeShares || 11111,
-          roundSize: previousRoundSize || 0,
-          valuationCap: valuationCap || 0,
-          discountRate: discountRate || 0,
-          interestRate: interestRate || 0,
-          optionPoolPercent: seedOptionPoolPercent || 0,
-          instrumentType: seedConvertibleRound?.instrumentType || "",
-          roundName: seedConvertibleRound?.nameOfRound || "",
-        },
-        message: "Previous round data fetched successfully",
+        previousRoundData: responseData,
+        message:
+          "Previous round data for Convertible Note conversion fetched successfully",
       });
     }
   );
@@ -6553,36 +6803,29 @@ exports.getPreviousRoundForConvertible = (req, res) => {
 exports.getPreviousRoundForAutoFill = (req, res) => {
   const { company_id, current_round_id } = req.body;
 
-  const query =
-    current_round_id && current_round_id > 0
-      ? `SELECT 
-        rr.id,
-        rr.nameOfRound,
-        rr.round_type,
-        rr.optionPoolPercent,
-        rr.optionPoolPercent_post,
-        rr.founder_data,
-        rr.issuedshares,
-        rr.investorPostMoney,
-        rr.created_at
-      FROM roundrecord rr
-      WHERE rr.company_id = ? AND rr.id < ?
-      
-      ORDER BY rr.created_at ASC`
-      : `SELECT 
-        rr.id,
-        rr.nameOfRound,
-        rr.round_type,
-        rr.optionPoolPercent,
-        rr.optionPoolPercent_post,
-        rr.founder_data,
-        rr.issuedshares,
-        rr.investorPostMoney,
-        rr.created_at
-      FROM roundrecord rr
-      WHERE rr.company_id = ?
-     
-      ORDER BY rr.created_at ASC`;
+  // ✅ Step 1: Get the MOST RECENT previous investment round
+  const query = `
+    SELECT 
+      id,
+      nameOfRound,
+      round_type,
+      instrumentType,
+      shareClassType,
+      optionPoolPercent,
+      optionPoolPercent_post,
+      issuedshares,
+      investorPostMoney,
+      roundsize,
+      pre_money,
+      post_money,
+      created_at
+    FROM roundrecord 
+    WHERE company_id = ? 
+      AND round_type = 'Investment'
+      ${current_round_id && current_round_id > 0 ? "AND id < ?" : ""}
+    ORDER BY created_at DESC 
+    LIMIT 1
+  `;
 
   const params =
     current_round_id && current_round_id > 0
@@ -6609,103 +6852,642 @@ exports.getPreviousRoundForAutoFill = (req, res) => {
       });
     }
 
-    // ✅ Calculate total existing shares CORRECTLY
-    let totalExistingShares = 0;
-    let totalOptionPoolShares = 0;
-    let lastOptionPoolPercent = 0;
-    let lastRoundName = "";
+    const previousRound = results[0];
+    console.log(`📊 Previous Round Found: ${previousRound.nameOfRound}`);
+    console.log(`   Instrument: ${previousRound.instrumentType}`);
+    console.log(`   Share Class: ${previousRound.shareClassType}`);
 
-    results.forEach((round, index) => {
-      if (round.round_type === "Round 0") {
-        // ✅ Round 0: Add ALL founder shares
-        if (round.founder_data) {
-          try {
-            const founderData = JSON.parse(round.founder_data);
-            if (founderData.founders && Array.isArray(founderData.founders)) {
-              founderData.founders.forEach((founder) => {
-                const shares = parseFloat(founder.shares || 0);
-                totalExistingShares += shares;
-                console.log(
-                  `  Founder: ${founder.firstName} - ${shares} shares`
-                );
-              });
-            }
-          } catch (e) {
-            console.error("Error parsing founder data:", e);
-          }
-        }
-      } else if (round.round_type === "Investment") {
-        const prevRoundInvestorShares = parseFloat(round.issuedshares || 0);
-        const prevRoundPreMoneyPool = parseFloat(round.optionPoolPercent || 0);
-        const prevRoundPostMoneyPool = parseFloat(
-          round.optionPoolPercent_post || 0
-        );
+    const instrumentType = previousRound.instrumentType || "";
+    const shareClassType = previousRound.shareClassType || "";
 
-        // ✅ Calculate option pool shares for this round
-        if (prevRoundPreMoneyPool > 0) {
-          // PRE-MONEY OPTION POOL (Seed round)
-          const sharesBeforePool = totalExistingShares;
-          const optionPoolShares = Math.round(
-            (sharesBeforePool * (prevRoundPreMoneyPool / 100)) /
-              (1 - prevRoundPreMoneyPool / 100)
+    const isSeedRound =
+      shareClassType.includes("Seed") ||
+      shareClassType.includes("Pre-Seed") ||
+      shareClassType.includes("Post-Seed");
+
+    const isSeriesRound = shareClassType.includes("Series");
+
+    // ✅ CASE 1: Convertible Note Series Round
+    if (instrumentType === "Convertible Note" && isSeriesRound) {
+      // For Series Convertible Note, get the seed round's option pool
+      return getSeedRoundOptionPoolForSeries(company_id, current_round_id)
+        .then((seedData) => {
+          res.status(200).json({
+            success: true,
+            data: {
+              existingOptionPoolPercent: seedData.optionPoolPercent,
+              existingShares: seedData.existingShares,
+              previousRoundName: seedData.roundName,
+              instrumentType: previousRound.instrumentType,
+              shareClassType: previousRound.shareClassType,
+              note: `Seed round had ${seedData.optionPoolPercent}% option pool`,
+            },
+          });
+        })
+        .catch((err) => {
+          console.error("Error fetching seed round:", err);
+          // Fallback
+          const optionPoolPercent =
+            parseFloat(previousRound.optionPoolPercent) || 0;
+          const existingShares = parseFloat(previousRound.issuedshares) || 0;
+
+          res.status(200).json({
+            success: true,
+            data: {
+              existingOptionPoolPercent: optionPoolPercent,
+              existingShares: existingShares,
+              previousRoundName: previousRound.nameOfRound,
+              instrumentType: previousRound.instrumentType,
+              shareClassType: previousRound.shareClassType,
+            },
+          });
+        });
+    }
+    // ✅ CASE 2: Convertible Note Seed Round
+    else if (instrumentType === "Convertible Note" && isSeedRound) {
+      // Use Convertible Note calculation to get option pool
+      return calculateOptionPoolFromConvertibleNoteRound(
+        previousRound,
+        company_id
+      )
+        .then((result) => {
+          res.status(200).json({
+            success: true,
+            data: {
+              existingOptionPoolPercent: result.optionPoolPercent, // 10%
+              existingShares: result.existingShares, // 111,111
+              previousRoundName: previousRound.nameOfRound,
+              instrumentType: previousRound.instrumentType,
+              shareClassType: previousRound.shareClassType,
+              calculationMethod: result.calculationMethod,
+              note: `Convertible Note round had ${result.optionPoolPercent}% option pool`,
+            },
+          });
+        })
+        .catch((err) => {
+          console.error(
+            "Error calculating option pool for Convertible Note:",
+            err
           );
+          // Fallback
+          const optionPoolPercent =
+            parseFloat(previousRound.optionPoolPercent) || 0;
+          const existingShares = parseFloat(previousRound.issuedshares) || 0;
 
-          totalOptionPoolShares = optionPoolShares;
-          totalExistingShares += optionPoolShares;
-          lastOptionPoolPercent = prevRoundPreMoneyPool;
-        } else if (prevRoundPostMoneyPool > 0) {
-          // POST-MONEY OPTION POOL (Series A/B/C)
-          const investorPostMoney = parseFloat(round.investorPostMoney || 0);
-          if (investorPostMoney > 0 && prevRoundInvestorShares > 0) {
-            const totalAfterPrevRound =
-              prevRoundInvestorShares / (investorPostMoney / 100);
-            const optionPoolShares = Math.round(
-              totalAfterPrevRound * (prevRoundPostMoneyPool / 100)
-            );
+          res.status(200).json({
+            success: true,
+            data: {
+              existingOptionPoolPercent: optionPoolPercent,
+              existingShares: existingShares,
+              previousRoundName: previousRound.nameOfRound,
+              instrumentType: previousRound.instrumentType,
+              shareClassType: previousRound.shareClassType,
+              note: "Using stored value (calculation failed)",
+            },
+          });
+        });
+    }
+    // ✅ CASE 3: "OTHER" Instrument Type (Common Stock, Equity, etc.)
+    else if (instrumentType === "OTHER" || instrumentType === "Common Stock") {
+      // Use calculateInvestmentRoundCapTable logic to get option pool
+      return calculateOptionPoolFromCommonStockFunction(
+        previousRound,
+        company_id
+      )
+        .then((result) => {
+          res.status(200).json({
+            success: true,
+            data: {
+              existingOptionPoolPercent: result.optionPoolPercent, // 8%
+              existingShares: result.existingShares, // 138,889
+              previousRoundName: previousRound.nameOfRound,
+              instrumentType: previousRound.instrumentType,
+              shareClassType: previousRound.shareClassType,
+              calculationMethod: result.calculationMethod,
+              note: `Calculated from ${previousRound.nameOfRound} (${result.optionPoolPercent}% option pool)`,
+            },
+          });
+        })
+        .catch((err) => {
+          console.error("Error calculating option pool for Common Stock:", err);
+          // Fallback to simple calculation
+          const optionPoolPercent =
+            parseFloat(previousRound.optionPoolPercent) || 0;
+          const existingShares = parseFloat(previousRound.issuedshares) || 0;
 
-            totalOptionPoolShares = optionPoolShares;
-            lastOptionPoolPercent = prevRoundPostMoneyPool;
-          }
-        }
+          res.status(200).json({
+            success: true,
+            data: {
+              existingOptionPoolPercent: optionPoolPercent,
+              existingShares: existingShares,
+              previousRoundName: previousRound.nameOfRound,
+              instrumentType: previousRound.instrumentType,
+              shareClassType: previousRound.shareClassType,
+              note: "Using stored value (calculation failed)",
+            },
+          });
+        });
+    }
+    // ✅ CASE 4: SAFE Instrument Type (Seed Round)
+    else if (instrumentType === "Safe" && isSeedRound) {
+      // Use SAFE round calculation to get option pool
 
-        // ✅ Add investor shares from this round
-        if (prevRoundInvestorShares > 0) {
-          totalExistingShares += prevRoundInvestorShares;
-          console.log(`  Added investor shares: ${prevRoundInvestorShares}`);
-        }
+      return calculateOptionPoolFromSAFERound(previousRound, company_id)
+        .then((result) => {
+          res.status(200).json({
+            success: true,
+            data: {
+              existingOptionPoolPercent: result.optionPoolPercent, // 10%
+              existingShares: result.existingShares, // 111,111
+              previousRoundName: previousRound.nameOfRound,
+              instrumentType: previousRound.instrumentType,
+              shareClassType: previousRound.shareClassType,
+              calculationMethod: result.calculationMethod,
+              note: `SAFE round had ${result.optionPoolPercent}% option pool`,
+            },
+          });
+        })
+        .catch((err) => {
+          console.error("Error calculating option pool for SAFE:", err);
+          // Fallback
+          const optionPoolPercent =
+            parseFloat(previousRound.optionPoolPercent) || 0;
+          const existingShares = parseFloat(previousRound.issuedshares) || 0;
 
-        lastRoundName = round.nameOfRound || `Round ${index}`;
+          res.status(200).json({
+            success: true,
+            data: {
+              existingOptionPoolPercent: optionPoolPercent,
+              existingShares: existingShares,
+              previousRoundName: previousRound.nameOfRound,
+              instrumentType: previousRound.instrumentType,
+              shareClassType: previousRound.shareClassType,
+              note: "Using stored value (calculation failed)",
+            },
+          });
+        });
+    }
+    // ✅ CASE 5: SAFE Series Round
+    else if (instrumentType === "Safe" && isSeriesRound) {
+      // For SAFE Series round, get the seed round's option pool
+      return getSeedRoundOptionPoolForSeries(company_id, current_round_id)
+        .then((seedData) => {
+          res.status(200).json({
+            success: true,
+            data: {
+              existingOptionPoolPercent: seedData.optionPoolPercent,
+              existingShares: seedData.existingShares,
+              previousRoundName: seedData.roundName,
+              instrumentType: previousRound.instrumentType,
+              shareClassType: previousRound.shareClassType,
+              note: `Seed round had ${seedData.optionPoolPercent}% option pool`,
+            },
+          });
+        })
+        .catch((err) => {
+          console.error("Error fetching seed round for SAFE Series:", err);
+          // Fallback
+          const optionPoolPercent =
+            parseFloat(previousRound.optionPoolPercent_post) ||
+            parseFloat(previousRound.optionPoolPercent) ||
+            0;
+          const existingShares = parseFloat(previousRound.issuedshares) || 0;
+
+          res.status(200).json({
+            success: true,
+            data: {
+              existingOptionPoolPercent: optionPoolPercent,
+              existingShares: existingShares,
+              previousRoundName: previousRound.nameOfRound,
+              instrumentType: previousRound.instrumentType,
+              shareClassType: previousRound.shareClassType,
+            },
+          });
+        });
+    }
+    // ✅ CASE 6: Preferred Equity
+    else if (instrumentType === "Preferred Equity") {
+      let optionPoolPercent =
+        parseFloat(previousRound.optionPoolPercent_post) ||
+        parseFloat(previousRound.optionPoolPercent) ||
+        0;
+      const existingShares = parseFloat(previousRound.issuedshares) || 0;
+
+      res.status(200).json({
+        success: true,
+        data: {
+          existingOptionPoolPercent: optionPoolPercent,
+          existingShares: Math.round(existingShares),
+          previousRoundName: previousRound.nameOfRound,
+          instrumentType: previousRound.instrumentType,
+          shareClassType: previousRound.shareClassType,
+        },
+      });
+    }
+    // ✅ CASE 7: Default (Other instrument types)
+    else {
+      let optionPoolPercent = 0;
+
+      if (isSeriesRound) {
+        // Series rounds use post-money option pool
+        optionPoolPercent =
+          parseFloat(previousRound.optionPoolPercent_post) ||
+          parseFloat(previousRound.optionPoolPercent) ||
+          0;
+      } else {
+        // Seed rounds use pre-money option pool
+        optionPoolPercent = parseFloat(previousRound.optionPoolPercent) || 0;
       }
-    });
 
-    // ✅ Calculate the ACTUAL option pool % as of now
-    const actualOptionPoolPercent =
-      totalExistingShares > 0
-        ? (totalOptionPoolShares / totalExistingShares) * 100
-        : 0;
+      const existingShares = parseFloat(previousRound.issuedshares) || 0;
 
-    console.log(
-      `Total Existing Shares:     ${totalExistingShares.toLocaleString()}`
-    );
-    console.log(
-      `Total Option Pool Shares:  ${totalOptionPoolShares.toLocaleString()}`
-    );
-    console.log(
-      `Option Pool Percent:       ${actualOptionPoolPercent.toFixed(2)}%`
-    );
-
-    res.status(200).json({
-      success: true,
-      data: {
-        existingOptionPoolPercent:
-          Math.round(actualOptionPoolPercent * 100) / 100,
-        existingShares: Math.round(totalExistingShares), // ✅ Should be 138,889
-        totalOptionPoolShares: Math.round(totalOptionPoolShares),
-        previousRoundName: lastRoundName,
-      },
-    });
+      res.status(200).json({
+        success: true,
+        data: {
+          existingOptionPoolPercent: optionPoolPercent,
+          existingShares: Math.round(existingShares),
+          previousRoundName: previousRound.nameOfRound,
+          instrumentType: previousRound.instrumentType,
+          shareClassType: previousRound.shareClassType,
+        },
+      });
+    }
   });
 };
+function calculateOptionPoolFromSAFERound(previousRound, company_id) {
+  return new Promise((resolve, reject) => {
+    // Get Round 0 data
+    db.query(
+      `SELECT * FROM roundrecord WHERE company_id=? AND round_type='Round 0'`,
+      [company_id],
+      (err, roundZeroData) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+
+        if (roundZeroData.length === 0) {
+          resolve({
+            optionPoolPercent: 0,
+            existingShares: 0,
+            calculationMethod: "No Round 0 found",
+          });
+          return;
+        }
+
+        const roundZero = roundZeroData[0];
+
+        try {
+          // Parse SAFE round data (SAME as handleSAFERoundCalculation)
+          const investmentSize = parseFloat(previousRound.roundsize) || 0;
+          const companyValue = parseFloat(previousRound.pre_money) || 0;
+          const optionPoolPercentInput =
+            parseFloat(previousRound.optionPoolPercent) || 0;
+
+          // Get founder shares from Round 0
+          let roundZeroTotalShares = 0;
+
+          if (roundZero.founder_data) {
+            try {
+              const founderData = JSON.parse(roundZero.founder_data);
+              roundZeroTotalShares =
+                parseFloat(founderData.totalShares) ||
+                parseFloat(roundZero.issuedshares) ||
+                0;
+            } catch (e) {
+              roundZeroTotalShares = parseFloat(roundZero.issuedshares) || 0;
+            }
+          } else {
+            roundZeroTotalShares = parseFloat(roundZero.issuedshares) || 0;
+          }
+
+          // ✅ SAFE ROUND CALCULATION (SAME as handleSAFERoundCalculation)
+          // Calculate Employee shares using SAFE formula
+          const employeeShares = Math.round(
+            (roundZeroTotalShares / (1 - optionPoolPercentInput / 100)) *
+              (optionPoolPercentInput / 100)
+          );
+
+          const totalShares = roundZeroTotalShares + employeeShares;
+
+          // Calculate ACTUAL option pool percentage
+          const actualOptionPoolPercent =
+            totalShares > 0 ? (employeeShares / totalShares) * 100 : 0;
+
+          console.log(`🔢 SAFE Round Calculation Results:`);
+          console.log(
+            `   - Input option pool %: ${optionPoolPercentInput}% (pre-money)`
+          );
+          console.log(`   - Founder shares: ${roundZeroTotalShares}`);
+          console.log(`   - Employee shares: ${employeeShares}`);
+          console.log(`   - Total shares: ${totalShares}`);
+          console.log(
+            `   - Actual option pool %: ${actualOptionPoolPercent.toFixed(
+              2
+            )}% (post-money)`
+          );
+
+          resolve({
+            optionPoolPercent: parseFloat(actualOptionPoolPercent.toFixed(2)), // 10%
+            existingShares: totalShares, // 111,111
+            calculationMethod: "SAFE Round Calculation",
+            details: {
+              founderShares: roundZeroTotalShares,
+              employeeShares: employeeShares,
+              totalShares: totalShares,
+              inputOptionPoolPercent: optionPoolPercentInput,
+            },
+          });
+        } catch (error) {
+          console.error("Error in SAFE calculation:", error);
+          reject(error);
+        }
+      }
+    );
+  });
+}
+// ✅ NEW Helper Function for Convertible Note Seed Round Calculation
+function calculateOptionPoolFromConvertibleNoteRound(
+  previousRound,
+  company_id
+) {
+  return new Promise((resolve, reject) => {
+    // Get Round 0 data
+    db.query(
+      `SELECT * FROM roundrecord WHERE company_id=? AND round_type='Round 0'`,
+      [company_id],
+      (err, roundZeroData) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+
+        if (roundZeroData.length === 0) {
+          resolve({
+            optionPoolPercent: 0,
+            existingShares: 0,
+            calculationMethod: "No Round 0 found",
+          });
+          return;
+        }
+
+        const roundZero = roundZeroData[0];
+
+        try {
+          // Parse Convertible Note round data (SAME as handleConvertibleNoteRoundCalculation)
+          const companyValue = parseFloat(previousRound.pre_money) || 0;
+          const investmentSize = parseFloat(previousRound.roundsize) || 0;
+          const optionPoolPercentInput =
+            parseFloat(previousRound.optionPoolPercent) || 0;
+
+          // Get founder shares from Round 0
+          let roundZeroTotalShares = 0;
+
+          if (roundZero.founder_data) {
+            try {
+              const founderData = JSON.parse(roundZero.founder_data);
+              roundZeroTotalShares =
+                parseFloat(founderData.totalShares) ||
+                parseFloat(roundZero.issuedshares) ||
+                0;
+            } catch (e) {
+              roundZeroTotalShares = parseFloat(roundZero.issuedshares) || 0;
+            }
+          } else {
+            roundZeroTotalShares = parseFloat(roundZero.issuedshares) || 0;
+          }
+
+          // ✅ CONVERTIBLE NOTE ROUND CALCULATION (SAME as handleConvertibleNoteRoundCalculation)
+          // Calculate Employee shares using Convertible Note formula
+          const employeeShares = Math.round(
+            (roundZeroTotalShares * (optionPoolPercentInput / 100)) /
+              (1 - optionPoolPercentInput / 100)
+          );
+
+          const totalShares = roundZeroTotalShares + employeeShares;
+
+          // Calculate ACTUAL option pool percentage
+          const actualOptionPoolPercent =
+            totalShares > 0 ? (employeeShares / totalShares) * 100 : 0;
+
+          console.log(`🔢 Convertible Note Round Calculation Results:`);
+          console.log(
+            `   - Input option pool %: ${optionPoolPercentInput}% (pre-money)`
+          );
+          console.log(`   - Founder shares: ${roundZeroTotalShares}`);
+          console.log(`   - Employee shares: ${employeeShares}`);
+          console.log(`   - Total shares: ${totalShares}`);
+          console.log(
+            `   - Actual option pool %: ${actualOptionPoolPercent.toFixed(
+              2
+            )}% (post-money)`
+          );
+
+          resolve({
+            optionPoolPercent: parseFloat(actualOptionPoolPercent.toFixed(2)), // 10%
+            existingShares: totalShares, // 111,111
+            calculationMethod: "Convertible Note Round Calculation",
+            details: {
+              founderShares: roundZeroTotalShares,
+              employeeShares: employeeShares,
+              totalShares: totalShares,
+              inputOptionPoolPercent: optionPoolPercentInput,
+            },
+          });
+        } catch (error) {
+          console.error("Error in Convertible Note calculation:", error);
+          reject(error);
+        }
+      }
+    );
+  });
+}
+// ✅ Helper Function for Common Stock/OTHER instrument type
+function calculateOptionPoolFromCommonStockFunction(previousRound, company_id) {
+  return new Promise((resolve, reject) => {
+    // First, get Round 0 data
+    db.query(
+      `SELECT * FROM roundrecord WHERE company_id=? AND round_type='Round 0'`,
+      [company_id],
+      (err, roundZeroData) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+
+        if (roundZeroData.length === 0) {
+          resolve({
+            optionPoolPercent: 0,
+            existingShares: 0,
+            calculationMethod: "No Round 0 found",
+          });
+          return;
+        }
+
+        const roundZero = roundZeroData[0];
+
+        // Get investors for this round
+        db.query(
+          `SELECT ir.*, COALESCE(ii.first_name,'') AS first_name, COALESCE(ii.last_name,'') AS last_name
+           FROM investorrequest_company ir
+           LEFT JOIN investor_information ii ON ir.investor_id = ii.id
+           WHERE ir.roundrecord_id=? AND ir.company_id=? AND ir.request_confirm='Yes'`,
+          [previousRound.id, company_id],
+          (err, investors) => {
+            if (err) {
+              console.error("Error fetching investors:", err);
+              investors = [];
+            }
+
+            try {
+              // Extract parameters (SAME as calculateInvestmentRoundCapTable)
+              const investmentSize = parseFloat(previousRound.roundsize) || 0;
+              const preMoneyValuation =
+                parseFloat(previousRound.pre_money) || 0;
+              const optionPoolPercentInput =
+                parseFloat(previousRound.optionPoolPercent) || 0;
+
+              // Get founder shares from Round 0
+              let roundZeroTotalShares = 0;
+              let roundZeroFounders = [];
+
+              if (roundZero.founder_data) {
+                try {
+                  const founderData = JSON.parse(roundZero.founder_data);
+                  roundZeroTotalShares =
+                    parseFloat(founderData.totalShares) ||
+                    parseFloat(roundZero.issuedshares) ||
+                    0;
+
+                  if (
+                    founderData.founders &&
+                    Array.isArray(founderData.founders)
+                  ) {
+                    roundZeroFounders = founderData.founders;
+                  }
+                } catch (e) {
+                  roundZeroTotalShares =
+                    parseFloat(roundZero.issuedshares) || 0;
+                }
+              } else {
+                roundZeroTotalShares = parseFloat(roundZero.issuedshares) || 0;
+              }
+
+              // ✅ CALCULATION (SAME as calculateInvestmentRoundCapTable)
+              // 1. Calculate option pool shares
+              const optionPoolShares =
+                optionPoolPercentInput > 0
+                  ? Math.round(
+                      (roundZeroTotalShares * (optionPoolPercentInput / 100)) /
+                        (1 - optionPoolPercentInput / 100)
+                    )
+                  : 0;
+
+              const totalSharesPreSeed =
+                roundZeroTotalShares + optionPoolShares;
+
+              // 2. Calculate post-money shares
+              const postMoneyValuation = investmentSize + preMoneyValuation;
+              const investorOwnershipPercent =
+                (investmentSize / postMoneyValuation) * 100;
+              const totalSharesPostInvestment = Math.round(
+                totalSharesPreSeed / (1 - investorOwnershipPercent / 100)
+              );
+
+              // 3. Calculate ACTUAL option pool percentage (post-money basis)
+              const actualOptionPoolPercent =
+                totalSharesPostInvestment > 0
+                  ? (optionPoolShares / totalSharesPostInvestment) * 100
+                  : 0;
+
+              console.log(`🔢 Common Stock Calculation Results:`);
+              console.log(
+                `   - Input option pool %: ${optionPoolPercentInput}% (pre-money)`
+              );
+              console.log(`   - Founder shares: ${roundZeroTotalShares}`);
+              console.log(`   - Option pool shares: ${optionPoolShares}`);
+              console.log(`   - Total shares: ${totalSharesPostInvestment}`);
+              console.log(
+                `   - Actual option pool %: ${actualOptionPoolPercent.toFixed(
+                  2
+                )}% (post-money)`
+              );
+
+              resolve({
+                optionPoolPercent: parseFloat(
+                  actualOptionPoolPercent.toFixed(2)
+                ),
+                existingShares: totalSharesPostInvestment,
+                calculationMethod: "calculateInvestmentRoundCapTable logic",
+                details: {
+                  founderShares: roundZeroTotalShares,
+                  optionPoolShares: optionPoolShares,
+                  totalShares: totalSharesPostInvestment,
+                  inputOptionPoolPercent: optionPoolPercentInput,
+                },
+              });
+            } catch (error) {
+              console.error("Error in Common Stock calculation:", error);
+              reject(error);
+            }
+          }
+        );
+      }
+    );
+  });
+}
+
+// ✅ Helper function to get seed round option pool for Series rounds
+function getSeedRoundOptionPoolForSeries(company_id, current_round_id) {
+  return new Promise((resolve, reject) => {
+    let whereCondition = `WHERE rr.company_id = ? AND rr.round_type = 'Investment'`;
+    const params = [company_id];
+
+    if (current_round_id !== 0) {
+      whereCondition += ` AND rr.id < ?`;
+      params.push(current_round_id);
+    }
+
+    const query = `
+      SELECT 
+        rr.id,
+        rr.nameOfRound,
+        rr.optionPoolPercent,
+        rr.optionPoolPercent_post,
+        rr.issuedshares,
+        rr.instrumentType
+      FROM roundrecord rr
+      ${whereCondition}
+      ORDER BY rr.id DESC 
+      LIMIT 1
+    `;
+    console.log(query);
+    db.query(query, params, (err, results) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      console.log(results);
+      if (results.length === 0) {
+        resolve({ optionPoolPercent: 0, existingShares: 0, roundName: null });
+      } else {
+        const seedRound = results[0];
+        const optionPoolPercent =
+          parseFloat(seedRound.optionPoolPercent_post) || 0;
+        const existingShares = parseFloat(seedRound.issuedshares) || 0;
+
+        resolve({
+          optionPoolPercent,
+          existingShares,
+          roundName: seedRound.nameOfRound,
+          instrumentType: seedRound.instrumentType,
+        });
+      }
+    });
+  });
+}
+
+// Then in your getPreviousRoundForAutoFill:
 
 exports.getIndustryExpertise = (req, res) => {
   db.query(
