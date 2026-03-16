@@ -74,7 +74,7 @@ function generateStrongPassword(length = 12) {
   for (let i = passwordArray.length; i < length; i++) {
     const randomByte = crypto.randomBytes(1).readUInt8();
     passwordArray.push(
-      allChars[Math.floor((randomByte / 256) * allChars.length)]
+      allChars[Math.floor((randomByte / 256) * allChars.length)],
     );
   }
 
@@ -348,10 +348,10 @@ exports.userRegister = async (req, res) => {
                         if (err) {
                           console.error("Company update error:", err);
                         }
-                      }
+                      },
                     );
                   }
-                }
+                },
               );
             }
 
@@ -366,7 +366,7 @@ exports.userRegister = async (req, res) => {
             });
           });
         }
-      }
+      },
     );
   } catch (err) {
     res.status(500).json({
@@ -506,7 +506,7 @@ exports.userLogin = async (req, res) => {
         const token = jwt.sign(
           { id: user.id, email: user.email },
           JWT_SECRET,
-          { expiresIn: "1h" } // ⏰ 1 hour token expiry
+          { expiresIn: "1h" }, // ⏰ 1 hour token expiry
         );
 
         // ✅ Send token & user info
@@ -518,7 +518,7 @@ exports.userLogin = async (req, res) => {
           name: user.name,
           access_token: token,
         });
-      }
+      },
     );
   } catch (err) {
     return res.status(500).json({
@@ -543,7 +543,7 @@ exports.getModules = (req, res) => {
         message: "",
         results: results,
       });
-    }
+    },
   );
 };
 const generateUniqueCode = () => {
@@ -583,7 +583,7 @@ exports.registerforZoom = async (req, res) => {
 
   // Convert slot start times into formatted datetime strings
   const formattedSlots = selectedSlots.map((slot) =>
-    format(new Date(slot.start), "yyyy-MM-dd HH:mm:ss")
+    format(new Date(slot.start), "yyyy-MM-dd HH:mm:ss"),
   );
 
   // ❌ Check for conflicting slots (exact time match)
@@ -606,10 +606,10 @@ exports.registerforZoom = async (req, res) => {
 
     if (conflictResults.length > 0) {
       const conflictingTimes = conflictResults.map((row) =>
-        format(new Date(row.meeting_date), "yyyy-MM-dd hh:mm a")
+        format(new Date(row.meeting_date), "yyyy-MM-dd hh:mm a"),
       );
       const conflictingTimess = conflictResults.map((row) =>
-        format(new Date(row.meeting_date), "yyyy-MM-dd")
+        format(new Date(row.meeting_date), "yyyy-MM-dd"),
       );
 
       return res.status(200).json({
@@ -643,12 +643,12 @@ exports.registerforZoom = async (req, res) => {
             const zoomMeeting = await createZoomMeeting(
               slot,
               data.selectedZone,
-              data.module_id
+              data.module_id,
             );
 
             const meetingDateTime = format(
               new Date(slot.start),
-              "yyyy-MM-dd HH:mm:ss"
+              "yyyy-MM-dd HH:mm:ss",
             );
 
             const token = jwt.sign(
@@ -658,13 +658,13 @@ exports.registerforZoom = async (req, res) => {
                 meetingId: zoomMeeting.id,
               },
               process.env.JWT_SECRET,
-              { expiresIn: "1h" }
+              { expiresIn: "1h" },
             );
 
             const uniqueCode = generateUniqueCode();
             const tokenExpiry = format(
               new Date(slot.start),
-              "yyyy-MM-dd 23:00:00"
+              "yyyy-MM-dd 23:00:00",
             );
 
             const insertMeetingQuery = `
@@ -712,7 +712,7 @@ exports.registerforZoom = async (req, res) => {
           status: "1",
           meetings: meetingRecords,
         });
-      }
+      },
     );
   });
 };
@@ -733,14 +733,14 @@ async function getZoomAccessToken() {
         headers: {
           Authorization: `Basic ${token}`,
         },
-      }
+      },
     );
 
     return response.data.access_token;
   } catch (err) {
     console.error(
       "Error fetching Zoom access token:",
-      err.response?.data || err.message
+      err.response?.data || err.message,
     );
     throw err;
   }
@@ -792,7 +792,7 @@ async function createZoomMeeting(slot, timezone, moduleid) {
           Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     // Optional: Store meeting info in in-memory DB
@@ -809,7 +809,7 @@ async function createZoomMeeting(slot, timezone, moduleid) {
   } catch (error) {
     console.error(
       "❌ Error creating Zoom meeting:",
-      error.response?.data || error.message
+      error.response?.data || error.message,
     );
     throw error;
   }
@@ -850,7 +850,7 @@ exports.selectModule = (req, res) => {
 
               // Ensure date is in correct format (YYYY-MM-DD)
               const dateFormatted = moment(meeting.meeting_date).format(
-                "YYYY-MM-DD"
+                "YYYY-MM-DD",
               );
               const fullDateTimeStr = `${dateFormatted} ${meeting.time}:00`;
 
@@ -866,7 +866,7 @@ exports.selectModule = (req, res) => {
                 meetingTimeInOriginal = moment.tz(
                   fullDateTimeStr,
                   "YYYY-MM-DD HH:mm:ss",
-                  meeting.timezone
+                  meeting.timezone,
                 );
               } catch (e) {
                 console.error("Timezone error:", e, meeting.timezone);
@@ -900,9 +900,9 @@ exports.selectModule = (req, res) => {
             results: moduleResults, // only one module
             zoomMeetings: finalMeetings, // all related meetings
           });
-        }
+        },
       );
-    }
+    },
   );
 };
 
@@ -990,7 +990,7 @@ exports.joinZoomMeeting = (req, res) => {
         //     `);
         //   }
         // );
-      }
+      },
     );
   });
 };
@@ -1022,14 +1022,14 @@ exports.videolimitsave = (req, res) => {
         db.query(
           userInsertQuery,
           [user_id, video_id, date],
-          async (err, result) => {}
+          async (err, result) => {},
         );
         res.status(200).json({
           message: "",
           status: 1,
         });
       }
-    }
+    },
   );
 };
 
@@ -1140,7 +1140,7 @@ exports.getcategories = (req, res) => {
         // Handle subcategory
         if (row.subcategory_id) {
           let subcat = category.subcategories.find(
-            (sc) => sc.id === row.subcategory_id
+            (sc) => sc.id === row.subcategory_id,
           );
 
           if (!subcat) {
@@ -1398,7 +1398,7 @@ exports.resendLink = async (req, res) => {
               message: "Please check your email to activate your account.",
               status: 1,
             });
-          }
+          },
         );
       }
     } else {
@@ -1532,7 +1532,7 @@ function sendEmailResendActivateLink(to, fullName, activationCode) {
 
   // Your frontend URL where users click to activate
   const activationUrl = `http://localhost:5000/activate-account?code=${activationCode}&email=${encodeURIComponent(
-    to
+    to,
   )}`;
 
   const htmlBody = `
@@ -1588,7 +1588,7 @@ function sendEmailActivateAccount(to, fullName, activationCode) {
 
   // Your frontend URL where users click to activate
   const activationUrl = `http://localhost:5000/activate-account?code=${activationCode}&email=${encodeURIComponent(
-    to
+    to,
   )}`;
 
   const htmlBody = `
@@ -1694,7 +1694,7 @@ exports.checkCompanyEmail = (req, res) => {
                 status: "1", // ✅ Allowed to register
               });
             }
-          }
+          },
         );
       } else {
         // No referral code — allow registration
@@ -1815,7 +1815,7 @@ exports.getzipcode = async (req, res) => {
     "728165937090-15b9f7n63pc8dfc8p7t59in8f0rk279h.apps.googleusercontent.com";
 
   const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
-    address
+    address,
   )}&key=${apiKey}`;
 
   try {
@@ -1885,7 +1885,7 @@ exports.resetPassword = async (req, res) => {
                 status: 1,
                 message: "Password reset successfully, Please check your email",
               });
-            }
+            },
           );
         } else {
           return res.status(200).json({
@@ -2013,7 +2013,7 @@ exports.register_zoom = (req, res) => {
 
     // ✅ Check for duplicate registrations
     const duplicateIds = selectedMeetings.filter((id) =>
-      registeredIds.includes(id)
+      registeredIds.includes(id),
     );
 
     if (duplicateIds.length > 0) {
@@ -2040,7 +2040,7 @@ exports.register_zoom = (req, res) => {
 
       const validIds = result.map((r) => r.id);
       const invalidIds = selectedMeetings.filter(
-        (id) => !validIds.includes(id)
+        (id) => !validIds.includes(id),
       );
 
       if (invalidIds.length > 0) {
@@ -2066,7 +2066,7 @@ exports.register_zoom = (req, res) => {
             (err3) => {
               if (err3) return reject(err3);
               resolve(meetingId);
-            }
+            },
           );
         });
       });
@@ -2101,7 +2101,7 @@ exports.register_zoom = (req, res) => {
 
                 // Ensure date is in correct format (YYYY-MM-DD)
                 const dateFormatted = moment(meeting.meeting_date).format(
-                  "YYYY-MM-DD"
+                  "YYYY-MM-DD",
                 );
                 const fullDateTimeStr = `${dateFormatted} ${meeting.time}:00`;
 
@@ -2109,7 +2109,7 @@ exports.register_zoom = (req, res) => {
                   !moment(
                     fullDateTimeStr,
                     "YYYY-MM-DD HH:mm:ss",
-                    true
+                    true,
                   ).isValid()
                 ) {
                   console.warn("Invalid date format:", fullDateTimeStr);
@@ -2121,7 +2121,7 @@ exports.register_zoom = (req, res) => {
                   meetingTimeInOriginal = moment.tz(
                     fullDateTimeStr,
                     "YYYY-MM-DD HH:mm:ss",
-                    meeting.timezone
+                    meeting.timezone,
                   );
                 } catch (e) {
                   console.error("Timezone error:", e, meeting.timezone);
@@ -2131,7 +2131,7 @@ exports.register_zoom = (req, res) => {
                 if (!meetingTimeInOriginal.isValid()) {
                   console.warn(
                     "Failed to parse meeting time:",
-                    fullDateTimeStr
+                    fullDateTimeStr,
                   );
                   return null;
                 }
@@ -2324,7 +2324,7 @@ exports.get_combined_zoom_meetings = (req, res) => {
 
           // Ensure date is in correct format (YYYY-MM-DD)
           const dateFormatted = moment(meeting.meeting_date).format(
-            "YYYY-MM-DD"
+            "YYYY-MM-DD",
           );
           const fullDateTimeStr = `${dateFormatted} ${meeting.time}:00`;
 
@@ -2338,7 +2338,7 @@ exports.get_combined_zoom_meetings = (req, res) => {
             meetingTimeInOriginal = moment.tz(
               fullDateTimeStr,
               "YYYY-MM-DD HH:mm:ss",
-              meeting.timezone
+              meeting.timezone,
             );
           } catch (e) {
             console.error("Timezone error:", e, meeting.timezone);
@@ -2407,7 +2407,7 @@ exports.sendAlluserReminderZoomLink = async (req, res) => {
     };
 
     for (const [templateType, { hours, dbField }] of Object.entries(
-      reminderTypes
+      reminderTypes,
     )) {
       const template = templateResults.find((t) => t.type === templateType);
       if (!template) continue;
@@ -2436,7 +2436,7 @@ exports.sendAlluserReminderZoomLink = async (req, res) => {
             user_name: meeting.name || "User",
             meeting_topic: meeting.topic || "Zoom Meeting",
             event_time: meetingTimeInLocal.format(
-              "dddd, MMMM Do YYYY [at] hh:mm A"
+              "dddd, MMMM Do YYYY [at] hh:mm A",
             ),
             zoom_link: zoomLink,
           };
@@ -2451,7 +2451,7 @@ exports.sendAlluserReminderZoomLink = async (req, res) => {
             .promise()
             .query(
               `UPDATE zoommeeting_register SET ${dbField} = 1 WHERE id = ?`,
-              [meeting.id]
+              [meeting.id],
             );
         }
       }
@@ -2528,7 +2528,7 @@ exports.getcompanydetail = async (req, res) => {
         message: "",
         results: row,
       });
-    }
+    },
   );
 };
 
@@ -2565,7 +2565,7 @@ exports.companydataUpdate = async (req, res) => {
           company_linkedin,
         },
       });
-    }
+    },
   );
 };
 
@@ -2620,13 +2620,13 @@ exports.getusersSubscriptionPlan = async (req, res) => {
                     success: true,
                     results: result,
                   });
-                }
+                },
               );
-            }
+            },
           );
-        }
+        },
       );
-    }
+    },
   );
 };
 
@@ -2688,7 +2688,7 @@ WHERE zm.id = ?;
                 <iframe src="${zoom_link}" allow="camera; microphone; fullscreen" sandbox="allow-same-origin allow-scripts allow-popups" onload="window.parent.postMessage('zoom-loaded', '*')"></iframe>
 
             `);
-    }
+    },
   );
 };
 
@@ -2799,7 +2799,7 @@ exports.checkreferralCode = async (req, res) => {
         message: "",
         results: row,
       });
-    }
+    },
   );
 };
 
@@ -2851,7 +2851,7 @@ exports.checkReferralUser = async (req, res) => {
             const existingEmails = companyRows.map((row) => row.email);
             return res.status(200).json({
               message: `These emails are already registered: ${existingEmails.join(
-                ", "
+                ", ",
               )}`,
               status: "2",
             });
@@ -2872,7 +2872,7 @@ exports.checkReferralUser = async (req, res) => {
                 const alreadySharedEmails = sharedRows.map((row) => row.email);
                 return res.status(200).json({
                   message: `Discount code already shared with: ${alreadySharedEmails.join(
-                    ", "
+                    ", ",
                   )}`,
                   status: "2",
                 });
@@ -2921,7 +2921,7 @@ exports.checkReferralUser = async (req, res) => {
                           .promise()
                           .query(
                             `SELECT type FROM discount_code WHERE code = ? LIMIT 1`,
-                            [discount_code]
+                            [discount_code],
                           );
 
                         let allowedModules = [];
@@ -2948,8 +2948,8 @@ exports.checkReferralUser = async (req, res) => {
                               sharedBy,
                               context: "company_to_register",
                               allowedModules,
-                            })
-                          )
+                            }),
+                          ),
                         );
 
                         return res.status(200).json({
@@ -2964,15 +2964,15 @@ exports.checkReferralUser = async (req, res) => {
                           error,
                         });
                       }
-                    }
+                    },
                   );
-                }
+                },
               );
-            }
+            },
           );
-        }
+        },
       );
-    }
+    },
   );
 };
 
@@ -3097,7 +3097,7 @@ exports.getallsharedCodeByCompany = (req, res) => {
         message: "",
         results: results,
       });
-    }
+    },
   );
 };
 exports.getallCodetrack = (req, res) => {
@@ -3235,7 +3235,7 @@ exports.getallCodetrackSingleDetail = (req, res) => {
           shared: shared,
           usage: usageWithEmail[0],
         });
-      }
+      },
     );
   });
 };
@@ -3278,7 +3278,7 @@ exports.get_SessionMeeting = (req, res) => {
           meetingTimeInOriginal = moment.tz(
             fullDateTimeStr,
             "YYYY-MM-DD HH:mm:ss",
-            meeting.timezone
+            meeting.timezone,
           );
         } catch (e) {
           console.error("Timezone error:", e, meeting.timezone);
@@ -3387,7 +3387,7 @@ exports.companyaddWithSignatory = (req, res) => {
                 }
 
                 const usedColors = colorResults.map(
-                  (c) => c.company_color_code
+                  (c) => c.company_color_code,
                 );
 
                 // Generate a unique random color
@@ -3398,7 +3398,12 @@ exports.companyaddWithSignatory = (req, res) => {
                   attempts++;
                   if (attempts > 50) break; // fallback in case all colors clash
                 } while (usedColors.includes(assignedColor));
-
+                const yearRegistration = rest.year_registration
+                  ? new Date(rest.year_registration)
+                      .toISOString()
+                      .slice(0, 19)
+                      .replace("T", " ")
+                  : null;
                 // Insert company with dynamic color
                 var date = new Date();
                 const companyInsertQuery = `
@@ -3420,7 +3425,7 @@ exports.companyaddWithSignatory = (req, res) => {
                     rest.phone || null,
                     rest.company_website || null,
                     rest.employee_number || null,
-                    rest.year_registration || null,
+                    yearRegistration || null,
                     rest.formally_legally || null,
                     rest.company_street_address || null,
                     rest.company_country || null,
@@ -3485,7 +3490,7 @@ exports.companyaddWithSignatory = (req, res) => {
                               s.signatory_email,
                               `${s.first_name} ${s.last_name}`,
                               inviteLink,
-                              company_name
+                              company_name,
                             );
 
                             if (insertedCount === signatories.length) {
@@ -3497,7 +3502,7 @@ exports.companyaddWithSignatory = (req, res) => {
                                 company_color_code: assignedColor,
                               });
                             }
-                          }
+                          },
                         );
                       });
                     } else {
@@ -3508,14 +3513,14 @@ exports.companyaddWithSignatory = (req, res) => {
                         company_color_code: assignedColor,
                       });
                     }
-                  }
+                  },
                 );
-              }
+              },
             );
           }
-        }
+        },
       );
-    }
+    },
   );
 };
 
@@ -3676,7 +3681,7 @@ exports.checkSubscriptionPlan = (req, res) => {
           meetingTimeInOriginal = moment.tz(
             fullDateTimeStr,
             "YYYY-MM-DD HH:mm:ss",
-            meeting.timezone
+            meeting.timezone,
           );
         } catch (e) {
           console.error("Timezone error:", e, meeting.timezone);
@@ -3729,7 +3734,7 @@ const storage = multer.diskStorage({
       "upload",
       "docs",
       `doc_${company_id}`,
-      "company_profile"
+      "company_profile",
     );
     fs.mkdirSync(uploadPath, { recursive: true });
     cb(null, uploadPath);
@@ -3747,25 +3752,59 @@ exports.companyProfileUpdate = (req, res) => {
   upload(req, res, function (err) {
     if (err) {
       console.error("File upload error:", err);
-      return res.status(500).json({ error: "File upload failed" });
+      return res.status(500).json({
+        success: false,
+        error: "File upload failed",
+        details: err.message,
+      });
     }
 
+    console.log("Request body:", req.body);
     const company_id = req.body.company_id;
-    // Build file path if uploaded
+
+    if (!company_id) {
+      console.error("❌ Company ID missing");
+      return res.status(400).json({
+        success: false,
+        error: "Company ID is required",
+      });
+    }
+
     const filePath = req.file
       ? path.join(
           "upload",
           "docs",
           `doc_${company_id}`,
           "company_profile",
-          req.file.filename
+          req.file.filename,
         )
       : null;
-    console.log(req.body);
+    const formatMySQLDate = (dateStr) => {
+      if (!dateStr) return null;
 
-    // ✅ Update company table explicitly
+      // Agar YYYY-MM-DD format mein hai
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+        return dateStr;
+      }
+
+      // ISO string se date part nikaalo
+      try {
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return null;
+
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+
+        return `${year}-${month}-${day}`;
+      } catch {
+        return null;
+      }
+    };
+    // ✅ Update company table
     const companyUpdateQuery = `
       UPDATE company SET
+        year_registration = ?,
         company_email = ?,
         company_name = ?,
         state_code = ?,
@@ -3780,13 +3819,14 @@ exports.companyProfileUpdate = (req, res) => {
         company_state = ?,
         company_country = ?,
         company_postal_code = ?,
-        descriptionStep4=?,
-        problemStep4=?,
-        solutionStep4=?
+        descriptionStep4 = ?,
+        problemStep4 = ?,
+        solutionStep4 = ?
       WHERE id = ?
     `;
 
     const companyValues = [
+      formatMySQLDate(req.body.year_registration),
       req.body.company_email || null,
       req.body.company_name || null,
       req.body.state_code || null,
@@ -3807,166 +3847,135 @@ exports.companyProfileUpdate = (req, res) => {
       company_id,
     ];
 
-    db.query(companyUpdateQuery, companyValues, (err) => {
-      if (err) console.error("Company update error:", err);
+    db.query(companyUpdateQuery, companyValues, (err, companyResult) => {
+      if (err) {
+        console.error("❌ Company update error:", err);
+        return res.status(500).json({
+          success: false,
+          error: "Company update failed",
+          details: err.message,
+        });
+      }
+
+      console.log("✅ Company update result:", companyResult);
+
+      // ✅ Handle legal info
       db.query(
-        "SELECT id FROM audit_logs WHERE user_id = ? AND company_id = ?",
-        [req.body.user_id, company_id],
-        (selectErr, rows) => {
-          if (selectErr) {
-            console.error("Audit log select error:", selectErr);
-            return;
+        "SELECT * FROM company_legal_information WHERE company_id = ?",
+        [company_id],
+        (err, rows) => {
+          if (err) {
+            console.error("❌ Select error:", err);
+            return res.status(500).json({
+              success: false,
+              error: "DB select failed",
+              details: err.message,
+            });
           }
+
+          const filename = req.file
+            ? req.file.filename
+            : rows[0]?.articles || null;
 
           if (rows.length > 0) {
-            // Record exists → update
-            const logUpdateQuery = `
-        UPDATE audit_logs
-        SET module = ?, action = ?, entity_id = ?, entity_type = ?, details = ?, ip_address = ?
-        WHERE id = ?
-      `;
-            const logUpdateValues = [
-              "company-profile",
-              "UPDATE",
+            // Update existing legal info
+            const legalUpdateQuery = `
+              UPDATE company_legal_information SET
+                user_id = ?,
+                articles = ?,
+                entity_name = ?,
+                business_number = ?,
+                jurisdiction_country = ?,
+                entity_type = ?,
+                date_of_incorporation = ?,
+                entity_structure = ?,
+                office_address = ?,
+                mailing_address = ?
+              WHERE company_id = ?
+            `;
+
+            const legalValues = [
+              req.body.user_id,
+              filename,
+              req.body.entity_name || null,
+              req.body.business_number || null,
+              req.body.jurisdiction_country || null,
+              req.body.entity_type || null,
+              req.body.date_of_incorporation || null,
+              req.body.entity_structure || null,
+              req.body.office_address || null,
+              req.body.mailing_address || null,
               company_id,
-              "company",
-              JSON.stringify(req.body),
-              req.body.ip_address,
-              rows[0].id, // update the existing row
             ];
 
-            db.query(logUpdateQuery, logUpdateValues, (updateErr) => {
-              if (updateErr)
-                console.error("Audit log update error:", updateErr);
-              else console.log("Audit log updated successfully");
+            db.query(legalUpdateQuery, legalValues, (err2, legalResult) => {
+              if (err2) {
+                console.error("❌ Legal update error:", err2);
+                return res.status(500).json({
+                  success: false,
+                  error: "Legal info update failed",
+                  details: err2.message,
+                });
+              }
+
+              console.log("✅ Legal update result:", legalResult);
+              return res.status(200).json({
+                success: true,
+                message: "Profile updated successfully",
+                file: req.file ? req.file.filename : null,
+                path: filePath,
+                companyResult,
+                legalResult,
+              });
             });
           } else {
-            // Record does not exist → insert new
-            const logInsertQuery = `
-        INSERT INTO audit_logs 
-        (user_id, company_id, module, action, entity_id, entity_type, details, ip_address) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `;
-            const logInsertValues = [
+            // Insert new legal info
+            const legalInsertQuery = `
+              INSERT INTO company_legal_information
+                (user_id, company_id, articles, entity_name, business_number, 
+                 jurisdiction_country, entity_type, date_of_incorporation, 
+                 entity_structure, office_address, mailing_address, created_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+            `;
+
+            const legalValues = [
               req.body.user_id,
               company_id,
-              "company-profile",
-              "UPDATE",
-              company_id,
-              "company",
-              JSON.stringify(req.body),
-              req.body.ip_address,
+              filename,
+              req.body.entity_name || null,
+              req.body.business_number || null,
+              req.body.jurisdiction_country || null,
+              req.body.entity_type || null,
+              req.body.date_of_incorporation || null,
+              req.body.entity_structure || null,
+              req.body.office_address || null,
+              req.body.mailing_address || null,
             ];
 
-            db.query(logInsertQuery, logInsertValues, (insertErr) => {
-              if (insertErr)
-                console.error("Audit log insert error:", insertErr);
-              else console.log("Audit log inserted successfully");
+            db.query(legalInsertQuery, legalValues, (err3, legalResult) => {
+              if (err3) {
+                console.error("❌ Legal insert error:", err3);
+                return res.status(500).json({
+                  success: false,
+                  error: "Legal info insert failed",
+                  details: err3.message,
+                });
+              }
+
+              console.log("✅ Legal insert result:", legalResult);
+              return res.status(200).json({
+                success: true,
+                message: "Profile created successfully",
+                file: req.file ? req.file.filename : null,
+                path: filePath,
+                companyResult,
+                legalResult,
+              });
             });
           }
-        }
+        },
       );
     });
-
-    // ✅ Check if legal info exists
-    db.query(
-      "SELECT * FROM company_legal_information WHERE company_id = ?",
-      [company_id],
-      (err, rows) => {
-        if (err) {
-          console.error("Select error:", err);
-          return res
-            .status(500)
-            .json({ error: "DB select failed", details: err });
-        }
-        const filename = req.file
-          ? req.file.filename
-          : rows[0]?.articles || null;
-        if (rows.length > 0) {
-          // ✅ Update legal info explicitly
-          const legalUpdateQuery = `
-            UPDATE company_legal_information SET
-              user_id = ?,
-              company_id = ?,
-              articles = ?,
-              entity_name = ?,
-              business_number = ?,
-              jurisdiction_country = ?,
-              entity_type = ?,
-              date_of_incorporation = ?,
-              entity_structure = ?,
-              office_address = ?,
-              mailing_address = ?,
-              created_at = NOW()
-            WHERE company_id = ?
-          `;
-          const legalValues = [
-            req.body.user_id,
-            company_id,
-            filename,
-            req.body.entity_name || null,
-            req.body.business_number || null,
-            req.body.jurisdiction_country || null,
-            req.body.entity_type || null,
-            req.body.date_of_incorporation || null,
-            req.body.entity_structure || null,
-            req.body.office_address || null,
-            req.body.mailing_address || null,
-            company_id,
-          ];
-
-          db.query(legalUpdateQuery, legalValues, (err2) => {
-            if (err2) {
-              console.error("Legal update error:", err2);
-              return res
-                .status(500)
-                .json({ error: "Legal info update failed", details: err2 });
-            }
-            return res.status(200).json({
-              message: "Profile updated successfully",
-              file: req.file ? req.file.filename : null,
-              path: filePath,
-            });
-          });
-        } else {
-          // ✅ Insert legal info explicitly
-          const legalInsertQuery = `
-            INSERT INTO company_legal_information
-  (user_id, company_id, articles, entity_name, business_number, jurisdiction_country, entity_type, date_of_incorporation, entity_structure, office_address, mailing_address, created_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-
-          `;
-          const legalValues = [
-            req.body.user_id,
-            req.body.company_id,
-            filename,
-            req.body.entity_name || null,
-            req.body.business_number || null,
-            req.body.jurisdiction_country || null,
-            req.body.entity_type || null,
-            req.body.date_of_incorporation || null,
-            req.body.entity_structure || null,
-            req.body.office_address || null,
-            req.body.mailing_address || null,
-            new Date(),
-          ];
-
-          db.query(legalInsertQuery, legalValues, (err3) => {
-            if (err3) {
-              console.error("Legal insert error:", err3);
-              return res
-                .status(500)
-                .json({ error: "Legal info insert failed", details: err3 });
-            }
-            return res.status(200).json({
-              message: "Profile created successfully",
-              file: req.file ? req.file.filename : null,
-              path: filePath,
-            });
-          });
-        }
-      }
-    );
   });
 };
 
@@ -4020,7 +4029,7 @@ const storageSignature = multer.diskStorage({
       "upload",
       "docs",
       `doc_${company_id}`,
-      "signatory"
+      "signatory",
     );
     fs.mkdirSync(uploadPath, { recursive: true });
     cb(null, uploadPath);
@@ -4099,7 +4108,7 @@ exports.authorizedSignature = (req, res) => {
               status: "success",
               message: "Signature updated successfully",
             });
-          }
+          },
         );
       } else {
         // Insert
@@ -4224,7 +4233,7 @@ exports.authorizedSignature = (req, res) => {
                             userData.first_name + " " + userData.last_name;
                           notifyCompanyOwner(company_id, userFullName);
                         }
-                      }
+                      },
                     );
 
                     // 3️⃣ Return response
@@ -4232,11 +4241,11 @@ exports.authorizedSignature = (req, res) => {
                       status: "success",
                       message: "Signature saved successfully",
                     });
-                  }
+                  },
                 );
-              }
+              },
             );
-          }
+          },
         );
       }
     });
@@ -4691,7 +4700,7 @@ exports.getcountrySymbolLocal = (req, res) => {
         message: "",
         results: row,
       });
-    }
+    },
   );
 };
 // Controller: registerController.contactform
@@ -4890,3 +4899,356 @@ function sendContactFormEmail(data) {
     else console.log("Contact form email sent:", info.response);
   });
 }
+// ✅ CORRECTED: Handles duplicate device_id without losing data
+exports.trackVisitor = (req, res) => {
+  try {
+    const {
+      country = null,
+      state = null,
+      ip_address = null,
+      device_id = null,
+      device_type = null,
+      is_mobile = 0,
+      user_agent = null,
+      page_url = null,
+      referrer = null,
+    } = req.body;
+
+    // Validate required fields
+    if (!device_id || !page_url) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields: device_id and page_url are required",
+      });
+    }
+
+    console.log("📊 Tracking attempt for device:", {
+      device_id_short: device_id ? `${device_id.substring(0, 10)}...` : null,
+      page_url,
+    });
+
+    // ✅ FIXED STEP 1: Check if device_id already exists - FIXED SQL QUERY
+    const checkSql = `
+      SELECT 
+        id, 
+        COUNT(*) OVER() as total_visits 
+      FROM visitors 
+      WHERE device_id = ?
+      LIMIT 1
+    `;
+
+    // OR Alternative query (simpler):
+    const checkSql2 = `
+      SELECT 
+        id,
+        (SELECT COUNT(*) FROM visitors WHERE device_id = ?) as total_visits
+      FROM visitors 
+      WHERE device_id = ?
+      LIMIT 1
+    `;
+
+    // OR Even simpler (two separate queries):
+    db.query(
+      "SELECT id FROM visitors WHERE device_id = ? LIMIT 1",
+      [device_id],
+      (err, results) => {
+        if (err) {
+          console.error("❌ Database check error:", err);
+          return res.status(500).json({
+            success: false,
+            message: "Failed to check visitor data",
+            error: err.message,
+          });
+        }
+
+        const deviceExists = results && results.length > 0;
+        const existingId = deviceExists ? results[0].id : null;
+
+        if (deviceExists) {
+          // ✅ Get total visits count for this device
+          db.query(
+            "SELECT COUNT(*) as total_visits FROM visitors WHERE device_id = ?",
+            [device_id],
+            (countErr, countResults) => {
+              if (countErr) {
+                console.error("❌ Count error:", countErr);
+                return res.status(500).json({
+                  success: false,
+                  message: "Failed to count visitor data",
+                  error: countErr.message,
+                });
+              }
+
+              const totalVisits = countResults[0]?.total_visits || 0;
+
+              console.log("❌ Device already exists, rejecting duplicate:", {
+                device_id_short: device_id
+                  ? `${device_id.substring(0, 10)}...`
+                  : null,
+                existing_id: existingId,
+                total_visits: totalVisits,
+              });
+
+              return res.status(409).json({
+                success: false,
+                message:
+                  "This device has already been tracked. No duplicate records allowed.",
+                existingVisitorId: existingId,
+                isDuplicate: true,
+                totalVisits: totalVisits,
+                timestamp: new Date().toISOString(),
+              });
+            },
+          );
+        } else {
+          // ✅ STEP 3: If NEW device (doesn't exist), insert it
+          const insertSql = `
+          INSERT INTO visitors 
+          (country, state, ip_address, device_id, device_type, is_mobile, 
+           user_agent, page_url, referrer, date, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+        `;
+
+          const values = [
+            country,
+            state,
+            ip_address,
+            device_id,
+            device_type,
+            is_mobile ? 1 : 0,
+            user_agent,
+            page_url,
+            referrer,
+          ];
+
+          db.query(insertSql, values, (err, result) => {
+            if (err) {
+              console.error("❌ Insert error:", err);
+              return res.status(500).json({
+                success: false,
+                message: "Failed to record visitor data",
+                error: err.message,
+              });
+            }
+
+            // ✅ Success - ONLY NEW device saved
+            console.log("✅ NEW device recorded (first visit):", {
+              visitorId: result.insertId,
+              device_id_short: device_id
+                ? `${device_id.substring(0, 10)}...`
+                : null,
+            });
+
+            return res.status(201).json({
+              success: true,
+              message: "New visitor recorded successfully",
+              visitorId: result.insertId,
+              isDuplicate: false,
+              isReturningVisitor: false,
+              totalVisits: 1,
+              timestamp: new Date().toISOString(),
+            });
+          });
+        }
+      },
+    );
+  } catch (error) {
+    console.error("❌ Visitor tracking error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to record visitor data",
+      error: error.message,
+    });
+  }
+};
+// controllers/visitorController.js
+
+// ✅ 1. Get all visitors (GET)
+exports.visitors = (req, res) => {
+  try {
+    const { page = 1, limit = 100 } = req.body;
+    const offset = (page - 1) * limit;
+
+    // Count total visitors first
+    const countSql = `SELECT COUNT(*) as total FROM visitors`;
+
+    db.query(countSql, (err, countResult) => {
+      if (err) {
+        return res.status(500).json({
+          success: false,
+          error: err.message,
+        });
+      }
+
+      const total = countResult[0].total || 0;
+
+      // Get paginated data
+      const sql = `
+        SELECT 
+          id, 
+          country, 
+          state, 
+          ip_address, 
+          device_id, 
+          device_type, 
+          is_mobile,
+          user_agent,
+          page_url,
+          referrer,
+          DATE_FORMAT(date, '%Y-%m-%d %H:%i:%s') as date,
+          DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') as created_at
+        FROM visitors 
+        ORDER BY date DESC 
+        LIMIT ? OFFSET ?
+      `;
+
+      db.query(sql, [parseInt(limit), offset], (err, results) => {
+        if (err) {
+          return res.status(500).json({
+            success: false,
+            error: err.message,
+          });
+        }
+
+        res.json({
+          success: true,
+          visitors: results || [],
+          total: total,
+          page: parseInt(page),
+          limit: parseInt(limit),
+          totalPages: Math.ceil(total / limit),
+        });
+      });
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+};
+exports.visitorstats = (req, res) => {
+  try {
+    const sql = `
+      SELECT 
+        COUNT(*) as totalVisitors,
+        COUNT(DISTINCT device_id) as uniqueDevices,
+        SUM(is_mobile = 1) as mobileVisitors,
+        SUM(DATE(date) = CURDATE()) as todayVisitors,
+        SUM(DATE(date) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)) as yesterdayVisitors,
+        COUNT(DISTINCT country) as countriesCount
+      FROM visitors
+    `;
+
+    db.query(sql, (err, results) => {
+      if (err) {
+        return res.status(500).json({
+          success: false,
+          error: err.message,
+        });
+      }
+
+      const stats = results[0] || {
+        totalVisitors: 0,
+        uniqueDevices: 0,
+        mobileVisitors: 0,
+        todayVisitors: 0,
+        yesterdayVisitors: 0,
+        countriesCount: 0,
+      };
+
+      res.json({
+        success: true,
+        ...stats, // Flatten the stats object
+      });
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+};
+// ✅ 3. Get visitor by ID (GET)
+exports.getVisitorById = (req, res) => {
+  try {
+    const { id } = req.body;
+
+    const sql = `
+      SELECT 
+        id, 
+        country, 
+        state, 
+        ip_address, 
+        device_id, 
+        device_type, 
+        is_mobile,
+        user_agent,
+        page_url,
+        referrer,
+        DATE_FORMAT(date, '%Y-%m-%d %H:%i:%s') as date,
+        DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') as created_at
+      FROM visitors 
+      WHERE id = ?
+    `;
+
+    db.query(sql, [id], (err, results) => {
+      if (err) {
+        return res.status(500).json({
+          success: false,
+          error: err.message,
+        });
+      }
+
+      if (results.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "Visitor not found",
+        });
+      }
+
+      res.json({
+        success: true,
+        visitor: results[0],
+      });
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+};
+exports.deleteVisitor = (req, res) => {
+  try {
+    const { deleteId } = req.body;
+
+    const sql = "DELETE FROM visitors WHERE id = ?";
+
+    db.query(sql, [deleteId], (err, result) => {
+      if (err) {
+        return res.status(500).json({
+          success: false,
+          error: err.message,
+        });
+      }
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "Visitor not found",
+        });
+      }
+
+      res.json({
+        success: true,
+        message: "Visitor deleted successfully",
+      });
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+};

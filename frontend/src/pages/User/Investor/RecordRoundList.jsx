@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import DataTable from "react-data-table-component";
-import TopBar from "../../../components/Users/TopBar";
+import SideBar from "../../../components/social/SideBar";
+import TopBar from '../../../components/social/TopBar';
 import ModuleSideNav from "../../../components/Users/ModuleSideNav.jsx";
 import "bootstrap/dist/css/bootstrap.min.css";
 import {
@@ -41,6 +42,8 @@ export default function RecordRoundList() {
   var apiURLInvestor = API_BASE_URL + "api/user/investor/";
   const apiURLSignature = API_BASE_URL + "api/user/";
   const [LockId, setLockId] = useState("");
+  const [Isfundinground, setIsfundinground] = useState(false);
+  const [fundingroundMessage, setfundingroundMessage] = useState("");
   document.title = "Investment Rounds Overview";
 
   const customStyles = {
@@ -147,8 +150,13 @@ export default function RecordRoundList() {
       sortable: true,
     },
     {
-      name: "Share Class",
+      name: "Funding Round",
       selector: (row) => row.shareClassType,
+      sortable: true,
+    },
+    {
+      name: "Instrument Type",
+      selector: (row) => row.instrumentType,
       sortable: true,
     },
     {
@@ -164,24 +172,7 @@ export default function RecordRoundList() {
       },
       sortable: true,
     },
-    {
-      name: "Numbers of Shares",
-      selector: (row) => {
-        const formattedAmount = Number(row.issuedshares).toLocaleString(
-          "en-IN",
-          {
-            minimumFractionDigits: 3,
-            maximumFractionDigits: 3,
-          }
-        );
-        // Add (New) for Investment type
-        if (row.round_type === "Investment") {
-          return `${formattedAmount} (New)`;
-        }
-        return `${formattedAmount}`;
-      },
-      sortable: true,
-    },
+
     {
       name: "Status of Round",
       selector: (row) => row.dateroundclosed,
@@ -245,17 +236,14 @@ export default function RecordRoundList() {
 
         // If approved (or Owner), show the normal action buttons
         const isActive = row.roundStatus === "ACTIVE";
+        const latestRoundId = records.length > 0
+          ? Math.max(...records.map(r => r.id))
+          : null;
 
+        const isLatestRound = row.id === latestRoundId;
         return (
           <div className="d-flex gap-2">
-            {/* Show Edit only if round is ACTIVE */}
-            {/* <button
-              className="icon_btn green_clr"
-              onClick={() => handleViewsection(row)}
-              title="Lock The Document For Sharing"
-            >
-              <FaEye /> View
-            </button> */}
+
             <Link
               to={`/record-round-cap-table/${row.id}`}
               title="View Cap Table"
@@ -263,15 +251,26 @@ export default function RecordRoundList() {
             >
               <FaProjectDiagram /> Cap Table
             </Link>
-            {row.is_shared === "No" && (
+
+            {row.is_shared === "No" && isLatestRound ? (
               <Link
                 to={`/edit-record-round/${row.id}`}
-                title="View Record Round"
+                title="Edit Record Round"
                 className="icon_btn green_clr"
               >
                 <FaEdit /> Edit
               </Link>
-            )}
+            ) : row.is_shared === "No" && !isLatestRound ? (
+              <button
+                className="icon_btn gray_clr"
+                title="Only latest round can be edited"
+                disabled
+                style={{ opacity: 0.5, cursor: 'not-allowed' }}
+              >
+                <FaEdit /> Edit
+              </button>
+
+            ) : null}
 
             {row.is_locked === "Yes" || row.is_shared === "Yes" ? (
               <button className="icon_btn red_clr" title="Locked" disabled>
@@ -286,6 +285,15 @@ export default function RecordRoundList() {
                 <FaUnlock /> Unlock
               </button>
             )}
+            {/* <button type="button"
+              onClick={() => handledeleteround(row.id)}
+              className="icon_btn gray_clr"
+              title="Only latest round can be edited"
+
+
+            >
+              Delete
+            </button> */}
           </div>
         );
       },
@@ -300,6 +308,49 @@ export default function RecordRoundList() {
   const handleViewsection = (rowdata) => {
     setrecordViewData(rowdata);
     setViewRecordRounds(true);
+  };
+  const handledeleteround = async (idd) => {
+    // Show confirmation dialog
+    const isConfirmed = window.confirm("Are you sure you want to delete this round? This action cannot be undone.");
+
+    if (!isConfirmed) {
+      return; // User cancelled the deletion
+    }
+
+    const formData = {
+      company_id: userLogin.companies[0].id,
+      id: idd,
+    };
+
+    console.log(formData);
+
+    try {
+      const generateRes = await axios.post(
+        apiURLInvestor + "deleteround",
+        formData,
+        {
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      // Check if deletion was successful
+      if (generateRes.data.success) {
+        // Show success message
+        alert("Round deleted successfully!");
+
+        // Optional: Refresh the page or redirect
+        window.location.reload(); // or navigate to rounds list
+      } else {
+        alert(generateRes.data.message || "Failed to delete round");
+      }
+
+    } catch (err) {
+      console.error("Error deleting round", err);
+      alert("An error occurred while deleting the round. Please try again.");
+    }
   };
   const handlelockreport = async (Id) => {
     setLockId(Id);
@@ -458,6 +509,7 @@ export default function RecordRoundList() {
     const [message, setMessage] = useState("");
     const [err, seterr] = useState(false);
     const [ClientIP, setClientIP] = useState("");
+
     setTimeout(() => {
       setMessage("");
     }, 5000);
@@ -792,93 +844,123 @@ export default function RecordRoundList() {
     );
   };
   //Payment
+  const handlefundingRound = async () => {
+    if (records.length > 0) {
+      setfundingroundMessage(
+        "Only the most recent funding round can be edited. Once a new round is created, previous rounds become read-only."
+      );
+      setIsfundinground(true);
+    } else {
+      await handleCheckPayemt(); // submit form once
+    }
+
+  }
+  const handlefundingRoundConfirm = async () => {
+    setfundingroundMessage(
+      ""
+    );
+    setIsfundinground(false);
+    await handleCheckPayemt(); // submit form once
+  }
   const handleCheckPayemt = async () => {
     // Owner bypasses all checks
 
-    if (userLogin.role === "owner") {
-      try {
-        const res = await axios.post(
-          apiURLAiFile + "checkSubscriptionInvestorReport",
-          {
-            company_id: userLogin.companies[0].id,
-          }
-        );
+    navigate("/createrecord");
+    // if (userLogin.role === "owner") {
+    //   try {
+    //     const res = await axios.post(
+    //       apiURLAiFile + "checkSubscriptionInvestorReport",
+    //       {
+    //         company_id: userLogin.companies[0].id,
+    //       }
+    //     );
 
-        const { subscriptionActive, updateAlreadySubmitted, lastUpdateDate } =
-          res.data;
+    //     const { subscriptionActive, updateAlreadySubmitted, lastUpdateDate } =
+    //       res.data;
 
-        if (!subscriptionActive) {
-          setShowPopup(true); // Subscription expired
-        } else if (updateAlreadySubmitted) {
-          const nextAllowedDate = getNextQuarterDate(new Date(lastUpdateDate));
-          const formattedNextDate = formatCurrentDate(
-            nextAllowedDate,
-            "MMMM do, yyyy"
-          ); // e.g., October 1st, 2025
+    //     if (!subscriptionActive) {
+    //       setShowPopup(true); // Subscription expired
+    //     } else if (updateAlreadySubmitted) {
+    //       const nextAllowedDate = getNextQuarterDate(new Date(lastUpdateDate));
+    //       const formattedNextDate = formatCurrentDate(
+    //         nextAllowedDate,
+    //         "MMMM do, yyyy"
+    //       );
 
-          navigate("/createrecord");
-        } else {
-          navigate("/createrecord");
-        }
-      } catch (err) {
-        console.error(err);
-        seterrr(true);
-        setmessagesuccessError("Something went wrong.");
-      }
-    } else {
-      if (authorizedData !== null) {
-        if (authorizedData.approve === "No") {
-          seterrr(true);
-          setmessagesuccessError("Please verify your signature");
-          setTimeout(() => {
-            seterrr(false);
-            navigate("/authorized-signature");
-          }, 1500);
-        } else {
-          try {
-            const res = await axios.post(
-              apiURLAiFile + "checkSubscriptionInvestorReport",
-              {
-                company_id: userLogin.companies[0].id,
-              }
-            );
+    //       navigate("/createrecord");
+    //     } else {
+    //       navigate("/createrecord");
+    //     }
+    //     if (updateAlreadySubmitted) {
+    //       const nextAllowedDate = getNextQuarterDate(new Date(lastUpdateDate));
+    //       const formattedNextDate = formatCurrentDate(
+    //         nextAllowedDate,
+    //         "MMMM do, yyyy"
+    //       );
 
-            const {
-              subscriptionActive,
-              updateAlreadySubmitted,
-              lastUpdateDate,
-            } = res.data;
+    //       navigate("/createrecord");
+    //     } else {
+    //       navigate("/createrecord");
+    //     }
+    //   } catch (err) {
+    //     console.error(err);
+    //     seterrr(true);
+    //     setmessagesuccessError("Something went wrong.");
+    //   }
+    // } else {
+    //   if (authorizedData !== null) {
+    //     if (authorizedData.approve === "No") {
+    //       seterrr(true);
+    //       setmessagesuccessError("Please verify your signature");
+    //       setTimeout(() => {
+    //         seterrr(false);
+    //         navigate("/authorized-signature");
+    //       }, 1500);
+    //     } else {
+    //       try {
+    //         const res = await axios.post(
+    //           apiURLAiFile + "checkSubscriptionInvestorReport",
+    //           {
+    //             company_id: userLogin.companies[0].id,
+    //           }
+    //         );
 
-            if (!subscriptionActive) {
-              setShowPopup(true); // Subscription expired
-            } else if (updateAlreadySubmitted) {
-              const nextAllowedDate = getNextQuarterDate(
-                new Date(lastUpdateDate)
-              );
-              const formattedNextDate = formatCurrentDate(
-                nextAllowedDate,
-                "MMMM do, yyyy"
-              ); // e.g., October 1st, 2025
+    //         const {
+    //           subscriptionActive,
+    //           updateAlreadySubmitted,
+    //           lastUpdateDate,
+    //         } = res.data;
 
-              navigate("/createrecord");
-            } else {
-              navigate("/createrecord");
-            }
-          } catch (err) {
-            console.error(err);
-            seterrr(true);
-            setmessagesuccessError("Something went wrong.");
-          }
-        }
-      } else {
-        seterrr(true);
-        setmessagesuccessError("Please verify your signature");
-        setTimeout(() => {
-          seterrr(false);
-          navigate("/authorized-signature");
-        }, 1500);
-      }
-    }
+    //         if (!subscriptionActive) {
+    //           setShowPopup(true); // Subscription expired
+    //         } else if (updateAlreadySubmitted) {
+    //           const nextAllowedDate = getNextQuarterDate(
+    //             new Date(lastUpdateDate)
+    //           );
+    //           const formattedNextDate = formatCurrentDate(
+    //             nextAllowedDate,
+    //             "MMMM do, yyyy"
+    //           ); // e.g., October 1st, 2025
+
+    //           navigate("/createrecord");
+    //         } else {
+    //           navigate("/createrecord");
+    //         }
+    //       } catch (err) {
+    //         console.error(err);
+    //         seterrr(true);
+    //         setmessagesuccessError("Something went wrong.");
+    //       }
+    //     }
+    //   } else {
+    //     seterrr(true);
+    //     setmessagesuccessError("Please verify your signature");
+    //     setTimeout(() => {
+    //       seterrr(false);
+    //       navigate("/authorized-signature");
+    //     }, 1500);
+    //   }
+    // }
   };
   function getNextQuarterDate(date) {
     const month = date.getMonth(); // 0-indexed (0 = Jan)
@@ -903,125 +985,137 @@ export default function RecordRoundList() {
   return (
     <>
       <>
-        <Wrapper>
-          <div className="fullpage d-block">
-            <div className="d-flex align-items-start gap-0">
-              <ModuleSideNav
-                isCollapsed={isCollapsed}
-                setIsCollapsed={setIsCollapsed}
-              />
-              <div
-                className={`global_view ${isCollapsed ? "global_view_col" : ""
-                  }`}
-              >
-                <TopBar />
-                <SectionWrapper className="d-block p-md-4 p-3">
-                  <div className="container-fluid">
-                    {messagesuccessError && (
-                      <div
-                        className={`flex items-center justify-between gap-3 shadow-lg ${errr ? "error_pop" : "success_pop"
-                          }`}
-                      >
-                        <div className="d-flex align-items-center gap-2">
-                          <span className="d-block">{messagesuccessError}</span>
-                        </div>
-
-                        <button
-                          type="button"
-                          className="close_btnCros"
-                          onClick={() => setmessagesuccessError("")}
-                        >
-                          ×
-                        </button>
-                      </div>
-                    )}
-                    {dangerMessage && (
-                      <DangerAlertPopup
-                        message={dangerMessage}
-                        onConfirm={handleConfirm}
-                        onCancel={() => {
-                          setdangerMessage("");
-                        }}
-                      />
-                    )}
-                    <DataRoomSection className="d-flex flex-column gap-2">
-                      <div className="titleroom d-flex justify-content-between align-items-center border-bottom pb-3">
-                        {/* Heading on the left */}
-                        <div className="pb-3 bar_design">
-                          <h4 className="h5 mb-0">
-                            Investment Rounds Overview
-                          </h4>
-                        </div>
-                        {/* Buttons on the right */}
-                        <div className="d-flex gap-2">
-                          <Link
-                            to="javascript:void(0)"
-                            onClick={handleCheckPayemt}
-                            className="generatebutton px-4 py-2 fn_size_sm btn btn-outline-dark active d-flex align-items-center gap-2"
-                            style={{
-                              opacity:
-                                userLogin.role === "owner" ||
-                                  authorizedData?.approve === "Yes"
-                                  ? 1
-                                  : 0.6,
-                              pointerEvents:
-                                userLogin.role === "owner" ||
-                                  authorizedData?.approve === "Yes"
-                                  ? "auto"
-                                  : "none", // disables click if not approved and not owner
-                            }}
-                          >
-                            <span
-                              style={{
-                                opacity:
-                                  userLogin.role === "owner" ||
-                                    authorizedData?.approve === "Yes"
-                                    ? 1
-                                    : 0.6,
-                              }}
+        <main>
+          <div className='d-flex align-items-start gap-0'>
+            <SideBar />
+            <div className='d-flex flex-grow-1 flex-column gap-0'>
+              <TopBar />
+              <section className='px-md-3 py-4'>
+                <div className='container-fluid'>
+                  <div className='row gy-4'>
+                    <div className='col-md-12 order-1 order-md-0'>
+                      <SectionWrapper className="d-block p-md-4 p-3">
+                        <div className="container-fluid">
+                          {messagesuccessError && (
+                            <div
+                              className={`flex items-center justify-between gap-3 shadow-lg ${errr ? "error_pop" : "success_pop"
+                                }`}
                             >
-                              Start New Funding Round
-                            </span>
-                          </Link>
-                        </div>
-                      </div>
+                              <div className="d-flex align-items-center gap-2">
+                                <span className="d-block">{messagesuccessError}</span>
+                              </div>
 
-                      <div className="d-flex justify-content-end my-2 p-0">
-                        <input
-                          type="search"
-                          placeholder="Search Here..."
-                          className="form-control"
-                          value={searchText}
-                          onChange={(e) => setSearchText(e.target.value)}
-                          style={{
-                            padding: "10px 15px",
-                            width: "100%",
-                            maxWidth: "300px",
-                            fontSize: "14px",
-                            borderRadius: "10px",
-                          }}
-                        />
-                      </div>
-                      <div className="d-flex flex-column justify-content-between align-items-start tb-box">
-                        <DataTable
-                          customStyles={customStyles}
-                          conditionalRowStyles={conditionalRowStyles}
-                          columns={columns}
-                          className="datatb-report"
-                          data={filteredData}
-                          pagination
-                          highlightOnHover
-                          striped
-                          responsive
-                        />
-                      </div>
-                    </DataRoomSection>
+                              <button
+                                type="button"
+                                className="close_btnCros"
+                                onClick={() => setmessagesuccessError("")}
+                              >
+                                ×
+                              </button>
+                            </div>
+                          )}
+                          {fundingroundMessage && (
+                            <DangerAlertPopup
+                              message={fundingroundMessage}
+                              onConfirm={handlefundingRoundConfirm}
+                              onCancel={() => {
+                                setfundingroundMessage("");
+                              }}
+                            />
+                          )}
+                          {dangerMessage && (
+                            <DangerAlertPopup
+                              message={dangerMessage}
+                              onConfirm={handleConfirm}
+                              onCancel={() => {
+                                setdangerMessage("");
+                              }}
+                            />
+                          )}
+                          <DataRoomSection className="d-flex flex-column gap-2">
+                            <div className="titleroom d-flex justify-content-between align-items-center border-bottom pb-3">
+                              {/* Heading on the left */}
+                              <div className="pb-3 bar_design">
+                                <h4 className="h5 mb-0">
+                                  Investment Rounds Overview
+                                </h4>
+                              </div>
+                              {/* Buttons on the right */}
+                              <div className="d-flex gap-2">
+                                <Link
+                                  to="javascript:void(0)"
+                                  onClick={handlefundingRound}
+                                  className="generatebutton px-4 py-2 fn_size_sm btn btn-outline-dark active d-flex align-items-center gap-2"
+                                  style={{
+                                    opacity:
+                                      userLogin.role === "owner" ||
+                                        authorizedData?.approve === "Yes"
+                                        ? 1
+                                        : 0.6,
+                                    pointerEvents:
+                                      userLogin.role === "owner" ||
+                                        authorizedData?.approve === "Yes"
+                                        ? "auto"
+                                        : "none", // disables click if not approved and not owner
+                                  }}
+                                >
+                                  <span
+                                    style={{
+                                      opacity:
+                                        userLogin.role === "owner" ||
+                                          authorizedData?.approve === "Yes"
+                                          ? 1
+                                          : 0.6,
+                                    }}
+                                  >
+                                    Start New Funding Round
+                                  </span>
+                                </Link>
+                              </div>
+                            </div>
+
+                            <div className="d-flex justify-content-end my-2 p-0">
+                              <input
+                                type="search"
+                                placeholder="Search Here..."
+                                className="form-control"
+                                value={searchText}
+                                onChange={(e) => setSearchText(e.target.value)}
+                                style={{
+                                  padding: "10px 15px",
+                                  width: "100%",
+                                  maxWidth: "300px",
+                                  fontSize: "14px",
+                                  borderRadius: "10px",
+                                }}
+                              />
+                            </div>
+                            <div className="d-flex flex-column justify-content-between align-items-start tb-box">
+                              <DataTable
+                                customStyles={customStyles}
+                                conditionalRowStyles={conditionalRowStyles}
+                                columns={columns}
+                                className="datatb-report"
+                                data={filteredData}
+                                pagination
+                                highlightOnHover
+                                striped
+                                responsive
+                              />
+                            </div>
+                          </DataRoomSection>
+                        </div>
+                      </SectionWrapper>
+                    </div>
+
                   </div>
-                </SectionWrapper>
-              </div>
+                </div>
+              </section>
             </div>
           </div>
-        </Wrapper>
+        </main>
+
+
       </>
       {/* {showPopup && (
         <div className="payment_modal-overlay" onClick={handleClosepayPopup}>
@@ -1183,14 +1277,14 @@ export default function RecordRoundList() {
           </div>
         </div>
       )} */}
-      {showPopup && (
+      {/* {showPopup && (
         <AirwallexPaymentPopupOneTimeDataroom
           show={showPopup}
           onClose={() => setShowPopup(false)}
           payment={getDataroompay.onetime_Fee}
           referstatus={true}
         />
-      )}
+      )} */}
       {ViewRecordRounds && (
         <ViewRecordRound
           onClose={() => setViewRecordRounds(false)}

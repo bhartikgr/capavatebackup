@@ -62,7 +62,6 @@ export default function InvestorLogin() {
       });
 
       const checkData = res.data;
-
       if (checkData.status === "2") {
         setspinners(false);
         setFormErrors((prev) => ({ ...prev, emailMatch: checkData.message }));

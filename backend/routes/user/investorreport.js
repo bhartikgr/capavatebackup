@@ -6,57 +6,63 @@ const path = require("path");
 const inverstorReportController = require("../../controllers/user/inverstorReportController");
 router.post(
   "/investorQuatarlyEmailSend",
-  inverstorReportController.investorQuatarlyEmailSend
+  inverstorReportController.investorQuatarlyEmailSend,
 );
 
 router.post("/getInvestorReport", inverstorReportController.getInvestorReport);
 router.post(
   "/SendreportToinvestor",
-  inverstorReportController.SendreportToinvestor
+  inverstorReportController.SendreportToinvestor,
 );
 
 router.post(
   "/getInvestorReportprevious",
-  inverstorReportController.getInvestorReportprevious
+  inverstorReportController.getInvestorReportprevious,
 );
 router.post("/checkinvestorCode", inverstorReportController.checkinvestorCode);
 router.post(
   "/investorInformation",
-  inverstorReportController.investorInformation
+  inverstorReportController.investorInformation,
 );
+router.post("/investorprofile", inverstorReportController.investorprofile);
 router.post(
   "/investorInformationUpdate",
-  inverstorReportController.investorInformationUpdate
+  inverstorReportController.investorInformationUpdate,
 );
 router.post(
   "/getreportForInvestor",
-  inverstorReportController.getreportForInvestor
+  inverstorReportController.getreportForInvestor,
 );
 router.post("/viewReport", inverstorReportController.viewReport);
 router.post(
   "/getInvestorReportViewed",
-  inverstorReportController.getInvestorReportViewed
+  inverstorReportController.getInvestorReportViewed,
 );
 router.post(
   "/exportInvestorExcel",
-  inverstorReportController.exportInvestorExcel
+  inverstorReportController.exportInvestorExcel,
 );
 router.post(
   "/getInvestorInfocheck",
-  inverstorReportController.getInvestorInfocheck
+  inverstorReportController.getInvestorInfocheck,
 );
 router.post("/investorlogin", inverstorReportController.investorlogin);
 router.post(
   "/getreportForInvestorCompany",
-  inverstorReportController.getreportForInvestorCompany
+  inverstorReportController.getreportForInvestorCompany,
 );
 router.post(
   "/resetPasswordinvestor",
-  inverstorReportController.resetPasswordinvestor
+  inverstorReportController.resetPasswordinvestor,
 );
 router.post("/getinvestorData", inverstorReportController.getinvestorData);
 router.post(
   "/investordataUpdate",
-  inverstorReportController.investordataUpdate
+  inverstorReportController.investordataUpdate,
 );
+router.post(
+  "/getinvestorRecorData",
+  inverstorReportController.getinvestorRecorData,
+);
+
 module.exports = router;

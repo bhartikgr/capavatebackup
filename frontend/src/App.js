@@ -20,6 +20,7 @@ import Services from "./pages/Services";
 import HowItWork from "./pages/HowItWork";
 import ContactPage from "./pages/ContactPage";
 import SingleService from "./pages/SingleService";
+import Analytics from "./components/Analytics";
 // Lazy load components
 const Demopage = lazy(() => import("./pages/Demopage"));
 
@@ -27,126 +28,129 @@ const AdminLogin = lazy(() => import("./pages/Admin/AdminLogin"));
 const AdminDashboard = lazy(() => import("./pages/Admin/AdminDashboard"));
 const AdminCompany = lazy(() => import("./pages/Admin/AdminCompany"));
 const AdminUsers = lazy(() => import("./pages/Admin/AdminUsers"));
-const Admininvestor = lazy(() =>
-  import("./pages/Admin/Investor/AdminInvestor")
+const Admininvestor = lazy(
+  () => import("./pages/Admin/Investor/AdminInvestor"),
 );
-const AdminUsersCompany = lazy(() =>
-  import("./pages/Admin/Company/AdminUsersCompany")
+const AdminUsersCompany = lazy(
+  () => import("./pages/Admin/Company/AdminUsersCompany"),
 );
-const AdminUsersCompanyInvestorreport = lazy(() =>
-  import("./pages/Admin/Company/AdminUsersCompanyInvestorreport")
+const AdminUsersCompanyInvestorreport = lazy(
+  () => import("./pages/Admin/Company/AdminUsersCompanyInvestorreport"),
 );
-const AdminUsersCompanyRecordRound = lazy(() =>
-  import("./pages/Admin/Company/AdminUsersCompanyRecordRound")
+const AdminUsersCompanyRecordRound = lazy(
+  () => import("./pages/Admin/Company/AdminUsersCompanyRecordRound"),
 );
-const AdminCompanyInvestorDetail = lazy(() =>
-  import("./pages/Admin/Investor/AdminCompanyInvestorDetail")
+const AdminCompanyInvestorDetail = lazy(
+  () => import("./pages/Admin/Investor/AdminCompanyInvestorDetail"),
 );
-const AdminCompanyView = lazy(() =>
-  import("./pages/Admin/Company/AdminCompanyView")
+const AdminCompanyView = lazy(
+  () => import("./pages/Admin/Company/AdminCompanyView"),
 );
-const AdminCompanyInvestorView = lazy(() =>
-  import("./pages/Admin/Company/Investor/AdminCompanyInvestorView")
+const AdminCompanyInvestorView = lazy(
+  () => import("./pages/Admin/Company/Investor/AdminCompanyInvestorView"),
 );
-const AdminCompanyCaptable = lazy(() =>
-  import("./pages/Admin/Company/AdminCompanyCaptable")
+const AdminCompanyCaptable = lazy(
+  () => import("./pages/Admin/Company/AdminCompanyCaptable"),
 );
-const AdminCompanyReferralUsed = lazy(() =>
-  import("./pages/Admin/AdminCompanyReferralUsed")
+const AdminCompanyReferralUsed = lazy(
+  () => import("./pages/Admin/AdminCompanyReferralUsed"),
 );
-const AdminCompanySharedReferral = lazy(() =>
-  import("./pages/Admin/AdminCompanySharedReferral")
+const AdminCompanySharedReferral = lazy(
+  () => import("./pages/Admin/AdminCompanySharedReferral"),
 );
-const AdminCompanyReferralRegsitered = lazy(() =>
-  import("./pages/Admin/AdminCompanyReferralRegsitered")
+const AdminCompanyReferralRegsitered = lazy(
+  () => import("./pages/Admin/AdminCompanyReferralRegsitered"),
 );
-const AdminUserSubscriptionView = lazy(() =>
-  import("./pages/Admin/AdminUserSubscriptionView")
+const AdminUserSubscriptionView = lazy(
+  () => import("./pages/Admin/AdminUserSubscriptionView"),
 );
-const AdminUserAllDetails = lazy(() =>
-  import("./pages/Admin/AdminUserAllDetails")
+const AdminUserAllDetails = lazy(
+  () => import("./pages/Admin/AdminUserAllDetails"),
 );
-const AdminInvestorView = lazy(() =>
-  import("./pages/Admin/Investor/AdminInvestorView")
+const AdminInvestorView = lazy(
+  () => import("./pages/Admin/Investor/AdminInvestorView"),
 );
 const AdminVideoList = lazy(() => import("./pages/Admin/Video/AdminVideoList"));
 const AdminVideoAdd = lazy(() => import("./pages/Admin/Video/AdminVideoAdd"));
-const AdminModuleList = lazy(() =>
-  import("./pages/Admin/Module/AdminModuleList")
+const AdminModuleList = lazy(
+  () => import("./pages/Admin/Module/AdminModuleList"),
 );
-const AdminModuleAdd = lazy(() =>
-  import("./pages/Admin/Module/AdminModuleAdd")
+const AdminModuleAdd = lazy(
+  () => import("./pages/Admin/Module/AdminModuleAdd"),
 );
-const UserZoomDetail = lazy(() =>
-  import("./pages/Admin/Zoom/AdminUserZoomDetailList")
+const UserZoomDetail = lazy(
+  () => import("./pages/Admin/Zoom/AdminUserZoomDetailList"),
 );
-const UserZoomMeetRegister = lazy(() =>
-  import("./pages/Admin/Zoom/AdminUserZoomMeetRegister")
+const UserZoomMeetRegister = lazy(
+  () => import("./pages/Admin/Zoom/AdminUserZoomMeetRegister"),
 );
-const AdminZoomCreate = lazy(() =>
-  import("./pages/Admin/Zoom/AdminZoomCreate")
-);
-
-const AdminUserEmailtemplate = lazy(() =>
-  import("./pages/Admin/Zoom/AdminUserEmailtemplate")
+const AdminZoomCreate = lazy(
+  () => import("./pages/Admin/Zoom/AdminZoomCreate"),
 );
 
-const UserZoomMetting = lazy(() =>
-  import("./pages/Admin/Zoom/AdminUserZoomMetting")
-);
-const DuediligenceCategory = lazy(() =>
-  import("./pages/Admin/Catgeory/AdminDuediligenceCategory")
-);
-const DuediligenceCategoryadd = lazy(() =>
-  import("./pages/Admin/Catgeory/AdminDuediligenceCategoryadd")
-);
-const AdminDuediligenceCategorynewadd = lazy(() =>
-  import("./pages/Admin/Catgeory/AdminDuediligenceCategorynewadd")
-);
-const AdminPaymentDataRoom = lazy(() =>
-  import("./pages/Admin/Setting/AdminPaymentDataRoom")
-);
-const AdminDiscountCode = lazy(() =>
-  import("./pages/Admin/Setting/AdminDiscountCode")
-);
-const AdminTrackingReferralCode = lazy(() =>
-  import("./pages/Admin/Setting/AdminTrackingReferralCode")
-);
-const AdminTrackingReferralCodeview = lazy(() =>
-  import("./pages/Admin/Setting/AdminTrackingReferralCodeview")
-);
-const AdminTrackingReferralCodeSinigleDetail = lazy(() =>
-  import("./pages/Admin/Setting/AdminTrackingReferralCodeSinigleDetail")
-);
-const AdminDiscountAdd = lazy(() =>
-  import("./pages/Admin/Setting/AdminDiscountAdd")
-);
-const AdminBroadcastSession = lazy(() =>
-  import("./pages/Admin/Setting/AdminBroadcastSession")
-);
-const AdminBroadcastAdd = lazy(() =>
-  import("./pages/Admin/Setting/AdminBroadcastAdd")
-);
-const AdminInvestorUpdate = lazy(() =>
-  import("./pages/Admin/Investor/AdminInvestorUpdate")
-);
-const AdminSingleViews = lazy(() =>
-  import("./pages/Admin/Investor/AdminSingleViews")
-);
-const AdminReferralCodes = lazy(() =>
-  import("./pages/Admin/Setting/AdminReferralCodes")
-);
-const AdminCompanyReferralCodes = lazy(() =>
-  import("./pages/Admin/AdminCompanyReferralCodes")
+const AdminUserEmailtemplate = lazy(
+  () => import("./pages/Admin/Zoom/AdminUserEmailtemplate"),
 );
 
-const AdminReferralUsage = lazy(() =>
-  import("./pages/Admin/Setting/AdminReferralUsage")
+const UserZoomMetting = lazy(
+  () => import("./pages/Admin/Zoom/AdminUserZoomMetting"),
 );
-const AdminTrackingReferralPayment = lazy(() =>
-  import("./pages/Admin/Setting/AdminTrackingReferralPayment")
+const DuediligenceCategory = lazy(
+  () => import("./pages/Admin/Catgeory/AdminDuediligenceCategory"),
+);
+const DuediligenceCategoryadd = lazy(
+  () => import("./pages/Admin/Catgeory/AdminDuediligenceCategoryadd"),
+);
+const AdminDuediligenceCategorynewadd = lazy(
+  () => import("./pages/Admin/Catgeory/AdminDuediligenceCategorynewadd"),
+);
+const AdminPaymentDataRoom = lazy(
+  () => import("./pages/Admin/Setting/AdminPaymentDataRoom"),
+);
+const AdminDiscountCode = lazy(
+  () => import("./pages/Admin/Setting/AdminDiscountCode"),
+);
+const AdminTrackingReferralCode = lazy(
+  () => import("./pages/Admin/Setting/AdminTrackingReferralCode"),
+);
+const AdminTrackingReferralCodeview = lazy(
+  () => import("./pages/Admin/Setting/AdminTrackingReferralCodeview"),
+);
+const AdminTrackingReferralCodeSinigleDetail = lazy(
+  () => import("./pages/Admin/Setting/AdminTrackingReferralCodeSinigleDetail"),
+);
+const AdminDiscountAdd = lazy(
+  () => import("./pages/Admin/Setting/AdminDiscountAdd"),
+);
+const AdminBroadcastSession = lazy(
+  () => import("./pages/Admin/Setting/AdminBroadcastSession"),
+);
+const AdminBroadcastAdd = lazy(
+  () => import("./pages/Admin/Setting/AdminBroadcastAdd"),
+);
+const AdminInvestorUpdate = lazy(
+  () => import("./pages/Admin/Investor/AdminInvestorUpdate"),
+);
+const AdminSingleViews = lazy(
+  () => import("./pages/Admin/Investor/AdminSingleViews"),
+);
+const AdminReferralCodes = lazy(
+  () => import("./pages/Admin/Setting/AdminReferralCodes"),
+);
+const AdminCompanyReferralCodes = lazy(
+  () => import("./pages/Admin/AdminCompanyReferralCodes"),
 );
 
+const AdminReferralUsage = lazy(
+  () => import("./pages/Admin/Setting/AdminReferralUsage"),
+);
+const AdminTrackingReferralPayment = lazy(
+  () => import("./pages/Admin/Setting/AdminTrackingReferralPayment"),
+);
+
+const AdminVisitors = lazy(
+  () => import("./pages/Admin/Visitors/AdminVisitors"),
+);
 // const AdminModuleAdd = lazy(() => import("./pages/Admin/Module/Add"));
 const AdminLogout = lazy(() => import("./pages/Admin/AdminLogout"));
 //
@@ -154,8 +158,8 @@ const AdminLogout = lazy(() => import("./pages/Admin/AdminLogout"));
 //User
 
 const UserRegister = lazy(() => import("./pages/User/Register"));
-const UserRegisterActivateAccount = lazy(() =>
-  import("./pages/User/Activateaccount")
+const UserRegisterActivateAccount = lazy(
+  () => import("./pages/User/Activateaccount"),
 );
 
 const AdviceVideos = lazy(() => import("./pages/User/AdviceVideos"));
@@ -166,14 +170,14 @@ const DataroomDiligence = lazy(() => import("./pages/User/DataroomDiligence"));
 const Approvalpage = lazy(() => import("./pages/User/Approvalpage"));
 const Dashboard = lazy(() => import("./pages/User/Dashboard"));
 const Recordround = lazy(() => import("./pages/User/Investor/Recordround"));
-const EditRecordround = lazy(() =>
-  import("./pages/User/Investor/EditRecordround")
+const EditRecordround = lazy(
+  () => import("./pages/User/Investor/EditRecordround"),
 );
-const RecordRoundList = lazy(() =>
-  import("./pages/User/Investor/RecordRoundList")
+const RecordRoundList = lazy(
+  () => import("./pages/User/Investor/RecordRoundList"),
 );
-const RecordRoundCapTable = lazy(() =>
-  import("./pages/User/Investor/RecordRoundCaptable")
+const RecordRoundCapTable = lazy(
+  () => import("./pages/User/Investor/RecordRoundCaptable"),
 );
 
 const Subscription = lazy(() => import("./pages/User/Subscription"));
@@ -183,38 +187,38 @@ const CardPopup = lazy(() => import("./pages/User/CardPopup"));
 const HomeNew = lazy(() => import("./pages/User/HomeNew"));
 const ProfileSettings = lazy(() => import("./pages/User/ProfileSettings"));
 const Referralcode = lazy(() => import("./pages/User/Referralcode"));
-const ReferralcodeTracking = lazy(() =>
-  import("./pages/User/ReferralcodeTracking")
+const ReferralcodeTracking = lazy(
+  () => import("./pages/User/ReferralcodeTracking"),
 );
-const InvestorReportPortal = lazy(() =>
-  import("./pages/User/Crm/InvestorReportPortal")
+const InvestorReportPortal = lazy(
+  () => import("./pages/User/Crm/InvestorReportPortal"),
 );
 const InvestorEntry = lazy(() => import("./pages/User/Crm/InvestorEntry"));
-const InvestorViewDetails = lazy(() =>
-  import("./pages/User/Crm/InvestorViewDetails")
+const InvestorViewDetails = lazy(
+  () => import("./pages/User/Crm/InvestorViewDetails"),
 );
-const InvestorInvestment = lazy(() =>
-  import("./pages/User/Crm/InvestorInvestment")
+const InvestorInvestment = lazy(
+  () => import("./pages/User/Crm/InvestorInvestment"),
 );
 const AddNewInvestor = lazy(() => import("./pages/User/Crm/AddNewInvestor"));
-const InvestorReportSharing = lazy(() =>
-  import("./pages/User/Crm/InvestorReportSharing")
+const InvestorReportSharing = lazy(
+  () => import("./pages/User/Crm/InvestorReportSharing"),
 );
-const InvestorRecordReoundConfirm = lazy(() =>
-  import("./pages/User/Crm/InvestorRecordReoundConfirm")
+const InvestorRecordReoundConfirm = lazy(
+  () => import("./pages/User/Crm/InvestorRecordReoundConfirm"),
 );
-const InvestorReportView = lazy(() =>
-  import("./pages/User/Crm/InvestorReportView")
+const InvestorReportView = lazy(
+  () => import("./pages/User/Crm/InvestorReportView"),
 );
-const InvestorReportViewDueDiligence = lazy(() =>
-  import("./pages/User/Crm/InvestorReportViewDueDiligence")
+const InvestorReportViewDueDiligence = lazy(
+  () => import("./pages/User/Crm/InvestorReportViewDueDiligence"),
 );
-const InvestorReportViewRecordRound = lazy(() =>
-  import("./pages/User/Crm/InvestorReportViewRecordRound")
+const InvestorReportViewRecordRound = lazy(
+  () => import("./pages/User/Crm/InvestorReportViewRecordRound"),
 );
 
-const InvestorReportDashboard = lazy(() =>
-  import("./pages/User/Crm/InvestorReportDashboard")
+const InvestorReportDashboard = lazy(
+  () => import("./pages/User/Crm/InvestorReportDashboard"),
 );
 const CompanyProfile = lazy(() => import("./pages/User/CompanyProfile"));
 //Investor
@@ -227,58 +231,59 @@ const Investorprofile = lazy(() => import("./pages/Investors/Profile"));
 
 const InvestorDashboard = lazy(() => import("./pages/Investors/Dashboard"));
 const InvestorCompanyList = lazy(() => import("./pages/Investors/CompanyList"));
-const InvestorMainProfile = lazy(() =>
-  import("./pages/Investors/InvestorProfile")
+const InvestorMainProfile = lazy(
+  () => import("./pages/Investors/InvestorProfile"),
 );
 const Reportlist = lazy(() => import("./pages/Investors/Reportlist"));
-const DueDiligenceReportlist = lazy(() =>
-  import("./pages/Investors/DueDiligenceReportlist")
+const DueDiligenceReportlist = lazy(
+  () => import("./pages/Investors/DueDiligenceReportlist"),
 );
 
-const CapitalRoundList = lazy(() =>
-  import("./pages/Investors/CapitalRoundList")
+const CapitalRoundList = lazy(
+  () => import("./pages/Investors/CapitalRoundList"),
 );
-const CapitalRoundView = lazy(() =>
-  import("./pages/Investors/CapitalRoundView")
+const CapitalRoundView = lazy(
+  () => import("./pages/Investors/CapitalRoundView"),
 );
 const ActivityLogs = lazy(() => import("./pages/User/ActivityLogs"));
 const DiscountCoupon = lazy(() => import("./pages/User/DiscountCoupon"));
 const SubscriptionUser = lazy(() => import("./pages/User/SubscriptionUser"));
-const Authorizedsignature = lazy(() =>
-  import("./pages/User/Authorizedsignature")
+const Authorizedsignature = lazy(
+  () => import("./pages/User/Authorizedsignature"),
 );
 //investor
 
 //UserDashboard
-const UserDashboard = lazy(() =>
-  import("./pages/User/UserDashboard/Dashboard")
+const UserDashboard = lazy(
+  () => import("./pages/User/UserDashboard/Dashboard"),
 );
-const UserCompanyList = lazy(() =>
-  import("./pages/User/UserDashboard/Addcompany/UserCompanyList")
+const UserCompanyList = lazy(
+  () => import("./pages/User/UserDashboard/Addcompany/UserCompanyList"),
 );
-const ApprovalSignature = lazy(() =>
-  import("./pages/User/UserDashboard/ApprovalSignature")
+const ApprovalSignature = lazy(
+  () => import("./pages/User/UserDashboard/ApprovalSignature"),
 );
-const UserSubscription = lazy(() =>
-  import("./pages/User/UserDashboard/Usersubscription")
+const UserSubscription = lazy(
+  () => import("./pages/User/UserDashboard/Usersubscription"),
 );
-const UserAddCompany = lazy(() =>
-  import("./pages/User/UserDashboard/Addcompany/UserAddCompany")
+const UserAddCompany = lazy(
+  () => import("./pages/User/UserDashboard/Addcompany/UserAddCompany"),
 );
+const SocialDashboard = lazy(() => import("./pages/SocialDashboard"));
 //UserDashboard
 
 //UserSignatory
-const UserSignatoryList = lazy(() =>
-  import("./pages/User/UserSignatory/UserSignatoryList")
+const UserSignatoryList = lazy(
+  () => import("./pages/User/UserSignatory/UserSignatoryList"),
 );
-const SignatoryDashboard = lazy(() =>
-  import("./pages/User/UserSignatory/SignatoryDashboard")
+const SignatoryDashboard = lazy(
+  () => import("./pages/User/UserSignatory/SignatoryDashboard"),
 );
-const UserAddSignatory = lazy(() =>
-  import("./pages/User/UserSignatory/UserAddSignatory")
+const UserAddSignatory = lazy(
+  () => import("./pages/User/UserSignatory/UserAddSignatory"),
 );
-const UserProfileSettig = lazy(() =>
-  import("./pages/User/UserSetting/UserProfileSettings")
+const UserProfileSettig = lazy(
+  () => import("./pages/User/UserSetting/UserProfileSettings"),
 );
 
 const AcceptLink = lazy(() => import("./pages/User/Signatory/AcceptLink"));
@@ -304,6 +309,7 @@ class App extends Component {
             }
           >
             <GlobalStyles />
+            {/* <Analytics /> */}
             <Routes>
               {/*Capavate Home Page*/}
               <Route path="/capavate/home" element={<CapavateHome />} />{" "}
@@ -475,6 +481,7 @@ class App extends Component {
                 path="/admin/investor/detail/:type/:id"
                 element={<AdminSingleViews />}
               />{" "}
+              <Route path="/admin/visitors" element={<AdminVisitors />} />{" "}
               <Route path="/investorlist" element={<InvestorReport />} />{" "}
               <Route
                 path="/share-with-investorreport"
@@ -504,12 +511,16 @@ class App extends Component {
               <Route path="/home" element={<Landing />} />{" "}
               <Route path="/" element={<Landing />} />{" "}
               <Route path="/advicevideos" element={<AdviceVideos />} />{" "}
-              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/dashboard" element={<SocialDashboard />} />
               <Route path="/createrecord" element={<Recordround />} />{" "}
               <Route path="/edit-record-round/:id" element={<Recordround />} />{" "}
               <Route path="/record-round-list" element={<RecordRoundList />} />{" "}
               <Route
                 path="/record-round-cap-table/:id"
+                element={<RecordRoundCapTable />}
+              />{" "}
+              <Route
+                path="/captable-view/:id"
                 element={<RecordRoundCapTable />}
               />{" "}
               <Route path="/subscription" element={<Subscription />} />{" "}
@@ -626,6 +637,7 @@ class App extends Component {
                 element={<UserSubscription />}
               />
               <Route path="/user/addcompany" element={<UserAddCompany />} />
+              <Route path="/homepage" element={<SocialDashboard />} />
               <Route
                 path="/user/signatorylist"
                 element={<UserSignatoryList />}

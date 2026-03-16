@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 
-import TopBar from "../../components/Users/TopBar";
-import ModuleSideNav from "../../components/Users/ModuleSideNav";
+import TopBar from '../../components/social/TopBar';
 
 import { IoCloseCircleOutline } from "react-icons/io5";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -51,6 +50,7 @@ import { Link, useNavigate } from "react-router-dom";
 import AirwallexPaymentPopupOneTimeDataroom from "../../components/Users/AirwallexPaymentPopupOneTimeDataroom.jsx";
 import AirwallexPaymentPopupPerInstanceDataroom from "../../components/Users/AirwallexPaymentPopupPerInstanceDataroom.jsx";
 import { API_BASE_URL } from "../../config/config.js";
+import SideBar from "../../components/social/SideBar";
 export default function DataroomDiligence() {
   const [lockId, setlockId] = useState([]);
   const [dangerMessagealertLockUnlock, setdangerMessagealertLockUnlock] =
@@ -1276,136 +1276,135 @@ export default function DataroomDiligence() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   return (
     <>
-      <Wrapper>
-        <div className="fullpage d-block">
-          {messageAll && (
-            <p className={err ? " mt-3 error_pop" : "success_pop mt-3"}>
-              {messageAll}
-            </p>
-          )}
-          {dangerMessage && (
-            <DangerAlertPopup
-              message={dangerMessage}
-              onConfirm={handleConfirm}
-              onCancel={() => {
-                setdangerMessage("");
-              }}
-            />
-          )}
-          {dangerMessagealert && (
-            <DangerAlertPopup
-              message={dangerMessagealert}
-              onConfirm={handleConfirmProcess}
-              onCancel={() => {
-                setdangerMessagealert("");
-              }}
-            />
-          )}
-          {dangerMessagealertLockUnlock && (
-            <DangerAlertPopup
-              message={dangerMessagealertLockUnlock}
-              onConfirm={handleConfirmProcessLockUnlock}
-              onCancel={() => {
-                setdangerMessagealertLockUnlock("");
-              }}
-            />
-          )}
-          {dangerMessagealertAllLock && (
-            <DangerAlertPopup
-              message={dangerMessagealertAllLock}
-              onConfirm={handleConfirmProcessAllLock}
-              onCancel={() => {
-                setdangerMessagealertAllLock("");
-              }}
-            />
-          )}
-          {dangerMessagealertDoc && (
-            <DangerAlertPopupMessage
-              message={dangerMessagealertDoc}
-              onClose={() => {
-                setdangerMessagealertDoc("");
-              }}
-            />
-          )}
-          {normallyMessage && (
-            <p className={errr ? " mt-3 error_pop" : "success_pop mt-3"}>
-              {normallyMessage}
-            </p>
-          )}
-          <div className="d-flex align-items-start gap-0">
-            <ModuleSideNav
-              isCollapsed={isCollapsed}
-              setIsCollapsed={setIsCollapsed}
-            />
-            <div
-              className={`global_view ${isCollapsed ? "global_view_col" : ""}`}
-            >
-              <TopBar />
-              <SectionWrapper className="d-block p-md-4 p-3">
-                <div className="container-fluid">
-                  <DataRoomSection className="d-flex flex-column gap-4">
-                    <div className="pb-3 bar_design">
-                      <h4 className="h5 mb-0">
-                        Dataroom Management & Executive Summary
-                      </h4>
-                    </div>
-                    <div className="titleroom d-flex m-0 flex-wrap gap-3 justify-content-between align-items-center text-center">
-                      <button
-                        type="button"
-                        disabled={
-                          spinnerss || authorizedData?.approve !== "Yes"
-                        } // ✅ disable if spinner or not approved
-                        style={{
-                          opacity:
-                            spinnerss || authorizedData?.approve !== "Yes"
-                              ? 0.6
-                              : 1,
-                        }}
-                        onClick={handleFinaldoc}
-                        className="generatebutton px-4 py-2 fn_size_sm btn btn-outline-dark active d-flex align-items-center gap-2"
-                      >
-                        <span
-                          style={{
-                            opacity:
-                              !Documentcheck ||
-                                authorizedData?.approve !== "Yes"
-                                ? 0.6
-                                : 1,
-                          }}
-                        >
-                          {textgeneratebtn}
-                        </span>
-                        {spinnerss && (
-                          <div
-                            className="spinner-color spinner-border spinneronetimepay m-0"
-                            role="status"
-                          >
-                            <span className="visually-hidden"></span>
-                          </div>
-                        )}
-                      </button>
 
-                      {/* <button
+      <main>
+        <div className='d-flex align-items-start gap-0'>
+          <SideBar />
+          <div className='d-flex flex-grow-1 flex-column gap-0'>
+            <TopBar />
+            <section className='px-md-3 py-4'>
+              {messageAll && (
+                <p className={err ? " mt-3 error_pop" : "success_pop mt-3"}>
+                  {messageAll}
+                </p>
+              )}
+              {dangerMessage && (
+                <DangerAlertPopup
+                  message={dangerMessage}
+                  onConfirm={handleConfirm}
+                  onCancel={() => {
+                    setdangerMessage("");
+                  }}
+                />
+              )}
+              {dangerMessagealert && (
+                <DangerAlertPopup
+                  message={dangerMessagealert}
+                  onConfirm={handleConfirmProcess}
+                  onCancel={() => {
+                    setdangerMessagealert("");
+                  }}
+                />
+              )}
+              {dangerMessagealertLockUnlock && (
+                <DangerAlertPopup
+                  message={dangerMessagealertLockUnlock}
+                  onConfirm={handleConfirmProcessLockUnlock}
+                  onCancel={() => {
+                    setdangerMessagealertLockUnlock("");
+                  }}
+                />
+              )}
+              {dangerMessagealertAllLock && (
+                <DangerAlertPopup
+                  message={dangerMessagealertAllLock}
+                  onConfirm={handleConfirmProcessAllLock}
+                  onCancel={() => {
+                    setdangerMessagealertAllLock("");
+                  }}
+                />
+              )}
+              {dangerMessagealertDoc && (
+                <DangerAlertPopupMessage
+                  message={dangerMessagealertDoc}
+                  onClose={() => {
+                    setdangerMessagealertDoc("");
+                  }}
+                />
+              )}
+              {normallyMessage && (
+                <p className={errr ? " mt-3 error_pop" : "success_pop mt-3"}>
+                  {normallyMessage}
+                </p>
+              )}
+              <div className='container-fluid'>
+                <div className='row gy-4'>
+                  <div className='col-md-12 order-1 order-md-0'>
+                    <SectionWrapper className="d-block p-md-4 p-3">
+                      <div className="container-fluid">
+                        <DataRoomSection className="d-flex flex-column gap-4">
+                          <div className="pb-3 bar_design">
+                            <h4 className="h5 mb-0">
+                              Dataroom Management & Executive Summary
+                            </h4>
+                          </div>
+                          <div className="titleroom d-flex m-0 flex-wrap gap-3 justify-content-between align-items-center text-center">
+                            <button
+                              type="button"
+                              disabled={
+                                spinnerss || authorizedData?.approve !== "Yes"
+                              } // ✅ disable if spinner or not approved
+                              style={{
+                                opacity:
+                                  spinnerss || authorizedData?.approve !== "Yes"
+                                    ? 0.6
+                                    : 1,
+                              }}
+                              onClick={handleFinaldoc}
+                              className="generatebutton px-4 py-2 fn_size_sm btn btn-outline-dark active d-flex align-items-center gap-2"
+                            >
+                              <span
+                                style={{
+                                  opacity:
+                                    !Documentcheck ||
+                                      authorizedData?.approve !== "Yes"
+                                      ? 0.6
+                                      : 1,
+                                }}
+                              >
+                                {textgeneratebtn}
+                              </span>
+                              {spinnerss && (
+                                <div
+                                  className="spinner-color spinner-border spinneronetimepay m-0"
+                                  role="status"
+                                >
+                                  <span className="visually-hidden"></span>
+                                </div>
+                              )}
+                            </button>
+
+                            {/* <button
                         type="button"
                         onClick={handleLockAllFile}
                         className="generatebutton px-4 py-2 fn_size_sm btn btn-outline-dark active d-flex align-items-center gap-2"
                       >
                         <span>Signature to Approval</span>
                       </button> */}
-                      {userLogin.role !== "owner" && (
-                        <Link
-                          to="/authorized-signature"
-                          className="generatebutton px-4 py-2 fn_size_sm btn btn-outline-dark active d-flex align-items-center gap-2"
-                        >
-                          <span>
-                            {authorizedData?.approve === "Yes"
-                              ? "Approved Signature"
-                              : "Signature to Approval"}
-                          </span>
-                        </Link>
-                      )}
-                    </div>
-                    {/* {loading && (
+                            {userLogin.role !== "owner" && (
+                              <Link
+                                to="/authorized-signature"
+                                className="generatebutton px-4 py-2 fn_size_sm btn btn-outline-dark active d-flex align-items-center gap-2"
+                              >
+                                <span>
+                                  {authorizedData?.approve === "Yes"
+                                    ? "Approved Signature"
+                                    : "Signature to Approval"}
+                                </span>
+                              </Link>
+                            )}
+                          </div>
+                          {/* {loading && (
                       <div className="mt-6">
                         <div className="bg-gray-200 rounded-full h-4">
                           <div
@@ -1419,663 +1418,663 @@ export default function DataroomDiligence() {
                       </div>
                     )} */}
 
-                    <div className="table-responsive d-flex flex-column gap-3">
-                      {categories.map((category) => {
-                        const tooltipIdd = `tooltip-${category.category_id}`;
-                        const tooltipIddd = `tooltipex-${category.category_id}`;
-                        const tooltipIddd_doc = `tooltipDoc-${category.category_id}`;
+                          <div className="table-responsive d-flex flex-column gap-3">
+                            {categories.map((category) => {
+                              const tooltipIdd = `tooltip-${category.category_id}`;
+                              const tooltipIddd = `tooltipex-${category.category_id}`;
+                              const tooltipIddd_doc = `tooltipDoc-${category.category_id}`;
 
-                        return (
-                          <div className="overflow-auto">
-                            <table
-                              key={category.id}
-                              className="table document_table"
-                            >
-                              <thead>
-                                <tr>
-                                  <TableHeader>
-                                    {category.name}{" "}
-                                    {category.category_tips && (
-                                      <>
-                                        <span
-                                          className="tooltip-icon"
-                                          data-tooltip-id={`tt-cat-${category.id}`}
-                                          data-tooltip-html={
-                                            category.category_tips
-                                          }
-                                        >
-                                          <img
-                                            className="blackdark"
-                                            width="15"
-                                            height="15"
-                                            src="/assets/user/images/question.png"
-                                            alt="Tip"
-                                          />
-                                        </span>
-
-                                        <Tooltip
-                                          id={`tt-cat-${category.id}`}
-                                          place="top"
-                                          float
-                                          interactive={true}
-                                          className="custom-tooltip"
-                                          positionStrategy="fixed"
-                                        />
-                                      </>
-                                    )}
-                                  </TableHeader>
-
-                                  <TableHeader>Upload Documents</TableHeader>
-
-                                  <TableHeader>
-                                    Manage Documents
-                                    {category.do_not_exits && (
-                                      <>
-                                        <span
-                                          className="tooltip-icon"
-                                          data-tooltip-id={`tt-doc-${category.id}`}
-                                          data-tooltip-html={
-                                            category.do_not_exits
-                                          }
-                                        >
-                                          <img
-                                            className="blackdark"
-                                            width="15"
-                                            height="15"
-                                            src="/assets/user/images/question.png"
-                                            alt="Tip"
-                                          />
-                                        </span>
-
-                                        <Tooltip
-                                          id={`tt-doc-${category.id}`}
-                                          place="top"
-                                          float
-                                          interactive={true}
-                                          className="custom-tooltip"
-                                          positionStrategy="fixed"
-                                        />
-                                      </>
-                                    )}
-                                  </TableHeader>
-
-                                  <TableHeader>
-                                    Exists but NOT Available
-                                    {category.exits_tips && (
-                                      <>
-                                        <span
-                                          className="tooltip-icon"
-                                          data-tooltip-id={`tt-exit-${category.id}`}
-                                          data-tooltip-html={
-                                            category.exits_tips
-                                          }
-                                        >
-                                          <img
-                                            className="blackdark"
-                                            width="15"
-                                            height="15"
-                                            src="/assets/user/images/question.png"
-                                            alt="Tip"
-                                          />
-                                        </span>
-
-                                        <Tooltip
-                                          id={`tt-exit-${category.id}`}
-                                          place="top"
-                                          float
-                                          interactive={true}
-                                          className="custom-tooltip"
-                                          positionStrategy="fixed"
-                                        />
-                                      </>
-                                    )}
-                                  </TableHeader>
-
-                                  <TableHeader>Provided</TableHeader>
-                                </tr>
-                              </thead>
-                              {category.subcategories &&
-                                category.subcategories.length > 0 ? (
-                                <tbody>
-                                  {category.subcategories.map((sub, index) => {
-                                    const tooltipId = `tooltip-${category.id}-${sub.id}`;
-                                    const key = `${category.id}-${sub.id}`;
-
-                                    return (
-                                      <tr key={sub.id}>
-                                        <TableData>
-                                          <h6>
-                                            {sub.name}
-                                            {sub.tips && (
-                                              <>
-                                                <span
-                                                  data-tooltip-id={`tooltipSub-${category.id}-${sub.id}`}
-                                                  data-tooltip-html={sub.tips}
-                                                  className="tooltip-icon"
-                                                >
-                                                  <img
-                                                    className="blackdark"
-                                                    width="15"
-                                                    height="15"
-                                                    src="/assets/user/images/question.png"
-                                                    alt="Tip"
-                                                  />
-                                                </span>
-                                                <Tooltip
-                                                  id={`tooltipSub-${category.id}-${sub.id}`}
-                                                  place="top"
-                                                  float
-                                                  interactive={true}
-                                                  className="custom-tooltip"
-                                                  positionStrategy="fixed"
-                                                />
-                                              </>
-                                            )}
-                                          </h6>
-                                        </TableData>
-
-                                        <TableData>
-                                          <UploadButton
-                                            type="button"
-                                            onClick={() => {
-                                              if (sub.Ai_generate !== "Yes") {
-                                                handleUploadDocument(
-                                                  category.id,
-                                                  sub.id
-                                                );
-                                              } else {
-                                                if (sub.lockStatus === "Yes") {
-                                                  handleCheckpaymentdoc(
-                                                    category.id,
-                                                    sub.id
-                                                  );
-                                                } else {
-                                                  // handleUploadDocument(
-                                                  //   category.id,
-                                                  //   sub.id
-                                                  // );
-                                                }
-                                              }
-                                            }}
-                                          >
-                                            {sub.documents.length > 0 ? (
-                                              <span>
-                                                {sub.Ai_generate === "Yes" ? (
-                                                  <>
-                                                    {sub.lockStatus ===
-                                                      "Yes" ? (
-                                                      <>
-                                                        Lock{" "}
-                                                        <Lock
-                                                          size={16}
-                                                          className="text-white"
-                                                          title="Locked"
-                                                        />
-                                                      </>
-                                                    ) : (
-                                                      <>
-                                                        Lock{" "}
-                                                        <Lock
-                                                          size={16}
-                                                          className="text-white"
-                                                          title="Locked"
-                                                        />
-                                                      </>
-                                                    )}
-                                                  </>
-                                                ) : (
-                                                  <>
-                                                    Add <FaPlus />
-                                                  </>
-                                                )}
-                                              </span>
-                                            ) : (
-                                              <span
-                                                style={{ whiteSpace: "nowrap" }}
-                                                className="d-block"
-                                              >
-                                                Click to upload
-                                              </span>
-                                            )}
-                                          </UploadButton>
-                                        </TableData>
-
-                                        <TableData>
-                                          {sub.documents &&
-                                            sub.documents.length > 0 ? (
+                              return (
+                                <div className="overflow-auto">
+                                  <table
+                                    key={category.id}
+                                    className="table document_table"
+                                  >
+                                    <thead>
+                                      <tr>
+                                        <TableHeader>
+                                          {category.name}{" "}
+                                          {category.category_tips && (
                                             <>
-                                              <UploadButton
-                                                type="button"
-                                                onClick={() =>
-                                                  togglePopup(
-                                                    category.id,
-                                                    sub.id
-                                                  )
+                                              <span
+                                                className="tooltip-icon"
+                                                data-tooltip-id={`tt-cat-${category.id}`}
+                                                data-tooltip-html={
+                                                  category.category_tips
                                                 }
                                               >
-                                                {openDocPopupKey ===
-                                                  `${category.id}-${sub.id}`
-                                                  ? "Hide Documents"
-                                                  : "View Documents"}
-                                              </UploadButton>
+                                                <img
+                                                  className="blackdark"
+                                                  width="15"
+                                                  height="15"
+                                                  src="/assets/user/images/question.png"
+                                                  alt="Tip"
+                                                />
+                                              </span>
 
-                                              {openDocPopupKey ===
-                                                `${category.id}-${sub.id}` && (
-                                                  <div className="main_popup-overlay">
-                                                    <div className="popupDataRoom">
-                                                      <div className="uploadFilescroll position-relative">
-                                                        <div className="d-flex mb-2 pop_bg justify-content-between align-items-center p-2">
-                                                          <h4 className="docName">
-                                                            {sub.name}
-                                                          </h4>
-                                                          <div className="d-flex gap-2 align-items-center">
-                                                            <button
-                                                              type="button"
-                                                              className="bg-transparent text-white p-1 border-0"
-                                                              onClick={() =>
-                                                                togglePopup(
-                                                                  category.id,
-                                                                  sub.id
-                                                                )
-                                                              }
-                                                            >
-                                                              <IoCloseCircleOutline
-                                                                size={24}
+                                              <Tooltip
+                                                id={`tt-cat-${category.id}`}
+                                                place="top"
+                                                float
+                                                interactive={true}
+                                                className="custom-tooltip"
+                                                positionStrategy="fixed"
+                                              />
+                                            </>
+                                          )}
+                                        </TableHeader>
+
+                                        <TableHeader>Upload Documents</TableHeader>
+
+                                        <TableHeader>
+                                          Manage Documents
+                                          {category.do_not_exits && (
+                                            <>
+                                              <span
+                                                className="tooltip-icon"
+                                                data-tooltip-id={`tt-doc-${category.id}`}
+                                                data-tooltip-html={
+                                                  category.do_not_exits
+                                                }
+                                              >
+                                                <img
+                                                  className="blackdark"
+                                                  width="15"
+                                                  height="15"
+                                                  src="/assets/user/images/question.png"
+                                                  alt="Tip"
+                                                />
+                                              </span>
+
+                                              <Tooltip
+                                                id={`tt-doc-${category.id}`}
+                                                place="top"
+                                                float
+                                                interactive={true}
+                                                className="custom-tooltip"
+                                                positionStrategy="fixed"
+                                              />
+                                            </>
+                                          )}
+                                        </TableHeader>
+
+                                        <TableHeader>
+                                          Exists but NOT Available
+                                          {category.exits_tips && (
+                                            <>
+                                              <span
+                                                className="tooltip-icon"
+                                                data-tooltip-id={`tt-exit-${category.id}`}
+                                                data-tooltip-html={
+                                                  category.exits_tips
+                                                }
+                                              >
+                                                <img
+                                                  className="blackdark"
+                                                  width="15"
+                                                  height="15"
+                                                  src="/assets/user/images/question.png"
+                                                  alt="Tip"
+                                                />
+                                              </span>
+
+                                              <Tooltip
+                                                id={`tt-exit-${category.id}`}
+                                                place="top"
+                                                float
+                                                interactive={true}
+                                                className="custom-tooltip"
+                                                positionStrategy="fixed"
+                                              />
+                                            </>
+                                          )}
+                                        </TableHeader>
+
+                                        <TableHeader>Provided</TableHeader>
+                                      </tr>
+                                    </thead>
+                                    {category.subcategories &&
+                                      category.subcategories.length > 0 ? (
+                                      <tbody>
+                                        {category.subcategories.map((sub, index) => {
+                                          const tooltipId = `tooltip-${category.id}-${sub.id}`;
+                                          const key = `${category.id}-${sub.id}`;
+
+                                          return (
+                                            <tr key={sub.id}>
+                                              <TableData>
+                                                <h6>
+                                                  {sub.name}
+                                                  {sub.tips && (
+                                                    <>
+                                                      <span
+                                                        data-tooltip-id={`tooltipSub-${category.id}-${sub.id}`}
+                                                        data-tooltip-html={sub.tips}
+                                                        className="tooltip-icon"
+                                                      >
+                                                        <img
+                                                          className="blackdark"
+                                                          width="15"
+                                                          height="15"
+                                                          src="/assets/user/images/question.png"
+                                                          alt="Tip"
+                                                        />
+                                                      </span>
+                                                      <Tooltip
+                                                        id={`tooltipSub-${category.id}-${sub.id}`}
+                                                        place="top"
+                                                        float
+                                                        interactive={true}
+                                                        className="custom-tooltip"
+                                                        positionStrategy="fixed"
+                                                      />
+                                                    </>
+                                                  )}
+                                                </h6>
+                                              </TableData>
+
+                                              <TableData>
+                                                <UploadButton
+                                                  type="button"
+                                                  onClick={() => {
+                                                    if (sub.Ai_generate !== "Yes") {
+                                                      handleUploadDocument(
+                                                        category.id,
+                                                        sub.id
+                                                      );
+                                                    } else {
+                                                      if (sub.lockStatus === "Yes") {
+                                                        handleCheckpaymentdoc(
+                                                          category.id,
+                                                          sub.id
+                                                        );
+                                                      } else {
+                                                        // handleUploadDocument(
+                                                        //   category.id,
+                                                        //   sub.id
+                                                        // );
+                                                      }
+                                                    }
+                                                  }}
+                                                >
+                                                  {sub.documents.length > 0 ? (
+                                                    <span>
+                                                      {sub.Ai_generate === "Yes" ? (
+                                                        <>
+                                                          {sub.lockStatus ===
+                                                            "Yes" ? (
+                                                            <>
+                                                              Lock{" "}
+                                                              <Lock
+                                                                size={16}
+                                                                className="text-white"
+                                                                title="Locked"
                                                               />
-                                                            </button>
-                                                          </div>
-                                                        </div>
+                                                            </>
+                                                          ) : (
+                                                            <>
+                                                              Lock{" "}
+                                                              <Lock
+                                                                size={16}
+                                                                className="text-white"
+                                                                title="Locked"
+                                                              />
+                                                            </>
+                                                          )}
+                                                        </>
+                                                      ) : (
+                                                        <>
+                                                          Add <FaPlus />
+                                                        </>
+                                                      )}
+                                                    </span>
+                                                  ) : (
+                                                    <span
+                                                      style={{ whiteSpace: "nowrap" }}
+                                                      className="d-block"
+                                                    >
+                                                      Click to upload
+                                                    </span>
+                                                  )}
+                                                </UploadButton>
+                                              </TableData>
 
-                                                        <ol className="text-start text-capitalize px-3 pdflist">
-                                                          {sub.documents.map(
-                                                            (doc, index) => (
-                                                              <li key={doc.id}>
-                                                                <span className="d-flex justify-content-between align-items-center">
-                                                                  <span className="d-flex align-items-center gap-2">
-                                                                    {index + 1}.
-                                                                    <>
-                                                                      {doc.locked ===
-                                                                        "Yes" ? (
-                                                                        <Lock
-                                                                          size={
-                                                                            14
-                                                                          }
-                                                                          style={{
-                                                                            color:
-                                                                              "var(--primary)",
-                                                                          }}
-                                                                          title="Locked"
-                                                                        />
-                                                                      ) : (
-                                                                        <Unlock
-                                                                          size={
-                                                                            14
-                                                                          }
-                                                                          className="text-success"
-                                                                          title="Unlocked"
-                                                                        />
-                                                                      )}
-                                                                    </>
-                                                                    {doc.name}
-                                                                  </span>
+                                              <TableData>
+                                                {sub.documents &&
+                                                  sub.documents.length > 0 ? (
+                                                  <>
+                                                    <UploadButton
+                                                      type="button"
+                                                      onClick={() =>
+                                                        togglePopup(
+                                                          category.id,
+                                                          sub.id
+                                                        )
+                                                      }
+                                                    >
+                                                      {openDocPopupKey ===
+                                                        `${category.id}-${sub.id}`
+                                                        ? "Hide Documents"
+                                                        : "View Documents"}
+                                                    </UploadButton>
 
-                                                                  <div className="d-inline ">
-                                                                    <button
-                                                                      title="More actions"
-                                                                      className="btn btn-link p-0 text-dark"
-                                                                      type="button"
-                                                                      onClick={() =>
-                                                                        toggleDropdownEditDelete(
-                                                                          doc.id
-                                                                        )
-                                                                      }
-                                                                    >
-                                                                      <MoreHorizontal
-                                                                        width={16}
-                                                                        height={
-                                                                          16
-                                                                        }
-                                                                      />
-                                                                    </button>
+                                                    {openDocPopupKey ===
+                                                      `${category.id}-${sub.id}` && (
+                                                        <div className="main_popup-overlay">
+                                                          <div className="popupDataRoom">
+                                                            <div className="uploadFilescroll position-relative">
+                                                              <div className="d-flex mb-2 pop_bg justify-content-between align-items-center p-2">
+                                                                <h4 className="docName">
+                                                                  {sub.name}
+                                                                </h4>
+                                                                <div className="d-flex gap-2 align-items-center">
+                                                                  <button
+                                                                    type="button"
+                                                                    className="bg-transparent text-white p-1 border-0"
+                                                                    onClick={() =>
+                                                                      togglePopup(
+                                                                        category.id,
+                                                                        sub.id
+                                                                      )
+                                                                    }
+                                                                  >
+                                                                    <IoCloseCircleOutline
+                                                                      size={24}
+                                                                    />
+                                                                  </button>
+                                                                </div>
+                                                              </div>
 
-                                                                    {editdeleteBtn ===
-                                                                      doc.id && (
-                                                                        <div
-                                                                          style={{
-                                                                            position:
-                                                                              "absolute",
-                                                                            width:
-                                                                              "100px",
-                                                                            backgroundColor:
-                                                                              "#fff",
-                                                                            boxShadow:
-                                                                              "0 2px 5px rgba(0,0,0,0.2)",
-                                                                            padding:
-                                                                              "2px",
-                                                                            zIndex: 997,
-                                                                            right: 0,
-                                                                          }}
-                                                                        >
-                                                                          <button
-                                                                            type="button"
-                                                                            title="Download"
-                                                                            className="editdelete-links"
-                                                                            onClick={() =>
-                                                                              handleDownload(
-                                                                                doc.company_id,
-                                                                                doc.id,
-                                                                                doc.name,
-                                                                                doc.folder_name
-                                                                              )
-                                                                            }
-                                                                          >
-                                                                            <Download
-                                                                              className="me-1"
-                                                                              width={
-                                                                                12
-                                                                              }
-                                                                              height={
-                                                                                10
-                                                                              }
-                                                                            />
-                                                                            Download
-                                                                          </button>
-
-                                                                          <button
-                                                                            type="button"
-                                                                            title={
-                                                                              doc.Ai_generate ===
-                                                                                "Yes"
-                                                                                ? "Yes"
-                                                                                : "No"
-                                                                            }
-                                                                            className="editdelete-links"
-                                                                          >
-                                                                            <Brain
-                                                                              className="me-1 text-white"
-                                                                              width={
-                                                                                12
-                                                                              }
-                                                                              height={
-                                                                                10
-                                                                              }
-                                                                            />
-                                                                            {doc.Ai_generate ===
-                                                                              "Yes"
-                                                                              ? "AI Yes"
-                                                                              : "AI No"}
-                                                                          </button>
-                                                                          {doc.Ai_generate ===
-                                                                            "No" && (
-                                                                              <button
-                                                                                onClick={() =>
-                                                                                  handleLockUnlockFile(
-                                                                                    doc.company_id,
-                                                                                    doc.document_id,
-                                                                                    doc.locked,
-                                                                                    doc.Ai_generate
-                                                                                  )
-                                                                                }
-                                                                                type="button"
-                                                                                title={
-                                                                                  doc.locked ===
-                                                                                    "Yes"
-                                                                                    ? "Unlock"
-                                                                                    : "Lock"
-                                                                                }
-                                                                                className="editdelete-links"
-                                                                              >
-                                                                                {doc.locked ===
-                                                                                  "Yes" ? (
-                                                                                  <Unlock
-                                                                                    className="me-1 text-white"
-                                                                                    width={
-                                                                                      12
-                                                                                    }
-                                                                                    height={
-                                                                                      10
-                                                                                    }
-                                                                                  />
-                                                                                ) : (
-                                                                                  <Lock
-                                                                                    className="me-1 text-white"
-                                                                                    width={
-                                                                                      12
-                                                                                    }
-                                                                                    height={
-                                                                                      10
-                                                                                    }
-                                                                                  />
-                                                                                )}
-                                                                                {doc.locked ===
-                                                                                  "Yes"
-                                                                                  ? "Unlock"
-                                                                                  : "Lock"}
-                                                                              </button>
-                                                                            )}
-                                                                          <button
-                                                                            type="button"
-                                                                            title="Edit"
-                                                                            className="editdelete-links"
-                                                                            style={{
-                                                                              opacity:
-                                                                                doc.Ai_generate ===
-                                                                                  "Yes" &&
-                                                                                  sub.lockStatus ===
-                                                                                  "Yes"
-                                                                                  ? 0.6
-                                                                                  : 1,
-                                                                              pointerEvents:
-                                                                                doc.Ai_generate ===
-                                                                                  "Yes" &&
-                                                                                  sub.lockStatus ===
-                                                                                  "Yes"
-                                                                                  ? "none"
-                                                                                  : "auto",
-                                                                            }}
-                                                                            onClick={() =>
-                                                                              handleEditFile(
-                                                                                doc.id,
-                                                                                doc.name,
-                                                                                doc.lockStatus,
-                                                                                category.id,
-                                                                                doc.locked,
-                                                                                doc.Ai_generate
-                                                                              )
-                                                                            }
-                                                                          >
-                                                                            <Pencil
-                                                                              className="me-1 text-white"
-                                                                              width={
-                                                                                10
-                                                                              }
-                                                                              height={
-                                                                                10
-                                                                              }
-                                                                            />
-                                                                            {doc.Ai_generate ===
-                                                                              "Yes"
-                                                                              ? "Replace"
-                                                                              : "Edit"}
-                                                                          </button>
-                                                                          {doc.Ai_generate ===
-                                                                            "Yes" && (
-                                                                              <button
-                                                                                type="button"
-                                                                                title="Add"
-                                                                                className="editdelete-links"
-                                                                                onClick={() =>
-                                                                                  handleUploadDocument(
-                                                                                    category.id,
-                                                                                    sub.id,
-                                                                                    "1"
-                                                                                  )
+                                                              <ol className="text-start text-capitalize px-3 pdflist">
+                                                                {sub.documents.map(
+                                                                  (doc, index) => (
+                                                                    <li key={doc.id}>
+                                                                      <span className="d-flex justify-content-between align-items-center">
+                                                                        <span className="d-flex align-items-center gap-2">
+                                                                          {index + 1}.
+                                                                          <>
+                                                                            {doc.locked ===
+                                                                              "Yes" ? (
+                                                                              <Lock
+                                                                                size={
+                                                                                  14
                                                                                 }
                                                                                 style={{
-                                                                                  opacity:
-                                                                                    doc.Ai_generate ===
-                                                                                      "Yes" &&
-                                                                                      sub.lockStatus ===
-                                                                                      "Yes"
-                                                                                      ? 0.6
-                                                                                      : 1,
-                                                                                  pointerEvents:
-                                                                                    doc.Ai_generate ===
-                                                                                      "Yes" &&
-                                                                                      sub.lockStatus ===
-                                                                                      "Yes"
-                                                                                      ? "none"
-                                                                                      : "auto",
+                                                                                  color:
+                                                                                    "var(--primary)",
                                                                                 }}
-                                                                              >
-                                                                                <FaPlus
-                                                                                  className="me-1"
-                                                                                  width={
-                                                                                    10
-                                                                                  }
-                                                                                  height={
-                                                                                    10
-                                                                                  }
-                                                                                />
-                                                                                Add
-                                                                              </button>
+                                                                                title="Locked"
+                                                                              />
+                                                                            ) : (
+                                                                              <Unlock
+                                                                                size={
+                                                                                  14
+                                                                                }
+                                                                                className="text-success"
+                                                                                title="Unlocked"
+                                                                              />
                                                                             )}
+                                                                          </>
+                                                                          {doc.name}
+                                                                        </span>
+
+                                                                        <div className="d-inline ">
                                                                           <button
+                                                                            title="More actions"
+                                                                            className="btn btn-link p-0 text-dark"
                                                                             type="button"
-                                                                            title="Delete"
-                                                                            className="editdelete-links"
-                                                                            style={{
-                                                                              opacity:
-                                                                                doc.Ai_generate ===
-                                                                                  "Yes" &&
-                                                                                  sub.lockStatus ===
-                                                                                  "Yes"
-                                                                                  ? 0.6
-                                                                                  : 1,
-                                                                              pointerEvents:
-                                                                                doc.Ai_generate ===
-                                                                                  "Yes" &&
-                                                                                  sub.lockStatus ===
-                                                                                  "Yes"
-                                                                                  ? "none"
-                                                                                  : "auto",
-                                                                            }}
                                                                             onClick={() =>
-                                                                              handleDelete(
-                                                                                doc.id,
-                                                                                doc.locked,
-                                                                                doc.Ai_generate,
-                                                                                doc.lockStatus
+                                                                              toggleDropdownEditDelete(
+                                                                                doc.id
                                                                               )
                                                                             }
                                                                           >
-                                                                            <Trash2
-                                                                              className="me-1"
-                                                                              width={
-                                                                                10
-                                                                              }
+                                                                            <MoreHorizontal
+                                                                              width={16}
                                                                               height={
-                                                                                10
+                                                                                16
                                                                               }
                                                                             />
-                                                                            Delete
                                                                           </button>
+
+                                                                          {editdeleteBtn ===
+                                                                            doc.id && (
+                                                                              <div
+                                                                                style={{
+                                                                                  position:
+                                                                                    "absolute",
+                                                                                  width:
+                                                                                    "100px",
+                                                                                  backgroundColor:
+                                                                                    "#fff",
+                                                                                  boxShadow:
+                                                                                    "0 2px 5px rgba(0,0,0,0.2)",
+                                                                                  padding:
+                                                                                    "2px",
+                                                                                  zIndex: 997,
+                                                                                  right: 0,
+                                                                                }}
+                                                                              >
+                                                                                <button
+                                                                                  type="button"
+                                                                                  title="Download"
+                                                                                  className="editdelete-links"
+                                                                                  onClick={() =>
+                                                                                    handleDownload(
+                                                                                      doc.company_id,
+                                                                                      doc.id,
+                                                                                      doc.name,
+                                                                                      doc.folder_name
+                                                                                    )
+                                                                                  }
+                                                                                >
+                                                                                  <Download
+                                                                                    className="me-1"
+                                                                                    width={
+                                                                                      12
+                                                                                    }
+                                                                                    height={
+                                                                                      10
+                                                                                    }
+                                                                                  />
+                                                                                  Download
+                                                                                </button>
+
+                                                                                <button
+                                                                                  type="button"
+                                                                                  title={
+                                                                                    doc.Ai_generate ===
+                                                                                      "Yes"
+                                                                                      ? "Yes"
+                                                                                      : "No"
+                                                                                  }
+                                                                                  className="editdelete-links"
+                                                                                >
+                                                                                  <Brain
+                                                                                    className="me-1 text-white"
+                                                                                    width={
+                                                                                      12
+                                                                                    }
+                                                                                    height={
+                                                                                      10
+                                                                                    }
+                                                                                  />
+                                                                                  {doc.Ai_generate ===
+                                                                                    "Yes"
+                                                                                    ? "AI Yes"
+                                                                                    : "AI No"}
+                                                                                </button>
+                                                                                {doc.Ai_generate ===
+                                                                                  "No" && (
+                                                                                    <button
+                                                                                      onClick={() =>
+                                                                                        handleLockUnlockFile(
+                                                                                          doc.company_id,
+                                                                                          doc.document_id,
+                                                                                          doc.locked,
+                                                                                          doc.Ai_generate
+                                                                                        )
+                                                                                      }
+                                                                                      type="button"
+                                                                                      title={
+                                                                                        doc.locked ===
+                                                                                          "Yes"
+                                                                                          ? "Unlock"
+                                                                                          : "Lock"
+                                                                                      }
+                                                                                      className="editdelete-links"
+                                                                                    >
+                                                                                      {doc.locked ===
+                                                                                        "Yes" ? (
+                                                                                        <Unlock
+                                                                                          className="me-1 text-white"
+                                                                                          width={
+                                                                                            12
+                                                                                          }
+                                                                                          height={
+                                                                                            10
+                                                                                          }
+                                                                                        />
+                                                                                      ) : (
+                                                                                        <Lock
+                                                                                          className="me-1 text-white"
+                                                                                          width={
+                                                                                            12
+                                                                                          }
+                                                                                          height={
+                                                                                            10
+                                                                                          }
+                                                                                        />
+                                                                                      )}
+                                                                                      {doc.locked ===
+                                                                                        "Yes"
+                                                                                        ? "Unlock"
+                                                                                        : "Lock"}
+                                                                                    </button>
+                                                                                  )}
+                                                                                <button
+                                                                                  type="button"
+                                                                                  title="Edit"
+                                                                                  className="editdelete-links"
+                                                                                  style={{
+                                                                                    opacity:
+                                                                                      doc.Ai_generate ===
+                                                                                        "Yes" &&
+                                                                                        sub.lockStatus ===
+                                                                                        "Yes"
+                                                                                        ? 0.6
+                                                                                        : 1,
+                                                                                    pointerEvents:
+                                                                                      doc.Ai_generate ===
+                                                                                        "Yes" &&
+                                                                                        sub.lockStatus ===
+                                                                                        "Yes"
+                                                                                        ? "none"
+                                                                                        : "auto",
+                                                                                  }}
+                                                                                  onClick={() =>
+                                                                                    handleEditFile(
+                                                                                      doc.id,
+                                                                                      doc.name,
+                                                                                      doc.lockStatus,
+                                                                                      category.id,
+                                                                                      doc.locked,
+                                                                                      doc.Ai_generate
+                                                                                    )
+                                                                                  }
+                                                                                >
+                                                                                  <Pencil
+                                                                                    className="me-1 text-white"
+                                                                                    width={
+                                                                                      10
+                                                                                    }
+                                                                                    height={
+                                                                                      10
+                                                                                    }
+                                                                                  />
+                                                                                  {doc.Ai_generate ===
+                                                                                    "Yes"
+                                                                                    ? "Replace"
+                                                                                    : "Edit"}
+                                                                                </button>
+                                                                                {doc.Ai_generate ===
+                                                                                  "Yes" && (
+                                                                                    <button
+                                                                                      type="button"
+                                                                                      title="Add"
+                                                                                      className="editdelete-links"
+                                                                                      onClick={() =>
+                                                                                        handleUploadDocument(
+                                                                                          category.id,
+                                                                                          sub.id,
+                                                                                          "1"
+                                                                                        )
+                                                                                      }
+                                                                                      style={{
+                                                                                        opacity:
+                                                                                          doc.Ai_generate ===
+                                                                                            "Yes" &&
+                                                                                            sub.lockStatus ===
+                                                                                            "Yes"
+                                                                                            ? 0.6
+                                                                                            : 1,
+                                                                                        pointerEvents:
+                                                                                          doc.Ai_generate ===
+                                                                                            "Yes" &&
+                                                                                            sub.lockStatus ===
+                                                                                            "Yes"
+                                                                                            ? "none"
+                                                                                            : "auto",
+                                                                                      }}
+                                                                                    >
+                                                                                      <FaPlus
+                                                                                        className="me-1"
+                                                                                        width={
+                                                                                          10
+                                                                                        }
+                                                                                        height={
+                                                                                          10
+                                                                                        }
+                                                                                      />
+                                                                                      Add
+                                                                                    </button>
+                                                                                  )}
+                                                                                <button
+                                                                                  type="button"
+                                                                                  title="Delete"
+                                                                                  className="editdelete-links"
+                                                                                  style={{
+                                                                                    opacity:
+                                                                                      doc.Ai_generate ===
+                                                                                        "Yes" &&
+                                                                                        sub.lockStatus ===
+                                                                                        "Yes"
+                                                                                        ? 0.6
+                                                                                        : 1,
+                                                                                    pointerEvents:
+                                                                                      doc.Ai_generate ===
+                                                                                        "Yes" &&
+                                                                                        sub.lockStatus ===
+                                                                                        "Yes"
+                                                                                        ? "none"
+                                                                                        : "auto",
+                                                                                  }}
+                                                                                  onClick={() =>
+                                                                                    handleDelete(
+                                                                                      doc.id,
+                                                                                      doc.locked,
+                                                                                      doc.Ai_generate,
+                                                                                      doc.lockStatus
+                                                                                    )
+                                                                                  }
+                                                                                >
+                                                                                  <Trash2
+                                                                                    className="me-1"
+                                                                                    width={
+                                                                                      10
+                                                                                    }
+                                                                                    height={
+                                                                                      10
+                                                                                    }
+                                                                                  />
+                                                                                  Delete
+                                                                                </button>
+                                                                              </div>
+                                                                            )}
                                                                         </div>
-                                                                      )}
-                                                                  </div>
-                                                                </span>
-                                                              </li>
-                                                            )
-                                                          )}
-                                                        </ol>
+                                                                      </span>
+                                                                    </li>
+                                                                  )
+                                                                )}
+                                                              </ol>
 
-                                                        <button
-                                                          className="btn btn-outline-dark"
-                                                          type="button"
-                                                          onClick={() =>
-                                                            togglePopup(
-                                                              category.id,
-                                                              sub.id
-                                                            )
-                                                          }
-                                                        >
-                                                          <FaTimes />
-                                                        </button>
-                                                      </div>
-                                                    </div>
-                                                  </div>
+                                                              <button
+                                                                className="btn btn-outline-dark"
+                                                                type="button"
+                                                                onClick={() =>
+                                                                  togglePopup(
+                                                                    category.id,
+                                                                    sub.id
+                                                                  )
+                                                                }
+                                                              >
+                                                                <FaTimes />
+                                                              </button>
+                                                            </div>
+                                                          </div>
+                                                        </div>
+                                                      )}
+                                                  </>
+                                                ) : (
+                                                  <span>N/A</span>
                                                 )}
-                                            </>
-                                          ) : (
-                                            <span>N/A</span>
-                                          )}
-                                        </TableData>
+                                              </TableData>
 
-                                        <TableData>
-                                          <h5>--</h5>
-                                        </TableData>
-                                        <TableData>
-                                          {sub.documents.length > 0 ? (
-                                            <p>Yes</p>
-                                          ) : (
-                                            <span>--</span>
-                                          )}
-                                        </TableData>
-                                      </tr>
-                                    );
-                                  })}
-                                </tbody>
-                              ) : (
-                                <tbody>
-                                  <tr>
-                                    <TableData colSpan={5}>
-                                      <p>No subcategories</p>
-                                    </TableData>
-                                  </tr>
-                                </tbody>
-                              )}
-                            </table>
-                          </div>
-                        );
-                      })}
-                      <div className="titleroom d-flex justify-content-between align-items-center text-center">
-                        <button
-                          type="button"
-                          disabled={
-                            spinnerss || authorizedData?.approve !== "Yes"
-                          } // ✅ disable if spinner or not approved
-                          style={{
-                            opacity:
-                              spinnerss || authorizedData?.approve !== "Yes"
-                                ? 0.6
-                                : 1,
-                          }}
-                          onClick={handleFinaldoc}
-                          className="generatebutton px-4 py-2 fn_size_sm btn btn-outline-dark active d-flex align-items-center gap-2"
-                        >
-                          <span
-                            style={{
-                              opacity:
-                                !Documentcheck ||
-                                  authorizedData?.approve !== "Yes"
-                                  ? 0.6
-                                  : 1,
-                            }}
-                          >
-                            {textgeneratebtn}
-                          </span>
-                          {spinnerss && (
-                            <div
-                              className="spinner-color spinner-border spinneronetimepay m-0"
-                              role="status"
-                            >
-                              <span className="visually-hidden"></span>
-                            </div>
-                          )}
-                        </button>
+                                              <TableData>
+                                                <h5>--</h5>
+                                              </TableData>
+                                              <TableData>
+                                                {sub.documents.length > 0 ? (
+                                                  <p>Yes</p>
+                                                ) : (
+                                                  <span>--</span>
+                                                )}
+                                              </TableData>
+                                            </tr>
+                                          );
+                                        })}
+                                      </tbody>
+                                    ) : (
+                                      <tbody>
+                                        <tr>
+                                          <TableData colSpan={5}>
+                                            <p>No subcategories</p>
+                                          </TableData>
+                                        </tr>
+                                      </tbody>
+                                    )}
+                                  </table>
+                                </div>
+                              );
+                            })}
+                            <div className="titleroom d-flex justify-content-between align-items-center text-center">
+                              <button
+                                type="button"
+                                disabled={
+                                  spinnerss || authorizedData?.approve !== "Yes"
+                                } // ✅ disable if spinner or not approved
+                                style={{
+                                  opacity:
+                                    spinnerss || authorizedData?.approve !== "Yes"
+                                      ? 0.6
+                                      : 1,
+                                }}
+                                onClick={handleFinaldoc}
+                                className="generatebutton px-4 py-2 fn_size_sm btn btn-outline-dark active d-flex align-items-center gap-2"
+                              >
+                                <span
+                                  style={{
+                                    opacity:
+                                      !Documentcheck ||
+                                        authorizedData?.approve !== "Yes"
+                                        ? 0.6
+                                        : 1,
+                                  }}
+                                >
+                                  {textgeneratebtn}
+                                </span>
+                                {spinnerss && (
+                                  <div
+                                    className="spinner-color spinner-border spinneronetimepay m-0"
+                                    role="status"
+                                  >
+                                    <span className="visually-hidden"></span>
+                                  </div>
+                                )}
+                              </button>
 
-                        {/* Upload Company Logo Section */}
-                        {/* <div className="d-flex align-items-center gap-3">
+                              {/* Upload Company Logo Section */}
+                              {/* <div className="d-flex align-items-center gap-3">
                           <input
                             type="file"
                             accept="image/*"
@@ -2162,16 +2161,19 @@ export default function DataroomDiligence() {
                             </>
                           )}
                         </div> */}
+                            </div>
+                          </div>
+                        </DataRoomSection>
                       </div>
-                    </div>
-                  </DataRoomSection>
+                    </SectionWrapper>
+                  </div>
+
                 </div>
-              </SectionWrapper>
-            </div>
+              </div>
+            </section>
           </div>
         </div>
-      </Wrapper>
-
+      </main>
       {/* pop up */}
       {isModalOpen && (
         <UploadModal

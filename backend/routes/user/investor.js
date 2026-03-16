@@ -14,72 +14,82 @@ router.post("/getInvestorlistCrm", inverstorController.getInvestorlistCrm);
 router.post("/checkInvestor", inverstorController.checkInvestor);
 router.post(
   "/getInvestorReportUpdate",
-  inverstorController.getInvestorReportUpdate
+  inverstorController.getInvestorReportUpdate,
 );
 router.post(
   "/getInvestorlistCrmDuediligence",
-  inverstorController.getInvestorlistCrmDuediligence
+  inverstorController.getInvestorlistCrmDuediligence,
 );
 router.post(
   "/getInvestorReportDuediligence",
-  inverstorController.getInvestorReportDuediligence
+  inverstorController.getInvestorReportDuediligence,
 );
 router.post(
   "/getinvestorReportsLock",
-  inverstorController.getinvestorReportsLock
+  inverstorController.getinvestorReportsLock,
 );
 router.post(
   "/getDuediligenceDataroomLock",
-  inverstorController.getDuediligenceDataroomLock
+  inverstorController.getDuediligenceDataroomLock,
 );
 router.post(
   "/getInvestorlistCrmDuediligenceupdate",
-  inverstorController.getInvestorlistCrmDuediligenceupdate
+  inverstorController.getInvestorlistCrmDuediligenceupdate,
 );
 router.post("/getInvestorCompany", inverstorController.getInvestorCompany);
 router.post(
   "/getInvestorReportslist",
-  inverstorController.getInvestorReportslist
+  inverstorController.getInvestorReportslist,
 );
 router.post(
   "/InvestorReportslistDownload",
-  inverstorController.InvestorReportslistDownload
+  inverstorController.InvestorReportslistDownload,
 );
 router.post(
   "/getreportsCapitalRound",
-  inverstorController.getreportsCapitalRound
+  inverstorController.getreportsCapitalRound,
 );
 router.post(
   "/checkInvestorRecordround",
-  inverstorController.checkInvestorRecordround
+  inverstorController.checkInvestorRecordround,
 );
 router.post("/checkInvestorRecord", inverstorController.checkInvestorRecord);
 router.post(
   "/getInvestorReportCapitalRound",
-  inverstorController.getInvestorReportCapitalRound
+  inverstorController.getInvestorReportCapitalRound,
 );
 router.post("/getrecordRoundList", inverstorController.getrecordRoundList);
 router.post("/recordRoundLock", inverstorController.recordRoundLock);
 router.post(
   "/InvestorAuthorizeConfimataion",
-  inverstorController.InvestorAuthorizeConfimataion
+  inverstorController.InvestorAuthorizeConfimataion,
 );
 router.post(
   "/InvestorrequestToCompany",
-  inverstorController.InvestorrequestToCompany
+  inverstorController.InvestorrequestToCompany,
 );
 router.post(
   "/getInvestorAllRoundRecord",
-  inverstorController.getInvestorAllRoundRecord
+  inverstorController.getInvestorAllRoundRecord,
 );
 router.post("/getInvestmentList", inverstorController.getInvestmentList);
 router.post("/verifyInvestment", inverstorController.verifyInvestment);
 router.post("/fetchInvestorData", inverstorController.fetchInvestorData);
 router.post(
   "/getcheckInvestorStatus",
-  inverstorController.getcheckInvestorStatus
+  inverstorController.getcheckInvestorStatus,
 );
 router.post("/getexistingShare", inverstorController.getexistingShare);
+router.post("/getinvestorData", inverstorController.getinvestorData);
 router.post("/getAllocatedShares", inverstorController.getAllocatedShares);
 router.post("/getTotalInvestment", inverstorController.getTotalInvestment);
+router.post("/deleteround", inverstorController.deleteround);
+router.post(
+  "/investoreditprofile",
+
+  inverstorController.investoreditprofile,
+);
+router.post("/getCapTableRules", inverstorController.getCapTableRules);
+router.post("/saveCapTableRules", inverstorController.saveCapTableRules);
+
 module.exports = router;

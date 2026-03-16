@@ -23,8 +23,8 @@ export default function Provideform() {
   const navigate = useNavigate();
   const storedUsername = localStorage.getItem("InvestorData");
   const userLogin = JSON.parse(storedUsername);
-  var apiURLINFile = "https://capavate.com/api/user/investorreport/";
-  var apiURL = "https://capavate.com/api/user/";
+  var apiURLINFile = "http://localhost:5000/api/user/investorreport/";
+  var apiURL = "http://localhost:5000/api/user/";
   document.title = "Investor Page";
   const [successresponse, setsuccessresponse] = useState("");
   const [err, seterr] = useState(false);

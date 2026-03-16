@@ -108,6 +108,7 @@ export default function Login() {
           access_token: checkData.access_token,
           expiry: expiryTime,
         };
+
         localStorage.setItem("OwnerLoginData", JSON.stringify(userData));
         navigate("/user/dashboard");
       }
@@ -117,6 +118,7 @@ export default function Login() {
       }
     }
   };
+
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     first_name: "",

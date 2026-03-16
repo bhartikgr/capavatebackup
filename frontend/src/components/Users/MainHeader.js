@@ -69,7 +69,7 @@ export default function MainHeader() {
             Accept: "application/json",
             "Content-Type": "application/json",
           },
-        }
+        },
       );
       setShowPopup(true);
       setcreditBalanceData(res.data);

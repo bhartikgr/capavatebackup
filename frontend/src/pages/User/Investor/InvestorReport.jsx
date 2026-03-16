@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import DataTable from "react-data-table-component";
-import TopBar from "../../../components/Users/TopBar";
+import TopBar from '../../../components/social/TopBar';
 import ModuleSideNav from "../../../components/Users/ModuleSideNav.jsx";
 import { IoCloseCircleOutline } from "react-icons/io5";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -31,6 +31,7 @@ import { useNavigate } from "react-router-dom";
 import InvestorShareReport from "../../../components/Users/popup/InvestorShareReport.jsx";
 import AirwallexPaymentPopupOneTimeDataroom from "../../../components/Users/AirwallexPaymentPopupOneTimeDataroom.jsx";
 import { API_BASE_URL } from "../../../config/config.js";
+import SideBar from '../../../components/social/SideBar';
 export default function InvestorReport() {
   const navigate = useNavigate();
   const [IsModalOpenShareReport, setIsModalOpenShareReport] = useState(false);
@@ -841,47 +842,44 @@ export default function InvestorReport() {
   return (
     <>
       <>
-        <Wrapper>
-          <div className="fullpage d-block">
-            <div className="d-flex align-items-start gap-0">
-              <ModuleSideNav
-                isCollapsed={isCollapsed}
-                setIsCollapsed={setIsCollapsed}
-              />
-              <div
-                className={`global_view ${isCollapsed ? "global_view_col" : ""
-                  }`}
-              >
-                <TopBar />
-                <SectionWrapper className="d-block p-md-4 p-3">
-                  <div className="container-fluid">
-                    {messagesuccessError && (
-                      <div
-                        className={`flex items-center justify-between gap-3 shadow-lg ${errr ? "error_pop" : "success_pop"
-                          }`}
-                      >
-                        <div className="d-flex align-items-start gap-2">
-                          <span className="d-block">{messagesuccessError}</span>
-                        </div>
+        <main>
+          <div className='d-flex align-items-start gap-0'>
+            <SideBar />
+            <div className='d-flex flex-grow-1 flex-column gap-0'>
+              <TopBar />
+              <section className='px-md-3 py-4'>
+                <div className='container-fluid'>
+                  <div className='row gy-4'>
+                    <div className='col-md-12 order-1 order-md-0'>
+                      <SectionWrapper className="d-block p-md-4 p-3">
+                        <div className="container-fluid">
+                          {messagesuccessError && (
+                            <div
+                              className={`flex items-center justify-between gap-3 shadow-lg ${errr ? "error_pop" : "success_pop"
+                                }`}
+                            >
+                              <div className="d-flex align-items-start gap-2">
+                                <span className="d-block">{messagesuccessError}</span>
+                              </div>
 
-                        <button
-                          type="button"
-                          className="close_btnCros"
-                          onClick={() => setmessagesuccessError("")}
-                        >
-                          ×
-                        </button>
-                      </div>
-                    )}
-                    <DataRoomSection className="d-flex flex-column gap-2">
-                      <div className="titleroom flex-wrap gap-3 d-flex justify-content-between align-items-center border-bottom pb-3">
-                        {/* Heading on the left */}
-                        <div className="pb-3 bar_design">
-                          <h4 className="h5 mb-0">Investor Update Reports</h4>
-                        </div>
-                        {/* Buttons on the right */}
-                        <div className="d-flex gap-2">
-                          {/* <Button
+                              <button
+                                type="button"
+                                className="close_btnCros"
+                                onClick={() => setmessagesuccessError("")}
+                              >
+                                ×
+                              </button>
+                            </div>
+                          )}
+                          <DataRoomSection className="d-flex flex-column gap-2">
+                            <div className="titleroom flex-wrap gap-3 d-flex justify-content-between align-items-center border-bottom pb-3">
+                              {/* Heading on the left */}
+                              <div className="pb-3 bar_design">
+                                <h4 className="h5 mb-0">Investor Update Reports</h4>
+                              </div>
+                              {/* Buttons on the right */}
+                              <div className="d-flex gap-2">
+                                {/* <Button
                             onClick={handleshareReport}
                             type="button"
                             className="btn btn-outline-dark d-flex align-items-center active gap-2"
@@ -895,68 +893,72 @@ export default function InvestorReport() {
                             Share Report
                           </Button> */}
 
-                          <Button
-                            type="button"
-                            onClick={handleredirecturl}
-                            className="generatebutton px-4 py-2 fn_size_sm btn btn-outline-dark active d-flex align-items-center gap-2"
-                            disabled={
-                              userLogin.role !== "owner" &&
-                              authorizedData?.approve !== "Yes"
-                            } // ✅ Owner bypasses disabled condition
-                            style={{
-                              cursor:
-                                userLogin.role === "owner" ||
-                                  authorizedData?.approve === "Yes"
-                                  ? "pointer"
-                                  : "not-allowed",
-                              opacity:
-                                userLogin.role === "owner" ||
-                                  authorizedData?.approve === "Yes"
-                                  ? 1
-                                  : 0.6,
-                            }}
-                          >
-                            Add New Report
-                          </Button>
-                        </div>
-                      </div>
+                                <Button
+                                  type="button"
+                                  onClick={handleredirecturl}
+                                  className="generatebutton px-4 py-2 fn_size_sm btn btn-outline-dark active d-flex align-items-center gap-2"
+                                  disabled={
+                                    userLogin.role !== "owner" &&
+                                    authorizedData?.approve !== "Yes"
+                                  } // ✅ Owner bypasses disabled condition
+                                  style={{
+                                    cursor:
+                                      userLogin.role === "owner" ||
+                                        authorizedData?.approve === "Yes"
+                                        ? "pointer"
+                                        : "not-allowed",
+                                    opacity:
+                                      userLogin.role === "owner" ||
+                                        authorizedData?.approve === "Yes"
+                                        ? 1
+                                        : 0.6,
+                                  }}
+                                >
+                                  Add New Report
+                                </Button>
+                              </div>
+                            </div>
 
-                      <div className="d-flex justify-content-end my-2 p-0">
-                        <input
-                          type="search"
-                          placeholder="Search Here..."
-                          className="form-control"
-                          value={searchText}
-                          onChange={(e) => setSearchText(e.target.value)}
-                          style={{
-                            padding: "10px 15px",
-                            width: "100%",
-                            maxWidth: "300px",
-                            fontSize: "14px",
-                            borderRadius: "10px",
-                          }}
-                        />
-                      </div>
-                      <div className="d-flex flex-column overflow-auto justify-content-between align-items-start tb-box">
-                        <DataTable
-                          customStyles={customStyles}
-                          conditionalRowStyles={conditionalRowStyles}
-                          columns={columns}
-                          className="datatb-report"
-                          data={filteredData}
-                          pagination
-                          highlightOnHover
-                          striped
-                          responsive
-                        />
-                      </div>
-                    </DataRoomSection>
+                            <div className="d-flex justify-content-end my-2 p-0">
+                              <input
+                                type="search"
+                                placeholder="Search Here..."
+                                className="form-control"
+                                value={searchText}
+                                onChange={(e) => setSearchText(e.target.value)}
+                                style={{
+                                  padding: "10px 15px",
+                                  width: "100%",
+                                  maxWidth: "300px",
+                                  fontSize: "14px",
+                                  borderRadius: "10px",
+                                }}
+                              />
+                            </div>
+                            <div className="d-flex flex-column overflow-auto justify-content-between align-items-start tb-box">
+                              <DataTable
+                                customStyles={customStyles}
+                                conditionalRowStyles={conditionalRowStyles}
+                                columns={columns}
+                                className="datatb-report"
+                                data={filteredData}
+                                pagination
+                                highlightOnHover
+                                striped
+                                responsive
+                              />
+                            </div>
+                          </DataRoomSection>
+                        </div>
+                      </SectionWrapper>
+                    </div>
+
                   </div>
-                </SectionWrapper>
-              </div>
+                </div>
+              </section>
             </div>
           </div>
-        </Wrapper>
+        </main>
       </>
 
       {IsModalOpenAiResponseSummary && (

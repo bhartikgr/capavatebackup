@@ -37,7 +37,7 @@ export default function MainHeaderInvestorRegister() {
             Accept: "application/json",
             "Content-Type": "application/json",
           },
-        }
+        },
       );
       if (res.data.results.length === 0) {
       } else {

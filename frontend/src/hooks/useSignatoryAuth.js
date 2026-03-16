@@ -8,7 +8,7 @@ export default function useSignatoryAuth() {
   useEffect(() => {
     const storedData = localStorage.getItem("SignatoryLoginData");
     if (!storedData) {
-      navigate("/signatory/login", { replace: true });
+      navigate("/user/login", { replace: true });
       return;
     }
 
@@ -17,14 +17,14 @@ export default function useSignatoryAuth() {
 
       if (!userLogin || typeof userLogin !== "object") {
         localStorage.removeItem("SignatoryLoginData");
-        navigate("/signatory/login", { replace: true });
+        navigate("/user/login", { replace: true });
         return;
       }
 
       const currentTime = new Date().getTime();
       if (!userLogin.expiry || currentTime > userLogin.expiry) {
         localStorage.removeItem("SignatoryLoginData");
-        navigate("/signatory/login", { replace: true });
+        navigate("/user/login", { replace: true });
         return;
       }
 
@@ -32,7 +32,7 @@ export default function useSignatoryAuth() {
     } catch (error) {
       console.error("Error parsing user data:", error);
       localStorage.removeItem("SignatoryLoginData");
-      navigate("/signatory/login", { replace: true });
+      navigate("/user/login", { replace: true });
     }
   }, [navigate]);
 

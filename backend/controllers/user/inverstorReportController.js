@@ -24,7 +24,7 @@ const openai = new OpenAI({
 
 const Stripe = require("stripe");
 const stripe = new Stripe(
-  "sk_test_51RUJzWAx6rm2q3pyUl86ZMypACukdO7IsZ0AbsWOcJqg9xWGccwcQwbQvfCaxQniDCWzNg7z2p4rZS1u4mmDDyou00DM7rK8eY"
+  "sk_test_51RUJzWAx6rm2q3pyUl86ZMypACukdO7IsZ0AbsWOcJqg9xWGccwcQwbQvfCaxQniDCWzNg7z2p4rZS1u4mmDDyou00DM7rK8eY",
 );
 const upload = require("../../middlewares/uploadMiddleware");
 
@@ -49,7 +49,7 @@ exports.investorQuatarlyEmailSend = (req, res) => {
       // Send email to each investor
       sendEmailForInvestorReminder(
         investor.email,
-        "Reminder: Submit Your Quarterly Investor Update"
+        "Reminder: Submit Your Quarterly Investor Update",
       );
     });
 
@@ -196,7 +196,7 @@ exports.SendreportToinvestor = async (req, res) => {
       const messageText = duplicateReports
         .map(
           (item) =>
-            `Report "${item.document_name}" has already been sent to ${item.email}`
+            `Report "${item.document_name}" has already been sent to ${item.email}`,
         )
         .join("\n");
 
@@ -223,7 +223,7 @@ exports.SendreportToinvestor = async (req, res) => {
             currentDate,
             expiredAt,
             report.type,
-          ]
+          ],
         );
 
         // 📧 Send Email
@@ -424,7 +424,7 @@ function generateStrongPassword(length = 12) {
   for (let i = passwordArray.length; i < length; i++) {
     const randomByte = crypto.randomBytes(1).readUInt8();
     passwordArray.push(
-      allChars[Math.floor((randomByte / 256) * allChars.length)]
+      allChars[Math.floor((randomByte / 256) * allChars.length)],
     );
   }
 
@@ -436,10 +436,12 @@ function generateStrongPassword(length = 12) {
 
   return passwordArray.join("");
 }
-// Multer storage config
-const storagekyc = multer.diskStorage({
+
+const storage = multer.diskStorage({
   destination: async function (req, file, cb) {
-    const userId = req.body.id; // use inserted ID
+    // For new registrations, use email as folder name temporarily if ID not available
+    const folderName = req.body.id || req.body.email || "temp";
+    const sanitizedFolder = folderName.replace(/[^a-zA-Z0-9]/g, "_");
 
     const userFolder = path.join(
       __dirname,
@@ -447,7 +449,7 @@ const storagekyc = multer.diskStorage({
       "..",
       "upload",
       "investor",
-      `inv_${userId}`
+      `inv_${sanitizedFolder}`,
     );
 
     if (!fs.existsSync(userFolder)) {
@@ -458,163 +460,534 @@ const storagekyc = multer.diskStorage({
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
+
+    // Add prefix to identify file type
+    let prefix = "file";
+    if (
+      file.fieldname === "profile_picture" ||
+      file.fieldname === "profile_picture[]"
+    ) {
+      prefix = "profile";
+    } else if (
+      file.fieldname === "kyc_document" ||
+      file.fieldname === "kyc_document[]"
+    ) {
+      prefix = "kyc";
+    }
+
+    cb(null, prefix + "_" + uniqueSuffix + path.extname(file.originalname));
   },
 });
 
-const uploadKyc = multer({ storage: storagekyc }).array("kyc_document[]", 10); // multiple files
+// Updated middleware to handle multiple field types
+const uploadInvestorFiles = multer({ storage: storage }).fields([
+  { name: "kyc_document[]", maxCount: 10 }, // Multiple KYC documents
+  { name: "profile_picture", maxCount: 1 }, // Single profile picture
+]);
+
+// ============================================
+// INVESTOR INFORMATION CONTROLLER
+// ============================================
 
 exports.investorInformation = async (req, res) => {
-  uploadKyc(req, res, async function (err) {
+  uploadInvestorFiles(req, res, async function (err) {
     if (err) {
-      return res.status(500).json({ message: "File upload error", error: err });
-    }
-
-    const data = req.body;
-    const { code } = data.code;
-    if (!code) {
-      return res.status(400).json({
-        message: "Code and email are required",
+      console.error("File upload error:", err);
+      return res.status(500).json({
+        message: "File upload error",
+        error: err.message,
         status: "2",
       });
     }
 
-    const query = `SELECT * FROM investor_information WHERE email = ? AND unique_code = ?;`;
-
     try {
-      const [results] = await db.promise().query(query, [data.email, code]);
+      console.log("Received files:", req.files);
+      console.log("Received body:", req.body);
 
-      if (results.length === 0) {
-        return res.status(200).json({
-          message: "Investor email not matched",
+      const data = req.body;
+
+      let code;
+      try {
+        code =
+          typeof data.code === "string" ? JSON.parse(data.code) : data.code;
+        code = code.code || code;
+      } catch (e) {
+        code = data.code;
+      }
+
+      if (!code || !data.email) {
+        return res.status(400).json({
+          message: "Code and email are required",
           status: "2",
         });
       }
 
-      const query2 = `SELECT investor_information.*,company.company_name FROM investor_information join company on company.id = investor_information.company_id WHERE investor_information.unique_code = ? AND investor_information.email = ?`;
-      const [resultss] = await db.promise().query(query2, [code, data.email]);
+      const checkQuery = `SELECT * FROM investor_information WHERE email = ? AND unique_code = ?;`;
+      const [existingInvestors] = await db
+        .promise()
+        .query(checkQuery, [data.email, code]);
+
+      if (existingInvestors.length === 0) {
+        return res.status(200).json({
+          message: "Investor email not matched with the provided code",
+          status: "2",
+        });
+      }
+
+      const detailsQuery = `
+        SELECT investor_information.*, company.company_name 
+        FROM investor_information 
+        LEFT JOIN company ON company.id = investor_information.company_id 
+        WHERE investor_information.unique_code = ? AND investor_information.email = ?
+      `;
+      const [investorDetails] = await db
+        .promise()
+        .query(detailsQuery, [code, data.email]);
 
       const password = generateStrongPassword(8);
       const hashedPassword = await bcrypt.hash(password, 12);
       const ip = await getPublicIP();
 
-      // Prepare KYC files array
-      let newKycFiles = req.files ? req.files.map((f) => f.filename) : [];
-      let finalKycFiles =
-        resultss.length > 0 && resultss[0].kyc_document
-          ? [...JSON.parse(resultss[0].kyc_document), ...newKycFiles]
-          : newKycFiles;
-      let kycFilesJSON = JSON.stringify(finalKycFiles);
-      var invdata = resultss[0];
-      if (resultss.length > 0) {
+      // ============================================
+      // HANDLE PROFILE PICTURE - Only if new file uploaded
+      // ============================================
+      let profilePictureFilename = investorDetails[0]?.profile_picture || null;
+
+      if (
+        req.files &&
+        req.files["profile_picture"] &&
+        req.files["profile_picture"].length > 0
+      ) {
+        const profilePicFile = req.files["profile_picture"][0];
+        profilePictureFilename = profilePicFile.filename;
+        console.log(
+          "New profile picture uploaded (replaced):",
+          profilePictureFilename,
+        );
+      } else {
+        console.log(
+          "Keeping existing profile picture:",
+          profilePictureFilename,
+        );
+      }
+
+      // ============================================
+      // HANDLE KYC DOCUMENTS - Only new files, no merging
+      // ============================================
+      let kycFilesJSON = investorDetails[0]?.kyc_document || null;
+
+      if (
+        req.files &&
+        req.files["kyc_document[]"] &&
+        req.files["kyc_document[]"].length > 0
+      ) {
+        // Only use new files, discard old ones completely
+        const newKycFiles = req.files["kyc_document[]"].map((f) => f.filename);
+        kycFilesJSON = JSON.stringify(newKycFiles);
+        console.log("New KYC documents uploaded (replaced old):", newKycFiles);
+      } else {
+        console.log("Keeping existing KYC documents:", kycFilesJSON);
+      }
+
+      const investorData = investorDetails[0] || {};
+
+      if (investorDetails.length > 0) {
+        // UPDATE existing record
         const updateQuery = `
           UPDATE investor_information
-          SET is_register=?, viewpassword=?, password=?, first_name=?, last_name=?, phone=?, country=?, city=?, ip_address=?, full_address=?, country_tax=?, tax_id=?, linkedIn_profile=?, accredited_status=?, industry_expertise=?, type_of_investor=?, kyc_document=?, updated_at=?
-          WHERE unique_code=? AND email=?;
+          SET 
+          capavate_interests=?,
+            is_register = ?,
+            viewpassword = ?,
+            password = ?,
+            first_name = ?,
+            last_name = ?,
+            phone = ?,
+            country = ?,
+            city = ?,
+            ip_address = ?,
+            linkedIn_profile = ?,
+            type_of_investor = ?,
+            accredited_status = ?,
+            bio_short = ?,
+            mailing_address = ?,
+            country_tax = ?,
+            tax_id = ?,
+            screen_name = ?,
+            job_title = ?,
+            company_name = ?,
+            company_country = ?,
+            company_website = ?,
+            industry_expertise = ?,
+            geo_focus = ?,
+            network_bio = ?,
+            notes = ?,
+            hands_on = ?,
+            ma_interests = ?,
+            preferred_stages = ?,
+            cheque_size = ?,
+            profile_picture = ?,
+            kyc_document = ?,
+            full_address = ?,
+            updated_at = NOW()
+          WHERE unique_code = ? AND email = ?;
         `;
 
         const updateData = [
+          data.capavate_interests || null,
           "Yes",
           password,
           hashedPassword,
-          data.first_name,
-          data.last_name,
-          data.phone,
-          data.country,
-          data.city,
+          data.first_name || null,
+          data.last_name || null,
+          data.phone || null,
+          data.country || null,
+          data.city || null,
           ip,
-          data.full_address,
-          data.country_tax,
-          data.tax_id,
-          data.linkedIn_profile,
-          data.accredited_status,
-          data.industry_expertise,
-          data.type_of_investor,
-          kycFilesJSON,
-          new Date(),
+          data.linkedIn_profile || null,
+          data.type_of_investor || null,
+          data.accredited_status || null,
+          data.bio_short || null,
+          data.mailing_address || null,
+          data.country_tax || null,
+          data.tax_id || null,
+          data.screen_name || null,
+          data.job_title || null,
+          data.company_name || null,
+          data.company_country || null,
+          data.company_website || null,
+          data.industry_expertise || null,
+          data.geo_focus || null,
+          data.network_bio || null,
+          data.notes || null,
+          data.hands_on || null,
+          data.ma_interests || null,
+          data.preferred_stages || null,
+          data.cheque_size || null,
+          profilePictureFilename, // Either existing OR new (not merged)
+          kycFilesJSON, // Either existing OR new (not merged)
+          data.full_address || null,
           code,
           data.email,
         ];
 
         await db.promise().query(updateQuery, updateData);
-        insertInvestorLog({
-          investorId: invdata.id,
-          userId: invdata.created_by_id,
-          companyId: invdata.company_id,
-          companyName: invdata.company_name,
+
+        await insertInvestorLog({
+          investorId: investorData.id,
+          userId: investorData.created_by_id,
+          companyId: investorData.company_id,
+          companyName: investorData.company_name,
           action: "REGISTER",
-          description: `New investor ${data.first_name} ${data.last_name} registered.`,
+          description: `Investor ${data.first_name || ""} ${data.last_name || ""} registered successfully.`,
           ip,
-          extraData: { email: data.email },
+          extraData: {
+            email: data.email,
+            hasKyc:
+              req.files && req.files["kyc_document[]"]
+                ? req.files["kyc_document[]"].length > 0
+                : false,
+            hasProfilePic:
+              req.files && req.files["profile_picture"]
+                ? req.files["profile_picture"].length > 0
+                : false,
+          },
         });
-        const fullName = data.first_name + " " + data.last_name;
-        sendEmailInvestorpassword(
+
+        const fullName = (data.first_name || "") + " " + (data.last_name || "");
+        await sendEmailInvestorpassword(
           data.email,
-          fullName || "Investor",
+          fullName.trim() || "Investor",
           password,
-          invdata.company_name
+          investorData.company_name || "Capavate",
         );
 
         return res.status(200).json({
-          // Use a large, unmissable alert banner
           message:
             "✅ Registration complete! Check your email for your password.",
-
           status: "1",
+          data: {
+            email: data.email,
+            name: fullName.trim(),
+          },
         });
       } else {
+        // INSERT new record
         const insertQuery = `
           INSERT INTO investor_information
-          (password, viewpassword, user_id, unique_code, first_name, last_name, email, phone, country, city, full_address, country_tax, tax_id, linkedIn_profile, accredited_status, industry_expertise, type_of_investor, ip_address, kyc_document, created_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          (
+          capavate_interests,
+            password,
+            viewpassword,
+            user_id,
+            unique_code,
+            first_name,
+            last_name,
+            email,
+            phone,
+            country,
+            city,
+            linkedIn_profile,
+            type_of_investor,
+            accredited_status,
+            bio_short,
+            mailing_address,
+            country_tax,
+            tax_id,
+            screen_name,
+            job_title,
+            company_name,
+            company_country,
+            company_website,
+            industry_expertise,
+            geo_focus,
+            network_bio,
+            notes,
+            hands_on,
+            ma_interests,
+            preferred_stages,
+            cheque_size,
+            profile_picture,
+            kyc_document,
+            full_address,
+            ip_address,
+            is_register,
+            created_at,
+            updated_at
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
         `;
 
-        const formdata = [
+        const insertData = [
+          data.capavate_interests || null,
           hashedPassword,
           password,
-          results[0].user_id,
+          existingInvestors[0].user_id,
           code,
-          data.first_name,
-          data.last_name,
+          data.first_name || null,
+          data.last_name || null,
           data.email,
-          data.phone,
-          data.country,
-          data.city,
-          data.full_address,
-          data.country_tax,
-          data.tax_id,
-          data.linkedIn_profile,
-          data.accredited_status,
-          data.industry_expertise,
-          data.type_of_investor,
-          ip,
+          data.phone || null,
+          data.country || null,
+          data.city || null,
+          data.linkedIn_profile || null,
+          data.type_of_investor || null,
+          data.accredited_status || null,
+          data.bio_short || null,
+          data.mailing_address || null,
+          data.country_tax || null,
+          data.tax_id || null,
+          data.screen_name || null,
+          data.job_title || null,
+          data.company_name || null,
+          data.company_country || null,
+          data.company_website || null,
+          data.industry_expertise || null,
+          data.geo_focus || null,
+          data.network_bio || null,
+          data.notes || null,
+          data.hands_on || null,
+          data.ma_interests || null,
+          data.preferred_stages || null,
+          data.cheque_size || null,
+          profilePictureFilename,
           kycFilesJSON,
-          new Date(),
+          data.full_address || null,
+          ip,
+          "Yes",
         ];
 
-        const [insertResult] = await db.promise().query(insertQuery, formdata);
+        const [insertResult] = await db
+          .promise()
+          .query(insertQuery, insertData);
 
-        const fullName = data.first_name + " " + data.last_name;
-        sendEmailInvestorpassword(
+        const fullName = (data.first_name || "") + " " + (data.last_name || "");
+        await sendEmailInvestorpassword(
           data.email,
-          fullName || "Investor",
+          fullName.trim() || "Investor",
           password,
-          invdata.company_name
+          existingInvestors[0].company_name || "Capavate",
         );
 
         return res.status(200).json({
-          // Use a large, unmissable alert banner
           message:
             "✅ Registration complete! Check your email for your password.",
-          data: insertResult,
           status: "1",
+          data: {
+            id: insertResult.insertId,
+            email: data.email,
+            name: fullName.trim(),
+          },
         });
       }
     } catch (error) {
       console.error("Database error:", error);
       return res.status(500).json({
-        message: "Internal server error",
-        error,
+        message: "Internal server error occurred",
+        error: error.message,
+        status: "2",
+      });
+    }
+  });
+};
+exports.investorprofile = async (req, res) => {
+  uploadInvestorFiles(req, res, async function (err) {
+    if (err) {
+      console.error("File upload error:", err);
+      return res.status(500).json({
+        message: "File upload error",
+        error: err.message,
+        status: "2",
+      });
+    }
+
+    try {
+      console.log("Received files:", req.files);
+
+      const data = req.body;
+
+      // Check if investor exists
+      const checkQuery = `SELECT * FROM investor_information WHERE email = ? AND id = ?;`;
+      const [existingInvestors] = await db
+        .promise()
+        .query(checkQuery, [data.email, data.id]);
+
+      if (existingInvestors.length === 0) {
+        return res.status(200).json({
+          message: "Investor not found",
+          status: "2",
+        });
+      }
+
+      // Get current investor data for existing file references
+      const [currentData] = await db
+        .promise()
+        .query(`SELECT * FROM investor_information WHERE id = ?`, [data.id]);
+
+      const currentInvestor = currentData[0] || {};
+
+      // Handle profile picture - ONLY update if new file is uploaded, otherwise keep existing
+      let profilePictureFilename = currentInvestor.profile_picture;
+      if (
+        req.files &&
+        req.files["profile_picture"] &&
+        req.files["profile_picture"].length > 0
+      ) {
+        const profilePicFile = req.files["profile_picture"][0];
+        profilePictureFilename = profilePicFile.filename; // Replace with new file only
+        console.log(
+          "New profile picture uploaded (replaced):",
+          profilePictureFilename,
+        );
+      }
+
+      // Handle KYC documents - ONLY use new files if uploaded, otherwise keep existing
+      let kycFilesJSON = currentInvestor.kyc_document;
+
+      if (
+        req.files &&
+        req.files["kyc_document[]"] &&
+        req.files["kyc_document[]"].length > 0
+      ) {
+        // Only use new files, discard old ones
+        const newKycFiles = req.files["kyc_document[]"].map((f) => f.filename);
+        kycFilesJSON = JSON.stringify(newKycFiles);
+        console.log("New KYC documents uploaded (replaced old):", newKycFiles);
+      }
+
+      // Get IP address
+      const ip = await getPublicIP();
+
+      // UPDATE query
+      const updateQuery = `
+        UPDATE investor_information
+        SET 
+          capavate_interests  =?,
+          first_name = ?,
+          last_name = ?,
+          phone = ?,
+          country = ?,
+          city = ?,
+          ip_address = ?,
+          linkedIn_profile = ?,
+          type_of_investor = ?,
+          accredited_status = ?,
+          bio_short = ?,
+          mailing_address = ?,
+          country_tax = ?,
+          tax_id = ?,
+          screen_name = ?,
+          job_title = ?,
+          company_name = ?,
+          company_country = ?,
+          company_website = ?,
+          industry_expertise = ?,
+          geo_focus = ?,
+          network_bio = ?,
+          notes = ?,
+          hands_on = ?,
+          ma_interests = ?,
+          preferred_stages = ?,
+          cheque_size = ?,
+          profile_picture = ?,
+          kyc_document = ?,
+          full_address = ?,
+          updated_at = NOW()
+        WHERE id = ? AND email = ?;
+      `;
+
+      const updateData = [
+        data.capavate_interests || null,
+        data.first_name || null,
+        data.last_name || null,
+        data.phone || null,
+        data.country || null,
+        data.city || null,
+        ip,
+        data.linkedIn_profile || null,
+        data.type_of_investor || null,
+        data.accredited_status || null,
+        data.bio_short || null,
+        data.mailing_address || null,
+        data.country_tax || null,
+        data.tax_id || null,
+        data.screen_name || null,
+        data.job_title || null,
+        data.company_name || null,
+        data.company_country || null,
+        data.company_website || null,
+        data.industry_expertise || null,
+        data.geo_focus || null,
+        data.network_bio || null,
+        data.notes || null,
+        data.hands_on || null,
+        data.ma_interests || null,
+        data.preferred_stages || null,
+        data.cheque_size || null,
+        profilePictureFilename, // Either existing OR new (not merged)
+        kycFilesJSON, // Either existing OR new (not merged)
+        data.full_address || null,
+        data.id,
+        data.email,
+      ];
+
+      await db.promise().query(updateQuery, updateData);
+
+      return res.status(200).json({
+        message: "✅ Profile updated successfully!",
+        status: "1",
+        data: {
+          id: data.id,
+          email: data.email,
+          name: (data.first_name || "") + " " + (data.last_name || ""),
+        },
+      });
+    } catch (error) {
+      console.error("Database error:", error);
+      return res.status(500).json({
+        message: "Internal server error occurred",
+        error: error.message,
+        status: "2",
       });
     }
   });
@@ -650,7 +1023,7 @@ function insertInvestorLog({
     (err) => {
       if (err) console.error("Investor Log Insert Failed:", err);
       else console.log("Investor Log Added ✅");
-    }
+    },
   );
 }
 
@@ -831,7 +1204,7 @@ exports.getreportForInvestor = (req, res) => {
 
     if (results.length > 0) {
       const filteredResults = results.filter(
-        (doc) => doc.document_name && doc.document_name.trim() !== ""
+        (doc) => doc.document_name && doc.document_name.trim() !== "",
       );
 
       const updatedResults = filteredResults.map((doc) => ({
@@ -891,7 +1264,7 @@ exports.viewReport = async (req, res) => {
             return res.status(200).json({
               message: "Investor report data fetched and updated",
             });
-          }
+          },
         );
       } else {
         return res.status(200).json({
@@ -982,11 +1355,11 @@ exports.exportInvestorExcel = async (req, res) => {
 
     res.setHeader(
       "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     );
     res.setHeader(
       "Content-Disposition",
-      "attachment; filename=investor_report.xlsx"
+      "attachment; filename=investor_report.xlsx",
     );
 
     await workbook.xlsx.write(res);
@@ -1045,7 +1418,7 @@ exports.investorlogin = async (req, res) => {
           const token = jwt.sign(
             { id: user.id, email: user.email, role: "investor" },
             JWT_SECRET,
-            { expiresIn: "1h" }
+            { expiresIn: "1h" },
           );
 
           res.status(200).json({
@@ -1062,7 +1435,7 @@ exports.investorlogin = async (req, res) => {
             .status(200)
             .json({ status: "2", message: "Invalid email or password" });
         }
-      }
+      },
     );
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
@@ -1087,7 +1460,7 @@ exports.getreportForInvestorCompany = async (req, res) => {
           message: "Login successfully",
           results: results,
         });
-      }
+      },
     );
   } catch (err) {
     res.status(500).json({
@@ -1145,7 +1518,7 @@ exports.resetPasswordinvestor = async (req, res) => {
               status: 1,
               message: "Password reset successfully and email sent",
             });
-          }
+          },
         );
       } else {
         return res.status(200).json({
@@ -1254,7 +1627,7 @@ exports.getinvestorData = async (req, res) => {
           message: "Login successfully",
           results: row,
         });
-      }
+      },
     );
   } catch (err) {
     res.status(500).json({
@@ -1296,6 +1669,63 @@ exports.investordataUpdate = async (req, res) => {
           city,
         },
       });
-    }
+    },
   );
+};
+exports.getinvestorRecorData = async (req, res) => {
+  const { id, email } = req.body;
+
+  if (!id || !email) {
+    return res.status(400).json({ message: "Missing required fields." });
+  }
+
+  // Investor information query
+  const investorQuery = `SELECT * FROM investor_information WHERE email = ?`;
+
+  db.query(investorQuery, [email], (err, investorResult) => {
+    if (err) {
+      console.error("Investor data error:", err);
+      return res.status(500).json({
+        message: "Database error fetching investor data",
+        error: err,
+      });
+    }
+
+    if (investorResult.length === 0) {
+      return res.status(404).json({
+        message: "Investor not found",
+        results: [],
+      });
+    }
+
+    // Share report query
+    const shareReportQuery = `
+      SELECT * FROM sharereport 
+      WHERE investor_email = ? AND investor_id = ?
+    `;
+
+    db.query(shareReportQuery, [email, id], (err, shareReportResult) => {
+      if (err) {
+        console.error("Share report error:", err);
+        return res.status(500).json({
+          message: "Database error fetching share report",
+          error: err,
+        });
+      }
+
+      // Combine both results
+      const investorData = investorResult[0];
+
+      return res.status(200).json({
+        message: "Investor data fetched successfully",
+        results: [
+          {
+            total_portfolio_company: investorResult,
+            investor_report_reviewed:
+              shareReportResult.length > 0 ? shareReportResult : [],
+          },
+        ],
+      });
+    });
+  });
 };

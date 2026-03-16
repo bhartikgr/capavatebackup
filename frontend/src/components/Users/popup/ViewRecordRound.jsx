@@ -13,8 +13,6 @@ import {
 
 const ViewRecordRound = ({ onClose, recordViewData }) => {
   const storedUsername = localStorage.getItem("CompanyLoginData");
-  const userLogin = JSON.parse(storedUsername);
-
   // Helper function to safely parse JSON data
   const safeJsonParse = (data) => {
     if (!data) return {};
@@ -457,7 +455,7 @@ const ViewRecordRound = ({ onClose, recordViewData }) => {
               )}
 
               {/* Investor Post-Money Ownership (Not for Convertible Note and Safe) */}
-              {(recordViewData.instrumentType !== 'Convertible Note' && recordViewData.instrumentType !== 'Safe') && (
+              {recordViewData.instrumentType !== 'Convertible Note' && recordViewData.instrumentType !== 'Safe' && recordViewData.instrumentType !== 'Common Stock' && (
                 <div className="col-md-4">
                   <div className="p-3 bg-white rounded-3 h-100">
                     <span className="text-secondary small fw-semibold text-uppercase">
@@ -491,10 +489,7 @@ const ViewRecordRound = ({ onClose, recordViewData }) => {
                 <div className="col-md-4">
                   <div className="p-3 bg-white rounded-3 h-100">
                     <span className="text-secondary small fw-semibold text-uppercase">
-                      {(recordViewData.instrumentType === 'Convertible Note' && recordViewData.shareClassType === 'Seed') ||
-                        (recordViewData.instrumentType === 'Safe' && recordViewData.shareClassType === 'Seed')
-                        ? 'Company Valuation'
-                        : 'Pre-Money Valuation'}
+                      {((recordViewData.shareClassType === "Seed" || recordViewData.shareClassType === "Pre-Seed" || recordViewData.shareClassType === "Post-Seed") && recordViewData.instrumentType === "Safe") || (recordViewData.instrumentType === "Convertible Note" && (recordViewData.shareClassType === "Seed" || recordViewData.shareClassType === "Pre-Seed" || recordViewData.shareClassType === "Post-Seed")) ? "Company Valuation" : "Pre-Money Valuation"}
                     </span>
                     <p className="mb-0 mt-1 fw-bold text-dark fs-5">
                       {recordViewData.currency || '$'}
@@ -509,45 +504,66 @@ const ViewRecordRound = ({ onClose, recordViewData }) => {
               )}
 
               {/* Post-Money Valuation (Not for Safe with Seed) */}
-              {recordViewData.instrumentType === 'Safe' && recordViewData.shareClassType === 'Seed' || recordViewData.instrumentType === 'Convertible Note' && recordViewData.shareClassType === 'Seed' && (
-                <div className="col-md-4">
-                  <div className="p-3 bg-white rounded-3 h-100">
-                    <span className="text-secondary small fw-semibold text-uppercase">
-                      Pre-Money Option Pool (%)
-                    </span>
-                    <p className="mb-0 mt-1 fw-bold text-dark fs-5">
+              {
+                (
+                  (recordViewData.instrumentType === 'Safe' && recordViewData.shareClassType === 'Seed' || recordViewData.shareClassType === "Pre-Seed" || recordViewData.shareClassType === "Post-Seed") ||
+                  (recordViewData.instrumentType === 'Convertible Note' && recordViewData.shareClassType === 'Seed' || recordViewData.shareClassType === "Pre-Seed" || recordViewData.shareClassType === "Post-Seed") || recordViewData.instrumentType === 'Common Stock'
+                ) && (
+                  <div className="col-md-4">
+                    <div className="p-3 bg-white rounded-3 h-100">
+                      <span className="text-secondary small fw-semibold text-uppercase">
+                        Pre-Money Option Pool (%)
+                      </span>
+                      <p className="mb-0 mt-1 fw-bold text-dark fs-5">
 
 
-                      {
-                        recordViewData.optionPoolPercent || recordViewData.optionPoolPercent === "0"
-                          ? Number(recordViewData.optionPoolPercent).toLocaleString(undefined, {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })
-                          : <span className="text-muted">Not provided</span>
-                      } %
+                        {
+                          recordViewData.optionPoolPercent || recordViewData.optionPoolPercent === "0"
+                            ? Number(recordViewData.optionPoolPercent).toLocaleString(undefined, {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })
+                            : <span className="text-muted">Not provided</span>
+                        } %
 
-                    </p>
+                      </p>
+                    </div>
                   </div>
-                </div>
-              )}
-              {(recordViewData.instrumentType !== 'Safe' && recordViewData.shareClassType !== 'Seed') || (recordViewData.instrumentType !== 'Convertible Safe' && !recordViewData.shareClassType?.includes("Series")) || (recordViewData.instrumentType !== 'Convertible Safe' && recordViewData.shareClassType === 'Seed') && postMoney > 0 && (
-                <div className="col-md-4">
-                  <div className="p-3 bg-white rounded-3 h-100">
-                    <span className="text-secondary small fw-semibold text-uppercase">
-                      Post-Money Valuation
-                    </span>
-                    <p className="mb-0 mt-1 fw-bold text-dark fs-5">
-                      {recordViewData.currency || '$'}
-                      {Number(postMoney).toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
+                )
+              }
 
-                    </p>
+              {(() => {
+                const isSafe = recordViewData.instrumentType === 'Safe';
+                const isConvertibleNote = recordViewData.instrumentType === 'Convertible Note';
+                const isSeedType = ["Seed", "Pre-Seed", "Post-Seed"].includes(recordViewData.shareClassType);
+                const isSeriesType = recordViewData.shareClassType?.includes("Series");
+
+                // Hide if any of these conditions are true
+                const shouldHide =
+
+                  (isSafe && isSeriesType) ||     // Safe + Series types
+                  // Convertible Note + Seed types
+                  (isConvertibleNote && isSeriesType) || (recordViewData.instrumentType === "OTHER"); // Convertible Note + Series types
+
+                return shouldHide && (
+                  <div className="col-md-4">
+                    <div className="p-3 bg-white rounded-3 h-100">
+                      <span className="text-secondary small fw-semibold text-uppercase">
+                        Post-Money Valuation
+                      </span>
+                      <p className="mb-0 mt-1 fw-bold text-dark fs-5">
+                        {recordViewData.currency || '$'}
+                        {Number(postMoney).toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+
+                      </p>
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
+
 
               {/* Option Pool Percentage - Conditional */}
               {/* {
@@ -596,30 +612,46 @@ const ViewRecordRound = ({ onClose, recordViewData }) => {
                 )}
 
               {/* Issued Shares (Not for Seed+Safe) */}
-              {recordViewData.instrumentType !== 'Safe' && recordViewData.shareClassType !== 'Seed' || recordViewData.instrumentType === 'Safe' && recordViewData.shareClassType?.includes("Series") && (
-                <div className="col-md-4">
-                  <div className="p-3 bg-white rounded-3 h-100">
-                    <span className="text-secondary small fw-semibold text-uppercase">
-                      Total Shares Issued in this Round
-                    </span>
+              {(() => {
+                const isSafe = recordViewData.instrumentType === 'Safe';
+                const isConvertibleNote = recordViewData.instrumentType === 'Convertible Note';
+                const isSeedType = ["Seed", "Pre-Seed", "Post-Seed"].includes(recordViewData.shareClassType);
+                const isSeriesType = recordViewData.shareClassType?.includes("Series");
 
-                    {/* Show shares for all rounds EXCEPT Seed+Safe */}
-                    {!(recordViewData.shareClassType === 'Seed' && recordViewData.instrumentType === 'Safe') ? (
-                      <p className="mb-0 mt-1 fw-bold text-dark fs-5">
-                        {Number(recordViewData.issuedshares).toLocaleString("en-US", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </p>
-                    ) : (
-                      /* Seed+Safe ke liye message show karein */
-                      <p className="mb-0 mt-1 fw-bold text-dark fs-5">
-                        <span className="text-muted">Not applicable for SAFE notes</span>
-                      </p>
-                    )}
+                // Hide if any of these conditions are true
+                const shouldHide =
+
+                  (isSafe && isSeedType) ||     // Safe + Series types
+                  (isSafe && isSeriesType) ||
+                  (isConvertibleNote && isSeriesType) ||
+                  (isConvertibleNote && isSeedType); // Convertible Note + Series types
+
+                return !shouldHide && (
+                  <div className="col-md-4">
+                    <div className="p-3 bg-white rounded-3 h-100">
+                      <span className="text-secondary small fw-semibold text-uppercase">
+                        Total Shares Issued in this Round
+                      </span>
+
+                      {/* Show shares for all rounds EXCEPT Seed+Safe */}
+                      {!(recordViewData.shareClassType === 'Seed' && recordViewData.instrumentType === 'Safe') ? (
+                        <p className="mb-0 mt-1 fw-bold text-dark fs-5">
+                          {Number(recordViewData.issuedshares).toLocaleString("en-US", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </p>
+                      ) : (
+                        /* Seed+Safe ke liye message show karein */
+                        <p className="mb-0 mt-1 fw-bold text-dark fs-5">
+                          <span className="text-muted">Not applicable for SAFE notes</span>
+                        </p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
+
 
             </div>
           </div>
@@ -647,7 +679,7 @@ const ViewRecordRound = ({ onClose, recordViewData }) => {
 
                 {/* Investor Ownership Percentage */}
                 {recordViewData.instrumentType !== 'Convertible Note' &&
-                  recordViewData.instrumentType !== 'Safe' &&
+                  recordViewData.instrumentType !== 'Safe' && recordViewData.instrumentType !== 'Common Stock' &&
                   preMoney > 0 &&
                   recordViewData.roundsize &&
                   postMoney > 0 && (

@@ -235,9 +235,8 @@ function Sidebar() {
 
       {/* Sidebar */}
       <div
-        className={`side_bar_admin  vh-100 shadow-xl p-4 position-fixed  top-0 start-0 ${
-          isOpen ? "d-flex" : "d-none"
-        } d-xl-flex flex-column justify-content-between`}
+        className={`side_bar_admin  vh-100 shadow-xl p-4 position-fixed  top-0 start-0 ${isOpen ? "d-flex" : "d-none"
+          } d-xl-flex flex-column justify-content-between`}
         style={{ width: "300px", flexShrink: "0" }}
       >
         <div className="d-flex flex-column gap-3">
@@ -266,9 +265,8 @@ function Sidebar() {
           >
             <li
               ref={getRefIfActive(isActive(["/admin/dashboard"]))}
-              className={`p-2  d-flex align-items-center gap-2 mb-2 border-bottom ${
-                isActive(["/admin/dashboard"]) ? "color_primary" : ""
-              }`}
+              className={`p-2  d-flex align-items-center gap-2 mb-2 border-bottom ${isActive(["/admin/dashboard"]) ? "color_primary" : ""
+                }`}
             >
               <Link
                 to="/admin/dashboard"
@@ -290,20 +288,19 @@ function Sidebar() {
                   /^\/admin\/company\/viewdetails\/\d+$/,
                 ])
               )}
-              className={`p-2 d-flex align-items-center gap-2 mb-2 border-bottom ${
-                isActivePath([
-                  "/admin/users",
-                  /^\/admin\/users\/company\/\d+$/,
-                  /^\/admin\/company\/investor-reporting\/\d+$/,
-                  /^\/admin\/company\/record-round\/\d+$/,
-                  /^\/admin\/users\/company\/cap-table\/\d+$/,
-                  /^\/admin\/users\/company\/investor-info\/\d+$/,
-                  /^\/admin\/users\/company\/info\/\d+$/,
-                  /^\/admin\/company\/viewdetails\/\d+$/,
-                ])
-                  ? "color_primary"
-                  : ""
-              }`}
+              className={`p-2 d-flex align-items-center gap-2 mb-2 border-bottom ${isActivePath([
+                "/admin/users",
+                /^\/admin\/users\/company\/\d+$/,
+                /^\/admin\/company\/investor-reporting\/\d+$/,
+                /^\/admin\/company\/record-round\/\d+$/,
+                /^\/admin\/users\/company\/cap-table\/\d+$/,
+                /^\/admin\/users\/company\/investor-info\/\d+$/,
+                /^\/admin\/users\/company\/info\/\d+$/,
+                /^\/admin\/company\/viewdetails\/\d+$/,
+              ])
+                ? "color_primary"
+                : ""
+                }`}
             >
               <Link
                 to="/admin/users"
@@ -320,15 +317,14 @@ function Sidebar() {
                   /^\/admin\/investor\/viewdetails\/\d+$/,
                 ])
               )}
-              className={`p-2 d-flex align-items-center gap-2 mb-2 border-bottom ${
-                isActivePath([
-                  "/admin/investor",
-                  /^\/admin\/investor-info\/\d+$/,
-                  /^\/admin\/investor\/viewdetails\/\d+$/,
-                ])
-                  ? "color_primary"
-                  : ""
-              }`}
+              className={`p-2 d-flex align-items-center gap-2 mb-2 border-bottom ${isActivePath([
+                "/admin/investor",
+                /^\/admin\/investor-info\/\d+$/,
+                /^\/admin\/investor\/viewdetails\/\d+$/,
+              ])
+                ? "color_primary"
+                : ""
+                }`}
             >
               <Link
                 to="/admin/investor"
@@ -404,15 +400,14 @@ function Sidebar() {
                       /^\/admin\/module\/edit\/\d+$/,
                     ])
                   )}
-                  className={`p-2  d-flex align-items-center gap-2 mb-2 border-bottom ${
-                    isActivePath([
-                      "/admin/module/list",
-                      "/admin/module/add",
-                      /^\/admin\/module\/edit\/\d+$/,
-                    ])
-                      ? "color_primary"
-                      : ""
-                  }`}
+                  className={`p-2  d-flex align-items-center gap-2 mb-2 border-bottom ${isActivePath([
+                    "/admin/module/list",
+                    "/admin/module/add",
+                    /^\/admin\/module\/edit\/\d+$/,
+                  ])
+                    ? "color_primary"
+                    : ""
+                    }`}
                 >
                   <Link
                     to="/admin/module/list"
@@ -431,16 +426,15 @@ function Sidebar() {
                       /^\/admin\/zoomeetlist\/useregister\/\d+$/,
                     ])
                   )}
-                  className={`p-2  d-flex align-items-center gap-2 mb-2 border-bottom ${
-                    isActivePath([
-                      "/admin/zoomeetlist",
-                      "/admin/createzoomeet",
-                      /^\/admin\/editzoomeet\/\d+$/,
-                      /^\/admin\/zoomeetlist\/useregister\/\d+$/,
-                    ])
-                      ? "color_primary"
-                      : ""
-                  }`}
+                  className={`p-2  d-flex align-items-center gap-2 mb-2 border-bottom ${isActivePath([
+                    "/admin/zoomeetlist",
+                    "/admin/createzoomeet",
+                    /^\/admin\/editzoomeet\/\d+$/,
+                    /^\/admin\/zoomeetlist\/useregister\/\d+$/,
+                  ])
+                    ? "color_primary"
+                    : ""
+                    }`}
                 >
                   <Link
                     to="/admin/zoomeetlist"
@@ -452,11 +446,10 @@ function Sidebar() {
 
                 <li
                   ref={getRefIfActive(isActivePath(["/admin/emailtemplate"]))}
-                  className={`p-2  d-flex align-items-center gap-2 mb-2 border-bottom ${
-                    isActivePath(["/admin/emailtemplate"])
-                      ? "color_primary"
-                      : ""
-                  }`}
+                  className={`p-2  d-flex align-items-center gap-2 mb-2 border-bottom ${isActivePath(["/admin/emailtemplate"])
+                    ? "color_primary"
+                    : ""
+                    }`}
                 >
                   <Link
                     to="/admin/emailtemplate"
@@ -613,21 +606,41 @@ function Sidebar() {
                   /^\/admin\/duediligencecategorytip\/add\/\d+$/,
                 ])
               )}
-              className={`p-2  d-flex align-items-center gap-2 mb-2 border-bottom ${
-                isActivePath([
-                  "/admin/duediligencecategoryList",
-                  "/admin/duediligencecategory/add",
-                  /^\/admin\/duediligencecategorytip\/add\/\d+$/,
-                ])
-                  ? "color_primary"
-                  : ""
-              }`}
+              className={`p-2  d-flex align-items-center gap-2 mb-2 border-bottom ${isActivePath([
+                "/admin/duediligencecategoryList",
+                "/admin/duediligencecategory/add",
+                /^\/admin\/duediligencecategorytip\/add\/\d+$/,
+              ])
+                ? "color_primary"
+                : ""
+                }`}
             >
               <Link
                 to="/admin/duediligencecategoryList"
                 className=" d-flex align-items-center gap-2 text-decoration-none w-100"
               >
                 <Home size={20} /> <span>Data Rooms Category</span>
+              </Link>
+            </li>
+            <li
+              ref={getRefIfActive(
+                isActive([
+                  "/admin/visitors",
+
+                ])
+              )}
+              className={`p-2  d-flex align-items-center gap-2 mb-2 border-bottom ${isActivePath([
+                "/admin/visitors",
+              ])
+                ? "color_primary"
+                : ""
+                }`}
+            >
+              <Link
+                to="/admin/visitors"
+                className=" d-flex align-items-center gap-2 text-decoration-none w-100"
+              >
+                <Users size={20} /> <span>Visitors</span>
               </Link>
             </li>
 
@@ -641,11 +654,10 @@ function Sidebar() {
                   ref={getRefIfActive(
                     isActive(["/admin/setting/dataroompaymentadd"])
                   )}
-                  className={`p-2  d-flex align-items-center gap-2 mb-2 border-bottom ${
-                    isActive(["/admin/setting/dataroompaymentadd"])
-                      ? "color_primary"
-                      : ""
-                  }`}
+                  className={`p-2  d-flex align-items-center gap-2 mb-2 border-bottom ${isActive(["/admin/setting/dataroompaymentadd"])
+                    ? "color_primary"
+                    : ""
+                    }`}
                 >
                   <Link
                     to="/admin/setting/dataroompaymentadd"
@@ -665,17 +677,16 @@ function Sidebar() {
                       /^\/admin\/setting\/referralusage\/[\w-]+$/,
                     ])
                   )}
-                  className={`p-2  d-flex align-items-center gap-2 mb-2 border-bottom ${
-                    isActivePath([
-                      "/admin/setting/paymentdiscountlist",
-                      "/admin/setting/createpaymentdiscount",
-                      /^\/admin\/setting\/discountCode\/edit\/\d+$/,
-                      /^\/admin\/setting\/referralcodes\/[\w-]+$/,
-                      /^\/admin\/setting\/referralusage\/[\w-]+$/,
-                    ])
-                      ? "color_primary"
-                      : ""
-                  }`}
+                  className={`p-2  d-flex align-items-center gap-2 mb-2 border-bottom ${isActivePath([
+                    "/admin/setting/paymentdiscountlist",
+                    "/admin/setting/createpaymentdiscount",
+                    /^\/admin\/setting\/discountCode\/edit\/\d+$/,
+                    /^\/admin\/setting\/referralcodes\/[\w-]+$/,
+                    /^\/admin\/setting\/referralusage\/[\w-]+$/,
+                  ])
+                    ? "color_primary"
+                    : ""
+                    }`}
                 >
                   <Link
                     to="/admin/setting/paymentdiscountlist"

@@ -6,12 +6,7 @@ const nodemailer = require("nodemailer");
 const { format } = require("date-fns");
 const fs = require("fs");
 const path = require("path");
-const mammoth = require("mammoth");
-const PizZip = require("pizzip");
-const Docxtemplater = require("docxtemplater");
-const mysql = require("mysql2/promise"); // 👈 only used in this API
-const cron = require("node-cron");
-const ExcelJS = require("exceljs");
+const multer = require("multer");
 
 const pdfParse = require("pdf-parse");
 const OpenAI = require("openai");
@@ -22,9 +17,8 @@ const openai = new OpenAI({
 
 const Stripe = require("stripe");
 const stripe = new Stripe(
-  "sk_test_51RUJzWAx6rm2q3pyUl86ZMypACukdO7IsZ0AbsWOcJqg9xWGccwcQwbQvfCaxQniDCWzNg7z2p4rZS1u4mmDDyou00DM7rK8eY"
+  "sk_test_51RUJzWAx6rm2q3pyUl86ZMypACukdO7IsZ0AbsWOcJqg9xWGccwcQwbQvfCaxQniDCWzNg7z2p4rZS1u4mmDDyou00DM7rK8eY",
 );
-const upload = require("../../middlewares/uploadMiddleware");
 const { json } = require("stream/consumers");
 
 require("dotenv").config();
@@ -202,7 +196,7 @@ exports.Addnewinvenstor = (req, res) => {
                       first_name + " " + last_name,
                       companyName,
                       url,
-                      true // already registered
+                      true, // already registered
                     );
 
                     res.status(200).json({
@@ -210,10 +204,10 @@ exports.Addnewinvenstor = (req, res) => {
                       message: "Investor successfully linked to your company",
                       insertedId: result.insertId,
                     });
-                  }
+                  },
                 );
               }
-            }
+            },
           );
         } else {
           // New investor
@@ -254,7 +248,7 @@ exports.Addnewinvenstor = (req, res) => {
                 investorId, // entity_id
                 "Investor", // entity_type
                 JSON.stringify(req.body),
-                ip_address // ip_address
+                ip_address, // ip_address
               );
               const insertQueryre = `
                 INSERT INTO company_investor (created_by_id,created_by_role,company_id, investor_id, created_at)
@@ -275,7 +269,7 @@ exports.Addnewinvenstor = (req, res) => {
                     first_name + " " + last_name,
                     companyName,
                     `http://localhost:5000/investor/information/${token}`,
-                    false // not registered
+                    false, // not registered
                   );
 
                   res.status(200).json({
@@ -284,9 +278,9 @@ exports.Addnewinvenstor = (req, res) => {
                       "Investor successfully created and linked to your company",
                     insertedId: result.insertId,
                   });
-                }
+                },
               );
-            }
+            },
           );
         }
       });
@@ -302,7 +296,7 @@ const logUserAction = (
   entityId,
   entityType,
   details,
-  ipAddress
+  ipAddress,
 ) => {
   const selectQuery = `
     SELECT * FROM audit_logs 
@@ -334,7 +328,7 @@ const logUserAction = (
       ],
       (err, result) => {
         if (err) console.error("Log insert error", err);
-      }
+      },
     );
   });
 };
@@ -346,7 +340,7 @@ const sendInvestorInviteEmail = (
   firstName,
   companyName,
   link,
-  isRegistered = false
+  isRegistered = false,
 ) => {
   const subject = isRegistered
     ? `You have been invited by ${companyName} - Capavate`
@@ -492,11 +486,11 @@ exports.SendreportToinvestor = async (req, res) => {
     const [existingShares] = await db.promise().query(
       `SELECT investor_updates_id, investor_email FROM sharereport 
        WHERE investor_updates_id IN (?)`,
-      [records.map((r) => r.id)]
+      [records.map((r) => r.id)],
     );
 
     const existingSet = new Set(
-      existingShares.map((e) => `${e.investor_updates_id}_${e.investor_email}`)
+      existingShares.map((e) => `${e.investor_updates_id}_${e.investor_email}`),
     );
 
     // Prepare data to insert and email
@@ -509,7 +503,7 @@ exports.SendreportToinvestor = async (req, res) => {
           .promise()
           .query(
             "SELECT email, first_name, last_name, is_register, unique_code FROM investor_information WHERE id = ?",
-            [investorId]
+            [investorId],
           );
 
         if (investorRows.length === 0) continue;
@@ -524,7 +518,7 @@ exports.SendreportToinvestor = async (req, res) => {
             .promise()
             .query(
               "UPDATE investor_information SET expired_at = ? WHERE id = ?",
-              [expiredAt, investorId]
+              [expiredAt, investorId],
             );
         }
 
@@ -592,8 +586,8 @@ exports.SendreportToinvestor = async (req, res) => {
             currentDate,
             expiredAt,
             report.type,
-          ]
-        )
+          ],
+        ),
     );
     await Promise.all(insertPromises);
 
@@ -633,7 +627,7 @@ exports.SendreportToinvestor = async (req, res) => {
           auditDetails.entity_type,
           JSON.stringify(auditDetails.details),
           auditDetails.ip_address,
-        ]
+        ],
       );
 
       console.log("Audit log inserted successfully");
@@ -718,7 +712,7 @@ exports.SendreportToinvestor = async (req, res) => {
         return transporter
           .sendMail(mailOptions)
           .then(() => console.log(`Email sent to ${email}`));
-      }
+      },
     );
 
     await Promise.all(emailPromises);
@@ -983,7 +977,7 @@ exports.getInvestorCompany = async (req, res) => {
           message: "",
           results: results,
         });
-      }
+      },
     );
   } catch (err) {
     res.status(500).json({
@@ -1018,7 +1012,7 @@ exports.getInvestorReportslist = async (req, res) => {
           message: "",
           results: updatedResults,
         });
-      }
+      },
     );
   } catch (err) {
     res.status(500).json({
@@ -1061,7 +1055,7 @@ exports.InvestorReportslistDownload = (req, res) => {
           if (err) return callback(err, null);
           if (companyResult.length === 0) return callback(null, null);
           return callback(null, companyResult[0].company_name);
-        }
+        },
       );
     };
 
@@ -1466,13 +1460,13 @@ exports.InvestorAuthorizeConfimataion = (req, res) => {
                   return res.status(200).json({
                     message: `Report status updated to ${types}, email sent`,
                   });
-                }
+                },
               );
-            }
+            },
           );
-        }
+        },
       );
-    }
+    },
   );
 };
 
@@ -1556,7 +1550,7 @@ exports.InvestorrequestToCompany = (req, res) => {
           // ✅ CONDITION: Only process if instrumentType is "Preferred Equity"
           if (round.instrumentType !== "Preferred Equity") {
             console.log(
-              `No warrants: Instrument type is ${round.instrumentType}, not Preferred Equity`
+              `No warrants: Instrument type is ${round.instrumentType}, not Preferred Equity`,
             );
             return;
           }
@@ -1573,7 +1567,7 @@ exports.InvestorrequestToCompany = (req, res) => {
 
             if (!hasWarrants) {
               console.log(
-                "No warrants enabled for this Preferred Equity round"
+                "No warrants enabled for this Preferred Equity round",
               );
               return;
             }
@@ -1586,7 +1580,7 @@ exports.InvestorrequestToCompany = (req, res) => {
             }
 
             const coveragePercentage = parseFloat(
-              instrumentData.warrant_coverage_percentage || 0
+              instrumentData.warrant_coverage_percentage || 0,
             );
             if (coveragePercentage <= 0) {
               console.log("Invalid or zero warrant coverage percentage");
@@ -1635,7 +1629,7 @@ exports.InvestorrequestToCompany = (req, res) => {
                   console.error("Warrant creation error:", warrantErr);
                 } else {
                   console.log(
-                    `Warrant created for investor ${investor_id}, ID: ${warrantResult.insertId}`
+                    `Warrant created for investor ${investor_id}, ID: ${warrantResult.insertId}`,
                   );
 
                   // Optional: Log warrant creation
@@ -1673,12 +1667,12 @@ exports.InvestorrequestToCompany = (req, res) => {
                     if (logErr) console.error("Warrant log error:", logErr);
                   });
                 }
-              }
+              },
             );
           } catch (parseError) {
             console.error("Error parsing instrument data:", parseError);
           }
-        }
+        },
       );
     };
 
@@ -1782,33 +1776,33 @@ exports.getInvestorAllRoundRecord = (req, res) => {
     });
 
     const sortedInvestors = Object.entries(investmentByInvestor).sort(
-      (a, b) => b[1] - a[1]
+      (a, b) => b[1] - a[1],
     );
 
     const rank =
       sortedInvestors.findIndex(
-        ([id]) => parseInt(id) === parseInt(investor_id)
+        ([id]) => parseInt(id) === parseInt(investor_id),
       ) + 1 || 0;
 
     // This investor’s records
     const investorRecords = parsedAll.filter(
-      (r) => r.investor_id === Number(investor_id)
+      (r) => r.investor_id === Number(investor_id),
     );
 
     const totalInvested = investorRecords.reduce(
       (sum, r) => sum + r.investment_amount,
-      0
+      0,
     );
     const investorShares = investorRecords.reduce(
       (sum, r) => sum + r.shares,
-      0
+      0,
     );
 
     // ✅ Correct ownership calculation
     // Use issuedshares from roundrecord (not sum of all rounds)
     const totalIssuedShares = investorRecords.reduce(
       (sum, r) => sum + r.issuedshares,
-      0
+      0,
     );
 
     const ownershipPercent =
@@ -1895,7 +1889,7 @@ exports.verifyInvestment = (req, res) => {
         record.nameOfRound,
         record.roundsize,
         record.issuedshares,
-        record.currency
+        record.currency,
       );
 
       return res
@@ -1914,7 +1908,7 @@ function sendEmailToInvestment_Verify(
   nameOfRound,
   roundsize,
   issuedshares,
-  currency
+  currency,
 ) {
   const subject = `Your investment has been verified - ${companyName}`;
 
@@ -2138,7 +2132,7 @@ exports.fetchInvestorData = (req, res) => {
 
     // Sort rounds by creation date
     const rounds = Object.values(roundsMap).sort(
-      (a, b) => new Date(a.created_at) - new Date(b.created_at)
+      (a, b) => new Date(a.created_at) - new Date(b.created_at),
     );
 
     // Calculate cumulative shares and ownership
@@ -2165,13 +2159,13 @@ exports.fetchInvestorData = (req, res) => {
           if (cap > 0 && cumulativeTotalShares > 0) {
             conversionPrice = Math.min(
               conversionPrice,
-              cap / cumulativeTotalShares
+              cap / cumulativeTotalShares,
             );
           }
           if (discount > 0) {
             conversionPrice = Math.min(
               conversionPrice,
-              pricePerShare * (1 - discount / 100)
+              pricePerShare * (1 - discount / 100),
             );
           }
 
@@ -2228,7 +2222,7 @@ exports.fetchInvestorData = (req, res) => {
         const ownershipPercentage =
           cumulativeTotalShares > 0
             ? parseFloat(
-                (investorShares / cumulativeTotalShares) * 100
+                (investorShares / cumulativeTotalShares) * 100,
               ).toFixed(2)
             : "0.00";
 
@@ -2295,7 +2289,7 @@ exports.fetchInvestorData = (req, res) => {
         totalShares: Math.round(cumulativeTotalShares),
         founderShares: Math.round(stakeholderShares["Founders"] || 0),
         totalInvestorShares: Math.round(
-          cumulativeTotalShares - (stakeholderShares["Founders"] || 0)
+          cumulativeTotalShares - (stakeholderShares["Founders"] || 0),
         ),
       },
     });
@@ -2412,7 +2406,7 @@ exports.getcheckInvestorStatus = (req, res) => {
         message: "",
         result: row,
       });
-    }
+    },
   );
 };
 
@@ -2519,14 +2513,14 @@ exports.getexistingShare = async (req, res) => {
               // If this is an equity round, we need to add option pool shares
               if (currentRound.instrumentType !== "Safe") {
                 const optionPoolPercent = parseFloat(
-                  currentRound.optionPoolPercent || 0
+                  currentRound.optionPoolPercent || 0,
                 );
 
                 if (optionPoolPercent > 0) {
                   // Calculate option pool shares: existingShares / (1 - optionPool%) * optionPool%
                   const optionPoolShares = Math.round(
                     (existingShares * (optionPoolPercent / 100)) /
-                      (1 - optionPoolPercent / 100)
+                      (1 - optionPoolPercent / 100),
                   );
                   existingShares += optionPoolShares;
                 }
@@ -2545,7 +2539,7 @@ exports.getexistingShare = async (req, res) => {
                   currentRoundResults[0].instrumentType !== "Safe",
               },
             });
-          }
+          },
         );
       } else {
         // No specific round provided, return Round 0 shares only
@@ -2706,7 +2700,7 @@ exports.getTotalInvestment = async (req, res) => {
     });
 
     console.log(
-      `Found ${results.length} records, total investment: $${totalInvestment}`
+      `Found ${results.length} records, total investment: $${totalInvestment}`,
     );
 
     res.json({
@@ -2756,4 +2750,388 @@ exports.getTotalInvestment = async (req, res) => {
       });
     }
   }
+};
+exports.deleteround = async (req, res) => {
+  const { id, company_id } = req.body;
+
+  // Validate inputs
+  if (!id || !company_id) {
+    return res.status(400).json({
+      success: false,
+      message: "Missing required parameters",
+    });
+  }
+
+  try {
+    // First check if round exists
+    const checkQuery =
+      "SELECT id FROM roundrecord WHERE id = ? AND company_id = ?";
+    const [checkResult] = await db
+      .promise()
+      .query(checkQuery, [id, company_id]);
+
+    if (checkResult.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Round not found",
+      });
+    }
+
+    // Delete from child tables first
+    await db
+      .promise()
+      .query("DELETE FROM round_cap_table_items WHERE round_id = ?", [id]);
+    await db
+      .promise()
+      .query("DELETE FROM round_conversions WHERE round_id = ?", [id]);
+    await db
+      .promise()
+      .query("DELETE FROM round_founders WHERE round_id = ?", [id]);
+    await db
+      .promise()
+      .query("DELETE FROM round_investors WHERE round_id = ?", [id]);
+    await db
+      .promise()
+      .query("DELETE FROM round_option_pools WHERE round_id = ?", [id]);
+    await db
+      .promise()
+      .query("DELETE FROM round_pending_instruments WHERE round_id = ?", [id]);
+
+    // Finally delete from parent table
+    const [deleteResult] = await db
+      .promise()
+      .query("DELETE FROM roundrecord WHERE id = ? AND company_id = ?", [
+        id,
+        company_id,
+      ]);
+
+    res.json({
+      success: true,
+      message: "Round deleted successfully",
+      deleted_round_id: id,
+    });
+  } catch (error) {
+    console.error("❌ Error in deleteround:", error);
+    res.status(500).json({
+      success: false,
+      message: "Database error",
+      error: error.message,
+    });
+  }
+};
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    // ✅ FIX: req.body.id milta hai sirf multer ke baad
+    // destination mein req.body reliable nahi hota — static path use karo
+    var id = req.body.id;
+    const uploadPath = "upload/investor/inv_" + id;
+    console.log(uploadPath);
+    if (!fs.existsSync(uploadPath))
+      fs.mkdirSync(uploadPath, { recursive: true });
+    cb(null, uploadPath);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(
+      null,
+      file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname),
+    );
+  },
+});
+const upload = multer({ storage });
+// ================================================================
+// EXACT SAME PATTERN as CreateOrUpdateCapitalRound
+// Destructure ANDAR callback ke — bahar nahi
+// ================================================================
+
+exports.investoreditprofile = (req, res) => {
+  // ✅ STEP 1: uploadFields define karo
+  const uploadFields = upload.fields([
+    { name: "kyc_doc", maxCount: 1 },
+    { name: "profile_picture", maxCount: 1 },
+  ]);
+
+  // ✅ STEP 2: callback ke andar sab kuch — req.body yahaan milega
+  uploadFields(req, res, async (err) => {
+    if (err) {
+      return res.status(500).json({
+        success: false,
+        message: "File upload error",
+        error: err.message,
+      });
+    }
+
+    console.log("Body:", req.body);
+    console.log("Files:", req.files);
+
+    // ✅ STEP 3: ANDAR destructure karo — callback ke bahar nahi
+    const {
+      email,
+      first_name,
+      last_name,
+      phone,
+      city,
+      country,
+      linkedIn_profile,
+      type_of_investor,
+      bio_short,
+      mailing_address,
+      accredited_status,
+      country_tax,
+      tax_id,
+      screen_name,
+      job_title,
+      company_name,
+      company_country,
+      company_website,
+      industry_expertise,
+      cheque_size,
+      geo_focus,
+      preferred_stages,
+      hands_on,
+      network_bio,
+      ma_interests,
+      notes,
+    } = req.body;
+
+    if (!email) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Email is required" });
+    }
+
+    try {
+      const fields = [];
+      const values = [];
+
+      const addField = (col, val) => {
+        if (val !== undefined && val !== null) {
+          fields.push(`${col} = ?`);
+          values.push(val === "" ? null : val);
+        }
+      };
+
+      addField("first_name", first_name);
+      addField("last_name", last_name);
+      addField("phone", phone);
+      addField("city", city);
+      addField("country", country);
+      addField("linkedIn_profile", linkedIn_profile);
+      addField("type_of_investor", type_of_investor);
+      addField("bio_short", bio_short);
+      addField("mailing_address", mailing_address);
+      addField("accredited_status", accredited_status);
+      addField("country_tax", country_tax);
+      addField("tax_id", tax_id);
+
+      // ✅ Files — req.files ab defined hai callback ke andar
+      if (req.files?.["kyc_doc"]?.[0]) {
+        addField("kyc_document", req.files["kyc_doc"][0].filename);
+      }
+      if (req.files?.["profile_picture"]?.[0]) {
+        addField("profile_picture", req.files["profile_picture"][0].filename);
+      }
+
+      addField("screen_name", screen_name);
+      addField("job_title", job_title);
+      addField("company_name", company_name);
+      addField("company_country", company_country);
+      addField("company_website", company_website);
+      addField("industry_expertise", industry_expertise);
+      addField("cheque_size", cheque_size);
+      addField("geo_focus", geo_focus);
+      addField("preferred_stages", preferred_stages);
+      addField("hands_on", hands_on);
+      addField("network_bio", network_bio);
+      addField("ma_interests", ma_interests);
+      addField("notes", notes);
+
+      fields.push("updated_at = NOW()");
+
+      if (fields.length === 1) {
+        return res
+          .status(400)
+          .json({ success: false, message: "No fields to update" });
+      }
+
+      values.push(email);
+      const sql = `UPDATE investor_information SET ${fields.join(", ")} WHERE email = ?`;
+
+      console.log("SQL:", sql);
+      console.log("VALUES:", values);
+
+      const [result] = await db.promise().query(sql, values);
+
+      if (result.affectedRows === 0) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Investor not found" });
+      }
+
+      return res
+        .status(200)
+        .json({ success: true, message: "Profile updated successfully" });
+    } catch (dbErr) {
+      console.error("investoreditprofile DB error:", dbErr);
+      return res.status(500).json({
+        success: false,
+        message: "Server error",
+        error: dbErr.message,
+      });
+    }
+  }); // ← uploadFields callback end
+};
+
+exports.getinvestorData = (req, res) => {
+  const { id } = req.body;
+
+  const updateQuery = `
+        select * from investor_information where id = ?`;
+
+  // Correct parameter order: date_view, access_status, id
+  db.query(updateQuery, [id], (err, results) => {
+    if (err) {
+      return res
+        .status(500)
+        .json({ message: "Database update error", error: err });
+    }
+
+    return res.status(200).json({ message: "", results: results });
+  });
+};
+
+exports.getCapTableRules = async (req, res) => {
+  const { investor_id, type } = req.body;
+
+  if (!investor_id || !type) {
+    return res.status(400).json({
+      message: "Investor ID and type are required",
+      results: [],
+    });
+  }
+
+  const query = `SELECT * FROM captable_rule_investor_comapny WHERE investor_id = ? AND type = ?`;
+
+  db.query(query, [investor_id, type], (err, result) => {
+    if (err) {
+      console.error("Database error:", err);
+      return res.status(500).json({
+        message: "Database error",
+        error: err,
+        results: [],
+      });
+    }
+
+    return res.status(200).json({
+      message: "Success",
+      results: result || [],
+    });
+  });
+};
+
+exports.saveCapTableRules = async (req, res) => {
+  const {
+    investor_id,
+    type, // 'Investor' or 'Company'
+    contact_listed = "No",
+    portfolio_company = "No",
+    contact_from = "No",
+    capavate_member = "No",
+    everyone = "No",
+  } = req.body;
+
+  if (!investor_id || !type) {
+    return res.status(400).json({
+      message: "Investor ID and type are required",
+      results: [],
+    });
+  }
+
+  const checkQuery = `SELECT id FROM captable_rule_investor_comapny WHERE investor_id = ? AND type = ?`;
+
+  db.query(checkQuery, [investor_id, type], (err, existing) => {
+    if (err) {
+      console.error("Check error:", err);
+      return res.status(500).json({
+        message: "Database error",
+        error: err,
+        results: [],
+      });
+    }
+
+    if (existing.length > 0) {
+      // Update existing record
+      const updateQuery = `
+        UPDATE captable_rule_investor_comapny 
+        SET contact_listed = ?, 
+            portfolio_company = ?, 
+            contact_from = ?, 
+            capavate_member = ?, 
+            everyone = ?
+        WHERE investor_id = ? AND type = ?
+      `;
+
+      db.query(
+        updateQuery,
+        [
+          contact_listed,
+          portfolio_company,
+          contact_from,
+          capavate_member,
+          everyone,
+          investor_id,
+          type,
+        ],
+        (err, result) => {
+          if (err) {
+            console.error("Update error:", err);
+            return res.status(500).json({
+              message: "Update error",
+              error: err,
+              results: [],
+            });
+          }
+          return res.status(200).json({
+            message: `${type} rules updated successfully`,
+            results: [],
+          });
+        },
+      );
+    } else {
+      // Insert new record
+      const insertQuery = `
+        INSERT INTO captable_rule_investor_comapny 
+        (investor_id, type, contact_listed, portfolio_company, contact_from, capavate_member, everyone) 
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `;
+
+      db.query(
+        insertQuery,
+        [
+          investor_id,
+          type,
+          contact_listed,
+          portfolio_company,
+          contact_from,
+          capavate_member,
+          everyone,
+        ],
+        (err, result) => {
+          if (err) {
+            console.error("Insert error:", err);
+            return res.status(500).json({
+              message: "Insert error",
+              error: err,
+              results: [],
+            });
+          }
+          return res.status(200).json({
+            message: `${type} rules saved successfully`,
+            results: [],
+          });
+        },
+      );
+    }
+  });
 };

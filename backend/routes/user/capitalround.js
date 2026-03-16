@@ -5,99 +5,103 @@ const capitalroundController = require("../../controllers/user/capitalroundContr
 // Define the POST /login route
 router.post(
   "/getallcountrySymbolList",
-  capitalroundController.getallcountrySymbolList
+  capitalroundController.getallcountrySymbolList,
 );
 router.post(
   "/CreateOrUpdateCapitalRound",
-  capitalroundController.CreateOrUpdateCapitalRound
+  capitalroundController.CreateOrUpdateCapitalRound,
 );
 router.post(
   "/getCapitalRecordRound",
-  capitalroundController.getCapitalRecordRound
+  capitalroundController.getCapitalRecordRound,
 );
 router.post(
   "/SendRecordRoundToinvestor",
-  capitalroundController.SendRecordRoundToinvestor
+  capitalroundController.SendRecordRoundToinvestor,
 );
 router.post(
   "/getInvestorCapitalMotionlist",
-  capitalroundController.getInvestorCapitalMotionlist
+  capitalroundController.getInvestorCapitalMotionlist,
 );
 router.post(
   "/getcheckCapitalMotionlist",
-  capitalroundController.getcheckCapitalMotionlist
+  capitalroundController.getcheckCapitalMotionlist,
 );
 router.post(
   "/tersheetdownloadInvestor",
-  capitalroundController.tersheetdownloadInvestor
+  capitalroundController.tersheetdownloadInvestor,
 );
 router.post("/Capitalmotionviewed", capitalroundController.Capitalmotionviewed);
 router.post(
   "/subscriptiondownloadInvestor",
-  capitalroundController.subscriptiondownloadInvestor
+  capitalroundController.subscriptiondownloadInvestor,
 );
 router.post(
   "/investorrecordAuthorize",
-  capitalroundController.investorrecordAuthorize
+  capitalroundController.investorrecordAuthorize,
 );
 router.post("/getinvestorprofile", capitalroundController.getinvestorprofile);
 router.post(
   "/updateInvestorProfile",
-  capitalroundController.updateInvestorProfile
+  capitalroundController.updateInvestorProfile,
 );
 router.post("/getTotalcompany", capitalroundController.getTotalcompany);
 router.post(
   "/getTotalCompanyIssuedShared",
-  capitalroundController.getTotalCompanyIssuedShares
+  capitalroundController.getTotalCompanyIssuedShares,
 );
 router.post(
   "/getlatestinvestorreport",
-  capitalroundController.getlatestinvestorreport
+  capitalroundController.getlatestinvestorreport,
 );
 router.post(
   "/getlatestinvestorDataroom",
-  capitalroundController.getlatestinvestorDataroom
+  capitalroundController.getlatestinvestorDataroom,
 );
 router.post(
   "/getInvestorCapitalMotionlistLatest",
-  capitalroundController.getInvestorCapitalMotionlistLatest
+  capitalroundController.getInvestorCapitalMotionlistLatest,
 );
 
 router.post("/getEditrecordlist", capitalroundController.getEditrecordlist);
 router.post("/EditcapitalRound", capitalroundController.EditcapitalRound);
 router.post(
   "/getTotalInvestorReport",
-  capitalroundController.getTotalInvestorReport
+  capitalroundController.getTotalInvestorReport,
 );
 router.post(
   "/getcheckNextRoundForInvestor",
-  capitalroundController.getcheckNextRoundForInvestor
+  capitalroundController.getcheckNextRoundForInvestor,
 );
 router.post(
   "/getRoundCapTableSingleRecord",
-  capitalroundController.getRoundCapTableSingleRecord
+  capitalroundController.getRoundCapTableSingleRecord,
 );
 router.post("/checkExistingRounds", capitalroundController.checkExistingRounds);
 router.post(
   "/getPreviousRoundOptionPool",
-  capitalroundController.getPreviousRoundOptionPool
+  capitalroundController.getPreviousRoundOptionPool,
 );
 router.post(
   "/getPreviousRoundForAutoFill",
-  capitalroundController.getPreviousRoundForAutoFill
+  capitalroundController.getPreviousRoundForAutoFill,
 );
 router.post(
   "/getIndustryExpertise",
-  capitalroundController.getIndustryExpertise
+  capitalroundController.getIndustryExpertise,
 );
 router.post(
   "/addIndustryExpertise",
-  capitalroundController.addIndustryExpertise
+  capitalroundController.addIndustryExpertise,
 );
 router.post("/createWarrant", capitalroundController.createWarrant);
 router.post("/warrantDataUpdate", capitalroundController.warrantDataUpdate);
 router.post(
   "/getPreviousRoundForConvertible",
-  capitalroundController.getPreviousRoundForConvertible
+  capitalroundController.getPreviousRoundForConvertible,
+);
+router.post(
+  "/getPreviousFundingRound",
+  capitalroundController.getPreviousFundingRound,
 );
 module.exports = router;

@@ -51,6 +51,7 @@ export default function Login() {
   const [companyData, setcompanyData] = useState([]);
   const [SignatoryLoginData, setSignatoryLoginData] = useState(null);
   var apiURL = API_BASE_URL + "api/user/signatory/";
+  const apiURLPayment = API_BASE_URL + "api/user/payment/";
   useEffect(() => {
     const getIP = async () => {
       try {
@@ -130,6 +131,8 @@ export default function Login() {
         };
 
         console.log(userData);
+
+
         setSignatoryLoginData(userData);
         setcompanyData(userData.companies);
       }
@@ -334,13 +337,12 @@ export default function Login() {
         ],
       };
 
-      // ✅ Update state and localStorage
       setSignatoryLoginData(updatedUserData);
       localStorage.setItem(
         "SignatoryLoginData",
         JSON.stringify(updatedUserData)
       );
-
+      await handlePay(updatedUserData);
       seterrr(false);
       setdangerMessage("Login successfully");
 
@@ -351,7 +353,41 @@ export default function Login() {
       console.error("Error during login:", err);
     }
   };
+  const handlePay = async (corpdata) => {
+    try {
+      const storedData = localStorage.getItem("SignatoryLoginData");
+      const userLogin = JSON.parse(storedData);
 
+      // First check if entry already exists
+      const checkResponse = await axios.post(
+        `${apiURLPayment}checkSubscriptionExists`,
+        {
+          company_id: corpdata.companies[0].id,
+
+        }
+      );
+
+      // If entry doesn't exist, create it
+      if (checkResponse.data.results.length === 0) {
+        await axios.post(
+          `${apiURLPayment}CompanySubscriptionOneTimeDataRoomPlus`,
+          {
+            code: '',
+            company_id: corpdata.companies[0].id,
+            created_by_id: userLogin.id,
+            amount: '0.00',
+            clientSecret: null,
+            PayidOnetime: null,
+            payment_status: "succeeded",
+            discount: '0',
+            ip_address: '',
+          }
+        );
+      }
+    } catch (err) {
+      console.error("Error in handlePay:", err);
+    }
+  };
   return (
     <>
       <div className="login_main_gradient h100vh">

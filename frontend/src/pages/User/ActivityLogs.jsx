@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from "react";
-import TopBar from "../../components/Users/TopBar";
 import DataTable from "react-data-table-component";
 import ModuleSideNav from "../../components/Users/ModuleSideNav";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -13,6 +12,8 @@ import { Link } from "react-router-dom";
 import DangerAlertPopup from "../../components/Admin/DangerAlertPopup";
 import { FaEdit, FaEye, FaTrash } from "react-icons/fa";
 import { API_BASE_URL } from "../../config/config.js";
+import SideBar from '../../components/social/SideBar';
+import TopBar from '../../components/social/TopBar';
 export default function ActivityLogs() {
   const storedUsername = localStorage.getItem("SignatoryLoginData");
   const userLogin = JSON.parse(storedUsername);
@@ -121,6 +122,11 @@ export default function ActivityLogs() {
       sortable: true,
     },
     {
+      name: "Country Name",
+      selector: (row) => row.country_name || "-",
+      sortable: false,
+    },
+    {
       name: "IP Address",
       selector: (row) => row.ip_address || "-",
       sortable: false,
@@ -227,19 +233,10 @@ export default function ActivityLogs() {
     if (isNaN(date)) return "";
 
     const months = [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
     ];
+
 
     const day = date.getDate();
     const month = months[date.getMonth()];
@@ -274,73 +271,67 @@ export default function ActivityLogs() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   return (
     <>
-      <Wrapper>
-        <div className="fullpage d-block">
-          <div className="d-flex align-items-start gap-0">
-            <ModuleSideNav
-              isCollapsed={isCollapsed}
-              setIsCollapsed={setIsCollapsed}
-            />
-            <div
-              className={`global_view ${isCollapsed ? "global_view_col" : ""}`}
-            >
-              {dangerMessage && (
-                <DangerAlertPopup
-                  message={dangerMessage}
-                  onConfirm={handleConfirm}
-                  onCancel={() => {
-                    setdangerMessage("");
-                  }}
-                />
-              )}
-              <TopBar />
-              <SectionWrapper className="d-block p-md-4 p-3">
-                <div className="container-fluid">
-                  <DataRoomSection className="d-flex flex-column gap-2">
-                    <div className="titleroom flex-wrap gap-3 d-flex justify-content-between align-items-center  pb-3">
-                      {/* Heading on the left */}
-                      <div className="pb-3 bar_design">
-                        <h4 className="h5 mb-0">Activity Logs</h4>
-                      </div>
-                      {/* Buttons on the right */}
-                      <div className="d-flex gap-2">
-                        <input
-                          type="search"
-                          placeholder="Search Here..."
-                          className="form-control"
-                          value={searchText}
-                          onChange={(e) => setSearchText(e.target.value)}
-                          style={{
-                            padding: "10px 15px",
-                            width: "100%",
-                            maxWidth: "300px",
-                            fontSize: "14px",
-                            borderRadius: "10px",
-                          }}
-                        />
-                      </div>
-                    </div>
 
-                    <div className="d-flex flex-column overflow-auto justify-content-between align-items-start tb-box">
-                      <DataTable
-                        customStyles={customStyles}
-                        conditionalRowStyles={conditionalRowStyles}
-                        columns={columns}
-                        className="datatb-report"
-                        data={filteredData}
-                        pagination
-                        highlightOnHover
-                        striped
-                        responsive
-                      />
-                    </div>
-                  </DataRoomSection>
+      <main>
+        <div className='d-flex align-items-start gap-0'>
+          <SideBar />
+          <div className='d-flex flex-grow-1 flex-column gap-0'>
+            <TopBar />
+            <section className='px-md-3 py-4'>
+              <div className='container-fluid'>
+                <div className='row gy-4'>
+                  <div className='col-md-12 order-1 order-md-0'>
+                    <SectionWrapper className="d-block p-md-4 p-3">
+                      <div className="container-fluid">
+                        <DataRoomSection className="d-flex flex-column gap-2">
+                          <div className="titleroom flex-wrap gap-3 d-flex justify-content-between align-items-center  pb-3">
+                            {/* Heading on the left */}
+                            <div className="pb-3 bar_design">
+                              <h4 className="h5 mb-0">Activity Logs</h4>
+                            </div>
+                            {/* Buttons on the right */}
+                            <div className="d-flex gap-2">
+                              <input
+                                type="search"
+                                placeholder="Search Here..."
+                                className="form-control"
+                                value={searchText}
+                                onChange={(e) => setSearchText(e.target.value)}
+                                style={{
+                                  padding: "10px 15px",
+                                  width: "100%",
+                                  maxWidth: "300px",
+                                  fontSize: "14px",
+                                  borderRadius: "10px",
+                                }}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="d-flex flex-column overflow-auto justify-content-between align-items-start tb-box">
+                            <DataTable
+                              customStyles={customStyles}
+                              conditionalRowStyles={conditionalRowStyles}
+                              columns={columns}
+                              className="datatb-report"
+                              data={filteredData}
+                              pagination
+                              highlightOnHover
+                              striped
+                              responsive
+                            />
+                          </div>
+                        </DataRoomSection>
+                      </div>
+                    </SectionWrapper>
+                  </div>
+
                 </div>
-              </SectionWrapper>
-            </div>
+              </div>
+            </section>
           </div>
         </div>
-      </Wrapper>
+      </main>
     </>
   );
 }

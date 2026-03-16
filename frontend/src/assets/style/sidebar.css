@@ -1,0 +1,156 @@
+.sidebar_item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  text-decoration: none;
+  color: rgb(0, 0, 0);
+  transition: 0.2s;
+  border-radius: 6px;
+  font-weight: 450;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.com_logo img {
+  padding: 5px;
+  background: white;
+  border: 1px solid #0000001f;
+}
+.bg_red {
+  background-color: #df383e;
+}
+.menu_btn {
+  background: transparent;
+  border: none;
+}
+
+.menu_value {
+  font-size: 11px;
+  font-weight: 500;
+  color: #fff;
+  padding: 2px 9px;
+  border-radius: 50px;
+  border: none;
+  height: fit-content;
+}
+.company_box {
+  padding: 10px;
+  border: 1px solid #d310174f;
+  border-radius: 8px;
+  box-shadow: 0px 0px 3px 0px #d310174f;
+}
+
+.company_box h6 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #000000db;
+}
+.company_box p {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #000000db;
+}
+.company_box p strong {
+  font-weight: 600;
+}
+
+.input-deisgn label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #000000db;
+}
+
+.input-deisgn input {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: #000000db;
+  padding: 10px;
+}
+
+.input-deisgn .react-select__control {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: #000000db;
+  border: var(--bs-border-width) solid var(--bs-border-color);
+}
+
+.form-pop .form-pop-head h4 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #000000db;
+}
+
+.form-pop .form-pop-head p {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: #000000db;
+}
+
+.close_btn_pop {
+  border: none;
+  color: #d40209;
+  background: transparent;
+}
+
+.bg_light {
+  background: #0000000c;
+}
+
+.button_deisgn {
+  padding: 13px 30px;
+  height: fit-content;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border: none;
+}
+.main_sidenav_social {
+  border-right: 1px solid #00000033;
+  position: sticky;
+  width: 330px;
+  height: 100vh;
+  overflow: auto;
+  z-index: 98;
+  background-color: #fff;
+  top: 0;
+  flex-shrink:0;
+}
+
+.main_sidenav_social {
+  transition: width 0.3s ease;
+}
+
+.main_sidenav_social.collapsed {
+  width: 71px;
+}
+
+.main_sidenav_social.collapsed .logo {
+  display: flex;
+  justify-content: center;
+}
+
+.su-creditb {
+  display: flex;
+  color: #fff;
+  text-decoration: none;
+  flex-shrink: 0;
+  font-size: 13px;
+  padding: 0px 15px 6px 15px;
+  text-transform: capitalize;
+  background: #0e2841;
+  border: none;
+  border-radius: 7px;
+  justify-content: center;
+  align-items: center;
+}
+
+.serach_input {
+  width: 100%;
+  padding: 13px 20px;
+  border-radius: 50px;
+  border: 1px solid #00000033;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #000000db;
+}
+

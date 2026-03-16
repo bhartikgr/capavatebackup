@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import "react-datepicker/dist/react-datepicker.css";
-import TopBar from "../../components/Users/TopBar";
 import "bootstrap/dist/css/bootstrap.min.css";
 import {
   SectionWrapper,
@@ -13,6 +12,8 @@ import { format, toZonedTime } from "date-fns-tz";
 import ModuleSideNav from "../../components/Users/ModuleSideNav";
 import axios from "axios";
 import { API_BASE_URL } from "../../config/config";
+import SideBar from '../../components/social/SideBar';
+import TopBar from '../../components/social/TopBar';
 export default function Subscription() {
   document.title = "Your Active Plan";
   const localizer = momentLocalizer(moment);
@@ -300,211 +301,215 @@ export default function Subscription() {
 
   return (
     <>
-      <Wrapper>
-        <div className="fullpage d-block">
-          <div className="d-flex align-items-start gap-0">
-            <ModuleSideNav
-              isCollapsed={isCollapsed}
-              setIsCollapsed={setIsCollapsed}
-            />
-            <div
-              className={`global_view ${isCollapsed ? "global_view_col" : ""}`}
-            >
-              <TopBar />
-              <SectionWrapper className="d-block p-md-4 p-3">
-                <div className="container-fluid">
-                  <div className="subscription-header">
-                    <div className="subscription-title">
-                      <h1>Your Subscriptions</h1>
-                      <p>Manage your active plans and services</p>
-                    </div>
-                    <div className="subscription-count">
-                      <span>{userPlans.length} active plans</span>
-                    </div>
+
+
+      <main>
+        <div className='d-flex align-items-start gap-0'>
+          <SideBar />
+          <div className='d-flex flex-grow-1 flex-column gap-0'>
+            <TopBar />
+            <section className='px-md-3 py-4'>
+              <div className='container-fluid'>
+                <div className='row gy-4'>
+                  <div className='col-md-12 order-1 order-md-0'>
+                    <SectionWrapper className="d-block p-md-4 p-3">
+                      <div className="container-fluid">
+                        <div className="subscription-header">
+                          <div className="subscription-title">
+                            <h1>Your Subscriptions</h1>
+                            <p>Manage your active plans and services</p>
+                          </div>
+                          <div className="subscription-count">
+                            <span>{userPlans.length} active plans</span>
+                          </div>
+                        </div>
+
+                        {userPlans.length === 0 ? (
+                          <div className="empty-state">
+                            <div className="empty-icon">
+                              <svg
+                                width="64"
+                                height="64"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path
+                                  d="M15 5V7M15 11V13M15 17V19M5 5C5 6.10457 4.10457 7 3 7C4.10457 7 5 7.89543 5 9C5 7.89543 5.89543 7 7 7C5.89543 7 5 6.10457 5 5ZM12 5C12 6.10457 11.1046 7 10 7C11.1046 7 12 7.89543 12 9C12 7.89543 12.8954 7 14 7C12.8954 7 12 6.10457 12 5ZM19 5C19 6.10457 18.1046 7 17 7C18.1046 7 19 7.89543 19 9C19 7.89543 19.8954 7 21 7C19.8954 7 19 6.10457 19 5ZM5 12C5 13.1046 4.10457 14 3 14C4.10457 14 5 14.8954 5 16C5 14.8954 5.89543 14 7 14C5.89543 14 5 13.1046 5 12ZM12 12C12 13.1046 11.1046 14 10 14C11.1046 14 12 14.8954 12 16C12 14.8954 12.8954 14 14 14C12.8954 14 12 13.1046 12 12ZM19 12C19 13.1046 18.1046 14 17 14C18.1046 14 19 14.8954 19 16C19 14.8954 19.8954 14 21 14C19.8954 14 19 13.1046 19 12Z"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
+                              </svg>
+                            </div>
+                            <h3>No subscriptions yet</h3>
+                            <p>
+                              You don't have any active subscriptions at the moment.
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="subscription-grid">
+                            {userPlans.map((plan, index) => {
+                              const cleanDateStr = plan.renewalDate
+                                ? plan.renewalDate.replace(/(\d+)(st|nd|rd|th)/, "$1")
+                                : null;
+
+                              const endDate = cleanDateStr
+                                ? new Date(cleanDateStr)
+                                : null;
+
+                              const currentDate = new Date();
+                              let status;
+
+                              if (
+                                plan.name === "International Entrepreneur Academy"
+                              ) {
+                                status = "Active";
+                              } else {
+                                status =
+                                  endDate && endDate >= currentDate
+                                    ? "Active"
+                                    : "Inactive";
+                              }
+
+                              return (
+                                <div className="subscription-card" key={index}>
+                                  <div className="card-header">
+                                    <div className="card-title-section">
+                                      <div className="card-icon">
+                                        {getSubscriptionIcon(plan.type)}
+                                      </div>
+                                      <h3>{plan.name}</h3>
+                                    </div>
+                                    {!plan.name.includes("Per Instance") && (
+                                      <span
+                                        className={`status-badge status-${status.toLowerCase()}`}
+                                      >
+                                        {status}
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  <div className="card-body">
+                                    <div className="price-section">
+                                      <span className="price">{plan.price}</span>
+                                      {plan.renewalDate && (
+                                        <span className="period">/{plan.period}</span>
+                                      )}
+                                    </div>
+
+                                    <div className="details-grid">
+                                      {plan.renewalDate && (
+                                        <div className="detail-item">
+                                          <svg
+                                            width="16"
+                                            height="16"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                          >
+                                            <path
+                                              d="M19 4H5C3.89543 4 3 4.89543 3 6V20C3 21.1046 3.89543 22 5 22H19C20.1046 22 21 21.1046 21 20V6C21 4.89543 20.1046 4 19 4Z"
+                                              stroke="currentColor"
+                                              strokeWidth="2"
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                            />
+                                            <path
+                                              d="M16 2V6"
+                                              stroke="currentColor"
+                                              strokeWidth="2"
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                            />
+                                            <path
+                                              d="M8 2V6"
+                                              stroke="currentColor"
+                                              strokeWidth="2"
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                            />
+                                            <path
+                                              d="M3 10H21"
+                                              stroke="currentColor"
+                                              strokeWidth="2"
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                            />
+                                          </svg>
+                                          <span>Renews: {plan.renewalDate}</span>
+                                        </div>
+                                      )}
+
+                                      <div className="detail-item">
+                                        <svg
+                                          width="16"
+                                          height="16"
+                                          viewBox="0 0 24 24"
+                                          fill="none"
+                                          xmlns="http://www.w3.org/2000/svg"
+                                        >
+                                          <path
+                                            d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                          />
+                                          <path
+                                            d="M12 6V12L16 14"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                          />
+                                        </svg>
+                                        <span>Last payment: {plan.lastPayment}</span>
+                                      </div>
+                                    </div>
+
+                                    <div className="features-section">
+                                      <h4>Features</h4>
+                                      <ul className="features-list">
+                                        {plan.features.map((feature, i) => (
+                                          <li key={i}>
+                                            <svg
+                                              width="16"
+                                              height="16"
+                                              viewBox="0 0 24 24"
+                                              fill="none"
+                                              xmlns="http://www.w3.org/2000/svg"
+                                            >
+                                              <path
+                                                d="M20 6L9 17L4 12"
+                                                stroke="currentColor"
+                                                strokeWidth="2"
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                              />
+                                            </svg>
+                                            {feature}
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </SectionWrapper>
                   </div>
 
-                  {userPlans.length === 0 ? (
-                    <div className="empty-state">
-                      <div className="empty-icon">
-                        <svg
-                          width="64"
-                          height="64"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            d="M15 5V7M15 11V13M15 17V19M5 5C5 6.10457 4.10457 7 3 7C4.10457 7 5 7.89543 5 9C5 7.89543 5.89543 7 7 7C5.89543 7 5 6.10457 5 5ZM12 5C12 6.10457 11.1046 7 10 7C11.1046 7 12 7.89543 12 9C12 7.89543 12.8954 7 14 7C12.8954 7 12 6.10457 12 5ZM19 5C19 6.10457 18.1046 7 17 7C18.1046 7 19 7.89543 19 9C19 7.89543 19.8954 7 21 7C19.8954 7 19 6.10457 19 5ZM5 12C5 13.1046 4.10457 14 3 14C4.10457 14 5 14.8954 5 16C5 14.8954 5.89543 14 7 14C5.89543 14 5 13.1046 5 12ZM12 12C12 13.1046 11.1046 14 10 14C11.1046 14 12 14.8954 12 16C12 14.8954 12.8954 14 14 14C12.8954 14 12 13.1046 12 12ZM19 12C19 13.1046 18.1046 14 17 14C18.1046 14 19 14.8954 19 16C19 14.8954 19.8954 14 21 14C19.8954 14 19 13.1046 19 12Z"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      </div>
-                      <h3>No subscriptions yet</h3>
-                      <p>
-                        You don't have any active subscriptions at the moment.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="subscription-grid">
-                      {userPlans.map((plan, index) => {
-                        const cleanDateStr = plan.renewalDate
-                          ? plan.renewalDate.replace(/(\d+)(st|nd|rd|th)/, "$1")
-                          : null;
-
-                        const endDate = cleanDateStr
-                          ? new Date(cleanDateStr)
-                          : null;
-
-                        const currentDate = new Date();
-                        let status;
-
-                        if (
-                          plan.name === "International Entrepreneur Academy"
-                        ) {
-                          status = "Active";
-                        } else {
-                          status =
-                            endDate && endDate >= currentDate
-                              ? "Active"
-                              : "Inactive";
-                        }
-
-                        return (
-                          <div className="subscription-card" key={index}>
-                            <div className="card-header">
-                              <div className="card-title-section">
-                                <div className="card-icon">
-                                  {getSubscriptionIcon(plan.type)}
-                                </div>
-                                <h3>{plan.name}</h3>
-                              </div>
-                              {!plan.name.includes("Per Instance") && (
-                                <span
-                                  className={`status-badge status-${status.toLowerCase()}`}
-                                >
-                                  {status}
-                                </span>
-                              )}
-                            </div>
-
-                            <div className="card-body">
-                              <div className="price-section">
-                                <span className="price">{plan.price}</span>
-                                {plan.renewalDate && (
-                                  <span className="period">/{plan.period}</span>
-                                )}
-                              </div>
-
-                              <div className="details-grid">
-                                {plan.renewalDate && (
-                                  <div className="detail-item">
-                                    <svg
-                                      width="16"
-                                      height="16"
-                                      viewBox="0 0 24 24"
-                                      fill="none"
-                                      xmlns="http://www.w3.org/2000/svg"
-                                    >
-                                      <path
-                                        d="M19 4H5C3.89543 4 3 4.89543 3 6V20C3 21.1046 3.89543 22 5 22H19C20.1046 22 21 21.1046 21 20V6C21 4.89543 20.1046 4 19 4Z"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                      />
-                                      <path
-                                        d="M16 2V6"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                      />
-                                      <path
-                                        d="M8 2V6"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                      />
-                                      <path
-                                        d="M3 10H21"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                      />
-                                    </svg>
-                                    <span>Renews: {plan.renewalDate}</span>
-                                  </div>
-                                )}
-
-                                <div className="detail-item">
-                                  <svg
-                                    width="16"
-                                    height="16"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                  >
-                                    <path
-                                      d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
-                                      stroke="currentColor"
-                                      strokeWidth="2"
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                    />
-                                    <path
-                                      d="M12 6V12L16 14"
-                                      stroke="currentColor"
-                                      strokeWidth="2"
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                    />
-                                  </svg>
-                                  <span>Last payment: {plan.lastPayment}</span>
-                                </div>
-                              </div>
-
-                              <div className="features-section">
-                                <h4>Features</h4>
-                                <ul className="features-list">
-                                  {plan.features.map((feature, i) => (
-                                    <li key={i}>
-                                      <svg
-                                        width="16"
-                                        height="16"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                      >
-                                        <path
-                                          d="M20 6L9 17L4 12"
-                                          stroke="currentColor"
-                                          strokeWidth="2"
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
-                                        />
-                                      </svg>
-                                      {feature}
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
                 </div>
-              </SectionWrapper>
-            </div>
+              </div>
+            </section>
           </div>
         </div>
-      </Wrapper>
+      </main>
 
       <style jsx>{`
         .subscription-header {

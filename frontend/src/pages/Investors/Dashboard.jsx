@@ -4,8 +4,20 @@ import {
   SectionWrapper,
   Wrapper,
 } from "../../components/Styles/RegisterStyles";
-import SideBar from "../../components/Investor/Sidebar.jsx";
 import axios from "axios";
+
+
+
+
+import SideBar from '../../components/Investor/social/SideBar';
+import TopBar from '../../components/Investor/social/TopBar';
+import MessagesShareholders from '../../components/Investor/social/MessagesShareholders';
+import EquitySnapshot from '../../components/Investor/social/EquitySnapshot';
+import PostSearch from '../../components/Investor/social/PostSearch';
+import SocialPosts from '../../components/Investor/social/SocialPosts';
+import InvestorReports from '../../components/Investor/social/InvestorReports';
+import TBDSuggestions from '../../components/Investor/social/TBDSuggestions.jsx';
+import RoundStatistics from '../../components/Investor/social/RoundStatistics';
 function Dashboard() {
   const [totalCompany, setTotalCompany] = useState(0); // initial value
   const [totalCompanyshares, settotalCompanyshares] = useState(0); // initial value
@@ -310,216 +322,41 @@ function Dashboard() {
     return `${month} ${day}${getOrdinal(day)}, ${year}`;
   }
   return (
-    <Wrapper className="investor-login-wrapper">
-      <div className="fullpage d-block">
-        <div className="d-flex align-items-start gap-0">
-          <SideBar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
+    <main>
+      <div className='d-flex align-items-start gap-0'>
+        <SideBar />
+        <div className='d-flex flex-grow-1 flex-column gap-0'>
+          <TopBar />
+          <section className='px-md-3 py-4'>
+            <div className='container-fluid'>
+              <div className='row gy-4'>
+                <div className='col-md-8 order-1 order-md-0'>
+                  <div className='row'>
+                    <div class='col-md-12'>
+                      <div className='d-flex flex-column gap-5 social_h'>
+                        {/* <EquitySnapshot /> */}
 
-          <div
-            className={`global_view ${isCollapsed ? "global_view_col" : ""}`}
-          >
-            <SectionWrapper className="d-block p-md-4 p-3">
-              <div className="container-fluid">
-                <Stepblock id="step5">
-                  <div className="row">
-                    <div className="col-md-12">
-                      <div className="pb-3 bar_design">
-                        <h4 className="h5 mb-0">Dashboard</h4>
-                      </div>
-
-                      <div class="row gap-0 dashboard-top">
-                        <div class="col-6 col-md-4 p-0 bor">
-                          <div class="p-3">
-                            <p class="small fw-medium mb-1">Total Portfolio Companies</p>
-                            <div className="d-flex align-items-center gap-3 justify-content-between">
-                              <p class="h4 fw-semibold mb-0">{totalCompany}</p>
-                            </div>
-                          </div>
-                        </div>
-                        <div class="col-6 col-md-4 p-0 bor">
-                          <div class="p-3">
-                            <p class="small fw-medium mb-1">
-                              Total Investor Reports Reviewed
-                            </p>
-                            <div className="d-flex align-items-center gap-3 justify-content-between">
-                              <p class="h4 fw-semibold mb-0">
-                                {TotalInvestorReport}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-
-                        <div class="col-6 col-md-4 p-0 bor">
-                          <div class="p-3">
-                            <p class="small fw-medium mb-1">Number of Participating Rounds</p>
-                            <p class="h4 fw-semibold mb-0">{totalround}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="col-12 my-4">
-                      <div class="dashboard_card  modern-chart">
-                        <div class="card-header">
-                          <h3 class="card-title">Latest Company Report</h3>
-                        </div>
-
-                        <div class="access-logs">
-                          <h4 class="section-title">Investor Report</h4>
-
-                          <table class="log-table">
-                            <thead>
-                              <tr>
-                                <th className="fw-bold">Report</th>
-                                <th className="fw-bold">Version</th>
-                                <th className="fw-bold">Date Of Report</th>
-                                <th className="fw-bold">Name Of Report</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {Array.isArray(latestinvestorReport) &&
-                                latestinvestorReport.length > 0 ? (
-                                latestinvestorReport.map((log, index) => (
-                                  <tr key={index}>
-                                    <td>
-                                      <small>{log.type}</small>
-                                    </td>
-                                    <td>
-                                      <small>{log.version}</small>
-                                    </td>
-                                    <td>
-                                      <small>
-                                        {formatCurrentDate(log.shared_date)}
-                                      </small>
-                                    </td>
-                                    <td>
-                                      <small>{log.document_name}</small>
-                                    </td>
-                                  </tr>
-                                ))
-                              ) : (
-                                <tr>
-                                  <td colSpan="4">
-                                    <small>No records found</small>
-                                  </td>
-                                </tr>
-                              )}
-                            </tbody>
-                          </table>
-                        </div>
-                        <div class="access-logs">
-                          <h4 class="section-title">
-                            DataRoom Management & Diligence
-                          </h4>
-
-                          <table class="log-table">
-                            <thead>
-                              <tr>
-                                <th className="fw-bold">Report</th>
-                                <th className="fw-bold">Version</th>
-                                <th className="fw-bold">Date Of Report</th>
-                                <th className="fw-bold">Name Of Report</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {Array.isArray(latestinvestorReportDataroom) &&
-                                latestinvestorReportDataroom.length > 0 ? (
-                                latestinvestorReportDataroom.map(
-                                  (log, index) => (
-                                    <tr key={index}>
-                                      <td>
-                                        <small>{log.type}</small>
-                                      </td>
-                                      <td>
-                                        <small>{log.version}</small>
-                                      </td>
-                                      <td>
-                                        <small>
-                                          {formatCurrentDate(log.shared_date)}
-                                        </small>
-                                      </td>
-                                      <td>
-                                        <small>{log.document_name}</small>
-                                      </td>
-                                    </tr>
-                                  )
-                                )
-                              ) : (
-                                <tr>
-                                  <td colSpan="4">
-                                    <small>No records found</small>
-                                  </td>
-                                </tr>
-                              )}
-                            </tbody>
-                          </table>
-                        </div>
-                        <div class="access-logs">
-                          <h4 class="section-title">Capital Round Documents</h4>
-
-                          <table class="log-table">
-                            <thead>
-                              <tr>
-                                <th className="fw-bold">
-                                  Share Class(Name Of Round)
-                                </th>
-                                <th className="fw-bold">Target Raise Amount</th>
-                                <th className="fw-bold">Number Of Shares</th>
-                                <th className="fw-bold">Date of Share</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {Array.isArray(roundRecordlatest) &&
-                                roundRecordlatest.length > 0 ? (
-                                roundRecordlatest.map((log, index) => (
-                                  <tr key={index}>
-                                    <td>
-                                      <small>
-                                        {log.nameOfRound} {log.shareClassType}
-                                      </small>
-                                    </td>
-                                    <td>
-                                      <small>
-                                        {log.currency}{" "}
-                                        {Number(log.roundsize).toLocaleString(
-                                          "en-US"
-                                        )}
-                                      </small>
-                                    </td>
-                                    <td>
-                                      <small>
-                                        {Number(
-                                          log.issuedshares
-                                        ).toLocaleString("en-US")}
-                                      </small>
-                                    </td>
-                                    <td>
-                                      <small>
-                                        {formatCurrentDate(log.sent_date)}
-                                      </small>
-                                    </td>
-                                  </tr>
-                                ))
-                              ) : (
-                                <tr>
-                                  <td colSpan="4">
-                                    <small>No records found</small>
-                                  </td>
-                                </tr>
-                              )}
-                            </tbody>
-                          </table>
+                        <MessagesShareholders />
+                        <div className='d-flex flex-column gap-4'>
+                          <PostSearch />
+                          <SocialPosts />
                         </div>
                       </div>
                     </div>
                   </div>
-                </Stepblock>
+                </div>
+                <div className='col-md-4 order-0 order-md-1'>
+                  <div className='d-flex flex-column gap-4 social-right scroll_nonw '>
+                    <InvestorReports />
+                    {/* <RoundStatistics /> */}
+                  </div>
+                </div>
               </div>
-            </SectionWrapper>
-          </div>
+            </div>
+          </section>
         </div>
       </div>
-    </Wrapper>
+    </main>
   );
 }
 

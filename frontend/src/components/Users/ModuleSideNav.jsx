@@ -217,7 +217,7 @@ export default function ModuleSideNav({
     const storedData = localStorage.getItem("SignatoryLoginData");
 
     if (!storedData) {
-      navigate("/signatory/login", { replace: true });
+      navigate("/user/login", { replace: true });
       return;
     }
 
@@ -226,7 +226,7 @@ export default function ModuleSideNav({
 
       if (!userLogin || typeof userLogin !== "object") {
         localStorage.removeItem("SignatoryLoginData");
-        navigate("/signatory/login", { replace: true });
+        navigate("/user/login", { replace: true });
         return;
       }
 
@@ -234,7 +234,7 @@ export default function ModuleSideNav({
 
       if (!userLogin.expiry || currentTime > userLogin.expiry) {
         localStorage.removeItem("SignatoryLoginData");
-        navigate("/signatory/login", { replace: true });
+        navigate("/user/login", { replace: true });
         return;
       }
 
@@ -242,7 +242,7 @@ export default function ModuleSideNav({
     } catch (error) {
       console.error("Error parsing user data:", error);
       localStorage.removeItem("SignatoryLoginData");
-      navigate("/signatory/login", { replace: true });
+      navigate("/user/login", { replace: true });
     }
   }, [navigate]);
   const storedUsername = localStorage.getItem("SignatoryLoginData");
@@ -294,7 +294,7 @@ export default function ModuleSideNav({
 
     if (!storedData) {
       // ❌ No user data → redirect to login immediately
-      navigate("/signatory/login");
+      navigate("/user/login");
       return;
     }
 
@@ -304,7 +304,7 @@ export default function ModuleSideNav({
       // ✅ Check if required properties exist
       if (!userLogin || typeof userLogin !== "object") {
         localStorage.removeItem("SignatoryLoginData");
-        navigate("/signatory/login");
+        navigate("/user/login");
         return;
       }
 
@@ -314,7 +314,7 @@ export default function ModuleSideNav({
       if (!userLogin.expiry || currentTime > userLogin.expiry) {
         // ❌ Token missing or expired → remove storage & redirect
         localStorage.removeItem("SignatoryLoginData");
-        navigate("/signatory/login");
+        navigate("/user/login");
         return;
       }
 
@@ -324,7 +324,7 @@ export default function ModuleSideNav({
       // ❌ JSON parsing error → clear storage and redirect
       console.error("Error parsing user data:", error);
       localStorage.removeItem("SignatoryLoginData");
-      navigate("/signatory/login");
+      navigate("/user/login");
     }
   }, [navigate]);
 

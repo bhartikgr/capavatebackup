@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 
 import ModuleSideNav from "../../../components/Users/ModuleSideNav.jsx";
-import TopBar from "../../../components/Users/TopBar";
+import SideBar from '../../../components/social/SideBar';
+import TopBar from '../../../components/social/TopBar';
 import "bootstrap/dist/css/bootstrap.min.css";
 import {
   SectionWrapper,
@@ -129,145 +130,148 @@ export default function AddNewInvestor() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   return (
     <>
-      <Wrapper>
-        <div className="fullpage d-block">
-          <div className="d-flex align-items-start gap-0">
-            <ModuleSideNav
-              isCollapsed={isCollapsed}
-              setIsCollapsed={setIsCollapsed}
-            />
-            <div
-              className={`global_view ${isCollapsed ? "global_view_col" : ""}`}
-            >
-              <TopBar />
-              <SectionWrapper className="d-block p-md-4 p-3">
-                {message && (
-                  <p className={errr ? " mt-3 error_pop" : "success_pop mt-3"}>
-                    {message}
-                  </p>
-                )}
-                <div className="container-fluid">
-                  <DataRoomSection className="d-flex flex-column gap-2">
-                    <div className="titleroom d-flex justify-content-between align-items-center border-bottom pb-3">
-                      <BackButton
-                        type="button"
-                        className="backbtn"
-                        onClick={handleBackClick}
-                      >
-                        <ArrowLeft size={16} className="me-1" /> back
-                      </BackButton>
-                      <h4>
-                        {editInvestor && editInvestor.id
-                          ? "Edit Investor"
-                          : "Add Investor"}
-                      </h4>
-                    </div>
 
-                    <form onSubmit={handleSubmit}>
-                      <div className="formlist">
-                        <div className="row">
-                          {/* Email */}
-                          <div className="col-6">
-                            <label className="d-block mt-3">
-                              <div className="d-flex align-items-center gap-2 mb-2">
-                                <h5>
-                                  Email{" "}
-                                  <span style={{ color: "var(--primary)" }}>
-                                    *
-                                  </span>
-                                </h5>
-                              </div>
-                              <input
-                                className="form-control"
-                                type="email"
-                                name="email"
-                                id="email"
-                                placeholder="Enter your email..."
-                                defaultValue={editInvestor.email || ""}
-                                onChange={handleChange}
-                                required
-                                disabled={!!editInvestor.email} // disabled if email exists
-                              />
-                            </label>
-                          </div>
-
-                          {/* Investor Type */}
-                          <div className="col-6">
-                            <label className="d-block mt-3">
-                              <div className="d-flex align-items-center gap-2 mb-2">
-                                <h5>
-                                  First Name{" "}
-                                  <span style={{ color: "var(--primary)" }}>
-                                    *
-                                  </span>
-                                </h5>
-                              </div>
-                              <input
-                                className="form-control"
-                                onChange={handleChange}
-                                type="text"
-                                defaultValue={editInvestor.first_name}
-                                name="first_name"
-                                placeholder="Enter here..."
-                                id="first_name"
-                                required
-                              />
-                            </label>
-                          </div>
-                          <div className="col-6">
-                            <label className="d-block mt-3">
-                              <div className="d-flex align-items-center gap-2 mb-2">
-                                <h5>
-                                  Last Name{" "}
-                                  <span style={{ color: "var(--primary)" }}>
-                                    *
-                                  </span>
-                                </h5>
-                              </div>
-                              <input
-                                className="form-control"
-                                onChange={handleChange}
-                                type="text"
-                                defaultValue={editInvestor.last_name}
-                                name="last_name"
-                                placeholder="Enter here..."
-                                id="last_name"
-                                required
-                              />
-                            </label>
-                          </div>
-                        </div>
-
-                        {/* Submit + Spinner + Message */}
-                        <div className="d-flex justify-content-start align-items-center mt-3">
-                          <input
-                            type="submit"
-                            disabled={spinners}
-                            className="global_btn ms-auto w-fit"
-                            value="Submit"
-                            style={{ opacity: spinners ? 0.6 : 1 }}
-                          />
-                          {spinners && (
-                            <div
-                              className="spinner-border text-light ms-2"
-                              role="status"
-                              style={{ width: "1.5rem", height: "1.5rem" }}
+      <main>
+        <div className='d-flex align-items-start gap-0'>
+          <SideBar />
+          <div className='d-flex flex-grow-1 flex-column gap-0'>
+            <TopBar />
+            <section className='px-md-3 py-4'>
+              <div className='container-fluid'>
+                <div className='row gy-4'>
+                  <div className='col-md-12 order-1 order-md-0'>
+                    <SectionWrapper className="d-block p-md-4 p-3">
+                      {message && (
+                        <p className={errr ? " mt-3 error_pop" : "success_pop mt-3"}>
+                          {message}
+                        </p>
+                      )}
+                      <div className="container-fluid">
+                        <DataRoomSection className="d-flex flex-column gap-2">
+                          <div className="titleroom d-flex justify-content-between align-items-center border-bottom pb-3">
+                            <BackButton
+                              type="button"
+                              className="backbtn"
+                              onClick={handleBackClick}
                             >
-                              <span className="visually-hidden">
-                                Loading...
-                              </span>
+                              <ArrowLeft size={16} className="me-1" /> back
+                            </BackButton>
+                            <h4>
+                              {editInvestor && editInvestor.id
+                                ? "Edit Investor"
+                                : "Add Investor"}
+                            </h4>
+                          </div>
+
+                          <form onSubmit={handleSubmit}>
+                            <div className="formlist">
+                              <div className="row">
+                                {/* Email */}
+                                <div className="col-6">
+                                  <label className="d-block mt-3">
+                                    <div className="d-flex align-items-center gap-2 mb-2">
+                                      <h5>
+                                        Email{" "}
+                                        <span style={{ color: "var(--primary)" }}>
+                                          *
+                                        </span>
+                                      </h5>
+                                    </div>
+                                    <input
+                                      className="form-control"
+                                      type="email"
+                                      name="email"
+                                      id="email"
+                                      placeholder="Enter your email..."
+                                      defaultValue={editInvestor.email || ""}
+                                      onChange={handleChange}
+                                      required
+                                      disabled={!!editInvestor.email} // disabled if email exists
+                                    />
+                                  </label>
+                                </div>
+
+                                {/* Investor Type */}
+                                <div className="col-6">
+                                  <label className="d-block mt-3">
+                                    <div className="d-flex align-items-center gap-2 mb-2">
+                                      <h5>
+                                        First Name{" "}
+                                        <span style={{ color: "var(--primary)" }}>
+                                          *
+                                        </span>
+                                      </h5>
+                                    </div>
+                                    <input
+                                      className="form-control"
+                                      onChange={handleChange}
+                                      type="text"
+                                      defaultValue={editInvestor.first_name}
+                                      name="first_name"
+                                      placeholder="Enter here..."
+                                      id="first_name"
+                                      required
+                                    />
+                                  </label>
+                                </div>
+                                <div className="col-6">
+                                  <label className="d-block mt-3">
+                                    <div className="d-flex align-items-center gap-2 mb-2">
+                                      <h5>
+                                        Last Name{" "}
+                                        <span style={{ color: "var(--primary)" }}>
+                                          *
+                                        </span>
+                                      </h5>
+                                    </div>
+                                    <input
+                                      className="form-control"
+                                      onChange={handleChange}
+                                      type="text"
+                                      defaultValue={editInvestor.last_name}
+                                      name="last_name"
+                                      placeholder="Enter here..."
+                                      id="last_name"
+                                      required
+                                    />
+                                  </label>
+                                </div>
+                              </div>
+
+                              {/* Submit + Spinner + Message */}
+                              <div className="d-flex justify-content-start align-items-center mt-3">
+                                <input
+                                  type="submit"
+                                  disabled={spinners}
+                                  className="global_btn ms-auto w-fit"
+                                  value="Submit"
+                                  style={{ opacity: spinners ? 0.6 : 1 }}
+                                />
+                                {spinners && (
+                                  <div
+                                    className="spinner-border text-light ms-2"
+                                    role="status"
+                                    style={{ width: "1.5rem", height: "1.5rem" }}
+                                  >
+                                    <span className="visually-hidden">
+                                      Loading...
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          )}
-                        </div>
+                          </form>
+                        </DataRoomSection>
                       </div>
-                    </form>
-                  </DataRoomSection>
+                    </SectionWrapper>
+                  </div>
+
                 </div>
-              </SectionWrapper>
-            </div>
+              </div>
+            </section>
           </div>
         </div>
-      </Wrapper>
+      </main>
     </>
   );
 }

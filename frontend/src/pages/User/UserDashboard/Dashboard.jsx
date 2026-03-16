@@ -290,7 +290,17 @@ export default function Dashboard() {
 
         // 🔹 Redirect after short delay
         setTimeout(() => {
-          window.open("/dashboard", "_blank");
+          // Create anchor element
+          const link = document.createElement('a');
+          link.href = '/dashboard';
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+
+          // Append to body, click, and remove
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+
           setShowModal(false);
         }, 1500);
       } else {

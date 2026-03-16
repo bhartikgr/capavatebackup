@@ -21,6 +21,7 @@ import {
 import { Button } from "../../components/Styles/MainStyle.js";
 import PaymentPopupAcademy from "../../components/Users/PaymentPopupAcademy";
 import AirwallexPaymentPopupOneTimeDataroom from "../../components/Users/AirwallexPaymentPopupOneTimeDataroom.jsx";
+import InterestPopup from "../../components/Users/InterestPopup.jsx";
 import { API_BASE_URL } from "../../config/config.js";
 export default function SubscriptionUser() {
   document.title = "Pricing Plan";
@@ -543,12 +544,13 @@ export default function SubscriptionUser() {
                               </div>
                             </div>
                             <div className="mt-3">
-                              {CompanyPlans ? (
+                              {/* {CompanyPlans ? (
                                 <button
-                                  className="activate_btn border-0 active_sb"
+                                  className="activate_btn border-0"
                                   type="button"
+                                  onClick={handlePaymentPopup}
                                 >
-                                  Active
+                                  Pay Now
                                 </button>
                               ) : (
                                 <button
@@ -558,7 +560,14 @@ export default function SubscriptionUser() {
                                 >
                                   Pay Now
                                 </button>
-                              )}
+                              )} */}
+                              <button
+                                className="activate_btn border-0"
+                                type="button"
+                                onClick={handlePaymentPopup}
+                              >
+                                Pay Now
+                              </button>
                             </div>
                           </div>
                         </div>
@@ -609,28 +618,35 @@ export default function SubscriptionUser() {
                               </div>
 
                               <div className="mt-3">
-                                {checkModulesub ? (
+                                {/* {checkModulesub ? (
                                   <button
-                                    className="activate_btn border-0 active_sb"
-                                    type="button"
+                                    className="activate_btn border-0"
+                                    type="button" onClick={handlePaymentPopup}
                                   >
-                                    Active
+                                    Pay Now
                                   </button>
                                 ) : (
                                   <button
                                     className="activate_btn border-0"
-                                    type="button"
+                                    type="button" onClick={handlePaymentPopup}
                                   >
                                     Pay Now
                                   </button>
-                                  // <button
-                                  //   className="activate_btn border-0"
-                                  //   type="button"
-                                  //   onClick={handlePaymentPopupAcadmey}
-                                  // >
-                                  //   Activate Now
-                                  // </button>
-                                )}
+                                  <button
+                                    className="activate_btn border-0"
+                                    type="button"
+                                    onClick={handlePaymentPopupAcadmey}
+                                  >
+                                    Activate Now
+                                  </button>
+                                )} */}
+                                <button
+                                  className="activate_btn border-0"
+                                  type="button"
+                                  onClick={handlePaymentPopup}
+                                >
+                                  Pay Now
+                                </button>
                               </div>
                             </div>
                           </div>
@@ -649,12 +665,14 @@ export default function SubscriptionUser() {
       </Wrapper>
       {/******Payment Popup********/}
       {showPopup && (
-        <AirwallexPaymentPopupOneTimeDataroom
-          show={showPopup}
-          onClose={() => setShowPopup(false)}
-          payment={getDataroompay.onetime_Fee}
-          referstatus={true}
-        />
+        // <AirwallexPaymentPopupOneTimeDataroom
+        //   show={showPopup}
+        //   onClose={() => setShowPopup(false)}
+        //   payment={getDataroompay.onetime_Fee}
+        //   referstatus={true}
+        // />
+        <InterestPopup onClose={() => setShowPopup(false)} />
+
       )}
       {/* {showPopup && (
         <div className="payment_modal-overlay" onClick={handleClosepayPopup}>

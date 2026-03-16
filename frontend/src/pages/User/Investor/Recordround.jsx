@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import TopBar from "../../../components/Users/TopBar";
 import ModuleSideNav from "../../../components/Users/ModuleSideNav";
 import Alertpopup from "../../../components/Alertpopup";
 import {
@@ -13,13 +12,17 @@ import axios from "axios";
 import DangerAlertPopup from "../../../components/Admin/DangerAlertPopup";
 import { useNavigate, useParams } from "react-router-dom";
 import { API_BASE_URL } from "../../../config/config";
+import CurrencyFormatter from "../../../components/CurrencyFormatter";
+import SideBar from "../../../components/social/SideBar";
+import TopBar from '../../../components/social/TopBar';
 export default function Recordround() {
   const apiUrlRound = API_BASE_URL + "api/user/capitalround/";
   var apiURLInvestor = API_BASE_URL + "api/user/investor/";
+  var apiURLRoundZero = API_BASE_URL + "api/user/capitalroundinvestment/";
 
   const [countrySymbolList, setCountrysymbollist] = useState([]);
   const [CurrencySymbol, setCurrencySymbol] = useState('');
-  const [CurrDisplay, setCurrDisplay] = useState("CAD $");
+  const [CurrDisplay, setCurrDisplay] = useState("");
   const [errorMsg, seterrorMsg] = useState("");
   const [successMsg, setsuccessMsg] = useState("");
   const [activeSection, setActiveSection] = useState("shareclass");
@@ -29,10 +32,26 @@ export default function Recordround() {
   const userLogin = JSON.parse(storedUsername);
   const { id } = useParams();
   const [ClientIP, setClientIP] = useState("");
+  const [CountryName, setCountryName] = useState("");
   const [records, setrecords] = useState([]);
   // Add this to your component state
   const navigate = useNavigate();
+  const [errorMessageCenter, seterrorMessageCenter] = useState('')
 
+
+
+  const [isFirstRound, setIsFirstRound] = useState(false);
+  const [founderCount, setFounderCount] = useState(1);
+  const [foundersData, setFoundersData] = useState([{
+    shares: '',
+    shareType: 'common',
+    voting: 'voting'
+  }]);
+  //Check Authorized Signature
+  const apiURLSignature = API_BASE_URL + "api/user/";
+  var apiURLAiFile = API_BASE_URL + "api/user/aifile/";
+  const [existingSharesUse, setexistingSharesUse] = useState('0');
+  const [RoundZeroCurrency, setRoundZeroCurrency] = useState('CAD $');
   const [errors, setErrors] = useState({
     // convertibleTrigger: "",
     liquidationOther: "",
@@ -67,17 +86,20 @@ export default function Recordround() {
     pricePerShare: "",
     founders: "",
   });
+  console.log(RoundZeroCurrency)
   const [formData, setFormData] = useState({
     liquidationOther: "",
     liquidationpreferences: "",
-    nameOfRound: "Founding Share Allocation",
+    nameOfRound: "",
     shareClassType: "Common Shares",
     shareclassother: "",
     description: "",
     instrumentType: "",
     customInstrument: "",
     roundsize: "",
-    currency: "CAD $",
+    round_investments: [],
+    round_target_money: '',
+    currency: RoundZeroCurrency,
     issuedshares: "",
     dateroundclosed: "",
     rights: "",
@@ -88,11 +110,6 @@ export default function Recordround() {
     termsheetFile: null,
     subscriptiondocument: null,
     generalnotes: "",
-
-    // ❌ WRONG: Empty string evaluates to FALSE
-    // hasWarrants_preferred: "",
-
-    // ✅ CORRECT: Use boolean false
     hasWarrants_preferred: false,
 
     // ✅ Warrant fields with proper defaults
@@ -127,21 +144,51 @@ export default function Recordround() {
     isCalculationSource: false,
     lastUpdatedField: null,
   });
-
-
-  const [isFirstRound, setIsFirstRound] = useState(false);
-  const [founderCount, setFounderCount] = useState(1);
-  const [foundersData, setFoundersData] = useState([{
-    shares: '',
-    shareType: 'common',
-    voting: 'voting'
-  }]);
-  //Check Authorized Signature
-  const apiURLSignature = API_BASE_URL + "api/user/";
-  var apiURLAiFile = API_BASE_URL + "api/user/aifile/";
-  const [existingSharesUse, setexistingSharesUse] = useState('0');
+  const [investmentFields, setInvestmentFields] = useState([
+    {
+      id: 1,
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      amount: '',
+      error: ''
+    }
+  ]);
   useEffect(() => {
-    getAuthorizedSignature();
+    getRoundZeroCurrency();
+  }, [RoundZeroCurrency]);
+
+  const getRoundZeroCurrency = async () => {
+    const formData = {
+      company_id: userLogin.companies[0].id,
+    };
+    try {
+      const generateRes = await axios.post(
+        apiURLRoundZero + "getRoundZeroCurrency",
+        formData,
+        {
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (generateRes.data.results.length > 0) {
+        setRoundZeroCurrency(generateRes.data.results[0].currency);
+        setCurrDisplay(generateRes.data.results[0].currency);
+      }
+
+    } catch (err) {
+      console.error("Error generating summary", err);
+    }
+    //  Optionally, call AI Summary API here
+    //generateExecutiveSummary(formData);
+  };
+  useEffect(() => {
+    // getAuthorizedSignature();
+    getPreviousFundingRound();
     handleCheckPayemt();
     getexistingShares();
 
@@ -215,7 +262,75 @@ export default function Recordround() {
     }
   };
 
+  const [allowedRounds, setAllowedRounds] = useState(null); // null for loading state
+  const [previousRounds, setPreviousRounds] = useState([]);
 
+  const getPreviousFundingRound = async () => {
+    try {
+      console.log("🔄 Fetching allowed rounds...");
+
+      const res = await axios.post(
+        `${apiUrlRound}getPreviousFundingRound`,
+        {
+          company_id: userLogin.companies[0].id,
+        }
+      );
+
+
+
+      if (res.data.success) {
+        setPreviousRounds(res.data.results);
+        setAllowedRounds(res.data.allowedRounds || []); // Ensure array
+
+        console.log("✅ Allowed Rounds from API:", res.data.allowedRounds);
+        console.log("📊 Allowed Count:", res.data.allowedRounds?.length || 0);
+
+        // Show what's blocked
+        if (res.data.allowedRounds) {
+          const blockedRounds = [
+            "Pre-Seed", "Seed", "Post-Seed",
+            "Series A", "Series A Extension",
+            "Series B", "Series B Extension",
+            "Series C", "Series C Extension",
+            "Series D", "Series D Extension"
+          ].filter(round => !res.data.allowedRounds.includes(round));
+
+          console.log("🚫 Blocked Rounds:", blockedRounds);
+        }
+
+        // Reset if current selection not allowed
+        if (selected !== "default" && res.data.allowedRounds && !res.data.allowedRounds.includes(selected)) {
+          console.log(`⚠️ Resetting selection: ${selected} is not allowed`);
+          setSelected("default");
+          handleInputChange("shareClassType", "");
+        }
+      } else {
+        console.error("❌ API Error:", res.data.message);
+        // Fallback to all rounds
+        setAllowedRounds([
+          "Pre-Seed", "Seed", "Post-Seed",
+          "Series A", "Series A Extension",
+          "Series B", "Series B Extension",
+          "Series C", "Series C Extension",
+          "Series D", "Series D Extension",
+          "Bridge Round", "Advisor Shares", "OTHER"
+        ]);
+      }
+    } catch (err) {
+      console.error("❌ Network Error:", err);
+      // Fallback to all rounds
+      setAllowedRounds([
+        "Pre-Seed", "Seed", "Post-Seed",
+        "Series A", "Series A Extension",
+        "Series B", "Series B Extension",
+        "Series C", "Series C Extension",
+        "Series D", "Series D Extension",
+        "Bridge Round", "Advisor Shares", "OTHER"
+      ]);
+    }
+  };
+
+  // Helper function for frontend
 
 
 
@@ -273,7 +388,7 @@ export default function Recordround() {
         res.data;
 
       if (!subscriptionActive) {
-        navigate("/record-round-list"); // Subscription expired
+        // navigate("/record-round-list"); // Subscription expired
       } else if (updateAlreadySubmitted) {
       } else {
       }
@@ -292,6 +407,7 @@ export default function Recordround() {
     const formData = {
       company_id: userLogin.companies[0].id,
     };
+
     try {
       const generateRes = await axios.post(
         apiURLInvestor + "getrecordRoundList",
@@ -304,16 +420,52 @@ export default function Recordround() {
         }
       );
 
-      setrecords(generateRes.data.results);
+      const recordedit = generateRes.data.results;
+      setrecords(recordedit);
+      console.log(id)
+      if (id !== undefined && id !== 'undefined') {
+        // Get all round IDs
+        const roundIds = recordedit.map(r => r.id);
+
+        // Find the maximum (latest) round ID
+        const maxRoundId = Math.max(...roundIds);
+
+        // Check if current edit ID exists in the list
+        const currentRoundExists = recordedit.some(r => r.id === parseInt(id));
+
+        if (!currentRoundExists) {
+          // If current ID doesn't exist, redirect to list
+          navigate(`/record-round-list`);
+          return;
+        }
+
+        // Check if there's any round with ID greater than current
+        const nextRoundExists = roundIds.some(roundId => roundId > parseInt(id));
+
+        // If current ID is not the latest (next round exists), redirect to list
+        if (nextRoundExists) {
+          navigate(`/record-round-list`);
+          return;
+        }
+
+        // If we reach here, it's the latest round - continue with normal flow
+        console.log(`✅ Current round ${id} is the latest round`);
+      }
+
+
     } catch (err) {
       console.error("Error generating summary", err);
     }
-    //  Optionally, call AI Summary API here
-    //generateExecutiveSummary(formData);
   };
+
+  // Call this on component mount
   useEffect(() => {
-    document.title = id ? "Edit Record Round Page" : "Create Record Round Page";
+    if (id) {
+      getrecords();
+    }
   }, [id]);
+
+
 
   useEffect(() => {
     if (id) {
@@ -321,6 +473,7 @@ export default function Recordround() {
     }
   }, []);
   const [Editrecords, setEditrecords] = useState("");
+  const [RoundData, setRoundData] = useState('')
   const getEditrecordlist = async () => {
     const formData = {
       company_id: userLogin.companies[0].id,
@@ -339,7 +492,108 @@ export default function Recordround() {
       );
 
       if (generateRes.data.results.length > 0) {
+        // After fetching round data
         var getData = generateRes.data.results[0];
+        setRoundData(getData);
+
+        // Parse and set investment fields for edit mode
+        if (getData) {
+          let investments = [];
+
+          try {
+            // Check multiple possible sources
+            if (getData.round_investments) {
+              if (Array.isArray(getData.round_investments)) {
+                investments = getData.round_investments;
+              } else if (typeof getData.round_investments === 'string') {
+                investments = JSON.parse(getData.round_investments);
+              }
+            }
+            else if (getData.investment_breakdown) {
+              if (Array.isArray(getData.investment_breakdown)) {
+                investments = getData.investment_breakdown;
+              } else if (typeof getData.investment_breakdown === 'string') {
+                investments = JSON.parse(getData.investment_breakdown);
+              }
+            }
+            else if (getData.roundsize && parseFloat(getData.roundsize) > 0) {
+              // Create default investor from roundsize
+              investments = [{
+                amount: parseFloat(getData.roundsize),
+                firstName: getData.investor_first_name || '',
+                lastName: getData.investor_last_name || '',
+                email: getData.investor_email || '',
+                phone: getData.investor_phone || ''
+              }];
+            }
+          } catch (e) {
+            console.error('Error parsing investment data:', e);
+            if (getData.roundsize && parseFloat(getData.roundsize) > 0) {
+              investments = [{
+                amount: parseFloat(getData.roundsize),
+                firstName: '',
+                lastName: '',
+                email: '',
+                phone: ''
+              }];
+            }
+          }
+
+          // Set investment fields
+          if (investments.length > 0) {
+            const loadedFields = investments.map((item, idx) => {
+              // Handle both object and primitive amount
+              const amount = typeof item === 'object' ? item.amount : item;
+
+              return {
+                id: idx + 1,
+                firstName: item.firstName || item.first_name || '',
+                lastName: item.lastName || item.last_name || '',
+                email: item.email || '',
+                phone: item.phone || '',
+                amount: amount?.toString() || '',
+                error: ''
+              };
+            });
+
+            setInvestmentFields(loadedFields);
+
+            // Calculate total
+            const total = loadedFields.reduce((sum, field) => {
+              return sum + (parseFloat(field.amount) || 0);
+            }, 0);
+
+            // Update form data
+            setFormData(prev => ({
+              ...prev,
+              roundsize: total.toString(),
+              round_investments: investments,
+
+            }));
+
+            // Optional: Set first investor details in separate fields
+            if (investments[0]) {
+              setFormData(prev => ({
+                ...prev,
+                investor_first_name: investments[0].firstName || investments[0].first_name || '',
+                investor_last_name: investments[0].lastName || investments[0].last_name || '',
+                investor_email: investments[0].email || '',
+                investor_phone: investments[0].phone || ''
+              }));
+            }
+          } else {
+            // Default empty field
+            setInvestmentFields([{
+              id: 1,
+              firstName: '',
+              lastName: '',
+              email: '',
+              phone: '',
+              amount: '',
+              error: ''
+            }]);
+          }
+        }
 
         if (getData.round_type === 'Round 0') {
           setIsFirstRound(true);
@@ -347,7 +601,7 @@ export default function Recordround() {
 
           // Auto-set Round 0 values if first round
 
-          handleInputChange("nameOfRound", "Founding Share Allocation");
+          handleInputChange("nameOfRound", "");
           setSelected("Founder Shares (Family and Friends)");
           setFirstStepCompleted(true);
 
@@ -510,9 +764,11 @@ export default function Recordround() {
   useEffect(() => {
     const getIP = async () => {
       try {
-        const res = await fetch("https://api.ipify.org?format=json");
+        const res = await fetch("https://ipapi.co/json/");
         const data = await res.json();
+
         setClientIP(data.ip); // Save this to state
+        setCountryName(data.country_name);
       } catch (error) {
         console.error("Failed to fetch IP", error);
       }
@@ -527,18 +783,19 @@ export default function Recordround() {
     formDataToSend.append("id", id || ""); // Fix: Handle empty id for new records
     formDataToSend.append("company_id", userLogin.companies[0].id);
     formDataToSend.append("created_by_role", userLogin.role);
+    formDataToSend.append("country_name", CountryName);
 
     // Round 0 vs Round 1+ logic
     if (isFirstRound) {
       // ROUND 0 SPECIFIC DATA
       formDataToSend.append("round_type", "Round 0");
       formDataToSend.append("shareClassType", "Common Shares");
-      formDataToSend.append("nameOfRound", "Founding Share Allocation");
+      formDataToSend.append("nameOfRound", formData.nameOfRound);
       formDataToSend.append("issuedshares", calculateTotalShares().toString());
       formDataToSend.append("roundStatus", "");
       formDataToSend.append("instrumentType", "");
       formDataToSend.append("roundsize", "");
-      formDataToSend.append("currency", "CAD $");
+      formDataToSend.append("currency", formData.currency);
       formDataToSend.append("dateroundclosed", formData.dateroundclosed); // Add current date for Round 0
 
       // Founder data for Round 0 - FIXED: Convert to proper JSON string
@@ -554,6 +811,22 @@ export default function Recordround() {
       formDataToSend.append("founder_count", founderCount.toString());
 
     } else {
+      // Prepare investment data for saving
+      const investments = investmentFields
+        .filter(f => f.amount && f.amount.trim() !== '')  // Only fields with amount
+        .map(f => ({
+          firstName: f.firstName || '',
+          lastName: f.lastName || '',
+          email: f.email || '',
+          phone: f.phone || '',
+          amount: parseFloat(f.amount),
+          currency: CurrDisplay
+        }));
+      formDataToSend.append("round_target_money", formData.round_target_money);
+
+
+      // Also save individual investments as JSON (optional)
+      formDataToSend.append("round_investments", JSON.stringify(investments));
       // ROUND 1+ DATA
       formDataToSend.append("round_type", "Investment");
       if ((formData.instrumentType === 'Convertible Note' && (formData.shareClassType === "Pre-Seed" || formData.shareClassType === "Post-Seed")) || (formData.instrumentType === 'Safe' && (formData.shareClassType === 'Seed' || formData.shareClassType === "Pre-Seed" || formData.shareClassType === "Post-Seed"))) {
@@ -564,26 +837,41 @@ export default function Recordround() {
 
       formDataToSend.append("shareClassType", selected || "");
       formDataToSend.append("nameOfRound", formData.nameOfRound || "");
-      if ((formData.instrumentType === 'Convertible Note' && (formData.shareClassType === 'Seed' || formData.shareClassType === "Pre-Seed" || formData.shareClassType === "Post-Seed")) || (formData.instrumentType === 'Safe' && (formData.shareClassType === 'Seed' || formData.shareClassType === "Pre-Seed" || formData.shareClassType === "Post-Seed"))) {
+      if (formData.instrumentType === 'Convertible Note' || formData.instrumentType === 'Safe') {
         formDataToSend.append("issuedshares", "");
+        //formDataToSend.append("optionPoolPercent_post", formData.optionPoolPercent);
       } else {
-        formDataToSend.append("issuedshares", formData.issuedshares || "");
+        //formDataToSend.append("issuedshares", formData.issuedshares || "");
+        formDataToSend.append("issuedshares", "");
       }
 
       if (formData.instrumentType === 'Safe') {
         formDataToSend.append("post_money", "");
+
       } else {
         formDataToSend.append("post_money", formData.post_money || "");
+
       }
 
       formDataToSend.append("roundStatus", formData.roundStatus || "");
       formDataToSend.append("instrumentType", formData.instrumentType || "");
       formDataToSend.append("roundsize", formData.roundsize || "");
-      formDataToSend.append("currency", formData.currency || "");
+      formDataToSend.append("currency", RoundZeroCurrency);
       formDataToSend.append("pre_money", formData.pre_money || "");
 
+      // let optionPoolPostValue = "";
+
+      // if (formData.instrumentType === "Convertible Note" || formData.instrumentType === "Safe") {
+      //   optionPoolPostValue = formData.optionPoolPercent || "";
+      // } else if (formData.instrumentType === "Preferred Equity") {
+      //   optionPoolPostValue = formData.optionPoolPercent_post || "";
+      // } else {
+      //   optionPoolPostValue = formData.optionPoolPercent_post || "";
+      // }
+
+      formDataToSend.append("optionPoolPercent_post", formData.optionPoolPercent_post);
       formDataToSend.append("optionPoolPercent", formData.optionPoolPercent || "");
-      formDataToSend.append("optionPoolPercent_post", formData.optionPoolPercent_post || "");
+
     }
 
     // COMMON FIELDS FOR BOTH ROUNDS - FIXED: Handle null/undefined values
@@ -605,7 +893,7 @@ export default function Recordround() {
     formDataToSend.append("ip_address", ClientIP || "");
     formDataToSend.append("ClientIP", ClientIP || ""); // Add both for compatibility
 
-    // File uploads - FIXED: Handle empty arrays
+    // File  - FIXED: Handle empty arrays
     if (formData.termsheetFile && formData.termsheetFile.length > 0) {
       formData.termsheetFile.forEach((file) => {
         formDataToSend.append("termsheetFile", file);
@@ -652,7 +940,8 @@ export default function Recordround() {
               warrant_adjustment_direction: formData.warrant_adjustment_direction || "decrease",
               warrant_adjustment_percent: formData.warrant_adjustment_percent || "",
               expirationDate_preferred: formData.expirationDate_preferred || "",
-              warrant_notes: formData.warrant_notes || ""
+              warrant_notes: formData.warrant_notes || "",
+              warrant_status: 'pending' || ""
             })
           };
           break;
@@ -810,7 +1099,7 @@ export default function Recordround() {
         opt === "Founder Shares (Family and Friends)"
       ) {
         setFirstStepCompleted(true);
-        handleInputChange("nameOfRound", "Founding Share Allocation");
+        handleInputChange("nameOfRound", "");
       }
     }
 
@@ -874,8 +1163,8 @@ export default function Recordround() {
         { id: "description", title: "Description" },
         { id: "rights", title: "Rights & Preferences" },
         // { id: "liquidation", title: "Liquidation Preference" }, // Isko conditionally add karenge
-        { id: "convertible", title: "Convertible?" },
-        { id: "voting", title: "Voting Rights" },
+        // { id: "convertible", title: "Convertible?" },
+        // { id: "voting", title: "Voting Rights" },
         { id: "termsheet", title: "Term Sheet" },
         { id: "subscription", title: "Subscription Document" },
         { id: "notes", title: "Notes" },
@@ -1119,10 +1408,24 @@ export default function Recordround() {
   };
   const [isLoading, setIsLoading] = useState(false);
 
+
   const handleReviewpage = () => {
-    setsuccessMsg(
-      "Please review all the information carefully before submitting. Once submitted, it can be officially recorded."
-    );
+    // Check if this is an edit operation
+    const isEditOperation = id ? true : false; // If roundId exists, it's edit
+
+    if (isEditOperation) {
+      setsuccessMsg(
+        "⚠️ WARNING: Editing this round will affect ALL subsequent rounds. " +
+        "All following investment rounds will be recalculated based on new values. " +
+        "Please review all information carefully before submitting."
+      );
+    } else {
+      setsuccessMsg(
+        "Please review all the information carefully before submitting. " +
+        "Once submitted, it can be officially recorded."
+      );
+    }
+
     setIsReviewing(true); // show confirm button
   };
 
@@ -1179,7 +1482,7 @@ export default function Recordround() {
 
       // Auto-set Round 0 values if first round
       if (!hasExistingRounds) {
-        handleInputChange("nameOfRound", "Founding Share Allocation");
+        handleInputChange("nameOfRound", "");
         setSelected("Founder Shares (Family and Friends)");
         setFirstStepCompleted(true);
       }
@@ -1220,8 +1523,14 @@ export default function Recordround() {
   const calculateTotalValue = () => {
     const totalShares = calculateTotalShares();
     const pricePerShare = parseFloat(formData.pricePerShare) || 0;
-    return (totalShares * pricePerShare).toFixed(2);
+
+    return (totalShares * pricePerShare).toLocaleString("en-US", {
+
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
   };
+
 
   const calculateOwnershipPercentages = () => {
     const totalShares = calculateTotalShares();
@@ -1243,14 +1552,6 @@ export default function Recordround() {
   // ✅ CORRECTED SERIES A CALCULATION
   const [previousRoundOptionPool, setPreviousRoundOptionPool] = useState(0);
 
-  // Round 1 Calculations
-
-
-  // Aapke existing calculation useEffect ko REPLACE karein isse (around line 600):
-
-
-
-  // Add this state at the top of your component
   const [calculatedValues, setCalculatedValues] = useState({
     sharePrice: '0.0000',
     newSharesIssued: 0,
@@ -1291,9 +1592,12 @@ export default function Recordround() {
     foundersPostOwnership: 0,
     employeesPostOwnership: 0,
     seedInvestorsPostOwnership: 0,
-    seriesAInvestorsPostOwnership: 0
+    seriesAInvestorsPostOwnership: 0,
+    previousIntrumentType: '',
+    hasCalculated: true,
   });
   const calculateSeriesASafe = () => {
+    if (seriesASafeData.isCalculating) return;
     const preMoney = parseFloat(formData.pre_money || 0);
     const investmentSize = parseFloat(formData.roundsize || 0);
     const optionPoolPost = parseFloat(formData.optionPoolPercent_post || 0); // Can be 0 to 100
@@ -1417,7 +1721,8 @@ export default function Recordround() {
       foundersPostOwnership: foundersPostOwnership.toFixed(1),
       employeesPostOwnership: employeesPostOwnership.toFixed(1),
       seedInvestorsPostOwnership: seedInvestorsPostOwnership.toFixed(1),
-      seriesAInvestorsPostOwnership: seriesAInvestorsPostOwnership.toFixed(1)
+      seriesAInvestorsPostOwnership: seriesAInvestorsPostOwnership.toFixed(1),
+      hasCalculated: true,
     });
 
     // ✅ STEP 13: Update formData
@@ -1427,6 +1732,9 @@ export default function Recordround() {
       post_money: (preMoney + investmentSize).toFixed(2),
       investorPostMoney: seriesAInvestorsPostOwnership.toFixed(2)
     }));
+    setTimeout(() => {
+      setFormData(prev => ({ ...prev, isCalculationSource: false }));
+    }, 100);
   };
   const [seriesConvertibleData, setSeriesConvertibleData] = useState({
     // Previous round data (from API)
@@ -1437,7 +1745,8 @@ export default function Recordround() {
     previousInterestRate: 0,
     previousValuationCap: 0,
     previousDiscountRate: 0,
-
+    previousInstrumentType: "",
+    previousemployeeSharesFromSeed: 0,
     // Calculated values
     principalPlusInterest: '0.00',
     seriesASharePrice: '0.0000',
@@ -1457,141 +1766,104 @@ export default function Recordround() {
     foundersPostOwnership: '0.0',
     employeesPostOwnership: '0.0',
     noteInvestorsPostOwnership: '0.0',
-    seriesAInvestorsPostOwnership: '0.0'
+    seriesAInvestorsPostOwnership: '0.0',
+
+
   });
   const calculateSeriesConvertible = () => {
     // ✅ Get input values from form
+    console.log(seriesConvertibleData)
     const preMoney = parseFloat(formData.pre_money || 0); // $1,200,000
     const seriesAInvestment = parseFloat(formData.roundsize || 0); // $400,000
     const optionPoolPost = parseFloat(formData.optionPoolPercent_post || 0); // 20%
 
-    // ✅ Use dynamic data (now from SAFE API)
+    // ✅ Use dynamic data
     const previousRoundSize = seriesConvertibleData.previousRoundSize || 0; // $120,000
     const previousValuationCap = seriesConvertibleData.previousValuationCap || 0; // $1,000,000
     const previousDiscountRate = seriesConvertibleData.previousDiscountRate || 0; // 20%
+    const previousInterestRate = seriesConvertibleData.previousInterestRate || 0; // 10% (MISSING!)
 
     const previousTotalShares = seriesConvertibleData.previousTotalShares || 0; // 111,111
     const previousFounderShares = seriesConvertibleData.previousFounderShares || 0; // 100,000
-    const previousEmployeeShares = seriesConvertibleData.previousEmployeeShares || 0; // 11,111
+    const previousEmployeeShares = seriesConvertibleData.previousEmployeeShares || 0; // 11,111 (BUT IT'S 0!)
 
-
+    // FIX: Get employeeSharesFromSeed from API response
+    const employeeSharesFromSeed = seriesConvertibleData.previousemployeeSharesFromSeed || 0; // From API response
 
     // Validation
     if (preMoney <= 0 || seriesAInvestment <= 0 || previousTotalShares <= 0) {
-
       return;
     }
 
     // ✅ STEP 1: Series A share price
-    const seriesASharePrice = preMoney / previousTotalShares;
+    const seriesASharePrice = preMoney / previousTotalShares; // $10.80
 
+    // ✅ STEP 2: Convertible Note conversion prices
+    const noteDiscountPrice = seriesASharePrice * (1 - (previousDiscountRate / 100)); // $8.64
+    const noteCapPrice = previousValuationCap / previousTotalShares; // $9.00
+    const noteOptimalPrice = Math.min(noteDiscountPrice, noteCapPrice); // $8.64
 
-    // ✅ STEP 2: SAFE conversion prices (NO INTEREST)
-    const safeDiscountPrice = seriesASharePrice * (1 - (previousDiscountRate / 100));
-    const safeCapPrice = previousValuationCap / previousTotalShares;
+    // ✅ STEP 3: Convertible Note Conversion (WITH INTEREST!)
+    const years = 2; // From API
+    const principalPlusInterest = previousRoundSize * Math.pow(1 + (previousInterestRate / 100), years); // $145,200
+    const noteConversionShares = principalPlusInterest / noteOptimalPrice; // 16,806 shares
 
+    // ✅ STEP 4: Note Conversion Value
+    const noteConversionValue = noteConversionShares * seriesASharePrice; // $181,500
 
-    // ✅ STEP 3: Optimal conversion price
-    const safeOptimalPrice = Math.min(safeDiscountPrice, safeCapPrice);
+    // ✅ STEP 5: Note MOIC
+    const noteMOIC = (noteConversionValue / previousRoundSize).toFixed(2); // 1.51X
 
+    // ✅ STEP 6: Series A New Shares
+    const seriesANewShares = seriesAInvestment / seriesASharePrice; // 37,037 shares
+    const seriesANewValue = seriesANewShares * seriesASharePrice; // $400,000
+    const seriesAMOIC = (seriesANewValue / seriesAInvestment).toFixed(2); // 1.00X
 
-    // ✅ STEP 4: SAFE Conversion Shares (NO INTEREST - use original investment)
-    const safeConversionShares = previousRoundSize / safeOptimalPrice;
+    // ✅ STEP 7: Total shares from conversions
+    const totalConversionShares = noteConversionShares + seriesANewShares; // 53,843
 
+    // ✅ STEP 8: Total excluding option shares (FOUNDERS + CONVERSIONS)
+    const totalExcludingOptions = previousFounderShares + totalConversionShares; // 153,843
 
-    // ✅ STEP 5: SAFE Conversion Value
-    const safeConversionValue = safeConversionShares * seriesASharePrice;
-
-
-    // ✅ STEP 6: SAFE MOIC
-    const safeMOIC = (safeConversionValue / previousRoundSize).toFixed(2);
-
-
-    // ✅ STEP 7: Series A New Shares
-    const seriesANewShares = seriesAInvestment / seriesASharePrice;
-
-
-    // ✅ STEP 8: Series A Value
-    const seriesANewValue = seriesANewShares * seriesASharePrice;
-
-
-    // ✅ STEP 9: Series A MOIC
-    const seriesAMOIC = (seriesANewValue / seriesAInvestment).toFixed(2);
-
-
-    // ✅ STEP 10: Total shares from conversions (NOT including option pool yet)
-    const totalConversionShares = safeConversionShares + seriesANewShares;
-
-
-    // ✅ STEP 11: Total value from conversions
-    const totalConversionValue = safeConversionValue + seriesANewValue;
-
-
-    // ✅ STEP 12: According to requirements: Total Shares excluding Option Shares
-    // = Founders (100,000) + SAFE Conversion (13,889) + Series A (37,037) = 150,926
-    const totalExcludingOptions = previousFounderShares + safeConversionShares + seriesANewShares;
-
-
-    // ✅ STEP 13: Calculate total shares after 20% option pool
+    // ✅ STEP 9: Calculate total shares after 20% option pool
     let totalSharesAfterPool;
     let newOptionShares = 0;
 
     if (optionPoolPost > 0) {
-      // Formula from requirements: Total shares after pool = Total excluding options ÷ (1 - pool%)
-      totalSharesAfterPool = totalExcludingOptions / (1 - (optionPoolPost / 100));
+      // Formula: Total shares after pool = Total excluding options ÷ (1 - pool%)
+      totalSharesAfterPool = totalExcludingOptions / (1 - (optionPoolPost / 100)); // 192,303
 
-
-      // Calculate new option shares needed
-      // New options = Total after pool - Total excluding options - Existing employee shares
-      newOptionShares = totalSharesAfterPool - totalExcludingOptions - previousEmployeeShares;
-
-      // Ensure not negative
+      // FIXED: Use employeeSharesFromSeed (11,111) not previousEmployeeShares (0)
+      newOptionShares = totalSharesAfterPool - totalExcludingOptions - employeeSharesFromSeed; // 27,349
       newOptionShares = Math.max(0, newOptionShares);
-
-
     } else {
-      // No option pool
       totalSharesAfterPool = previousTotalShares + totalConversionShares;
     }
 
-    // ✅ STEP 14: Total shares issued in THIS round
-    const totalSharesIssuedThisRound = totalConversionShares + newOptionShares;
+    // ✅ STEP 10: Total shares issued in THIS round
+    const totalSharesIssuedThisRound = noteConversionShares + seriesANewShares + newOptionShares; // 81,192
 
+    // ✅ STEP 11: Post-Money Valuation (Equity Value)
+    const postMoneyValuationEquity = totalSharesAfterPool * seriesASharePrice; // $2,076,875
 
-    // ✅ STEP 15: Post-Money Valuation (Equity Value)
-    const postMoneyValuationEquity = totalSharesAfterPool * seriesASharePrice;
+    // ✅ STEP 12: Simple Post-Money (without notes)
+    const simplePostMoney = preMoney + seriesAInvestment; // $1,600,000
 
+    // ✅ STEP 13: Ownership percentages
+    const foundersPostOwnership = (previousFounderShares / totalSharesAfterPool) * 100; // 52.0%
+    const noteInvestorsPostOwnership = (noteConversionShares / totalSharesAfterPool) * 100; // 8.7%
+    const seriesAInvestorsPostOwnership = (seriesANewShares / totalSharesAfterPool) * 100; // 19.3%
+    const employeesPostOwnership = ((employeeSharesFromSeed + newOptionShares) / totalSharesAfterPool) * 100; // 20.0%
 
-    // ✅ STEP 16: Simple Post-Money (without SAFE notes)
-    const simplePostMoney = preMoney + seriesAInvestment;
-
-
-    // ✅ STEP 17: Ownership percentages
-    const foundersPostOwnership = (previousFounderShares / totalSharesAfterPool) * 100;
-    const safeInvestorsPostOwnership = (safeConversionShares / totalSharesAfterPool) * 100;
-    const seriesAInvestorsPostOwnership = (seriesANewShares / totalSharesAfterPool) * 100;
-    const employeesPostOwnership = ((previousEmployeeShares + newOptionShares) / totalSharesAfterPool) * 100;
-
-
-
-    // ✅ STEP 18: Update state
+    // ✅ STEP 14: Update state
     setSeriesConvertibleData(prev => ({
       ...prev,
-      // Keep previous data
-      previousTotalShares: previousTotalShares,
-      previousFounderShares: previousFounderShares,
-      previousEmployeeShares: previousEmployeeShares,
-      previousRoundSize: previousRoundSize,
-      previousValuationCap: previousValuationCap,
-      previousDiscountRate: previousDiscountRate,
-      previousInterestRate: 0, // SAFE has no interest
-      // Add calculated values
-      principalPlusInterest: previousRoundSize.toFixed(2), // No interest for SAFE
+      principalPlusInterest: principalPlusInterest.toFixed(2),
       seriesASharePrice: seriesASharePrice.toFixed(4),
-      noteOptimalPrice: safeOptimalPrice.toFixed(4),
-      noteConversionShares: Math.round(safeConversionShares),
-      noteConversionValue: Math.round(safeConversionValue),
-      noteMOIC: safeMOIC + "X",
+      noteOptimalPrice: noteOptimalPrice.toFixed(4),
+      noteConversionShares: Math.round(noteConversionShares),
+      noteConversionValue: Math.round(noteConversionValue),
+      noteMOIC: noteMOIC + "X",
       seriesANewShares: Math.round(seriesANewShares),
       seriesANewValue: Math.round(seriesANewValue),
       seriesAMOIC: seriesAMOIC + "X",
@@ -1603,257 +1875,312 @@ export default function Recordround() {
       simplePostMoney: Math.round(simplePostMoney),
       foundersPostOwnership: foundersPostOwnership.toFixed(1),
       employeesPostOwnership: employeesPostOwnership.toFixed(1),
-      noteInvestorsPostOwnership: safeInvestorsPostOwnership.toFixed(1),
+      noteInvestorsPostOwnership: noteInvestorsPostOwnership.toFixed(1),
       seriesAInvestorsPostOwnership: seriesAInvestorsPostOwnership.toFixed(1)
     }));
-
-    // ✅ STEP 19: Update formData
+    console.log(totalSharesIssuedThisRound);
+    // ✅ STEP 15: Update formData
     setFormData(prev => ({
       ...prev,
-      issuedshares: Math.round(totalSharesIssuedThisRound).toString(),
-      post_money: simplePostMoney.toFixed(2), // Simple: Pre-money + Series A
+      issuedshares: Math.round(totalSharesIssuedThisRound).toString(), // 81,192
+      post_money: simplePostMoney.toFixed(2),
       sharePrice: seriesASharePrice.toFixed(4)
     }));
   };
-  useEffect(() => {
-    if (formData.isCalculationSource) {
-      return;
-    }
-
-    const preMoney = parseFloat(formData.pre_money || 0);
-    const roundSize = parseFloat(formData.roundsize || 0);
-    const postMoneyPool = parseFloat(formData.optionPoolPercent_post || 0);
-    const existing = parseFloat(existingSharesUse || 0);
-    const isSeriesRound = selected?.includes("Series");
-    const isSafeInstrument = formData.instrumentType === "Safe";
-    const isSeriesSafe = isSeriesRound && isSafeInstrument;
-
-    //Convertible
-    const isConvertibleInstrument = formData.instrumentType === "Convertible Note";
-    const isSeriesConvertible = isSeriesRound && isConvertibleInstrument;
-    if (preMoney <= 0 || roundSize <= 0 || existing <= 0) {
-
-      return;
-    }
-    if (isSeriesConvertible) {
-      // ✅ Series + Safe ke liye alag calculation
-      calculateSeriesConvertible();
-      return;
-    }
-    if (isSeriesSafe) {
-      // ✅ Series + Safe ke liye alag calculation
-      calculateSeriesASafe();
-      return;
-    }
+  const calculationPreferredEquity = async () => {
     try {
-      const isSeriesRound = selected?.includes("Series");
-      const postMoney = preMoney + roundSize;
-      const investorOwnershipPercent = (roundSize / postMoney) * 100;
-      const isSeriesCommonStock =
-        isSeriesRound && formData.instrumentType === "Common Stock";
-      let sharePrice = 0;
-      let newSharesIssued = 0;
-      let totalPostShares = 0;
-      let newOptionShares = 0;
-      let doc4Action = 'NO_ACTION';
+      console.log("🔵 ==== PREFERRED EQUITY CALCULATION START =====");
 
-      // ✅ CRITICAL: Use previousRoundOptionPool for existing pool
-      const existingOptionPoolPercent = previousRoundOptionPool;
+      // ✅ STEP 1: Get form inputs
+      const preMoney = parseFloat(formData.pre_money || 0); // $3,000,000
+      const investment = parseFloat(formData.roundsize || 0); // $1,000,000
+      const postMoneyPool = parseFloat(formData.optionPoolPercent_post || 0); // 20%
 
-      if (isSeriesRound && postMoneyPool > 0 && isSeriesCommonStock) {
+      // ✅ STEP 2: Get previous round data dynamically
+      let previousRoundData = {
+        totalShares: 0,
+        founderShares: 0,
+        employeeShares: 0,
+        seedInvestment: 0,
+        valuationCap: 0,
+        discountRate: 0,
+        interestRate: 0, // Default 10%
+        instrumentType: ""
+      };
 
-        const existingOptionShares = Math.round(existing * (existingOptionPoolPercent / 100));
+      // Try to get from seriesASafeData first (for SAFE rounds)
+      if (seriesASafeData.previousTotalShares > 0) {
+        previousRoundData.totalShares = seriesASafeData.previousTotalShares;
+        previousRoundData.founderShares = seriesASafeData.previousFounderShares;
+        previousRoundData.employeeShares = seriesASafeData.previousEmployeeShares;
+        previousRoundData.seedInvestment = seriesASafeData.previousSeedInvestment;
+        previousRoundData.valuationCap = seriesASafeData.previousValuationCap;
+        previousRoundData.discountRate = seriesASafeData.previousDiscountRate;
+      }
+      // Try to get from seriesConvertibleData (for Convertible Note rounds)
+      else if (seriesConvertibleData.previousTotalShares > 0) {
+        previousRoundData.totalShares = seriesConvertibleData.previousTotalShares;
+        previousRoundData.founderShares = seriesConvertibleData.previousFounderShares;
+        previousRoundData.employeeShares = seriesConvertibleData.previousEmployeeShares;
+        previousRoundData.seedInvestment = seriesConvertibleData.previousRoundSize;
+        previousRoundData.valuationCap = seriesConvertibleData.previousValuationCap;
+        previousRoundData.discountRate = seriesConvertibleData.previousDiscountRate;
+      }
+      // Fallback: Fetch fresh data from API
+      else {
+        console.log("📡 Fetching fresh previous round data...");
+        await fetchPreviousRoundData();
 
+        // Use data from fetchPreviousRoundData result
+        previousRoundData.totalShares = seriesASafeData.previousTotalShares || 0;
+        previousRoundData.founderShares = seriesASafeData.previousFounderShares || 0;
+        previousRoundData.employeeShares = seriesASafeData.previousEmployeeShares || 0;
+        previousRoundData.seedInvestment = seriesASafeData.previousSeedInvestment || 0;
+        previousRoundData.valuationCap = seriesASafeData.previousValuationCap || 0;
+        previousRoundData.discountRate = seriesASafeData.previousDiscountRate || 0;
+      }
 
-        const foundersSeedShares = existing - existingOptionShares;
+      // ✅ STEP 3: VALIDATION
+      if (preMoney <= 0 || investment <= 0 || previousRoundData.totalShares <= 0) {
+        console.error("❌ Invalid input values for Preferred Equity calculation");
+        console.log("Pre-Money:", preMoney);
+        console.log("Investment:", investment);
+        console.log("Previous Total Shares:", previousRoundData.totalShares);
 
+        // Try one more time to fetch data
+        try {
+          const res = await axios.post(
+            apiUrlRound + "getPreviousRoundForConvertible",
+            {
+              company_id: userLogin.companies[0].id,
+              current_round_id: id || 0
+            }
+          );
 
-        if (existingOptionPoolPercent >= postMoneyPool) {
-          // NO TOP-UP
-          doc4Action = 'NO_ACTION';
-
-
-          sharePrice = preMoney / existing;
-          newSharesIssued = roundSize / sharePrice;
-          totalPostShares = existing + newSharesIssued;
-          newOptionShares = 0;
-
-        } else {
-          // TOP-UP NEEDED
-          doc4Action = 'TOP_UP';
-
-
-          const foundersSeedPercent = 100 - investorOwnershipPercent - postMoneyPool;
-
-
-          totalPostShares = Math.round(foundersSeedShares / (foundersSeedPercent / 100));
-
-
-          const totalNewShares = totalPostShares - existing;
-
-
-          const requiredOptionShares = Math.round(totalPostShares * (postMoneyPool / 100));
-
-
-          newOptionShares = Math.max(0, requiredOptionShares - existingOptionShares);
-
-
-          newSharesIssued = totalNewShares - newOptionShares;
-
-
-          sharePrice = preMoney / (existing + newOptionShares);
-
-
-          // Verification
-
+          if (res.data.success && res.data.previousRoundData) {
+            const data = res.data.previousRoundData;
+            previousRoundData.totalShares = data.totalShares || 0;
+            previousRoundData.founderShares = data.founderShares || 0;
+            previousRoundData.employeeShares = data.employeeShares || 0;
+            previousRoundData.seedInvestment = data.seedInvestment || 0;
+            previousRoundData.valuationCap = data.valuationCap || 0;
+            previousRoundData.discountRate = data.discountRate || 0;
+          }
+        } catch (fetchErr) {
+          console.error("❌ Error fetching fresh data:", fetchErr);
         }
 
-      } else {
-        // SEED ROUND
-        const preMoneyPool = parseFloat(formData.optionPoolPercent || 0);
-
-        if (preMoneyPool > 0) {
-          const poolFactor = 1 - (preMoneyPool / 100);
-          const preRoundShares = existing / poolFactor;
-          const employeeOptionShares = preRoundShares - existing;
-
-          const totalPreInvestmentShares = existing + employeeOptionShares;
-          totalPostShares = totalPreInvestmentShares / (1 - (investorOwnershipPercent / 100));
-          newSharesIssued = totalPostShares - totalPreInvestmentShares;
-          sharePrice = roundSize / newSharesIssued;
-
-          doc4Action = 'CREATED';
-          newOptionShares = Math.round(employeeOptionShares);
-        } else {
-          sharePrice = preMoney / existing;
-          newSharesIssued = roundSize / sharePrice;
-          totalPostShares = existing + newSharesIssued;
-          newOptionShares = 0;
+        // Final check
+        if (previousRoundData.totalShares <= 0) {
+          console.error("❌ Still no previous round data found");
+          return;
         }
       }
 
-      const newPostMoney = postMoney.toFixed(2);
-      const newInvestorOwnership = investorOwnershipPercent.toFixed(2);
-      const newIssuedShares = Math.round(newSharesIssued).toString();
-      const newSharePrice = sharePrice.toFixed(4);
+      console.log(`📊 Previous Round Data:`);
+      console.log(`   - Total Shares: ${previousRoundData.totalShares.toLocaleString()}`);
+      console.log(`   - Founders: ${previousRoundData.founderShares.toLocaleString()}`);
+      console.log(`   - Employee Pool: ${previousRoundData.employeeShares.toLocaleString()}`);
+      console.log(`   - Previous Investment: $${previousRoundData.seedInvestment.toLocaleString()}`);
 
+      // ✅ STEP 4: Calculate Share Price (CPAVATE Formula)
+      const sharePrice = preMoney / previousRoundData.totalShares;
+      console.log(`💰 Share Price: $${sharePrice.toFixed(4)} = $${preMoney} ÷ ${previousRoundData.totalShares}`);
 
+      // ✅ STEP 5: Process Convertible Note Conversions (if applicable)
+      let totalConvertedShares = 0;
+      let totalConvertedValue = 0;
+
+      // Check if there are convertible notes to convert (with valuation cap > 0)
+      if (previousRoundData.seedInvestment > 0 && previousRoundData.valuationCap > 0) {
+        console.log(`🔄 Processing convertible note conversion...`);
+
+        const noteAmount = previousRoundData.seedInvestment;
+        const interestRate = (previousRoundData.interestRate || 0) / 100;
+        const discountRate = (previousRoundData.discountRate || 0) / 100;
+        const valuationCap = previousRoundData.valuationCap;
+        const years = 2; // Default as per CPAVATE
+
+        // Calculate Principal + Interest
+        const principalPlusInterest = noteAmount * Math.pow(1 + interestRate, years);
+
+        // Calculate Conversion Price
+        const discountPrice = sharePrice * (1 - discountRate);
+        const capPrice = valuationCap > 0 ? valuationCap / previousRoundData.totalShares : Infinity;
+        const conversionPrice = Math.min(discountPrice, capPrice);
+
+        // Calculate Shares
+        const convertedShares = conversionPrice > 0 ? Math.round(principalPlusInterest / conversionPrice) : 0;
+        const convertedValue = convertedShares * sharePrice;
+
+        console.log(`   Convertible Note Details:`);
+        console.log(`      - Amount: $${noteAmount.toLocaleString()}`);
+        console.log(`      - Principal+Interest: $${principalPlusInterest.toLocaleString()}`);
+        console.log(`      - Conversion Price: $${conversionPrice.toFixed(4)}`);
+        console.log(`      - Shares: ${convertedShares.toLocaleString()}`);
+
+        totalConvertedShares = convertedShares;
+        totalConvertedValue = convertedValue;
+      }
+
+      // ✅ STEP 6: Series A (Preferred Equity) Shares
+      const seriesAShares = Math.round(investment / sharePrice);
+      const seriesAValue = seriesAShares * sharePrice;
+
+      console.log(`💰 Series A Shares: ${seriesAShares.toLocaleString()}`);
+      console.log(`💰 Series A Value: $${Math.round(seriesAValue).toLocaleString()}`);
+
+      // ✅ STEP 7: Total Shares before Option Pool Expansion
+      const totalSharesBeforePool = previousRoundData.founderShares + totalConvertedShares + seriesAShares;
+      console.log(`📊 Total Shares before pool: ${totalSharesBeforePool.toLocaleString()}`);
+
+      // ✅ STEP 8: Option Pool Expansion
+      let totalSharesAfterPool = totalSharesBeforePool;
+      let newOptionShares = 0;
+
+      if (postMoneyPool > 0) {
+        // CPAVATE Formula
+        totalSharesAfterPool = Math.round(totalSharesBeforePool / (1 - (postMoneyPool / 100)));
+
+        // New option shares = Total after pool - Total before pool - Existing option shares
+        newOptionShares = totalSharesAfterPool - totalSharesBeforePool - previousRoundData.employeeShares;
+
+        if (newOptionShares < 0) newOptionShares = 0;
+
+        console.log(`🎯 Option Pool Calculation:`);
+        console.log(`   - Target: ${postMoneyPool}%`);
+        console.log(`   - Existing: ${previousRoundData.employeeShares.toLocaleString()}`);
+        console.log(`   - New: ${newOptionShares.toLocaleString()}`);
+        console.log(`   - Total after pool: ${totalSharesAfterPool.toLocaleString()}`);
+      }
+
+      // ✅ STEP 9: Warrant Calculation (if applicable)
+      let warrantShares = 0;
+      let warrantExercisePrice = sharePrice;
+      let warrantValue = 0;
+
+      const warrantCoverage = parseFloat(formData.warrant_coverage_percentage || 0);
+      const warrantAdjustment = parseFloat(formData.warrant_adjustment_percent || 0);
+      const warrantDirection = formData.warrant_adjustment_direction || "decrease";
+
+      if (warrantCoverage > 0) {
+        // Calculate exercise price
+        if (warrantDirection === "decrease") {
+          warrantExercisePrice = sharePrice * (1 - (warrantAdjustment / 100));
+        } else if (warrantDirection === "increase") {
+          warrantExercisePrice = sharePrice * (1 + (warrantAdjustment / 100));
+        }
+
+        // Warrant shares = Series A new shares × Warrant Coverage %
+        warrantShares = Math.round(seriesAShares * (warrantCoverage / 100));
+        warrantValue = warrantShares * sharePrice;
+
+        console.log(`📜 Warrant Calculation:`);
+        console.log(`   - Coverage: ${warrantCoverage}%`);
+        console.log(`   - Exercise Price: $${warrantExercisePrice.toFixed(4)}`);
+        console.log(`   - Shares: ${warrantShares.toLocaleString()}`);
+        console.log(`   - Value: $${Math.round(warrantValue).toLocaleString()}`);
+      }
+
+      // ✅ STEP 10: Final Total Shares
+      const finalTotalShares = totalSharesAfterPool + warrantShares;
+      const postMoneyValuation = finalTotalShares * sharePrice;
+
+      console.log(`📊 Final Total Shares: ${finalTotalShares.toLocaleString()}`);
+      console.log(`💰 Post-Money Valuation: $${Math.round(postMoneyValuation).toLocaleString()}`);
+
+      // ✅ STEP 11: Ownership Calculations
+      const foundersOwnership = (previousRoundData.founderShares / finalTotalShares) * 100;
+      const optionPoolOwnership = ((previousRoundData.employeeShares + newOptionShares) / finalTotalShares) * 100;
+      const convertedInvestorsOwnership = (totalConvertedShares / finalTotalShares) * 100;
+      const seriesAInvestorsOwnership = (seriesAShares / finalTotalShares) * 100;
+      const warrantOwnership = (warrantShares / finalTotalShares) * 100;
+
+      // ✅ STEP 12: Total Shares Issued in THIS round
+      const totalSharesIssuedThisRound = seriesAShares + newOptionShares + warrantShares;
+
+      console.log(`📈 Total Shares Issued This Round: ${totalSharesIssuedThisRound.toLocaleString()}`);
+      const simplePostMoney = preMoney + investment;
+      // ✅ STEP 13: Update formData
+      setFormData(prev => ({
+        ...prev,
+        issuedshares: Math.round(totalSharesIssuedThisRound).toString(),
+        post_money: simplePostMoney.toFixed(2),
+        investorPostMoney: seriesAInvestorsOwnership.toFixed(2),
+        isCalculationSource: true
+      }));
+
+      // ✅ STEP 14: Set calculated values for display
       setCalculatedValues({
-        sharePrice: newSharePrice,
-        newSharesIssued: parseInt(newIssuedShares) || 0,
-        totalPostShares: Math.round(totalPostShares),
+        sharePrice: sharePrice.toFixed(4),
+        newSharesIssued: Math.round(seriesAShares),
+        totalPostShares: Math.round(finalTotalShares),
         newOptionShares: Math.round(newOptionShares),
-        existingOptionPoolPercent: existingOptionPoolPercent,
-        postMoneyValuation: newPostMoney,
-        investorOwnershipPercent: newInvestorOwnership,
-        doc4Action: doc4Action
+        existingOptionPoolPercent: previousRoundOptionPool,
+        postMoneyValuation: postMoneyValuation.toFixed(2),
+        investorOwnershipPercent: seriesAInvestorsOwnership.toFixed(2),
+        doc4Action: newOptionShares > 0 ? 'TOP_UP' : 'NO_ACTION',
+
+        // Convertible Note data (if any)
+        convertedShares: Math.round(totalConvertedShares),
+        convertedValue: Math.round(totalConvertedValue),
+
+        // Warrant data (if any)
+        warrantShares: Math.round(warrantShares),
+        warrantExercisePrice: warrantExercisePrice.toFixed(4),
+        warrantValue: Math.round(warrantValue),
+        warrantCoverage: warrantCoverage,
+
+        // Ownership breakdown
+        foundersOwnership: foundersOwnership.toFixed(2),
+        optionPoolOwnership: optionPoolOwnership.toFixed(2),
+        convertedInvestorsOwnership: convertedInvestorsOwnership.toFixed(2),
+        seriesAInvestorsOwnership: seriesAInvestorsOwnership.toFixed(2),
+        warrantOwnership: warrantOwnership.toFixed(2),
+
+        // Previous round info
+        previousTotalShares: previousRoundData.totalShares,
+        previousSharePrice: sharePrice.toFixed(4)
       });
 
-      if (formData.post_money !== newPostMoney ||
-        formData.investorPostMoney !== newInvestorOwnership ||
-        formData.issuedshares !== newIssuedShares) {
-        setFormData(prev => ({
-          ...prev,
-          post_money: newPostMoney,
-          investorPostMoney: newInvestorOwnership,
-          issuedshares: newIssuedShares,
-          sharePrice: newSharePrice,
-          isCalculationSource: true,
-        }));
+      // Reset calculation source flag
+      setTimeout(() => {
+        setFormData(prev => ({ ...prev, isCalculationSource: false }));
+      }, 100);
 
-        setTimeout(() => {
-          setFormData(prev => ({ ...prev, isCalculationSource: false }));
-        }, 10);
-      }
+      console.log("✅ ==== PREFERRED EQUITY CALCULATION COMPLETE =====");
 
     } catch (error) {
-      console.error("❌ Calculation error:", error);
-    }
-  }, [
-    formData.pre_money,
-    formData.roundsize,
-    formData.optionPoolPercent,
-    formData.optionPoolPercent_post,
-    existingSharesUse,
-    selected,
-    previousRoundOptionPool // ✅ This dependency is critical
-  ]);
-
-  //Automatic Fill
-  // Frontend: Recordround.jsx mein yeh function add karein
-  const autoFillFromPreviousRound = async () => {
-    if (isFirstRound || !selected || selected === "Advisor Shares") {
-      return;
-    }
-
-
-
-    try {
-      const res = await axios.post(
-        apiUrlRound + "getPreviousRoundForAutoFill",
-        {
-          company_id: userLogin.companies[0].id,
-          current_round_id: id || 0
-        }
-      );
-
-
-
-      if (res.data.success && res.data.data) {
-        const previousData = res.data.data;
-
-        // Auto-fill existing shares
-        if (previousData.existingShares > 0) {
-          setexistingSharesUse(previousData.existingShares.toString());
-          setFormData(prev => ({
-            ...prev,
-            existingShares: previousData.existingShares.toString()
-          }));
-
-        }
-
-        // ✅ CRITICAL: Auto-fill option pool and sync ALL states
-        if (previousData.existingOptionPoolPercent > 0) {
-          const poolPercent = parseFloat(previousData.existingOptionPoolPercent);
-
-
-
-          // Update all three states that track option pool
-          setFormData(prev => ({
-            ...prev,
-            optionPoolPercent: poolPercent.toFixed(2)
-          }));
-
-          setPreviousRoundOptionPool(poolPercent);
-
-          setCalculatedValues(prev => ({
-            ...prev,
-            existingOptionPoolPercent: poolPercent
-          }));
-
-
-        }
-
-
-      }
-
-    } catch (err) {
-      console.error("❌ Auto-fill error:", err);
+      console.error("❌ Preferred Equity calculation error:", error);
     }
   };
+  //Automatic Fill
+
   // Component ke shuru mein yeh useEffect add karein
   useEffect(() => {
-    const isSeriesRound = selected?.includes("Series");
+
     const isSeriesCommonStock =
-      isSeriesRound && formData.instrumentType === "Common Stock";
+      formData.instrumentType === "Common Stock" || formData.instrumentType === "Preferred Equity";
 
     if (!selected || isFirstRound) return;
-
+    autoFillFromPreviousRound();
     if (isSeriesCommonStock) {
+
       // ✅ Only here auto-fill should run
-      autoFillFromPreviousRound();
+      // autoFillFromPreviousRound();
     } else {
       // ❌ Not Series + Common Stock → reset option pool
+      // setFormData(prev => ({
+      //   ...prev,
+      //   optionPoolPercent: "0.00"
+      // }));
+
+      // setPreviousRoundOptionPool(0);
+
+      // setCalculatedValues(prev => ({
+      //   ...prev,
+      //   existingOptionPoolPercent: 0
+      // }));
       // setFormData(prev => ({
       //   ...prev,
       //   optionPoolPercent: "0.00"
@@ -1869,9 +2196,303 @@ export default function Recordround() {
 
     }
   }, [selected, formData.instrumentType]);
+  // Frontend: Recordround.jsx mein yeh function add karein
+  // ============================================
+  // autoFillFromPreviousRound - FULLY CORRECTED
+  // ============================================
+
+  const autoFillFromPreviousRound = async () => {
+    if (isFirstRound || !selected || selected === "Advisor Shares") {
+      return;
+    }
+
+    try {
+      const res = await axios.post(
+        apiUrlRound + "getPreviousRoundForAutoFill",
+        {
+          company_id: userLogin.companies[0].id,
+          current_round_id: id || 0,
+          current_instrument_type: formData.instrumentType,
+        }
+      );
+
+      if (res.data.success && res.data.data) {
+        const data = res.data.data;
+
+        // ✅ EXISTING SHARES - हमेशा set करो
+        if (data.existingShares > 0) {
+          setexistingSharesUse(data.existingShares.toString());
+          setFormData(prev => ({
+            ...prev,
+            existingShares: data.existingShares.toString()
+          }));
+        }
+
+        // ✅ CRITICAL: FRONTEND में DECIDE करो AUTOFILL करना है या नहीं
+        const isPricedRound =
+          formData.instrumentType === "Common Stock" ||
+          formData.instrumentType === "Preferred Equity";
+
+        const shouldAutofill = isPricedRound && data.can_autofill && data.existingOptionPoolPercent > 0;
+
+        if (shouldAutofill) {
+          // ✅ PRICED ROUND - AUTOFILL
+          const preMoneyPool = parseFloat(data.existingOptionPoolPercent) || 0;
+
+          console.log(`✅ AUTOFILL: Pre-money pool = ${preMoneyPool}%`);
+          console.log(`📊 Previous post-money pool = ${data.previousPostMoneyPool}%`);
+          console.log(`📊 Employee ownership = ${data.employee_ownership_percent}%`);
+
+          setFormData(prev => ({
+            ...prev,
+            optionPoolPercent: preMoneyPool.toFixed(2)
+          }));
+
+          setPreviousRoundOptionPool(preMoneyPool);
+
+          setCalculatedValues(prev => ({
+            ...prev,
+            existingOptionPoolPercent: preMoneyPool
+          }));
+
+        } else {
+          // 🚫 UNPRICED ROUND OR NO PREVIOUS POOL - NO AUTOFILL
+          // console.log(`🚫 NO AUTOFILL: ${formData.instrumentType || 'Unknown'} round`);
+          // console.log(`📊 Previous round had ${data.previousPostMoneyPool}% post-money pool`);
+          // console.log(`📊 Employee ownership: ${data.employee_ownership_percent}%`);
+
+          // setFormData(prev => ({
+          //   ...prev,
+          //   optionPoolPercent: "0.00"
+          // }));
+
+          // setPreviousRoundOptionPool(0);
+
+          // setCalculatedValues(prev => ({
+          //   ...prev,
+          //   existingOptionPoolPercent: 0
+          // }));
+        }
+      }
+
+    } catch (err) {
+      console.error("❌ Auto-fill error:", err);
+    }
+  };
+  useEffect(() => {
+    // Jab important inputs change ho, toh calculation reset karo
+    const shouldResetCalculation =
+      formData.pre_money > 0 ||
+      formData.roundsize > 0 ||
+      formData.optionPoolPercent_post !== seriesASafeData.lastOptionPoolPost;
+
+    if (shouldResetCalculation && seriesASafeData.hasCalculated) {
+      console.log("Resetting calculation flag due to input change");
+      setSeriesASafeData(prev => ({
+        ...prev,
+        hasCalculated: false,
+        lastOptionPoolPost: formData.optionPoolPercent_post
+      }));
+    }
+  }, [formData.pre_money, formData.roundsize, formData.optionPoolPercent_post]);
 
   useEffect(() => {
-    if (selected?.includes("Series") && formData.instrumentType === "Safe") {
+    // Only calculate if we have all required data AND haven't calculated yet
+
+    if (seriesASafeData.previousInstrumentType === 'Safe') {
+      const shouldCalculate =
+        seriesASafeData.previousInstrumentType &&
+        formData.pre_money > 0 &&
+        formData.roundsize > 0 &&
+        !seriesASafeData.hasCalculated;
+
+      console.log("useEffect - shouldCalculate:", shouldCalculate, seriesASafeData);
+
+      if (!shouldCalculate) return;
+
+      console.log("Calculating for:", seriesASafeData.previousInstrumentType);
+
+      if (seriesASafeData.previousInstrumentType === 'Safe') {
+        calculateSeriesASafe();
+      }
+    }
+    if (seriesASafeData.previousInstrumentType === 'Convertible Note') {
+      calculateSeriesConvertible();
+    }
+  }, [
+    formData.pre_money,
+    formData.roundsize,
+    formData.optionPoolPercent_post,
+    seriesASafeData.previousInstrumentType,
+    seriesASafeData.hasCalculated
+  ]);
+
+  // ✅ Function 1: Common Stock with Target Pool Top-up (Series/ANY round)
+  const calculateCommonStockWithTopUp = (preMoney, investment, priorTotalShares, existingPoolShares, targetPoolPercent) => {
+    console.log(preMoney, investment, priorTotalShares, existingPoolShares, targetPoolPercent)
+    // Step 1: Shares excluding current pool
+    const sharesExcludingPool = priorTotalShares - existingPoolShares;
+
+    // Step 2: Total shares needed for target pool %
+    const totalSharesForTargetPool = sharesExcludingPool / (1 - targetPoolPercent / 100);
+
+    // Step 3: New pool shares required
+    const newPoolShares = totalSharesForTargetPool - priorTotalShares + existingPoolShares;
+
+    // Step 4: Share price AFTER pool adjustment
+    const sharePrice = preMoney / totalSharesForTargetPool;
+
+    // Step 5: New investor common shares
+    const newInvestorShares = investment / sharePrice;
+
+    // Step 6: Total issued this round
+    const totalSharesIssued = newPoolShares + newInvestorShares;
+
+    return {
+      sharePrice: parseFloat(sharePrice.toFixed(4)),
+      newPoolShares: Math.round(newPoolShares),
+      newInvestorShares: Math.round(newInvestorShares),
+      totalSharesIssued: Math.round(totalSharesIssued),
+      totalPostShares: Math.round(totalSharesForTargetPool + newInvestorShares),
+      postMoneyValuation: (preMoney + investment).toFixed(2)
+    };
+  };
+
+  // ✅ Function 2: Common Stock WITHOUT Top-up (existing pool >= target)
+  const calculateCommonStockNoTopUp = (preMoney, investment, priorTotalShares) => {
+    const sharePrice = preMoney / priorTotalShares;
+    const newInvestorShares = investment / sharePrice;
+
+    return {
+      sharePrice: parseFloat(sharePrice.toFixed(4)),
+      newPoolShares: 0,
+      newInvestorShares: Math.round(newInvestorShares),
+      totalSharesIssued: Math.round(newInvestorShares),
+      totalPostShares: priorTotalShares + newInvestorShares,
+      postMoneyValuation: (preMoney + investment).toFixed(2)
+    };
+  };
+
+  // ✅ MAIN useEffect Logic (Clean & Simple)
+  useEffect(() => {
+    if (formData.isCalculationSource || !formData.instrumentType) {
+      return;
+    }
+
+    // ✅ Fix 1: Handle empty strings and NaN properly
+    const roundSize = formData.roundsize ? parseFloat(formData.roundsize) : 0;
+    const preMoney = formData.pre_money ? parseFloat(formData.pre_money) : 0;
+    const investment = formData.roundsize ? parseFloat(formData.roundsize) : 0;
+    const targetPoolPercent = formData.optionPoolPercent_post ? parseFloat(formData.optionPoolPercent_post) : 0;
+    const priorTotalShares = existingSharesUse ? parseFloat(existingSharesUse) : 0;
+    const existingPoolPercent = formData.optionPoolPercent ? parseFloat(formData.optionPoolPercent) : 0;
+
+    // ✅ Fix 2: Better validation with logging
+
+
+    // ✅ Fix 3: Don't return if preMoney is 0, just handle it
+    if (investment <= 0 || priorTotalShares <= 0) {
+      console.log("Missing required values for calculation");
+      return;
+    }
+
+    const isCommonStock = formData.instrumentType === "Common Stock";
+    const needsTopUp = targetPoolPercent > 0 && targetPoolPercent > existingPoolPercent;
+
+    let calculationResult = {};
+
+    if (isCommonStock) {
+      const existingPoolShares = Math.round(priorTotalShares * (existingPoolPercent / 100));
+
+      if (needsTopUp) {
+        calculationResult = calculateCommonStockWithTopUp(
+          preMoney,           // 0 bhi ho sakta hai
+          investment,
+          priorTotalShares,
+          existingPoolShares,
+          targetPoolPercent
+        );
+      } else {
+        calculationResult = calculateCommonStockNoTopUp(
+          preMoney,           // 0 bhi ho sakta hai
+          investment,
+          priorTotalShares
+        );
+      }
+    } else {
+
+    }
+
+    // ✅ Fix 4: Post-money calculation - handle preMoney being 0 or empty
+    const postMoney = preMoney + roundSize;  // Agar preMoney 0 hai toh postMoney = roundSize
+
+    // ✅ Fix 5: Safe division for investor ownership
+    const investorOwnershipPercent = postMoney > 0
+      ? ((investment / postMoney) * 100).toFixed(2)
+      : "0.00";
+
+    console.log("Calculation Result:", {
+      preMoney,
+      investment,
+      postMoney,
+      sharePrice: calculationResult.sharePrice,
+      totalSharesIssued: calculationResult.totalSharesIssued,
+      totalPostShares: calculationResult.totalPostShares,
+      investorOwnershipPercent
+    });
+
+    // ✅ Fix 6: Ensure all values are valid before setting state
+    const safeSharePrice = calculationResult.sharePrice && !isNaN(calculationResult.sharePrice)
+      ? calculationResult.sharePrice
+      : 0;
+
+    const safeTotalSharesIssued = calculationResult.totalSharesIssued && !isNaN(calculationResult.totalSharesIssued)
+      ? calculationResult.totalSharesIssued
+      : 0;
+
+    const safeTotalPostShares = calculationResult.totalPostShares && !isNaN(calculationResult.totalPostShares)
+      ? calculationResult.totalPostShares
+      : 0;
+
+    const safeNewOptionShares = calculationResult.newPoolShares && !isNaN(calculationResult.newPoolShares)
+      ? calculationResult.newPoolShares
+      : 0;
+
+    // Set calculated values
+    setCalculatedValues({
+      sharePrice: safeSharePrice,
+      newSharesIssued: safeTotalSharesIssued,
+      totalPostShares: safeTotalPostShares,
+      newOptionShares: safeNewOptionShares,
+      existingOptionPoolPercent: existingPoolPercent,
+      postMoneyValuation: postMoney,
+      investorOwnershipPercent: investorOwnershipPercent,
+      doc4Action: needsTopUp ? 'TOP_UP' : 'NO_ACTION'
+    });
+
+    // ✅ Fix 7: Update form with safe values
+    setFormData(prev => ({
+      ...prev,
+      post_money: postMoney.toString(),  // Convert to string for input field
+      investorPostMoney: investorOwnershipPercent,
+      issuedshares: safeTotalSharesIssued.toString(),
+      sharePrice: safeSharePrice.toFixed(4).toString(),
+      isCalculationSource: true,
+    }));
+
+    // Reset calculation source flag
+    setTimeout(() => {
+      setFormData(prev => ({ ...prev, isCalculationSource: false }));
+    }, 10);
+
+  }, [formData.pre_money, formData.instrumentType, formData.optionPoolPercent,
+  formData.roundsize, formData.optionPoolPercent_post, existingSharesUse]);
+
+
+
+
+  useEffect(() => {
+    if (formData.instrumentType === "Preferred Equity") {
       fetchPreviousRoundData();
     }
   }, [selected, formData.instrumentType]);
@@ -1883,40 +2504,43 @@ export default function Recordround() {
       );
 
       if (res.data.success) {
-
-
         const { previousRoundData } = res.data;
-
         const isSeriesRound = selected?.includes("Series");
         const isSeedRound = selected === "Seed";
-
+        console.log(previousRoundData)
         if (isSeriesRound) {
           // Auto-fill Pre-Money pool
           setFormData(prev => ({
             ...prev,
-            optionPoolPercent: res.data.existingOptionPoolPercent.toFixed(2)
+            // optionPoolPercent: res.data.existingOptionPoolPercent.toFixed(2)
           }));
+
           setPreviousRoundOptionPool(res.data.existingOptionPoolPercent);
 
-          // ✅ Set previous round data
-          setSeriesASafeData(prev => ({
-            ...prev,
-            previousTotalShares: previousRoundData.totalShares || 0,
-            previousFounderShares: previousRoundData.founderShares || 0,
-            previousEmployeeShares: previousRoundData.employeeShares || 0,
-            previousSeedInvestorShares: 0,
-            previousSeedInvestment: previousRoundData.seedInvestment || 0,
-            previousValuationCap: previousRoundData.valuationCap || 0,
-            previousDiscountRate: previousRoundData.discountRate || 0
-          }));
+          // ✅ Set previous round data WITHOUT calculating
+          if (previousRoundData.instrumentType === 'Safe') {
+            setSeriesASafeData(prev => ({
+              ...prev,
+              previousTotalShares: previousRoundData.totalShares || 0,
+              previousFounderShares: previousRoundData.founderShares || 0,
+              previousEmployeeShares: previousRoundData.employeeShares || 0,
+              previousSeedInvestorShares: 0,
+              previousSeedInvestment: previousRoundData.seedInvestment || 0,
+              previousValuationCap: previousRoundData.valuationCap || 0,
+              previousDiscountRate: previousRoundData.discountRate || 0,
+              previousInstrumentType: previousRoundData.instrumentType || '',
+              hasCalculated: false // ✅ Reset calculation flag
+            }));
+          }
 
-
+          // ❌ REMOVE THIS LINE: calculateSeriesASafe();
 
         } else if (isSeedRound) {
           setFormData(prev => ({
             ...prev,
             optionPoolPercent: "0.00"
           }));
+
         }
 
         if (previousRoundData.totalShares > 0) {
@@ -1930,7 +2554,7 @@ export default function Recordround() {
 
   //Series A Convertible
   useEffect(() => {
-    if (selected?.includes("Series") && formData.instrumentType === "Convertible Note") {
+    if (formData.instrumentType === "Preferred Equity") {
       fetchPreviousRoundForConvertible();
     }
   }, [selected, formData.instrumentType]);
@@ -1947,17 +2571,28 @@ export default function Recordround() {
 
       if (res.data.success && res.data.previousRoundData) {
         const previousData = res.data.previousRoundData;
+        console.log(previousData)
+        if (previousData.instrumentType !== '') {
+          setSeriesConvertibleData(prev => ({
+            ...prev,
+            previousTotalShares: previousData.totalShares || 0, // Should be 111,111
+            previousFounderShares: previousData.founderShares || 0, // Should be 100,000
+            previousEmployeeShares: previousData.employeeShares || 0, // Should be 11,111
+            previousRoundSize: previousData.seedInvestment || 0, // Should be 120,000
+            previousValuationCap: previousData.valuationCap || 0, // Should be 1,000,000
+            previousDiscountRate: previousData.discountRate || 0, // Should be 20
+            previousInterestRate: previousData.interestRate, // SAFE has no interest rate
+            previousInstrumentType: previousData.instrumentType || "", // Should be 20
+            previousemployeeSharesFromSeed: previousData.employeeSharesFromSeed || "", // Should be 20
+          }));
+          setSeriesASafeData(prev => ({
+            ...prev,
 
-        setSeriesConvertibleData(prev => ({
-          ...prev,
-          previousTotalShares: previousData.totalShares || 0, // Should be 111,111
-          previousFounderShares: previousData.founderShares || 0, // Should be 100,000
-          previousEmployeeShares: previousData.employeeShares || 0, // Should be 11,111
-          previousRoundSize: previousData.seedInvestment || 0, // Should be 120,000
-          previousValuationCap: previousData.valuationCap || 0, // Should be 1,000,000
-          previousDiscountRate: previousData.discountRate || 0, // Should be 20
-          previousInterestRate: 0 // SAFE has no interest rate
-        }));
+            previousInstrumentType: previousData.instrumentType || '',
+
+          }));
+        }
+
 
 
       }
@@ -2001,101 +2636,344 @@ export default function Recordround() {
   }, [formData.optionPoolPercent]);
   // Doc 4 Rule
   //Round 1
+  function formatCurrentDate(input) {
+    const date = new Date(input);
 
+    if (isNaN(date)) return "";
+
+    const months = [
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    ];
+
+
+    const day = date.getDate();
+    const month = months[date.getMonth()];
+    const year = date.getFullYear();
+
+    const getOrdinal = (n) => {
+      if (n >= 11 && n <= 13) return "th";
+      switch (n % 10) {
+        case 1:
+          return "st";
+        case 2:
+          return "nd";
+        case 3:
+          return "rd";
+        default:
+          return "th";
+      }
+    };
+
+    let hours = date.getHours();
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    const seconds = date.getSeconds().toString().padStart(2, "0");
+    const ampm = hours >= 12 ? "PM" : "AM";
+
+    hours = hours % 12;
+    hours = hours ? hours : 12; // 0 => 12
+
+    return `${month} ${day}${getOrdinal(
+      day
+    )}, ${year} ${hours}:${minutes} ${ampm}`;
+  }
+  function formatCurrentDateIncorporation(input) {
+    const date = new Date(input);
+
+    if (isNaN(date)) return "";
+
+    const months = [
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    ];
+
+
+    const day = date.getDate();
+    const month = months[date.getMonth()];
+    const year = date.getFullYear();
+
+    const getOrdinal = (n) => {
+      if (n >= 11 && n <= 13) return "th";
+      switch (n % 10) {
+        case 1:
+          return "st";
+        case 2:
+          return "nd";
+        case 3:
+          return "rd";
+        default:
+          return "th";
+      }
+    };
+
+    let hours = date.getHours();
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    const seconds = date.getSeconds().toString().padStart(2, "0");
+    const ampm = hours >= 12 ? "PM" : "AM";
+
+    hours = hours % 12;
+    hours = hours ? hours : 12; // 0 => 12
+
+    return `${month} ${day}${getOrdinal(
+      day
+    )}, ${year}`;
+  }
+  const formatIncorporationDate = (value) => {
+    if (!value) return "Not provided";
+
+    // Only year
+    if (/^\d{4}$/.test(value)) {
+      return value;
+    }
+
+    // Full date
+    return formatCurrentDateIncorporation(value);
+  };
+
+  //Investment Amount
+
+
+  const addInvestmentField = () => {
+    setInvestmentFields([
+      ...investmentFields,
+      {
+        id: investmentFields.length + 1,
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        amount: '',
+        error: ''
+      }
+    ]);
+  };
+
+  const removeInvestmentField = (id) => {
+    if (investmentFields.length > 1) {
+      const updatedFields = investmentFields.filter(field => field.id !== id);
+      setInvestmentFields(updatedFields);
+
+      // Recalculate total
+      const total = updatedFields.reduce((sum, field) => {
+        const val = parseFloat(field.amount);
+        return sum + (isNaN(val) ? 0 : val);
+      }, 0);
+      handleInputChange("roundsize", total.toString());
+    }
+  };
+
+
+
+  const handleInvestorFieldChange = (id, fieldName, value) => {
+    const updatedFields = investmentFields.map(field =>
+      field.id === id ? { ...field, [fieldName]: value, error: '' } : field
+    );
+    setInvestmentFields(updatedFields);
+  };
+
+  const handleInvestmentAmountChange = (id, values) => {
+    const updatedFields = investmentFields.map(field =>
+      field.id === id ? { ...field, amount: values.value, error: '' } : field
+    );
+    setInvestmentFields(updatedFields);
+
+    // Calculate total
+    const total = updatedFields.reduce((sum, field) => {
+      const val = parseFloat(field.amount);
+      return sum + (isNaN(val) ? 0 : val);
+    }, 0);
+
+    // Update main form
+    handleInputChange("roundsize", total.toString());
+  };
+
+  const handleInvestorNameChange = (id, value) => {
+    const updatedFields = investmentFields.map(field =>
+      field.id === id ? { ...field, name: value, error: '' } : field
+    );
+    setInvestmentFields(updatedFields);
+  };
+  const validateInvestments = () => {
+    let isValid = true;
+    let hasAnyInvestment = false;
+
+    const updatedFields = investmentFields.map((field, index) => {
+      let error = '';
+      const amount = parseFloat(field.amount);
+
+      // Validate first name (required for first investor)
+      if (index === 0 && (!field.firstName || field.firstName.trim() === '')) {
+        error = 'First name is required';
+        isValid = false;
+      }
+
+      // Validate last name (optional but recommended)
+      // No validation needed
+
+      // Validate email (if provided, must be valid)
+      if (field.email && field.email.trim() !== '') {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(field.email)) {
+          error = error || 'Invalid email format';
+          isValid = false;
+        }
+      }
+
+      // Validate phone (optional)
+
+      // Validate amount
+      if (index === 0) {
+        // First field - required
+        if (!field.amount || field.amount.trim() === '') {
+          error = error || 'Investment amount is required';
+          isValid = false;
+        } else if (isNaN(amount) || amount <= 0) {
+          error = error || 'Amount must be greater than 0';
+          isValid = false;
+        } else {
+          hasAnyInvestment = true;
+        }
+      } else {
+        // Additional fields - optional but if provided must be valid
+        if (field.amount && field.amount.trim() !== '') {
+          if (isNaN(amount) || amount <= 0) {
+            error = error || 'Amount must be greater than 0';
+            isValid = false;
+          } else {
+            hasAnyInvestment = true;
+          }
+
+          // If amount is provided, first name becomes required
+          if (!field.firstName || field.firstName.trim() === '') {
+            error = error || 'First name is required when amount is provided';
+            isValid = false;
+          }
+        }
+      }
+
+      return { ...field, error };
+    });
+
+    setInvestmentFields(updatedFields);
+
+    // Check if at least one investment exists
+    if (!hasAnyInvestment) {
+      setInvestmentFields(prev => prev.map((field, idx) =>
+        idx === 0 ? { ...field, error: 'At least one investment is required' } : field
+      ));
+      isValid = false;
+    }
+
+    return isValid;
+  };
+  const totalshareconvert = Number(
+    String(calculateTotalShares()).replace(/,/g, "")
+  ) || 0;
   const [isCollapsed, setIsCollapsed] = useState(false);
   return (
-    <Wrapper>
-      <div className="fullpage d-block">
-        <div className="d-flex align-items-start gap-0">
-          <ModuleSideNav
-            isCollapsed={isCollapsed}
-            setIsCollapsed={setIsCollapsed}
-          />
-          <div
-            className={`global_view ${isCollapsed ? "global_view_col" : ""}`}
-          >
-            <TopBar />
-            <SectionWrapper className="d-block p-md-4 p-3">
-              <div className="container-fluid">
-                <div className="d-flex flex-column gap-4">
-                  {errorMsg && (
-                    <Alertpopup
-                      message={errorMsg}
-                      onClose={() => seterrorMsg("")}
-                    />
-                  )}
-                  {messageAll && (
-                    <div
-                      className={`flex items-center justify-between gap-3 shadow-lg ${errr ? "error_pop" : "success_pop"
-                        }`}
-                    >
-                      <div className="d-flex align-items-center gap-2">
-                        <span className="d-block">{messageAll}</span>
-                      </div>
+    <main>
+      <div className='d-flex align-items-start gap-0'>
+        <SideBar />
+        <div className='d-flex flex-grow-1 flex-column gap-0'>
+          <TopBar />
+          <section className='px-md-3 py-4'>
+            <div className='container-fluid'>
+              <div className='row gy-4'>
+                <div className='col-md-12 order-1 order-md-0'>
+                  <SectionWrapper className="d-block p-md-4 p-3">
+                    <div className="container-fluid">
+                      <div className="d-flex flex-column gap-4">
+                        {errorMsg && (
+                          <Alertpopup
+                            message={errorMsg}
+                            onClose={() => seterrorMsg("")}
+                          />
+                        )}
+                        {errorMessageCenter && (
+                          <div className="center_error_pop flex items-center justify-between gap-3 shadow-lg">
+                            <div className="d-flex align-items-center gap-2">
+                              <span className="d-block">{errorMessageCenter}</span>
+                            </div>
+                            <button onClick={() => seterrorMessageCenter("")}
+                              type="button"
+                              className="close_btnCros"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        )}
+                        {messageAll && (
+                          <div
+                            className={`shadow-lg ${errr ? "error_pop" : "success_pop"
+                              }`}
+                          >
+                            <div className="d-flex align-items-center gap-2">
+                              <span className="d-block">{messageAll}</span>
+                            </div>
 
-                      <button
-                        type="button"
-                        className="close_btnCros"
-                        onClick={() => setmessageAll("")}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  )}
+                            <button
+                              type="button"
+                              className="close_btnCros"
+                              onClick={() => setmessageAll("")}
+                            >
+                              ×
+                            </button>
+                          </div>
+                        )}
 
-                  {successMsg && (
-                    // <Alertpopupsuccess
-                    //   message={successMsg}
-                    //   onClose={() => setsuccessMsg("")}
-                    // />
-                    <DangerAlertPopup
-                      message={successMsg}
-                      onConfirm={handleConfirm}
-                      onCancel={() => {
-                        setsuccessMsg("");
-                      }}
-                    />
-                  )}
-                  {isLoading && (
-                    <div
-                      style={{
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        width: '100%',
-                        height: '100%',
-                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                        zIndex: 9999,
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center'
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'center',
-                          alignItems: 'center',
-                          minHeight: '100vh'
-                        }}
-                      >
-                        <div
-                          class="spinner-border spinner-border_loader text-success"
-                          style={{ width: '3rem', height: '3rem' }}
-                          role="status"
-                        >
-                          <span className="visually-hidden">Loading...</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  <div className="d-flex justify-content-between align-items-center mb-4">
-                    <div className="pb-3 bar_design">
-                      <h4 className="h5 mb-0">
-                        {id ? "Edit Record Round" : "Create New Record Round"}
-                      </h4>
-                    </div>
-                    {/* <div className="d-flex gap-2">
+                        {successMsg && (
+                          // <Alertpopupsuccess
+                          //   message={successMsg}
+                          //   onClose={() => setsuccessMsg("")}
+                          // />
+                          <DangerAlertPopup
+                            message={successMsg}
+                            onConfirm={handleConfirm}
+                            onCancel={() => {
+                              setsuccessMsg("");
+                            }}
+                          />
+                        )}
+                        {isLoading && (
+                          <div
+                            style={{
+                              position: 'fixed',
+                              top: 0,
+                              left: 0,
+                              width: '100%',
+                              height: '100%',
+                              backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                              zIndex: 9999,
+                              display: 'flex',
+                              justifyContent: 'center',
+                              alignItems: 'center'
+                            }}
+                          >
+                            <div
+                              style={{
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                minHeight: '100vh'
+                              }}
+                            >
+                              <div
+                                class="spinner-border spinner-border_loader text-success"
+                                style={{ width: '3rem', height: '3rem' }}
+                                role="status"
+                              >
+                                <span className="visually-hidden">Loading...</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        <div className="d-flex justify-content-between align-items-center mb-4">
+                          <div className="pb-3 bar_design">
+                            <h4 className="h5 mb-0">
+                              {id ? "Edit Record Round" : "Create New Record Round"}
+                            </h4>
+                          </div>
+                          {/* <div className="d-flex gap-2">
                       <button className="close_btn w-fit">Save Draft</button>
                       <button
                         className="global_btn w-fit"
@@ -2104,857 +2982,891 @@ export default function Recordround() {
                         Create Round
                       </button>
                     </div> */}
-                  </div>
-
-                  <div className="mb-4 dashboard_card">
-                    <div class="progress-container pt-3">
-                      <div class="progress-info">
-                        <div class="progress-label">Progress</div>
-                        <div class="progress-value">
-                          {progressWidth}% Complete
                         </div>
-                      </div>
-                      <div class="progress-bar">
-                        <div
-                          class="progress-fill"
-                          style={{ width: `${progressWidth}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  </div>
 
-                  {/* Section Navigation */}
-                  <div className="mb-4 ">
-                    <div className="d-flex flex-wrap gap-2">
-                      {sections.map((section, index) => (
-                        <button
-                          key={section.id}
-                          className={`btn ${activeSection === section.id
-                            ? "select_btn_active"
-                            : "select_btn"
-                            } rounded-pill`}
-
-                        >
-                          {section.title}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Form Sections */}
-                  <form method="post" action="javascript:void(0)">
-                    <div className="from_quation">
-                      {/* Share Class Section */}
-                      {activeSection === "shareclass" && (
-                        <div className="section-content p-4 border rounded-3 shadow-sm bg-white">
-                          <h3 className="h5 mb-4 text-gray-800">{isFirstRound ? "Round 0 - Company Incorporation" : "Share Class"}</h3>
-                          {formData.dateroundclosed && shouldShowAlert(formData.dateroundclosed) && (
-                            <div className="alert-message text-danger p-3 mb-4 border rounded bg-white">
-                              <strong>Note:</strong> Start by entering your company's original ownership (who owned which shares at registration). Then add future investment rounds. This keeps your cap table accurate and makes future funding easier.
+                        <div className="mb-4 dashboard_card">
+                          <div class="progress-container pt-3">
+                            <div class="progress-info">
+                              <div class="progress-label">Progress</div>
+                              <div class="progress-value">
+                                {progressWidth}% Complete
+                              </div>
                             </div>
-                          )}
-                          {isFirstRound && (
-                            <div className="alert alert-info mb-4">
-                              <strong>Welcome!</strong> Let's start with your company's incorporation details. This will be your Round 0 - the foundation of your cap table.
-                            </div>
-                          )}
-
-                          <div className="mb-4">
-                            <label className="form-label fw-semibold">
-                              Name of Round <span className="text-danger fs-5">*</span>
-                              {errors.nameOfRound && (
-                                <div className="text-danger small mt-1 is-invalid">
-                                  <i className="bi bi-exclamation-circle me-1"></i>
-                                  {errors.nameOfRound}
-                                </div>
-                              )}
-                            </label>
-                            <input
-                              type="text"
-                              placeholder="Enter round name (e.g., Series A, Seed Round)"
-                              value={formData.nameOfRound}
-                              onChange={(e) => handleInputChange("nameOfRound", e.target.value)}
-                              className={`form-control ${errors.nameOfRound ? "is-invalid" : ""}`}
-                              maxLength={30}
-
-                            />
-                            <div className="form-text">
-                              {formData.nameOfRound.length}/30 characters
+                            <div class="progress-bar">
+                              <div
+                                class="progress-fill"
+                                style={{ width: `${progressWidth}%` }}
+                              ></div>
                             </div>
                           </div>
+                        </div>
 
-                          {isFirstRound && (
-                            <div className="round-zero-fields">
-                              {/* Founder Allocation Section */}
-                              <div className="mb-4">
-                                <label className="form-label fw-semibold">
-                                  Founder Share Allocation <span className="text-danger fs-5">*</span>
-                                  {errors.founders && (
-                                    <div className="text-danger small mt-1">
-                                      <i className="bi bi-exclamation-circle me-1"></i>
-                                      {errors.founders}
-                                    </div>
-                                  )}
-                                </label>
+                        {/* Section Navigation */}
+                        <div className="mb-4 ">
+                          <div className="d-flex flex-wrap gap-2">
+                            {sections.map((section, index) => (
+                              <button
+                                key={section.id}
+                                className={`btn ${activeSection === section.id
+                                  ? "select_btn_active"
+                                  : "select_btn"
+                                  } rounded-pill`}
 
-                                {foundersData.map((founder, index) => (
-                                  <div key={index} className="founder-allocation mb-4 p-3 border rounded">
-                                    <div className="d-flex justify-content-between align-items-center mb-3">
-                                      <h6 className="mb-0">Founder {index + 1}</h6>
-                                      {founderCount > 1 && (
-                                        <button
-                                          type="button"
-                                          className="btn btn-sm btn-outline-danger"
-                                          onClick={() => removeFounder(index)}
-                                        >
-                                          Remove
-                                        </button>
-                                      )}
-                                    </div>
+                              >
+                                {section.title}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
 
-                                    <div className="row">
-                                      <div className="col-md-3 mb-3">
-                                        <label className="form-label">
-                                          First Name <span className="text-danger">*</span>
-                                        </label>
-                                        <input
-                                          type="text"
-                                          className={`form-control ${errors[`founder_${index}_firstName`] ? 'is-invalid' : ''}`}
-                                          placeholder="First Name"
-                                          value={founder.firstName}
-                                          onChange={(e) => {
-                                            updateFounderData(index, 'firstName', e.target.value);
-                                            // Clear error when user starts typing
-                                            if (errors[`founder_${index}_firstName`]) {
-                                              setErrors(prev => ({
-                                                ...prev,
-                                                [`founder_${index}_firstName`]: ""
-                                              }));
-                                            }
-                                          }}
-                                        />
-                                        {errors[`founder_${index}_firstName`] && (
-                                          <div className="text-danger small mt-1">
-                                            <i className="bi bi-exclamation-circle me-1"></i>
-                                            {errors[`founder_${index}_firstName`]}
-                                          </div>
-                                        )}
-                                      </div>
-
-                                      <div className="col-md-3 mb-3">
-                                        <label className="form-label">
-                                          Last Name <span className="text-danger">*</span>
-                                        </label>
-                                        <input
-                                          type="text"
-                                          className={`form-control ${errors[`founder_${index}_lastName`] ? 'is-invalid' : ''}`}
-                                          placeholder="Last Name"
-                                          value={founder.lastName}
-                                          onChange={(e) => {
-                                            updateFounderData(index, 'lastName', e.target.value);
-                                            // Clear error when user starts typing
-                                            if (errors[`founder_${index}_lastName`]) {
-                                              setErrors(prev => ({
-                                                ...prev,
-                                                [`founder_${index}_lastName`]: ""
-                                              }));
-                                            }
-                                          }}
-                                        />
-                                        {errors[`founder_${index}_lastName`] && (
-                                          <div className="text-danger small mt-1">
-                                            <i className="bi bi-exclamation-circle me-1"></i>
-                                            {errors[`founder_${index}_lastName`]}
-                                          </div>
-                                        )}
-                                      </div>
-
-                                      <div className="col-md-3 mb-3">
-                                        <label className="form-label">
-                                          Email <span className="text-danger">*</span>
-                                        </label>
-                                        <input
-                                          type="email"
-                                          className={`form-control ${errors[`founder_${index}_email`] ? 'is-invalid' : ''}`}
-                                          placeholder="Email"
-                                          value={founder.email}
-                                          onChange={(e) => {
-                                            updateFounderData(index, 'email', e.target.value);
-                                            // Clear error when user starts typing
-                                            if (errors[`founder_${index}_email`]) {
-                                              setErrors(prev => ({
-                                                ...prev,
-                                                [`founder_${index}_email`]: ""
-                                              }));
-                                            }
-                                          }}
-                                        />
-                                        {errors[`founder_${index}_email`] && (
-                                          <div className="text-danger small mt-1">
-                                            <i className="bi bi-exclamation-circle me-1"></i>
-                                            {errors[`founder_${index}_email`]}
-                                          </div>
-                                        )}
-                                      </div>
-
-                                      <div className="col-md-3 mb-3">
-                                        <label className="form-label">
-                                          Phone
-                                        </label>
-                                        <input
-                                          type="tel"
-                                          className="form-control"
-                                          placeholder="Phone"
-                                          value={founder.phone}
-                                          onChange={(e) => updateFounderData(index, 'phone', e.target.value)}
-                                        />
-                                      </div>
-
-                                      <div className="col-md-3 mb-3">
-                                        <label className="form-label">
-                                          Shares Allocated <span className="text-danger">*</span>
-                                        </label>
-                                        <NumericFormat
-                                          className={`form-control ${errors[`founder_${index}_shares`] ? 'is-invalid' : ''}`}
-                                          placeholder="e.g., 500"
-                                          value={founder.shares || ''}
-                                          onValueChange={(values) => {
-                                            updateFounderData(index, 'shares', values.value);
-                                            if (errors[`founder_${index}_shares`]) {
-                                              setErrors(prev => ({
-                                                ...prev,
-                                                [`founder_${index}_shares`]: ""
-                                              }));
-                                            }
-                                          }}
-                                          thousandSeparator={true}
-
-                                          allowNegative={false}
-                                          decimalScale={2}
-                                          fixedDecimalScale={true}
-                                        />
-                                        {errors[`founder_${index}_shares`] && (
-                                          <div className="text-danger small mt-1">
-                                            <i className="bi bi-exclamation-circle me-1"></i>
-                                            {errors[`founder_${index}_shares`]}
-                                          </div>
-                                        )}
-                                      </div>
-
-                                      <div className="col-md-3 mb-3">
-                                        <label className="form-label">Share Type</label>
-                                        <select
-                                          className="form-control"
-                                          value={founder.shareType}
-                                          onChange={(e) => updateFounderData(index, 'shareType', e.target.value)}
-                                        >
-                                          <option value="common">Common Shares</option>
-                                          <option value="preferred">Preferred Shares</option>
-                                          <option value="other">Other</option>
-                                        </select>
-                                      </div>
-
-                                      {/* Custom Share Type Input - NEW */}
-                                      {founder.shareType === 'other' && (
-                                        <div className="col-md-6 mb-3">
-                                          <label className="form-label">Specify Share Type</label>
-                                          <input
-                                            type="text"
-                                            className="form-control"
-                                            placeholder="Enter custom share type"
-                                            value={founder.customShareType || ''}
-                                            onChange={(e) => updateFounderData(index, 'customShareType', e.target.value)}
-                                          />
-                                        </div>
-                                      )}
-
-                                      <div className="col-md-3 mb-3">
-                                        <label className="form-label">Share Class</label>
-                                        <select
-                                          className="form-control"
-                                          value={founder.shareClass}
-                                          onChange={(e) => updateFounderData(index, 'shareClass', e.target.value)}
-                                        >
-                                          <option value="Class A">Class A</option>
-                                          <option value="Class B">Class B</option>
-                                          <option value="Class C">Class C</option>
-
-                                        </select>
-                                      </div>
-
-                                      {/* Custom Share Class Input */}
-                                      {founder.shareClass === 'other' && (
-                                        <div className="col-md-3 mb-3">
-                                          <label className="form-label">Specify Share Class</label>
-                                          <input
-                                            type="text"
-                                            className="form-control"
-                                            placeholder="Enter custom share class"
-                                            value={founder.customShareClass || ''}
-                                            onChange={(e) => updateFounderData(index, 'customShareClass', e.target.value)}
-                                          />
-                                        </div>
-                                      )}
-
-                                      <div className="col-md-3 mb-3">
-                                        <label className="form-label">Voting Rights</label>
-                                        <select
-                                          className="form-control"
-                                          value={founder.voting}
-                                          onChange={(e) => updateFounderData(index, 'voting', e.target.value)}
-                                        >
-                                          <option value="voting">Voting</option>
-                                          <option value="non-voting">Non-Voting</option>
-                                        </select>
-                                      </div>
-                                    </div>
+                        {/* Form Sections */}
+                        <form method="post" action="javascript:void(0)">
+                          <div className="from_quation">
+                            {/* Share Class Section */}
+                            {activeSection === "shareclass" && (
+                              <div className="section-content p-4 border rounded-3 shadow-sm bg-white">
+                                <h3 className="h5 mb-4 text-gray-800">{isFirstRound ? "Round 0 - Company Incorporation" : "Share Class"}</h3>
+                                {formData.dateroundclosed && shouldShowAlert(formData.dateroundclosed) && (
+                                  <div className="alert-message text-danger p-3 mb-4 border rounded bg-white">
+                                    <strong>Note:</strong> Start by entering your company's original ownership (who owned which shares at registration). Then add future investment rounds. This keeps your cap table accurate and makes future funding easier.
                                   </div>
-                                ))}
+                                )}
+                                {isFirstRound && (
+                                  <div className="alert alert-info mb-4">
+                                    <strong>Welcome!</strong> Let's start with your company's incorporation details. This will be your Round 0 - the foundation of your cap table.
+                                  </div>
+                                )}
 
-                                <button
-                                  type="button"
-                                  className="btn btn-outline-primary btn-sm"
-                                  onClick={addFounder}
-                                >
-                                  + Add Another Founder
-                                </button>
-                              </div>
-
-                              {/* Currency and Price Per Share */}
-                              <div className="row">
-                                <div className="col-md-6 mb-4">
+                                <div className="mb-4">
                                   <label className="form-label fw-semibold">
-                                    Currency <span className="text-danger fs-5">*</span>
-                                    {errors.currency && (
-                                      <div className="text-danger small mt-1">
+                                    Name of Round <span className="text-danger fs-5">*</span>
+                                    {errors.nameOfRound && (
+                                      <div className="text-danger small mt-1 is-invalid">
                                         <i className="bi bi-exclamation-circle me-1"></i>
-                                        {errors.currency}
-                                      </div>
-                                    )}
-                                  </label>
-                                  <select
-                                    className={`form-control ${errors.currency ? 'is-invalid' : ''}`}
-                                    value={formData.currency}
-                                    onChange={(e) => {
-                                      handleInputChange("currency", e.target.value);
-                                      if (errors.currency) {
-                                        setErrors(prev => ({ ...prev, currency: "" }));
-                                      }
-                                    }}
-                                  >
-                                    <option value="">-- Select Currency --</option>
-                                    {countrySymbolList.map((item) => (
-                                      <option
-                                        key={item.id}
-                                        value={`${item.currency_code} ${item.currency_symbol}`}
-                                      >
-                                        {item.currency_code} {item.currency_symbol}
-                                      </option>
-                                    ))}
-                                  </select>
-                                </div>
-
-                                <div className="col-md-6 mb-4">
-                                  <label className="form-label fw-semibold">
-                                    Price Per Share at Incorporation
-                                    {formData.currency && ` (${formData.currency.split(' ')[1]})`}
-                                    <span className="text-danger fs-5">*</span>
-                                    {errors.pricePerShare && (
-                                      <div className="text-danger small mt-1">
-                                        <i className="bi bi-exclamation-circle me-1"></i>
-                                        {errors.pricePerShare}
+                                        {errors.nameOfRound}
                                       </div>
                                     )}
                                   </label>
                                   <input
-                                    type="number"
-                                    step="0.001"
-                                    className={`form-control ${errors.pricePerShare ? 'is-invalid' : ''}`}
-                                    placeholder={`e.g., 0.001 ${formData.currency ? formData.currency.split(' ')[1] : ''}`}
-                                    value={formData.pricePerShare || ''}
-                                    onChange={(e) => {
-                                      handleInputChange("pricePerShare", e.target.value);
-                                      if (errors.pricePerShare) {
-                                        setErrors(prev => ({ ...prev, pricePerShare: "" }));
-                                      }
-                                    }}
+                                    type="text"
+                                    placeholder="Founding Share Allocation"
+                                    value={formData.nameOfRound}
+                                    onChange={(e) => handleInputChange("nameOfRound", e.target.value)}
+                                    className={`form-control ${errors.nameOfRound ? "is-invalid" : ""}`}
+                                    maxLength={30}
+
                                   />
                                   <div className="form-text">
-                                    This is the par value from your incorporation documents
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Round 0 Calculations Display */}
-                              <div className="calculation-results p-3 bg-light rounded mb-4">
-                                <h6>Round 0 Calculations</h6>
-                                <div className="row">
-                                  <div className="col-md-4">
-                                    <strong>Total Shares:</strong> {calculateTotalShares().toLocaleString()}
-                                  </div>
-                                  <div className="col-md-4">
-                                    <strong>Total Value:</strong> {formData.currency ? formData.currency.split(' ')[1] : '$'}{calculateTotalValue()}
-                                  </div>
-                                  <div className="col-md-4">
-                                    <strong>Founder Count:</strong> {founderCount}
+                                    {formData.nameOfRound.length}/30 characters
                                   </div>
                                 </div>
 
-                                {/* Ownership Breakdown */}
-                                {calculateTotalShares() > 0 && (
-                                  <div className="mt-3">
-                                    <strong>Ownership Breakdown:</strong>
-                                    <ul className="mb-0 mt-2">
-                                      {calculateOwnershipPercentages().map((item, index) => (
-                                        <li key={index}>
-                                          {item.founder}: {item.percentage}%
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                )}
-                              </div>
+                                {isFirstRound && (
+                                  <div className="round-zero-fields">
+                                    {/* Founder Allocation Section */}
+                                    <div className="mb-4">
+                                      <label className="form-label fw-semibold">
+                                        Founder Share Allocation <span className="text-danger fs-5">*</span>
+                                        {errors.founders && (
+                                          <div className="text-danger small mt-1">
+                                            <i className="bi bi-exclamation-circle me-1"></i>
+                                            {errors.founders}
+                                          </div>
+                                        )}
+                                      </label>
 
-                              {/* Founder Details Table */}
-                              {calculateTotalShares() > 0 && (
-                                <div className="mt-3">
-                                  <strong>Founder Details:</strong>
-                                  <div className="table-responsive mt-2">
-                                    <table className="table table-sm table-bordered">
-                                      <thead>
-                                        <tr>
-                                          <th>Founder</th>
-                                          <th>Number of Shares</th>
-                                          <th>Price Per Share</th>
-                                          <th>Ownership %</th>
-                                          <th>Share Type</th>
-                                          <th>Share Class</th>
-                                          <th>Voting Rights</th>
-                                          <th>Value</th>
-                                        </tr>
-                                      </thead>
-                                      <tbody>
-                                        {foundersData.map((founder, index) => {
-                                          const shares = parseInt(founder.shares) || 0;
-                                          const percentage = calculateTotalShares() > 0
-                                            ? ((shares / calculateTotalShares()) * 100).toFixed(1)
-                                            : '0.0';
+                                      {foundersData.map((founder, index) => (
+                                        <div key={index} className="founder-allocation mb-4 p-3 border rounded">
+                                          <div className="d-flex justify-content-between align-items-center mb-3">
+                                            <h6 className="mb-0">Founder {index + 1}</h6>
+                                            {founderCount > 1 && (
+                                              <button
+                                                type="button"
+                                                className="btn btn-sm btn-outline-danger"
+                                                onClick={() => removeFounder(index)}
+                                              >
+                                                Remove
+                                              </button>
+                                            )}
+                                          </div>
 
-                                          // Display share type - show custom if available
-                                          const displayShareType = founder.shareType === 'other' && founder.customShareType
-                                            ? founder.customShareType
-                                            : (founder.shareType === 'common' ? 'Common' : 'Preferred');
+                                          <div className="row">
+                                            <div className="col-md-3 mb-3">
+                                              <label className="form-label">
+                                                First Name <span className="text-danger">*</span>
+                                              </label>
+                                              <input
+                                                type="text"
+                                                className={`form-control ${errors[`founder_${index}_firstName`] ? 'is-invalid' : ''}`}
+                                                placeholder="First Name"
+                                                value={founder.firstName}
+                                                onChange={(e) => {
+                                                  updateFounderData(index, 'firstName', e.target.value);
+                                                  // Clear error when user starts typing
+                                                  if (errors[`founder_${index}_firstName`]) {
+                                                    setErrors(prev => ({
+                                                      ...prev,
+                                                      [`founder_${index}_firstName`]: ""
+                                                    }));
+                                                  }
+                                                }}
+                                              />
+                                              {errors[`founder_${index}_firstName`] && (
+                                                <div className="text-danger small mt-1">
+                                                  <i className="bi bi-exclamation-circle me-1"></i>
+                                                  {errors[`founder_${index}_firstName`]}
+                                                </div>
+                                              )}
+                                            </div>
 
-                                          // Display share class - show custom if available
-                                          const displayShareClass = founder.customShareClass
-                                            ? founder.customShareClass
-                                            : (founder.shareClass || 'Class A');
+                                            <div className="col-md-3 mb-3">
+                                              <label className="form-label">
+                                                Last Name <span className="text-danger">*</span>
+                                              </label>
+                                              <input
+                                                type="text"
+                                                className={`form-control ${errors[`founder_${index}_lastName`] ? 'is-invalid' : ''}`}
+                                                placeholder="Last Name"
+                                                value={founder.lastName}
+                                                onChange={(e) => {
+                                                  updateFounderData(index, 'lastName', e.target.value);
+                                                  // Clear error when user starts typing
+                                                  if (errors[`founder_${index}_lastName`]) {
+                                                    setErrors(prev => ({
+                                                      ...prev,
+                                                      [`founder_${index}_lastName`]: ""
+                                                    }));
+                                                  }
+                                                }}
+                                              />
+                                              {errors[`founder_${index}_lastName`] && (
+                                                <div className="text-danger small mt-1">
+                                                  <i className="bi bi-exclamation-circle me-1"></i>
+                                                  {errors[`founder_${index}_lastName`]}
+                                                </div>
+                                              )}
+                                            </div>
 
-                                          return (
-                                            <tr key={index}>
-                                              <td>{founder.firstName} {founder.lastName}</td>
-                                              <td>{shares.toLocaleString()}</td>
-                                              <td>
-                                                {formData.currency ? formData.currency.split(' ')[1] : '$'}
-                                                {formData.pricePerShare || '0.00'}
-                                              </td>
-                                              <td>{percentage}%</td>
-                                              <td>{displayShareType}</td>
-                                              <td>{displayShareClass}</td>
-                                              <td>{founder.voting === 'voting' ? 'Voting' : 'Non-Voting'}</td>
-                                              <td>{formData.currency ? formData.currency.split(' ')[1] : '$'}{calculateFounderValue(shares)}</td>
-                                            </tr>
-                                          );
-                                        })}
-                                        {/* Total Row */}
-                                        <tr className="table-secondary fw-bold">
-                                          <td colSpan="2">Total</td>
-                                          <td>{formData.currency ? formData.currency.split(' ')[1] : '$'}{formData.pricePerShare || '0.00'}</td>
-                                          <td>100%</td>
-                                          <td colSpan="3"></td>
-                                          <td>{formData.currency ? formData.currency.split(' ')[1] : '$'}{calculateTotalValue()}</td>
-                                        </tr>
-                                      </tbody>
-                                    </table>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          )}
+                                            <div className="col-md-3 mb-3">
+                                              <label className="form-label">
+                                                Email <span className="text-danger">*</span>
+                                              </label>
+                                              <input
+                                                type="email"
+                                                className={`form-control ${errors[`founder_${index}_email`] ? 'is-invalid' : ''}`}
+                                                placeholder="Email"
+                                                value={founder.email}
+                                                onChange={(e) => {
+                                                  updateFounderData(index, 'email', e.target.value);
+                                                  // Clear error when user starts typing
+                                                  if (errors[`founder_${index}_email`]) {
+                                                    setErrors(prev => ({
+                                                      ...prev,
+                                                      [`founder_${index}_email`]: ""
+                                                    }));
+                                                  }
+                                                }}
+                                              />
+                                              {errors[`founder_${index}_email`] && (
+                                                <div className="text-danger small mt-1">
+                                                  <i className="bi bi-exclamation-circle me-1"></i>
+                                                  {errors[`founder_${index}_email`]}
+                                                </div>
+                                              )}
+                                            </div>
 
-                          {/* Share Class Options for Round 1+ */}
-                          {/* Share Class Options for Round 1+ */}
-                          {!isFirstRound && (
-                            <div className="mb-4">
-                              <label className="form-label fw-semibold">
-                                Funding Rounds <span className="text-danger fs-5">*</span>
-                                {errors.shareClassType && (
-                                  <div className="text-danger small mt-1 is-invalid">
-                                    <i className="bi bi-exclamation-circle me-1"></i>
-                                    {errors.shareClassType}
-                                  </div>
-                                )}
-                              </label>
+                                            <div className="col-md-3 mb-3">
+                                              <label className="form-label">
+                                                Phone
+                                              </label>
+                                              <input
+                                                type="tel"
+                                                className="form-control"
+                                                placeholder="Phone"
+                                                value={founder.phone}
+                                                onChange={(e) => updateFounderData(index, 'phone', e.target.value)}
+                                              />
+                                            </div>
 
-                              <select
-                                className={`form-control ${errors.shareClassType ? "is-invalid" : ""}`}
-                                value={selected}
-                                onChange={(e) => {
-                                  const value = e.target.value;
-                                  if (value && value !== "default") {
-                                    setSelected(value);
-                                    handleInputChange(
-                                      "shareClassType",
-                                      value === "OTHER" ? formData.shareclassother : value
-                                    );
-                                  }
-                                }}
-                              >
-                                <option value="default" disabled>-- Select Funding Round --</option>
+                                            <div className="col-md-3 mb-3">
+                                              <label className="form-label">
+                                                Shares Allocated <span className="text-danger">*</span>
+                                              </label>
+                                              <NumericFormat
+                                                className={`form-control ${errors[`founder_${index}_shares`] ? 'is-invalid' : ''}`}
+                                                placeholder="e.g., 500"
+                                                value={founder.shares || ''}
+                                                onValueChange={(values) => {
+                                                  updateFounderData(index, 'shares', values.value);
+                                                  if (errors[`founder_${index}_shares`]) {
+                                                    setErrors(prev => ({
+                                                      ...prev,
+                                                      [`founder_${index}_shares`]: ""
+                                                    }));
+                                                  }
+                                                }}
+                                                thousandSeparator={true}
 
-                                {/* Seed Rounds */}
-                                <optgroup label="Seed Rounds">
-                                  <option value="Pre-Seed">Pre-Seed</option>
-                                  <option value="Seed">Seed</option>
-                                  <option value="Post-Seed">Post-Seed</option>
-                                </optgroup>
+                                                allowNegative={false}
+                                                decimalScale={2}
+                                                fixedDecimalScale={true}
+                                              />
+                                              {errors[`founder_${index}_shares`] && (
+                                                <div className="text-danger small mt-1">
+                                                  <i className="bi bi-exclamation-circle me-1"></i>
+                                                  {errors[`founder_${index}_shares`]}
+                                                </div>
+                                              )}
+                                            </div>
 
-                                {/* Series Rounds */}
-                                <optgroup label="Series Rounds">
-                                  <option value="Series A">Series A</option>
-                                  <option value="Series A Extension">Series A Extension</option>
-                                  <option value="Series B">Series B</option>
-                                  <option value="Series B Extension">Series B Extension</option>
-                                  <option value="Series C">Series C</option>
-                                  <option value="Series C Extension">Series C Extension</option>
-                                  <option value="Series D">Series D</option>
-                                  <option value="Series D Extension">Series D Extension</option>
-                                </optgroup>
+                                            <div className="col-md-3 mb-3">
+                                              <label className="form-label">Share Type</label>
+                                              <select
+                                                className="form-control"
+                                                value={founder.shareType}
+                                                onChange={(e) => updateFounderData(index, 'shareType', e.target.value)}
+                                              >
+                                                <option value="common">Common Shares</option>
+                                                <option value="preferred">Preferred Shares</option>
+                                                <option value="other">Other</option>
+                                              </select>
+                                            </div>
 
-                                {/* Other Rounds */}
-                                <optgroup label="Other Rounds">
-                                  <option value="Bridge Round">Bridge Round</option>
-                                  <option value="Advisor Shares">Advisor Shares</option>
-                                  <option value="OTHER">OTHER</option>
-                                </optgroup>
-                              </select>
+                                            {/* Custom Share Type Input - NEW */}
+                                            {founder.shareType === 'other' && (
+                                              <div className="col-md-6 mb-3">
+                                                <label className="form-label">Specify Share Type</label>
+                                                <input
+                                                  type="text"
+                                                  className="form-control"
+                                                  placeholder="Enter custom share type"
+                                                  value={founder.customShareType || ''}
+                                                  onChange={(e) => updateFounderData(index, 'customShareType', e.target.value)}
+                                                />
+                                              </div>
+                                            )}
 
-                              {errors.shareClassType && (
-                                <div className="text-danger small mt-1">
-                                  <i className="bi bi-exclamation-circle me-1"></i>
-                                  {errors.shareClassType}
-                                </div>
-                              )}
-                            </div>
-                          )}
+                                            <div className="col-md-3 mb-3">
+                                              <label className="form-label">Share Class</label>
+                                              <select
+                                                className="form-control"
+                                                value={founder.shareClass}
+                                                onChange={(e) => updateFounderData(index, 'shareClass', e.target.value)}
+                                              >
+                                                <option value="Class A">Class A</option>
+                                                <option value="Class B">Class B</option>
+                                                <option value="Class C">Class C</option>
 
-                          {/* Conditional Field for OTHER option */}
-                          {!isFirstRound && selected === "OTHER" && (
-                            <div className="mb-4">
-                              <label className="form-label fw-semibold">
-                                Custom Share Class Name
-                              </label>
-                              <input
-                                type="text"
-                                placeholder="Enter custom share class name"
-                                value={formData.shareclassother}
-                                onChange={(e) => handleInputChange("shareclassother", e.target.value)}
-                                className={`form-control ${errors.shareclassother ? "is-invalid" : ""}`}
-                                maxLength={30}
-                              />
-                              <div className="form-text">
-                                {formData.shareclassother.length}/30 characters
-                              </div>
-                              {errors.shareclassother && (
-                                <div className="text-danger small">
-                                  <i className="bi bi-exclamation-circle me-1"></i>
-                                  {errors.shareclassother}
-                                </div>
-                              )}
-                            </div>
-                          )}
+                                              </select>
+                                            </div>
 
-                          {/* Conditional Field for OTHER option (only for Round 1+) */}
+                                            {/* Custom Share Class Input */}
+                                            {founder.shareClass === 'other' && (
+                                              <div className="col-md-3 mb-3">
+                                                <label className="form-label">Specify Share Class</label>
+                                                <input
+                                                  type="text"
+                                                  className="form-control"
+                                                  placeholder="Enter custom share class"
+                                                  value={founder.customShareClass || ''}
+                                                  onChange={(e) => updateFounderData(index, 'customShareClass', e.target.value)}
+                                                />
+                                              </div>
+                                            )}
 
-
-                          {/* Next Button with Validation */}
-                          <div className="d-flex justify-content-end">
-                            <button
-                              className="global_btn w-fit"
-                              onClick={() => {
-                                const newErrors = {};
-
-                                // Common validation for both rounds
-                                if (!formData.nameOfRound.trim()) {
-                                  newErrors.nameOfRound = "This field is required";
-                                }
-
-                                if (isFirstRound) {
-                                  // ROUND 0 VALIDATION
-
-                                  // Validate price per share
-                                  if (!formData.pricePerShare || parseFloat(formData.pricePerShare) <= 0) {
-                                    newErrors.pricePerShare = "Valid price per share is required";
-                                  }
-
-                                  // Validate currency
-                                  if (!formData.currency || formData.currency.trim() === "") {
-                                    newErrors.currency = "Currency selection is required";
-                                  }
-
-                                  // Validate founder allocations
-                                  let hasFounderShares = false;
-                                  let totalShares = 0;
-                                  let hasValidShares = false;
-
-                                  foundersData.forEach((founder, index) => {
-                                    const shares = parseInt(founder.shares) || 0;
-
-                                    // Validate first name
-                                    if (!founder.firstName || founder.firstName.trim() === "") {
-                                      newErrors[`founder_${index}_firstName`] = "First name is required";
-                                    }
-
-                                    // Validate last name
-                                    if (!founder.lastName || founder.lastName.trim() === "") {
-                                      newErrors[`founder_${index}_lastName`] = "Last name is required";
-                                    }
-
-                                    // Validate email
-                                    if (!founder.email || founder.email.trim() === "") {
-                                      newErrors[`founder_${index}_email`] = "Email is required";
-                                    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(founder.email)) {
-                                      newErrors[`founder_${index}_email`] = "Please enter a valid email address";
-                                    }
-
-                                    // Validate shares
-                                    if (!founder.shares || founder.shares.trim() === "") {
-                                      newErrors[`founder_${index}_shares`] = "Shares allocated is required";
-                                    } else if (shares <= 0) {
-                                      newErrors[`founder_${index}_shares`] = "Shares must be greater than 0";
-                                    } else if (isNaN(shares)) {
-                                      newErrors[`founder_${index}_shares`] = "Please enter a valid number";
-                                    } else {
-                                      hasFounderShares = true;
-                                      totalShares += shares;
-                                      hasValidShares = true;
-                                    }
-
-                                    // Validate custom share type if "other" is selected
-                                    if (founder.shareType === 'other' && (!founder.customShareType || founder.customShareType.trim() === "")) {
-                                      newErrors[`founder_${index}_customShareType`] = "Please specify the share type";
-                                    }
-
-                                    // Validate custom share class if "other" is selected
-                                    if (founder.shareClass === 'other' && (!founder.customShareClass || founder.customShareClass.trim() === "")) {
-                                      newErrors[`founder_${index}_customShareClass`] = "Please specify the share class";
-                                    }
-                                  });
-
-                                  // Check if at least one founder has shares
-                                  if (!hasFounderShares) {
-                                    newErrors.founders = "At least one founder must have shares allocated";
-                                  }
-
-                                  // Check if total shares is zero
-                                  if (totalShares === 0 && hasValidShares) {
-                                    newErrors.founders = "Total shares must be greater than 0";
-                                  }
-
-                                  // Check if all founders have valid share allocations
-                                  const allFoundersHaveShares = foundersData.every(founder => {
-                                    const shares = parseInt(founder.shares) || 0;
-                                    return shares > 0;
-                                  });
-
-                                  if (!allFoundersHaveShares && hasFounderShares) {
-                                    newErrors.founders = "All founders must have shares allocated";
-                                  }
-
-                                } else {
-                                  // ROUND 1+ VALIDATION
-                                  if (selected === "default") {
-                                    newErrors.shareClassType = "Please select a funding round";
-                                  }
-
-                                  if (selected === "OTHER" && !formData.shareclassother.trim()) {
-                                    newErrors.shareclassother = "This field is required";
-                                  }
-                                }
-
-                                if (Object.keys(newErrors).length > 0) {
-                                  setErrors(newErrors);
-
-                                  // Scroll to first error
-                                  setTimeout(() => {
-                                    const firstErrorElement = document.querySelector(".is-invalid");
-                                    if (firstErrorElement) {
-                                      firstErrorElement.scrollIntoView({
-                                        behavior: "smooth",
-                                        block: "center"
-                                      });
-                                    }
-                                  }, 100);
-                                } else {
-                                  setErrors({});
-
-                                  // For Round 0, auto-set some values
-                                  if (isFirstRound) {
-                                    handleInputChange("issuedshares", calculateTotalShares().toString());
-                                    handleInputChange("roundStatus", "CLOSED");
-                                    handleInputChange("shareClassType", "Common Shares");
-                                    setSelected("Founder Shares (Family and Friends)");
-                                  }
-
-                                  navigateToSection('next');
-                                }
-                              }}
-                            >
-                              Save and Continue
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                      {/* Investment Instrument Section */}
-                      {activeSection === "instrument" && (
-                        <div className="section-content p-4 border rounded-3 shadow-sm bg-white">
-                          <PreviousSection
-                            formData={formData}
-                            otherText={otherText}
-                            selected={selected}
-                            visibleFields={["shareclass", "description"]}
-                            isFirstRound={isFirstRound}
-                            foundersData={foundersData}
-                            calculateTotalShares={calculateTotalShares}
-                            calculateTotalValue={calculateTotalValue}
-                            founderCount={founderCount}
-                          />
-
-                          {/* ROUND 0 - Skip this section entirely */}
-                          {isFirstRound ? (
-                            <div className="text-center py-5">
-                              <div className="alert alert-info">
-                                <strong>Round 0 - No Investment Instrument</strong>
-                                <p className="mb-0 mt-2">
-                                  This is the incorporation round with founder shares only.
-                                  No external investment instruments are involved.
-                                </p>
-                              </div>
-                              <div className="d-flex justify-content-between pt-3 border-top gap-2">
-                                <button
-                                  className="close_btn w-fit"
-                                  onClick={() => navigateToSection('prev')}
-                                >
-                                  <i className="bi bi-arrow-left me-2"></i>Back
-                                </button>
-                                <button
-                                  className="global_btn w-fit"
-                                  onClick={() => navigateToSection('next')}
-                                >
-                                  Continue to Next Section
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            /* OTHER ROUNDS - Show instrument selection */
-                            <>
-                              <h3 className="h5 mb-4 text-gray-800">Investment Instrument</h3>
-
-                              <div className="mb-4">
-                                <label className="form-label fw-semibold d-flex align-items-center">
-                                  Select Investment Instrument Type
-                                  <span className="tooltip-icon ms-2" tabIndex={0}>
-                                    <img
-                                      className="blackdark"
-                                      width="15"
-                                      height="15"
-                                      src="/assets/user/images/question.png"
-                                      alt="Tip"
-                                    />
-                                    <div className="tooltip-text tool-test-white text-white" role="tooltip">
-                                      <strong>Description:</strong> The type of equity issued.
-                                      Common classes include "Common Stock" for founders/employees
-                                      and "Preferred" shares for investors.
-                                    </div>
-                                  </span>
-                                  <span className="text-danger fs-5 ms-1">*</span>
-                                  {errors.instrumentType && (
-                                    <span className="text-danger small ms-2">
-                                      <i className="bi bi-exclamation-circle me-1"></i>
-                                      {errors.instrumentType}
-                                    </span>
-                                  )}
-                                </label>
-
-                                {/* Instrument Selection */}
-                                <div className="row mt-3">
-                                  {instrumentOptions.map((opt) => (
-                                    <div key={opt.value} className="col-md-6 mb-3">
-                                      <div
-                                        className={`form-check-card p-3 border rounded-3 cursor-pointer h-100 ${formData.instrumentType === opt.value ? "bg-light" : "border-gray-300"
-                                          } ${errors.instrumentType ? "border-danger" : ""}`}
-                                        onClick={() => {
-                                          handleInputChange("instrumentType", opt.value);
-
-                                          // ✅ NEW: Agar Preferred Equity nahi hai, toh liquidation preferences clear karo
-                                          if (opt.value !== "Preferred Equity") {
-                                            handleInputChange("liquidation", []);
-                                            handleInputChange("liquidationpreferences", "");
-                                            handleInputChange("liquidationOther", "");
-                                          }
-
-                                          if (opt.value !== "OTHER") handleInputChange("customInstrument", "");
-                                          if (errors.instrumentType || errors.customInstrument) {
-                                            setErrors((prev) => ({
-                                              ...prev,
-                                              instrumentType: "",
-                                              customInstrument: "",
-                                            }));
-                                          }
-                                        }}
-                                      >
-                                        <div className="form-check">
-                                          <input
-                                            type="radio"
-                                            name="instrumentType"
-                                            value={opt.value}
-                                            checked={formData.instrumentType === opt.value}
-                                            onChange={() => {
-                                              handleInputChange("instrumentType", opt.value);
-
-                                              // ✅ NEW: Agar Preferred Equity nahi hai, toh liquidation preferences clear karo
-                                              if (opt.value !== "Preferred Equity") {
-                                                handleInputChange("liquidation", []);
-                                                handleInputChange("liquidationpreferences", "");
-                                                handleInputChange("liquidationOther", "");
-                                              }
-
-                                              if (opt.value !== "OTHER") handleInputChange("customInstrument", "");
-                                              if (errors.instrumentType || errors.customInstrument) {
-                                                setErrors((prev) => ({
-                                                  ...prev,
-                                                  instrumentType: "",
-                                                  customInstrument: "",
-                                                }));
-                                              }
-                                            }}
-                                            className="form-check-input"
-                                          />
-                                          <label className="form-check-label fw-medium">
-                                            {opt.label}
-                                          </label>
+                                            <div className="col-md-3 mb-3">
+                                              <label className="form-label">Voting Rights</label>
+                                              <select
+                                                className="form-control"
+                                                value={founder.voting}
+                                                onChange={(e) => updateFounderData(index, 'voting', e.target.value)}
+                                              >
+                                                <option value="voting">Voting</option>
+                                                <option value="non-voting">Non-Voting</option>
+                                              </select>
+                                            </div>
+                                          </div>
                                         </div>
-                                        <p className="text-muted small mb-0 mt-2">
-                                          {opt.description}
-                                        </p>
+                                      ))}
+
+                                      <button
+                                        type="button"
+                                        className="btn btn-outline-primary btn-sm"
+                                        onClick={addFounder}
+                                      >
+                                        + Add Another Founder
+                                      </button>
+                                    </div>
+
+                                    {/* Currency and Price Per Share */}
+                                    <div className="row">
+                                      <div className="col-md-6 mb-4">
+                                        <label className="form-label fw-semibold">
+                                          Currency <span className="text-danger fs-5">*</span>
+                                          {errors.currency && (
+                                            <div className="text-danger small mt-1">
+                                              <i className="bi bi-exclamation-circle me-1"></i>
+                                              {errors.currency}
+                                            </div>
+                                          )}
+                                        </label>
+                                        <select
+                                          className={`form-control ${errors.currency ? 'is-invalid' : ''}`}
+                                          value={formData.currency}
+                                          onChange={(e) => {
+                                            handleInputChange("currency", e.target.value);
+                                            if (errors.currency) {
+                                              setErrors(prev => ({ ...prev, currency: "" }));
+                                            }
+                                          }}
+                                        >
+                                          <option value="">-- Select Currency --</option>
+                                          {countrySymbolList.map((item) => (
+                                            <option
+                                              key={item.id}
+                                              value={`${item.currency_code} ${item.currency_symbol}`}
+                                            >
+                                              {item.currency_code} {item.currency_symbol}
+                                            </option>
+                                          ))}
+                                        </select>
+                                      </div>
+
+                                      <div className="col-md-6 mb-4">
+                                        <label className="form-label fw-semibold">
+                                          Price Per Share at Incorporation
+                                          {formData.currency && ` (${formData.currency.split(' ')[1]})`}
+                                          <span className="text-danger fs-5">*</span>
+                                          {errors.pricePerShare && (
+                                            <div className="text-danger small mt-1">
+                                              <i className="bi bi-exclamation-circle me-1"></i>
+                                              {errors.pricePerShare}
+                                            </div>
+                                          )}
+                                        </label>
+                                        <input
+                                          type="number"
+                                          step="0.001"
+                                          className={`form-control ${errors.pricePerShare ? 'is-invalid' : ''}`}
+                                          placeholder={`e.g., 0.001 ${formData.currency ? formData.currency.split(' ')[1] : ''}`}
+                                          value={formData.pricePerShare || ''}
+                                          onChange={(e) => {
+                                            handleInputChange("pricePerShare", e.target.value);
+                                            if (errors.pricePerShare) {
+                                              setErrors(prev => ({ ...prev, pricePerShare: "" }));
+                                            }
+                                          }}
+                                        />
+                                        <div className="form-text">
+                                          This is the par value from your incorporation documents
+                                        </div>
                                       </div>
                                     </div>
-                                  ))}
+
+                                    {/* Round 0 Calculations Display */}
+                                    <div className="calculation-results p-3 bg-light rounded mb-4">
+                                      <h6>Round 0 Calculations</h6>
+                                      <div className="row">
+                                        <div className="col-md-4">
+                                          <strong>Total Shares:</strong> <CurrencyFormatter
+                                            amount={totalshareconvert}
+                                            currency={""}
+                                            digit={0}
+                                          />
+                                        </div>
+                                        <div className="col-md-4">
+                                          <strong>Total Value:</strong> {formData.currency ? formData.currency.split(' ')[1] : '$'}{calculateTotalValue()}
+                                        </div>
+                                        <div className="col-md-4">
+                                          <strong>Founder Count:</strong> {founderCount}
+                                        </div>
+                                      </div>
+
+                                      {/* Ownership Breakdown */}
+                                      {calculateTotalShares() > 0 && (
+                                        <div className="mt-3">
+                                          <strong>Ownership Breakdown:</strong>
+                                          <ul className="mb-0 mt-2">
+                                            {calculateOwnershipPercentages().map((item, index) => (
+                                              <li key={index}>
+                                                {item.founder}: {item.percentage}%
+                                              </li>
+                                            ))}
+                                          </ul>
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {/* Founder Details Table */}
+                                    {calculateTotalShares() > 0 && (
+                                      <div className="mt-3">
+                                        <strong>Founder Details:</strong>
+                                        <div className="table-responsive mt-2">
+                                          <table className="table table-sm table-bordered">
+                                            <thead>
+                                              <tr>
+                                                <th>Founder</th>
+                                                <th>Number of Shares</th>
+                                                <th>Price Per Share</th>
+                                                <th>Ownership %</th>
+                                                <th>Share Type</th>
+                                                <th>Share Class</th>
+                                                <th>Voting Rights</th>
+                                                <th>Value</th>
+                                              </tr>
+                                            </thead>
+                                            <tbody>
+                                              {foundersData.map((founder, index) => {
+                                                const shares = parseInt(founder.shares) || 0;
+                                                const percentage = calculateTotalShares() > 0
+                                                  ? ((shares / calculateTotalShares()) * 100).toFixed(1)
+                                                  : '0.0';
+
+                                                // Display share type - show custom if available
+                                                const displayShareType = founder.shareType === 'other' && founder.customShareType
+                                                  ? founder.customShareType
+                                                  : (founder.shareType === 'common' ? 'Common' : 'Preferred');
+
+                                                // Display share class - show custom if available
+                                                const displayShareClass = founder.customShareClass
+                                                  ? founder.customShareClass
+                                                  : (founder.shareClass || 'Class A');
+
+                                                return (
+                                                  <tr key={index}>
+                                                    <td>{founder.firstName} {founder.lastName}</td>
+                                                    <td>{shares.toLocaleString()}</td>
+                                                    <td>
+                                                      {formData.currency ? formData.currency.split(' ')[1] : '$'}
+                                                      {formData.pricePerShare || '0.00'}
+                                                    </td>
+                                                    <td>{percentage}%</td>
+                                                    <td>{displayShareType}</td>
+                                                    <td>{displayShareClass}</td>
+                                                    <td>{founder.voting === 'voting' ? 'Voting' : 'Non-Voting'}</td>
+                                                    <td>{formData.currency ? formData.currency.split(' ')[1] : '$'}{calculateFounderValue(shares)}</td>
+                                                  </tr>
+                                                );
+                                              })}
+                                              {/* Total Row */}
+                                              <tr className="table-secondary fw-bold">
+                                                <td colSpan="2">Total</td>
+                                                <td>{formData.currency ? formData.currency.split(' ')[1] : '$'}{formData.pricePerShare || '0.00'}</td>
+                                                <td>100%</td>
+                                                <td colSpan="3"></td>
+                                                <td>{formData.currency ? formData.currency.split(' ')[1] : '$'}{calculateTotalValue()}</td>
+                                              </tr>
+                                            </tbody>
+                                          </table>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Share Class Options for Round 1+ */}
+                                {/* Share Class Options for Round 1+ */}
+                                {!isFirstRound && (
+                                  <div className="mb-4">
+                                    <label className="form-label fw-semibold">
+                                      Funding Rounds <span className="text-danger fs-5">*</span>
+                                      {errors.shareClassType && (
+                                        <div className="text-danger small mt-1 is-invalid">
+                                          <i className="bi bi-exclamation-circle me-1"></i>
+                                          {errors.shareClassType}
+                                        </div>
+                                      )}
+                                    </label>
+
+                                    <select
+                                      className={`form-control ${errors.shareClassType ? "is-invalid" : ""}`}
+                                      value={selected}
+                                      onChange={(e) => {
+                                        const value = e.target.value;
+                                        if (value && value !== "default") {
+                                          console.log(allowedRounds.includes(value))
+                                          // Validation check
+                                          if (allowedRounds && !allowedRounds.includes(value)) {
+                                            seterrorMessageCenter(`❌ ${value} is not available!\n\nAvailable rounds: ${allowedRounds.join(", ")}`);
+                                            setTimeout(() => {
+
+                                              seterrorMessageCenter("");
+
+                                            }, 3500);
+                                            return;
+                                          } else {
+                                            seterrorMessageCenter("");
+                                          }
+
+                                          setSelected(value);
+                                          handleInputChange(
+                                            "shareClassType",
+                                            value === "OTHER" ? formData.shareclassother : value
+                                          );
+                                        } else {
+                                          seterrorMessageCenter("");
+                                        }
+                                      }}
+                                      disabled={!allowedRounds} // Disable while loading
+                                    >
+                                      {/* Loading State */}
+                                      {!allowedRounds && (
+                                        <option value="default" disabled>Loading rounds...</option>
+                                      )}
+
+                                      {/* Loaded State */}
+                                      {allowedRounds && (
+                                        <>
+                                          <option value="default" disabled>
+                                            {allowedRounds.length === 0
+                                              ? "No rounds available"
+                                              : "-- Select Funding Round --"}
+                                          </option>
+
+                                          {/* Always show all options, backend will validate */}
+                                          <optgroup label="Seed Rounds">
+                                            <option value="Pre-Seed">Pre-Seed</option>
+                                            <option value="Seed">Seed</option>
+                                            <option value="Post-Seed">Post-Seed</option>
+                                          </optgroup>
+
+                                          <optgroup label="Series Rounds">
+                                            <option value="Series A">Series A</option>
+                                            <option value="Series A Extension">Series A Extension</option>
+                                            <option value="Series B">Series B</option>
+                                            <option value="Series B Extension">Series B Extension</option>
+                                            <option value="Series C">Series C</option>
+                                            <option value="Series C Extension">Series C Extension</option>
+                                            <option value="Series D">Series D</option>
+                                            <option value="Series D Extension">Series D Extension</option>
+                                          </optgroup>
+
+                                          <optgroup label="Other Rounds">
+                                            <option value="Bridge Round">Bridge Round</option>
+                                            <option value="Advisor Shares">Advisor Shares</option>
+                                            <option value="OTHER">OTHER</option>
+                                          </optgroup>
+                                        </>
+                                      )}
+                                    </select>
+                                    {errors.shareClassType && (
+                                      <div className="text-danger small mt-1">
+                                        <i className="bi bi-exclamation-circle me-1"></i>
+                                        {errors.shareClassType}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Conditional Field for OTHER option */}
+                                {!isFirstRound && selected === "OTHER" && (
+                                  <div className="mb-4">
+                                    <label className="form-label fw-semibold">
+                                      Custom Share Class Name
+                                    </label>
+                                    <input
+                                      type="text"
+                                      placeholder="Enter custom share class name"
+                                      value={formData.shareclassother}
+                                      onChange={(e) => handleInputChange("shareclassother", e.target.value)}
+                                      className={`form-control ${errors.shareclassother ? "is-invalid" : ""}`}
+                                      maxLength={30}
+                                    />
+                                    <div className="form-text">
+                                      {formData.shareclassother.length}/30 characters
+                                    </div>
+                                    {errors.shareclassother && (
+                                      <div className="text-danger small">
+                                        <i className="bi bi-exclamation-circle me-1"></i>
+                                        {errors.shareclassother}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Conditional Field for OTHER option (only for Round 1+) */}
+
+
+                                {/* Next Button with Validation */}
+                                <div className="d-flex justify-content-end">
+
+                                  <button
+                                    className="global_btn w-fit"
+                                    onClick={() => {
+                                      const newErrors = {};
+
+                                      // Common validation for both rounds
+                                      if (!formData.nameOfRound.trim()) {
+                                        newErrors.nameOfRound = "This field is required";
+                                      }
+
+                                      if (isFirstRound) {
+                                        // ROUND 0 VALIDATION
+
+                                        // Validate price per share
+                                        if (!formData.pricePerShare || parseFloat(formData.pricePerShare) <= 0) {
+                                          newErrors.pricePerShare = "Valid price per share is required";
+                                        }
+
+                                        // Validate currency
+                                        if (!formData.currency || formData.currency.trim() === "") {
+                                          newErrors.currency = "Currency selection is required";
+                                        }
+
+                                        // Validate founder allocations
+                                        let hasFounderShares = false;
+                                        let totalShares = 0;
+                                        let hasValidShares = false;
+
+                                        foundersData.forEach((founder, index) => {
+                                          const shares = parseInt(founder.shares) || 0;
+
+                                          // Validate first name
+                                          if (!founder.firstName || founder.firstName.trim() === "") {
+                                            newErrors[`founder_${index}_firstName`] = "First name is required";
+                                          }
+
+                                          // Validate last name
+                                          if (!founder.lastName || founder.lastName.trim() === "") {
+                                            newErrors[`founder_${index}_lastName`] = "Last name is required";
+                                          }
+
+                                          // Validate email
+                                          if (!founder.email || founder.email.trim() === "") {
+                                            newErrors[`founder_${index}_email`] = "Email is required";
+                                          } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(founder.email)) {
+                                            newErrors[`founder_${index}_email`] = "Please enter a valid email address";
+                                          }
+
+                                          // Validate shares
+                                          if (!founder.shares || founder.shares.trim() === "") {
+                                            newErrors[`founder_${index}_shares`] = "Shares allocated is required";
+                                          } else if (shares <= 0) {
+                                            newErrors[`founder_${index}_shares`] = "Shares must be greater than 0";
+                                          } else if (isNaN(shares)) {
+                                            newErrors[`founder_${index}_shares`] = "Please enter a valid number";
+                                          } else {
+                                            hasFounderShares = true;
+                                            totalShares += shares;
+                                            hasValidShares = true;
+                                          }
+
+                                          // Validate custom share type if "other" is selected
+                                          if (founder.shareType === 'other' && (!founder.customShareType || founder.customShareType.trim() === "")) {
+                                            newErrors[`founder_${index}_customShareType`] = "Please specify the share type";
+                                          }
+
+                                          // Validate custom share class if "other" is selected
+                                          if (founder.shareClass === 'other' && (!founder.customShareClass || founder.customShareClass.trim() === "")) {
+                                            newErrors[`founder_${index}_customShareClass`] = "Please specify the share class";
+                                          }
+                                        });
+
+                                        // Check if at least one founder has shares
+                                        if (!hasFounderShares) {
+                                          newErrors.founders = "At least one founder must have shares allocated";
+                                        }
+
+                                        // Check if total shares is zero
+                                        if (totalShares === 0 && hasValidShares) {
+                                          newErrors.founders = "Total shares must be greater than 0";
+                                        }
+
+                                        // Check if all founders have valid share allocations
+                                        const allFoundersHaveShares = foundersData.every(founder => {
+                                          const shares = parseInt(founder.shares) || 0;
+                                          return shares > 0;
+                                        });
+
+                                        if (!allFoundersHaveShares && hasFounderShares) {
+                                          newErrors.founders = "All founders must have shares allocated";
+                                        }
+
+                                      } else {
+                                        // ROUND 1+ VALIDATION
+                                        if (selected === "default") {
+                                          newErrors.shareClassType = "Please select a funding round";
+                                        }
+
+                                        if (selected === "OTHER" && !formData.shareclassother.trim()) {
+                                          newErrors.shareclassother = "This field is required";
+                                        }
+                                      }
+
+                                      if (Object.keys(newErrors).length > 0) {
+                                        setErrors(newErrors);
+
+                                        // Scroll to first error
+                                        setTimeout(() => {
+                                          const firstErrorElement = document.querySelector(".is-invalid");
+                                          if (firstErrorElement) {
+                                            firstErrorElement.scrollIntoView({
+                                              behavior: "smooth",
+                                              block: "center"
+                                            });
+                                          }
+                                        }, 100);
+                                      } else {
+                                        setErrors({});
+
+                                        // For Round 0, auto-set some values
+                                        if (isFirstRound) {
+                                          handleInputChange("issuedshares", calculateTotalShares().toString());
+                                          handleInputChange("roundStatus", "CLOSED");
+                                          handleInputChange("shareClassType", "Common Shares");
+                                          setSelected("Founder Shares (Family and Friends)");
+                                        }
+
+                                        navigateToSection('next');
+                                      }
+                                    }}
+                                  >
+                                    Save and Continue
+                                  </button>
                                 </div>
                               </div>
+                            )}
+                            {/* Investment Instrument Section */}
+                            {activeSection === "instrument" && (
+                              <div className="section-content p-4 border rounded-3 shadow-sm bg-white">
+                                <PreviousSection
+                                  formData={formData}
+                                  otherText={otherText}
+                                  selected={selected}
+                                  visibleFields={["shareclass", "description"]}
+                                  isFirstRound={isFirstRound}
+                                  foundersData={foundersData}
+                                  calculateTotalShares={calculateTotalShares}
+                                  calculateTotalValue={calculateTotalValue}
+                                  founderCount={founderCount}
+                                  CurrDisplay={CurrDisplay}
+                                />
 
-                              {/* Instrument Specific Details */}
-                              {/* {formData.instrumentType === "Common Stock" && (
+                                {/* ROUND 0 - Skip this section entirely */}
+                                {isFirstRound ? (
+                                  <div className="text-center py-5">
+                                    <div className="alert alert-info">
+                                      <strong>Round 0 - No Investment Instrument</strong>
+                                      <p className="mb-0 mt-2">
+                                        This is the incorporation round with founder shares only.
+                                        No external investment instruments are involved.
+                                      </p>
+                                    </div>
+                                    <div className="d-flex justify-content-between pt-3 border-top gap-2">
+                                      <button
+                                        className="close_btn w-fit"
+                                        onClick={() => navigateToSection('prev')}
+                                      >
+                                        <i className="bi bi-arrow-left me-2"></i>Back
+                                      </button>
+                                      <button
+                                        className="global_btn w-fit"
+                                        onClick={() => navigateToSection('next')}
+                                      >
+                                        Continue to Next Section
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  /* OTHER ROUNDS - Show instrument selection */
+                                  <>
+                                    <h3 className="h5 mb-4 text-gray-800">Investment Instrument</h3>
+
+                                    <div className="mb-4">
+                                      <label className="form-label fw-semibold d-flex align-items-center">
+                                        Select Investment Instrument Type
+                                        <span className="tooltip-icon ms-2" tabIndex={0}>
+                                          <img
+                                            className="blackdark"
+                                            width="15"
+                                            height="15"
+                                            src="/assets/user/images/question.png"
+                                            alt="Tip"
+                                          />
+                                          <div className="tooltip-text tool-test-white text-white" role="tooltip">
+                                            <strong>Description:</strong> The type of equity issued.
+                                            Common classes include Common Stock for founders/employees
+                                            and Preferred shares for investors.
+                                          </div>
+                                        </span>
+                                        <span className="text-danger fs-5 ms-1">*</span>
+                                        {errors.instrumentType && (
+                                          <span className="text-danger small ms-2">
+                                            <i className="bi bi-exclamation-circle me-1"></i>
+                                            {errors.instrumentType}
+                                          </span>
+                                        )}
+                                      </label>
+
+                                      {/* Instrument Selection */}
+                                      <div className="row mt-3">
+                                        {instrumentOptions.map((opt) => (
+                                          <div key={opt.value} className="col-md-6 mb-3">
+                                            <div
+                                              className={`form-check-card p-3 border rounded-3 cursor-pointer h-100 ${formData.instrumentType === opt.value ? "bg-light" : "border-gray-300"
+                                                } ${errors.instrumentType ? "border-danger" : ""}`}
+                                              onClick={() => {
+                                                handleInputChange("instrumentType", opt.value);
+
+                                                // ✅ NEW: Agar Preferred Equity nahi hai, toh liquidation preferences clear karo
+                                                if (opt.value !== "Preferred Equity") {
+                                                  handleInputChange("liquidation", []);
+                                                  handleInputChange("liquidationpreferences", "");
+                                                  handleInputChange("liquidationOther", "");
+                                                }
+
+                                                if (opt.value !== "OTHER") handleInputChange("customInstrument", "");
+                                                if (errors.instrumentType || errors.customInstrument) {
+                                                  setErrors((prev) => ({
+                                                    ...prev,
+                                                    instrumentType: "",
+                                                    customInstrument: "",
+                                                  }));
+                                                }
+                                              }}
+                                            >
+                                              <div className="form-check">
+                                                <input
+                                                  type="radio"
+                                                  name="instrumentType"
+                                                  value={opt.value}
+                                                  checked={formData.instrumentType === opt.value}
+                                                  onChange={() => {
+                                                    handleInputChange("instrumentType", opt.value);
+
+                                                    // ✅ NEW: Agar Preferred Equity nahi hai, toh liquidation preferences clear karo
+                                                    if (opt.value !== "Preferred Equity") {
+                                                      handleInputChange("liquidation", []);
+                                                      handleInputChange("liquidationpreferences", "");
+                                                      handleInputChange("liquidationOther", "");
+                                                    }
+
+                                                    if (opt.value !== "OTHER") handleInputChange("customInstrument", "");
+                                                    if (errors.instrumentType || errors.customInstrument) {
+                                                      setErrors((prev) => ({
+                                                        ...prev,
+                                                        instrumentType: "",
+                                                        customInstrument: "",
+                                                      }));
+                                                    }
+                                                  }}
+                                                  className="form-check-input"
+                                                />
+                                                <label className="form-check-label fw-medium">
+                                                  {opt.label}
+                                                </label>
+                                              </div>
+                                              <p className="text-muted small mb-0 mt-2">
+                                                {opt.description}
+                                              </p>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+
+                                    {/* Instrument Specific Details */}
+                                    {/* {formData.instrumentType === "Common Stock" && (
                                 <div className="mt-3 p-3 border rounded bg-light">
                                   <h5>Common Stock Details</h5>
                                   <label className="form-label">
@@ -3029,400 +3941,397 @@ export default function Recordround() {
                                 </div>
                               )} */}
 
-                              {formData.instrumentType === "Preferred Equity" && (
-                                <div className="mt-3 p-3 border rounded bg-light">
-                                  <h5>Preferred Equity Details</h5>
 
-                                  {/* ========== WARRANT SECTION ========== */}
-                                  <div className="border-top pt-3 mt-3">
-                                    <div className="d-flex justify-content-between align-items-center mb-3">
-                                      <h6 className="mb-0">Warrant Details (Optional)</h6>
-                                      <div className="form-check form-switch">
-                                        <input
-                                          type="checkbox"
-                                          className="form-check-input"
-                                          id="hasWarrants_preferred"
-                                          checked={formData.hasWarrants_preferred || false}
-                                          onChange={(e) => {
-                                            const checked = e.target.checked;
-                                            handleInputChange("hasWarrants_preferred", checked);
+                                    <div className="mt-3 p-3 border rounded bg-light">
+                                      <h5>Warrant Details</h5>
 
-                                            // Reset warrant fields if unchecked
-                                            if (!checked) {
-                                              handleInputChange("warrant_coverage_percentage", "");
-                                              handleInputChange("warrant_exercise_type", "next_round_adjusted");
-                                              handleInputChange("warrant_adjustment_percent", "");
-                                              handleInputChange("warrant_adjustment_direction", "decrease");
-                                              handleInputChange("expirationDate_preferred", "");
-                                              handleInputChange("warrant_notes", "");
-                                            }
-                                          }}
-                                        />
-                                        <label className="form-check-label" htmlFor="hasWarrants_preferred">
-                                          Include Warrants with this investment
-                                        </label>
-                                      </div>
-                                    </div>
+                                      {/* ========== WARRANT SECTION ========== */}
+                                      <div className="border-top pt-3 mt-3">
+                                        <div className="d-flex justify-content-between align-items-center mb-3">
+                                          <h6 className="mb-0">Warrant Details (Optional)</h6>
+                                          <div className="form-check form-switch">
+                                            <input
+                                              type="checkbox"
+                                              className="form-check-input"
+                                              id="hasWarrants_preferred"
+                                              checked={formData.hasWarrants_preferred || false}
+                                              onChange={(e) => {
+                                                const checked = e.target.checked;
+                                                handleInputChange("hasWarrants_preferred", checked);
 
-                                    {formData.hasWarrants_preferred && (
-                                      <>
-                                        {/* Alert - Important Info */}
-                                        <div className="alert alert-info mb-4">
-                                          <i className="bi bi-info-circle me-2"></i>
-                                          <strong>About Warrants:</strong> Warrants will be exercised in the next priced equity round.
-                                          Exercise price and shares will be calculated automatically at that time.
-                                        </div>
-
-                                        {/* 🔹 WARRANT COVERAGE PERCENTAGE */}
-                                        <div className="row mb-4">
-                                          <div className="col-md-6">
-                                            <label className="form-label">
-                                              Warrant Coverage Percentage (%)
-                                              <span className="text-danger ms-1">*</span>
-                                              <span className="tooltip-icon ms-2" tabIndex={0}>
-                                                <img
-                                                  className="blackdark"
-                                                  width="15"
-                                                  height="15"
-                                                  src="/assets/user/images/question.png"
-                                                  alt="Tip"
-                                                />
-                                                <div className="tooltip-text tool-test-white text-white" role="tooltip">
-                                                  <strong>What it is:</strong> Percentage of new shares issued in the NEXT priced round that will be allocated as warrant shares.
-                                                  <br /><br />
-                                                  <strong>Example:</strong> If Series B issues 50,000 new shares and warrant coverage is 20%, then 10,000 warrant shares will be created.
-                                                </div>
-                                              </span>
+                                                // Reset warrant fields if unchecked
+                                                if (!checked) {
+                                                  handleInputChange("warrant_coverage_percentage", "");
+                                                  handleInputChange("warrant_exercise_type", "next_round_adjusted");
+                                                  handleInputChange("warrant_adjustment_percent", "");
+                                                  handleInputChange("warrant_adjustment_direction", "decrease");
+                                                  handleInputChange("expirationDate_preferred", "");
+                                                  handleInputChange("warrant_notes", "");
+                                                }
+                                              }}
+                                            />
+                                            <label className="form-check-label" htmlFor="hasWarrants_preferred">
+                                              Include Warrants with this investment
                                             </label>
-                                            <div className="input-group">
-                                              <input
-                                                type="number"
-                                                className={`form-control ${errors.warrant_coverage_percentage ? "is-invalid" : ""}`}
-                                                value={formData.warrant_coverage_percentage || ""}
-                                                onChange={(e) => {
-                                                  handleInputChange("warrant_coverage_percentage", e.target.value);
-                                                  if (errors.warrant_coverage_percentage) {
-                                                    setErrors(prev => ({ ...prev, warrant_coverage_percentage: "" }));
-                                                  }
-                                                }}
-                                                placeholder="e.g., 20"
-                                                min="0"
-                                                max="100"
-                                                step="0.1"
-                                              />
-                                              <span className="input-group-text">%</span>
-                                            </div>
-                                            {errors.warrant_coverage_percentage && (
-                                              <div className="text-danger small mt-1">
-                                                <i className="bi bi-exclamation-circle me-1"></i>
-                                                {errors.warrant_coverage_percentage}
-                                              </div>
-                                            )}
-                                            <small className="text-muted d-block mt-1">
-                                              Percentage of next round's new shares that become warrant shares
-                                            </small>
                                           </div>
                                         </div>
 
-                                        {/* 🔹 WARRANT EXERCISE TYPE */}
-                                        <div className="row mb-4">
-                                          <div className="col-md-12">
-                                            <label className="form-label">
-                                              Warrant Exercise Price Method
-                                              <span className="text-danger ms-1">*</span>
-                                            </label>
-                                            <div className="border rounded p-3 bg-white">
-                                              {/* Option 1: Fixed Price (Disabled as per client requirements) */}
-                                              <div className="form-check mb-3 opacity-50">
-                                                <input
-                                                  className="form-check-input"
-                                                  type="radio"
-                                                  name="warrant_exercise_type"
-                                                  id="exerciseTypeFixed"
-                                                  value="fixed"
-                                                  disabled
-                                                  checked={formData.warrant_exercise_type === "fixed"}
-                                                />
-                                                <label className="form-check-label" htmlFor="exerciseTypeFixed">
-                                                  <strong>Fixed Price</strong> (Not available)
-                                                  <div className="small text-muted">
-                                                    Exercise at a predetermined fixed price - Not supported per client requirements
-                                                  </div>
-                                                </label>
-                                              </div>
-
-                                              {/* Option 2: Next Round Price (No Adjustment) */}
-                                              <div className="form-check mb-3">
-                                                <input
-                                                  className="form-check-input"
-                                                  type="radio"
-                                                  name="warrant_exercise_type"
-                                                  id="exerciseTypeNextRound"
-                                                  value="next_round"
-                                                  checked={formData.warrant_exercise_type === "next_round"}
-                                                  onChange={(e) => {
-                                                    handleInputChange("warrant_exercise_type", e.target.value);
-                                                    // Clear adjustment fields
-                                                    handleInputChange("warrant_adjustment_percent", "");
-                                                    if (errors.warrant_exercise_type) {
-                                                      setErrors(prev => ({ ...prev, warrant_exercise_type: "" }));
-                                                    }
-                                                  }}
-                                                />
-                                                <label className="form-check-label" htmlFor="exerciseTypeNextRound">
-                                                  <strong>Next Priced Round Price</strong> (No Adjustment)
-                                                  <div className="small text-muted">
-                                                    Exercise at the exact share price of the next priced equity round
-                                                  </div>
-                                                </label>
-                                              </div>
-
-                                              {/* Option 3: Next Round Price with Adjustment (DEFAULT) */}
-                                              <div className="form-check">
-                                                <input
-                                                  className="form-check-input"
-                                                  type="radio"
-                                                  name="warrant_exercise_type"
-                                                  id="exerciseTypeAdjusted"
-                                                  value="next_round_adjusted"
-                                                  checked={formData.warrant_exercise_type === "next_round_adjusted" || !formData.warrant_exercise_type}
-                                                  onChange={(e) => {
-                                                    handleInputChange("warrant_exercise_type", e.target.value);
-                                                    if (errors.warrant_exercise_type) {
-                                                      setErrors(prev => ({ ...prev, warrant_exercise_type: "" }));
-                                                    }
-                                                  }}
-                                                />
-                                                <label className="form-check-label" htmlFor="exerciseTypeAdjusted">
-                                                  <strong>Next Priced Round Price ± Adjustment</strong> (Recommended)
-                                                  <div className="small text-muted">
-                                                    Exercise at next round price, adjusted by a percentage increase or decrease
-                                                  </div>
-                                                </label>
-                                              </div>
+                                        {formData.hasWarrants_preferred && (
+                                          <>
+                                            {/* Alert - Important Info */}
+                                            <div className="alert alert-info mb-4">
+                                              <i className="bi bi-info-circle me-2"></i>
+                                              <strong>About Warrants:</strong> Warrants will be exercised in the next priced equity round.
+                                              Exercise price and shares will be calculated automatically at that time.
                                             </div>
 
-                                            {errors.warrant_exercise_type && (
-                                              <div className="text-danger small mt-1">
-                                                <i className="bi bi-exclamation-circle me-1"></i>
-                                                {errors.warrant_exercise_type}
-                                              </div>
-                                            )}
-                                          </div>
-                                        </div>
-
-                                        {/* 🔹 ADJUSTMENT PERCENTAGE (Only if adjusted type selected) */}
-                                        {formData.warrant_exercise_type === "next_round_adjusted" && (
-                                          <div className="row mb-4">
-                                            <div className="col-md-6">
-                                              <label className="form-label">
-                                                Adjustment Direction & Percentage
-                                                <span className="text-danger ms-1">*</span>
-                                              </label>
-                                              <div className="input-group">
-                                                <select
-                                                  className={`form-select ${errors.warrant_adjustment_direction ? "is-invalid" : ""}`}
-                                                  style={{ maxWidth: "140px" }}
-                                                  value={formData.warrant_adjustment_direction || "decrease"}
-                                                  onChange={(e) => {
-                                                    handleInputChange("warrant_adjustment_direction", e.target.value);
-                                                    if (errors.warrant_adjustment_direction) {
-                                                      setErrors(prev => ({ ...prev, warrant_adjustment_direction: "" }));
-                                                    }
-                                                  }}
-                                                >
-                                                  <option value="decrease">Decrease by</option>
-                                                  <option value="increase">Increase by</option>
-                                                </select>
-                                                <input
-                                                  type="number"
-                                                  className={`form-control ${errors.warrant_adjustment_percent ? "is-invalid" : ""}`}
-                                                  value={formData.warrant_adjustment_percent || ""}
-                                                  onChange={(e) => {
-                                                    handleInputChange("warrant_adjustment_percent", e.target.value);
-                                                    if (errors.warrant_adjustment_percent) {
-                                                      setErrors(prev => ({ ...prev, warrant_adjustment_percent: "" }));
-                                                    }
-                                                  }}
-                                                  placeholder="e.g., 20"
-                                                  min="0"
-                                                  max="100"
-                                                  step="0.1"
-                                                />
-                                                <span className="input-group-text">%</span>
-                                              </div>
-                                              {(errors.warrant_adjustment_direction || errors.warrant_adjustment_percent) && (
-                                                <div className="text-danger small mt-1">
-                                                  <i className="bi bi-exclamation-circle me-1"></i>
-                                                  {errors.warrant_adjustment_direction || errors.warrant_adjustment_percent}
+                                            {/* 🔹 WARRANT COVERAGE PERCENTAGE */}
+                                            <div className="row mb-4">
+                                              <div className="col-md-6">
+                                                <label className="form-label">
+                                                  Warrant Coverage Percentage (%)
+                                                  <span className="text-danger ms-1">*</span>
+                                                  <span className="tooltip-icon ms-2" tabIndex={0}>
+                                                    <img
+                                                      className="blackdark"
+                                                      width="15"
+                                                      height="15"
+                                                      src="/assets/user/images/question.png"
+                                                      alt="Tip"
+                                                    />
+                                                    <div className="tooltip-text tool-test-white text-white" role="tooltip">
+                                                      <strong>What it is:</strong> Percentage of new shares issued in the NEXT priced round that will be allocated as warrant shares.
+                                                      <br /><br />
+                                                      <strong>Example:</strong> If Series B issues 50,000 new shares and warrant coverage is 20%, then 10,000 warrant shares will be created.
+                                                    </div>
+                                                  </span>
+                                                </label>
+                                                <div className="input-group">
+                                                  <input
+                                                    type="number"
+                                                    className={`form-control ${errors.warrant_coverage_percentage ? "is-invalid" : ""}`}
+                                                    value={formData.warrant_coverage_percentage || ""}
+                                                    onChange={(e) => {
+                                                      handleInputChange("warrant_coverage_percentage", e.target.value);
+                                                      if (errors.warrant_coverage_percentage) {
+                                                        setErrors(prev => ({ ...prev, warrant_coverage_percentage: "" }));
+                                                      }
+                                                    }}
+                                                    placeholder="e.g., 20"
+                                                    min="0"
+                                                    max="100"
+                                                    step="0.1"
+                                                  />
+                                                  <span className="input-group-text">%</span>
                                                 </div>
-                                              )}
-                                              <small className="text-muted d-block mt-1">
-                                                Adjust the next round's share price by this percentage
-                                              </small>
+                                                {errors.warrant_coverage_percentage && (
+                                                  <div className="text-danger small mt-1">
+                                                    <i className="bi bi-exclamation-circle me-1"></i>
+                                                    {errors.warrant_coverage_percentage}
+                                                  </div>
+                                                )}
+                                                <small className="text-muted d-block mt-1">
+                                                  Percentage of next round's new shares that become warrant shares
+                                                </small>
+                                              </div>
                                             </div>
 
-                                            {/* Example Calculation */}
-                                            <div className="col-md-6">
-                                              <label className="form-label">Example Calculation</label>
-                                              <div className="form-control bg-light">
-                                                {formData.warrant_adjustment_percent ? (
-                                                  <small>
-                                                    If next round price = <strong>$10.00</strong><br />
-                                                    Adjustment = <strong>{formData.warrant_adjustment_percent}%</strong> {formData.warrant_adjustment_direction}
-                                                    <br />
-                                                    <strong>→ Exercise price = ${
-                                                      formData.warrant_adjustment_direction === "decrease"
-                                                        ? (10 * (1 - formData.warrant_adjustment_percent / 100)).toFixed(2)
-                                                        : (10 * (1 + formData.warrant_adjustment_percent / 100)).toFixed(2)
-                                                    }</strong>
-                                                  </small>
-                                                ) : (
-                                                  <small className="text-muted">Enter adjustment % to see example</small>
+                                            {/* 🔹 WARRANT EXERCISE TYPE */}
+                                            <div className="row mb-4">
+                                              <div className="col-md-12">
+                                                <label className="form-label">
+                                                  Warrant Exercise Price Method
+                                                  <span className="text-danger ms-1">*</span>
+                                                </label>
+                                                <div className="border rounded p-3 bg-white">
+                                                  {/* Option 1: Fixed Price (Disabled as per client requirements) */}
+                                                  <div className="form-check mb-3 opacity-50">
+                                                    <input
+                                                      className="form-check-input"
+                                                      type="radio"
+                                                      name="warrant_exercise_type"
+                                                      id="exerciseTypeFixed"
+                                                      value="fixed"
+                                                      disabled
+                                                      checked={formData.warrant_exercise_type === "fixed"}
+                                                    />
+                                                    <label className="form-check-label" htmlFor="exerciseTypeFixed">
+                                                      <strong>Fixed Price</strong> (Not available)
+                                                      <div className="small text-muted">
+                                                        Exercise at a predetermined fixed price - Not supported per client requirements
+                                                      </div>
+                                                    </label>
+                                                  </div>
+
+                                                  {/* Option 2: Next Round Price (No Adjustment) */}
+                                                  <div className="form-check mb-3">
+                                                    <input
+                                                      className="form-check-input"
+                                                      type="radio"
+                                                      name="warrant_exercise_type"
+                                                      id="exerciseTypeNextRound"
+                                                      value="next_round"
+                                                      checked={formData.warrant_exercise_type === "next_round"}
+                                                      onChange={(e) => {
+                                                        handleInputChange("warrant_exercise_type", e.target.value);
+                                                        // Clear adjustment fields
+                                                        handleInputChange("warrant_adjustment_percent", "");
+                                                        if (errors.warrant_exercise_type) {
+                                                          setErrors(prev => ({ ...prev, warrant_exercise_type: "" }));
+                                                        }
+                                                      }}
+                                                    />
+                                                    <label className="form-check-label" htmlFor="exerciseTypeNextRound">
+                                                      <strong>Next Priced Round Price</strong> (No Adjustment)
+                                                      <div className="small text-muted">
+                                                        Exercise at the exact share price of the next priced equity round
+                                                      </div>
+                                                    </label>
+                                                  </div>
+
+                                                  {/* Option 3: Next Round Price with Adjustment (DEFAULT) */}
+                                                  <div className="form-check">
+                                                    <input
+                                                      className="form-check-input"
+                                                      type="radio"
+                                                      name="warrant_exercise_type"
+                                                      id="exerciseTypeAdjusted"
+                                                      value="next_round_adjusted"
+                                                      checked={formData.warrant_exercise_type === "next_round_adjusted" || !formData.warrant_exercise_type}
+                                                      onChange={(e) => {
+                                                        handleInputChange("warrant_exercise_type", e.target.value);
+                                                        if (errors.warrant_exercise_type) {
+                                                          setErrors(prev => ({ ...prev, warrant_exercise_type: "" }));
+                                                        }
+                                                      }}
+                                                    />
+                                                    <label className="form-check-label" htmlFor="exerciseTypeAdjusted">
+                                                      <strong>Next Priced Round Price ± Adjustment</strong> (Recommended)
+                                                      <div className="small text-muted">
+                                                        Exercise at next round price, adjusted by a percentage increase or decrease
+                                                      </div>
+                                                    </label>
+                                                  </div>
+                                                </div>
+
+                                                {errors.warrant_exercise_type && (
+                                                  <div className="text-danger small mt-1">
+                                                    <i className="bi bi-exclamation-circle me-1"></i>
+                                                    {errors.warrant_exercise_type}
+                                                  </div>
                                                 )}
                                               </div>
                                             </div>
+
+                                            {/* 🔹 ADJUSTMENT PERCENTAGE (Only if adjusted type selected) */}
+                                            {formData.warrant_exercise_type === "next_round_adjusted" && (
+                                              <div className="row mb-4">
+                                                <div className="col-md-6">
+                                                  <label className="form-label">
+                                                    Adjustment Direction & Percentage
+                                                    <span className="text-danger ms-1">*</span>
+                                                  </label>
+                                                  <div className="input-group">
+                                                    <select
+                                                      className={`form-select ${errors.warrant_adjustment_direction ? "is-invalid" : ""}`}
+                                                      style={{ maxWidth: "140px" }}
+                                                      value={formData.warrant_adjustment_direction || "decrease"}
+                                                      onChange={(e) => {
+                                                        handleInputChange("warrant_adjustment_direction", e.target.value);
+                                                        if (errors.warrant_adjustment_direction) {
+                                                          setErrors(prev => ({ ...prev, warrant_adjustment_direction: "" }));
+                                                        }
+                                                      }}
+                                                    >
+                                                      <option value="decrease">Decrease by</option>
+                                                      <option value="increase">Increase by</option>
+                                                    </select>
+                                                    <input
+                                                      type="number"
+                                                      className={`form-control ${errors.warrant_adjustment_percent ? "is-invalid" : ""}`}
+                                                      value={formData.warrant_adjustment_percent || ""}
+                                                      onChange={(e) => {
+                                                        handleInputChange("warrant_adjustment_percent", e.target.value);
+                                                        if (errors.warrant_adjustment_percent) {
+                                                          setErrors(prev => ({ ...prev, warrant_adjustment_percent: "" }));
+                                                        }
+                                                      }}
+                                                      placeholder="e.g., 20"
+                                                      min="0"
+                                                      max="100"
+                                                      step="0.1"
+                                                    />
+                                                    <span className="input-group-text">%</span>
+                                                  </div>
+                                                  {(errors.warrant_adjustment_direction || errors.warrant_adjustment_percent) && (
+                                                    <div className="text-danger small mt-1">
+                                                      <i className="bi bi-exclamation-circle me-1"></i>
+                                                      {errors.warrant_adjustment_direction || errors.warrant_adjustment_percent}
+                                                    </div>
+                                                  )}
+                                                  <small className="text-muted d-block mt-1">
+                                                    Adjust the next round's share price by this percentage
+                                                  </small>
+                                                </div>
+
+                                                {/* Example Calculation */}
+                                                <div className="col-md-6">
+                                                  <label className="form-label">Example Calculation</label>
+                                                  <div className="form-control bg-light">
+                                                    {formData.warrant_adjustment_percent ? (
+                                                      <small>
+                                                        If next round price = <strong>$10.00</strong><br />
+                                                        Adjustment = <strong>{formData.warrant_adjustment_percent}%</strong> {formData.warrant_adjustment_direction}
+                                                        <br />
+                                                        <strong>→ Exercise price = ${
+                                                          formData.warrant_adjustment_direction === "decrease"
+                                                            ? (10 * (1 - formData.warrant_adjustment_percent / 100)).toFixed(2)
+                                                            : (10 * (1 + formData.warrant_adjustment_percent / 100)).toFixed(2)
+                                                        }</strong>
+                                                      </small>
+                                                    ) : (
+                                                      <small className="text-muted">Enter adjustment % to see example</small>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            )}
+
+                                            {/* 🔹 EXPIRATION DATE */}
+                                            <div className="row mb-4">
+                                              <div className="col-md-6">
+                                                <label className="form-label">
+                                                  Warrant Expiration Date (Optional)
+                                                </label>
+                                                <input
+                                                  type="date"
+                                                  className="form-control"
+                                                  value={formData.expirationDate_preferred || ""}
+                                                  onChange={(e) => handleInputChange("expirationDate_preferred", e.target.value)}
+                                                />
+                                                <small className="text-muted d-block mt-1">
+                                                  If not specified, warrants will expire in 10 years from issuance
+                                                </small>
+                                              </div>
+                                            </div>
+
+                                            {/* 🔹 WARRANT NOTES */}
+                                            <div className="row mb-4">
+                                              <div className="col-md-12">
+                                                <label className="form-label">Additional Warrant Terms (Optional)</label>
+                                                <textarea
+                                                  className="form-control"
+                                                  rows="3"
+                                                  value={formData.warrant_notes || ""}
+                                                  onChange={(e) => handleInputChange("warrant_notes", e.target.value)}
+                                                  placeholder="Enter any additional terms or conditions for these warrants..."
+                                                />
+                                                <small className="text-muted d-block mt-1">
+                                                  Any special conditions, vesting schedules, or restrictions
+                                                </small>
+                                              </div>
+                                            </div>
+
+                                            {/* 🔹 WARRANT SUMMARY */}
+                                            <div className="alert alert-success">
+                                              <h6 className="fw-bold mb-2">
+                                                <i className="bi bi-check-circle me-2"></i>
+                                                Warrant Terms Summary
+                                              </h6>
+                                              <ul className="mb-0 small">
+                                                <li>
+                                                  <strong>Coverage:</strong> {formData.warrant_coverage_percentage || "___"}% of next round's new shares
+                                                </li>
+                                                <li>
+                                                  <strong>Exercise Method:</strong>{" "}
+                                                  {formData.warrant_exercise_type === "next_round"
+                                                    ? "At next priced round price (no adjustment)"
+                                                    : formData.warrant_exercise_type === "next_round_adjusted"
+                                                      ? `At next priced round price ${formData.warrant_adjustment_direction === "decrease" ? "minus" : "plus"} ${formData.warrant_adjustment_percent || "___"}%`
+                                                      : "Not selected"}
+                                                </li>
+                                                <li>
+                                                  <strong>Exercise Timing:</strong> Warrants will be exercised automatically in the next priced equity round
+                                                </li>
+                                                <li>
+                                                  <strong>Share Calculation:</strong> Number of warrant shares will be calculated when next round closes
+                                                </li>
+                                                <li>
+                                                  <strong>Dilution Effect:</strong> Warrant exercise will dilute all existing shareholders proportionally
+                                                </li>
+                                              </ul>
+                                            </div>
+
+
+                                          </>
+                                        )}
+                                      </div>
+                                    </div>
+
+
+                                    {formData.instrumentType === "Safe" && (
+                                      <div className="mt-3 p-3 border rounded bg-light">
+                                        <h5>SAFE Details</h5>
+                                        <label className="form-label">
+                                          Valuation Cap <span style={{ color: "var(--primary)" }}>*</span>
+                                        </label>
+                                        <NumericFormat
+                                          className={`form-control mb-3 ${errors.valuationCap ? "is-invalid" : ""}`}
+                                          placeholder="Enter valuation cap"
+                                          value={formData.valuationCap || ""}
+                                          thousandSeparator={true}
+                                          allowNegative={false}
+                                          decimalScale={2}
+                                          fixedDecimalScale={true}
+                                          onValueChange={(values) => {
+                                            handleInputChange("valuationCap", values.value);
+
+                                            if (errors.valuationCap) {
+                                              setErrors(prev => ({
+                                                ...prev,
+                                                valuationCap: ""
+                                              }));
+                                            }
+                                          }}
+                                        />
+
+                                        {errors.valuationCap && (
+                                          <div className="text-danger small">
+                                            <i className="bi bi-exclamation-circle me-1"></i>
+                                            {errors.valuationCap}
                                           </div>
                                         )}
 
-                                        {/* 🔹 EXPIRATION DATE */}
-                                        <div className="row mb-4">
-                                          <div className="col-md-6">
-                                            <label className="form-label">
-                                              Warrant Expiration Date (Optional)
-                                            </label>
-                                            <input
-                                              type="date"
-                                              className="form-control"
-                                              value={formData.expirationDate_preferred || ""}
-                                              onChange={(e) => handleInputChange("expirationDate_preferred", e.target.value)}
-                                            />
-                                            <small className="text-muted d-block mt-1">
-                                              If not specified, warrants will expire in 10 years from issuance
-                                            </small>
+                                        <label className="form-label">
+                                          Conversion Discount: (%) <span style={{ color: "var(--primary)" }}>*</span>
+                                        </label>
+                                        <NumericFormat
+                                          decimalScale={2}        // 2 decimal places
+                                          fixedDecimalScale       // hamesha .00 show kare
+                                          allowNegative={false}   // negative values allow nahi
+                                          placeholder="Enter Conversion Discount: (10-25%)"
+                                          value={formData.discountRate || ""}
+                                          onValueChange={(values) => {
+                                            handleInputChange("discountRate", values.value);
+
+                                            if (errors.discountRate) {
+                                              setErrors((prev) => ({
+                                                ...prev,
+                                                discountRate: "",
+                                              }));
+                                            }
+                                          }}
+                                          className={`form-control mb-3 ${errors.discountRate ? "is-invalid" : ""}`}
+                                        />
+
+                                        {errors.discountRate && (
+                                          <div className="text-danger small">
+                                            <i className="bi bi-exclamation-circle me-1"></i>
+                                            {errors.discountRate}
                                           </div>
-                                        </div>
+                                        )}
 
-                                        {/* 🔹 WARRANT NOTES */}
-                                        <div className="row mb-4">
-                                          <div className="col-md-12">
-                                            <label className="form-label">Additional Warrant Terms (Optional)</label>
-                                            <textarea
-                                              className="form-control"
-                                              rows="3"
-                                              value={formData.warrant_notes || ""}
-                                              onChange={(e) => handleInputChange("warrant_notes", e.target.value)}
-                                              placeholder="Enter any additional terms or conditions for these warrants..."
-                                            />
-                                            <small className="text-muted d-block mt-1">
-                                              Any special conditions, vesting schedules, or restrictions
-                                            </small>
-                                          </div>
-                                        </div>
-
-                                        {/* 🔹 WARRANT SUMMARY */}
-                                        <div className="alert alert-success">
-                                          <h6 className="fw-bold mb-2">
-                                            <i className="bi bi-check-circle me-2"></i>
-                                            Warrant Terms Summary
-                                          </h6>
-                                          <ul className="mb-0 small">
-                                            <li>
-                                              <strong>Coverage:</strong> {formData.warrant_coverage_percentage || "___"}% of next round's new shares
-                                            </li>
-                                            <li>
-                                              <strong>Exercise Method:</strong>{" "}
-                                              {formData.warrant_exercise_type === "next_round"
-                                                ? "At next priced round price (no adjustment)"
-                                                : formData.warrant_exercise_type === "next_round_adjusted"
-                                                  ? `At next priced round price ${formData.warrant_adjustment_direction === "decrease" ? "minus" : "plus"} ${formData.warrant_adjustment_percent || "___"}%`
-                                                  : "Not selected"}
-                                            </li>
-                                            <li>
-                                              <strong>Exercise Timing:</strong> Warrants will be exercised automatically in the next priced equity round
-                                            </li>
-                                            <li>
-                                              <strong>Share Calculation:</strong> Number of warrant shares will be calculated when next round closes
-                                            </li>
-                                            <li>
-                                              <strong>Dilution Effect:</strong> Warrant exercise will dilute all existing shareholders proportionally
-                                            </li>
-                                          </ul>
-                                        </div>
-
-                                        {/* Important Note */}
-                                        <div className="alert alert-warning">
-                                          <strong>⚠️ Important:</strong> The exact number of warrant shares and exercise price will be calculated automatically when the next priced equity round is created. This ensures accurate pricing based on the actual next round terms.
-                                        </div>
-                                      </>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-
-                              {formData.instrumentType === "Safe" && (formData.shareClassType === "Seed" || formData.shareClassType === "Pre-Seed" || formData.shareClassType === "Post-Seed") && (
-                                <div className="mt-3 p-3 border rounded bg-light">
-                                  <h5>SAFE Details</h5>
-                                  <label className="form-label">
-                                    Valuation Cap <span style={{ color: "var(--primary)" }}>*</span>
-                                  </label>
-                                  <NumericFormat
-                                    className={`form-control mb-3 ${errors.valuationCap ? "is-invalid" : ""}`}
-                                    placeholder="Enter valuation cap"
-                                    value={formData.valuationCap || ""}
-                                    thousandSeparator={true}
-                                    allowNegative={false}
-                                    decimalScale={2}
-                                    fixedDecimalScale={true}
-                                    onValueChange={(values) => {
-                                      handleInputChange("valuationCap", values.value);
-
-                                      if (errors.valuationCap) {
-                                        setErrors(prev => ({
-                                          ...prev,
-                                          valuationCap: ""
-                                        }));
-                                      }
-                                    }}
-                                  />
-
-                                  {errors.valuationCap && (
-                                    <div className="text-danger small">
-                                      <i className="bi bi-exclamation-circle me-1"></i>
-                                      {errors.valuationCap}
-                                    </div>
-                                  )}
-
-                                  <label className="form-label">
-                                    Conversion Discount: (%) <span style={{ color: "var(--primary)" }}>*</span>
-                                  </label>
-                                  <NumericFormat
-                                    decimalScale={2}        // 2 decimal places
-                                    fixedDecimalScale       // hamesha .00 show kare
-                                    allowNegative={false}   // negative values allow nahi
-                                    placeholder="Enter Conversion Discount: (10-25%)"
-                                    value={formData.discountRate || ""}
-                                    onValueChange={(values) => {
-                                      handleInputChange("discountRate", values.value);
-
-                                      if (errors.discountRate) {
-                                        setErrors((prev) => ({
-                                          ...prev,
-                                          discountRate: "",
-                                        }));
-                                      }
-                                    }}
-                                    className={`form-control mb-3 ${errors.discountRate ? "is-invalid" : ""}`}
-                                  />
-
-                                  {errors.discountRate && (
-                                    <div className="text-danger small">
-                                      <i className="bi bi-exclamation-circle me-1"></i>
-                                      {errors.discountRate}
-                                    </div>
-                                  )}
-
-                                  {/* <label className="form-label">
+                                        {/* <label className="form-label">
                                     SAFE Type <span style={{ color: "var(--primary)" }}>*</span>
                                   </label>
                                   <div className="form-check mb-2">
@@ -3453,121 +4362,121 @@ export default function Recordround() {
                                       Post-Money SAFE
                                     </label>
                                   </div> */}
-                                  {/* {errors.safeType && (
+                                        {/* {errors.safeType && (
                                     <div className="text-danger small">
                                       <i className="bi bi-exclamation-circle me-1"></i>
                                       {errors.safeType}
                                     </div>
                                   )} */}
-                                </div>
-                              )}
+                                      </div>
+                                    )}
 
-                              {formData.instrumentType === "Convertible Note" && (formData.shareClassType === "Seed" || formData.shareClassType === "Pre-Seed" || formData.shareClassType === "Post-Seed") && (
-                                <div className="mt-3 p-3 border rounded bg-light">
-                                  <h5>Convertible Note Details</h5>
-                                  <label className="form-label">
-                                    Valuation Cap <span style={{ color: "var(--primary)" }}>*</span>
-                                  </label>
-                                  <NumericFormat
-                                    thousandSeparator
-                                    decimalScale={2}
-                                    fixedDecimalScale
-                                    allowNegative={false}
-                                    placeholder="Enter valuation cap"
-                                    value={formData.valuationCap_note || ""}
-                                    onValueChange={(values) => {
-                                      handleInputChange("valuationCap_note", values.value);
+                                    {formData.instrumentType === "Convertible Note" && (
+                                      <div className="mt-3 p-3 border rounded bg-light">
+                                        <h5>Convertible Note Details</h5>
+                                        <label className="form-label">
+                                          Valuation Cap <span style={{ color: "var(--primary)" }}>*</span>
+                                        </label>
+                                        <NumericFormat
+                                          thousandSeparator
+                                          decimalScale={2}
+                                          fixedDecimalScale
+                                          allowNegative={false}
+                                          placeholder="Enter valuation cap"
+                                          value={formData.valuationCap_note || ""}
+                                          onValueChange={(values) => {
+                                            handleInputChange("valuationCap_note", values.value);
 
-                                      if (errors.valuationCap_note) {
-                                        setErrors((prev) => ({
-                                          ...prev,
-                                          valuationCap_note: "",
-                                        }));
-                                      }
-                                    }}
-                                    className={`form-control mb-3 ${errors.valuationCap_note ? "is-invalid" : ""}`}
-                                  />
+                                            if (errors.valuationCap_note) {
+                                              setErrors((prev) => ({
+                                                ...prev,
+                                                valuationCap_note: "",
+                                              }));
+                                            }
+                                          }}
+                                          className={`form-control mb-3 ${errors.valuationCap_note ? "is-invalid" : ""}`}
+                                        />
 
 
-                                  {errors.valuationCap_note && (
-                                    <div className="text-danger small">
-                                      <i className="bi bi-exclamation-circle me-1"></i>
-                                      {errors.valuationCap_note}
-                                    </div>
-                                  )}
+                                        {errors.valuationCap_note && (
+                                          <div className="text-danger small">
+                                            <i className="bi bi-exclamation-circle me-1"></i>
+                                            {errors.valuationCap_note}
+                                          </div>
+                                        )}
 
-                                  <label className="form-label">
-                                    Conversion Discount  (%) <span style={{ color: "var(--primary)" }}>*</span>
-                                  </label>
-                                  <NumericFormat
-                                    decimalScale={2}        // 2 decimal places
-                                    fixedDecimalScale       // hamesha .00 show kare
-                                    allowNegative={false}   // negative values block
-                                    placeholder="Enter Conversion Discount (10–30%)"
-                                    value={formData.discountRate_note || ""}
-                                    onValueChange={(values) => {
-                                      handleInputChange("discountRate_note", values.value);
+                                        <label className="form-label">
+                                          Conversion Discount  (%) <span style={{ color: "var(--primary)" }}>*</span>
+                                        </label>
+                                        <NumericFormat
+                                          decimalScale={2}        // 2 decimal places
+                                          fixedDecimalScale       // hamesha .00 show kare
+                                          allowNegative={false}   // negative values block
+                                          placeholder="Enter Conversion Discount (10–30%)"
+                                          value={formData.discountRate_note || ""}
+                                          onValueChange={(values) => {
+                                            handleInputChange("discountRate_note", values.value);
 
-                                      if (errors.discountRate_note) {
-                                        setErrors((prev) => ({
-                                          ...prev,
-                                          discountRate_note: "",
-                                        }));
-                                      }
-                                    }}
-                                    className={`form-control mb-3 ${errors.discountRate_note ? "is-invalid" : ""}`}
-                                  />
+                                            if (errors.discountRate_note) {
+                                              setErrors((prev) => ({
+                                                ...prev,
+                                                discountRate_note: "",
+                                              }));
+                                            }
+                                          }}
+                                          className={`form-control mb-3 ${errors.discountRate_note ? "is-invalid" : ""}`}
+                                        />
 
-                                  {errors.discountRate_note && (
-                                    <div className="text-danger small">
-                                      <i className="bi bi-exclamation-circle me-1"></i>
-                                      {errors.discountRate_note}
-                                    </div>
-                                  )}
+                                        {errors.discountRate_note && (
+                                          <div className="text-danger small">
+                                            <i className="bi bi-exclamation-circle me-1"></i>
+                                            {errors.discountRate_note}
+                                          </div>
+                                        )}
 
-                                  <label className="form-label">Maturity Date</label>
-                                  <input
-                                    type="date"
-                                    className={`form-control mb-3 ${errors.maturityDate ? "is-invalid" : ""}`}
-                                    value={formData.maturityDate || ""}
-                                    onChange={(e) => handleInputChange("maturityDate", e.target.value)}
-                                  />
-                                  {errors.maturityDate && (
-                                    <div className="text-danger small">
-                                      <i className="bi bi-exclamation-circle me-1"></i>
-                                      {errors.maturityDate}
-                                    </div>
-                                  )}
+                                        <label className="form-label">Maturity Date</label>
+                                        <input
+                                          type="date"
+                                          className={`form-control mb-3 ${errors.maturityDate ? "is-invalid" : ""}`}
+                                          value={formData.maturityDate || ""}
+                                          onChange={(e) => handleInputChange("maturityDate", e.target.value)}
+                                        />
+                                        {errors.maturityDate && (
+                                          <div className="text-danger small">
+                                            <i className="bi bi-exclamation-circle me-1"></i>
+                                            {errors.maturityDate}
+                                          </div>
+                                        )}
 
-                                  <label className="form-label">Interest Rate (%)</label>
-                                  <NumericFormat
-                                    thousandSeparator
-                                    decimalScale={2}      // 2 decimal places
-                                    fixedDecimalScale     // hamesha 2 decimal dikhaye
-                                    allowNegative={false} // negative values allow nahi
-                                    placeholder="Enter annual interest rate"
-                                    value={formData.interestRate_note || ""}
-                                    onValueChange={(values) => {
-                                      handleInputChange("interestRate_note", values.value);
+                                        <label className="form-label">Interest Rate (%)</label>
+                                        <NumericFormat
+                                          thousandSeparator
+                                          decimalScale={2}      // 2 decimal places
+                                          fixedDecimalScale     // hamesha 2 decimal dikhaye
+                                          allowNegative={false} // negative values allow nahi
+                                          placeholder="Enter annual interest rate"
+                                          value={formData.interestRate_note || ""}
+                                          onValueChange={(values) => {
+                                            handleInputChange("interestRate_note", values.value);
 
-                                      if (errors.interestRate_note) {
-                                        setErrors((prev) => ({
-                                          ...prev,
-                                          interestRate_note: "",
-                                        }));
-                                      }
-                                    }}
-                                    className={`form-control mb-3 ${errors.interestRate_note ? "is-invalid" : ""}`}
-                                  />
+                                            if (errors.interestRate_note) {
+                                              setErrors((prev) => ({
+                                                ...prev,
+                                                interestRate_note: "",
+                                              }));
+                                            }
+                                          }}
+                                          className={`form-control mb-3 ${errors.interestRate_note ? "is-invalid" : ""}`}
+                                        />
 
-                                  {errors.interestRate_note && (
-                                    <div className="text-danger small">
-                                      <i className="bi bi-exclamation-circle me-1"></i>
-                                      {errors.interestRate_note}
-                                    </div>
-                                  )}
+                                        {errors.interestRate_note && (
+                                          <div className="text-danger small">
+                                            <i className="bi bi-exclamation-circle me-1"></i>
+                                            {errors.interestRate_note}
+                                          </div>
+                                        )}
 
-                                  {/* <label className="form-label">
+                                        {/* <label className="form-label">
                                     Convertible Trigger <span style={{ color: "var(--primary)" }}>*</span>
                                   </label>
                                   <select
@@ -3586,495 +4495,652 @@ export default function Recordround() {
                                       {errors.convertibleTrigger}
                                     </div>
                                   )} */}
-                                </div>
-                              )}
+                                      </div>
+                                    )}
 
-                              {formData.instrumentType === "Venture/Bank DEBT" && (
-                                <div className="mt-3 p-3 border rounded bg-light">
-                                  <h5>Venture/Bank Debt Details</h5>
-                                  <label className="form-label">
-                                    Interest Rate (%) <span style={{ color: "var(--primary)" }}>*</span>
-                                  </label>
-                                  <input
-                                    type="number"
-                                    className={`form-control mb-3 ${errors.interestRate ? "is-invalid" : ""}`}
-                                    value={formData.interestRate || ""}
-                                    onChange={(e) => handleInputChange("interestRate", e.target.value)}
-                                    placeholder="Enter interest rate"
-                                  />
-                                  {errors.interestRate && (
-                                    <div className="text-danger small">
-                                      <i className="bi bi-exclamation-circle me-1"></i>
-                                      {errors.interestRate}
-                                    </div>
-                                  )}
+                                    {formData.instrumentType === "Venture/Bank DEBT" && (
+                                      <div className="mt-3 p-3 border rounded bg-light">
+                                        <h5>Venture/Bank Debt Details</h5>
+                                        <label className="form-label">
+                                          Interest Rate (%) <span style={{ color: "var(--primary)" }}>*</span>
+                                        </label>
+                                        <input
+                                          type="number"
+                                          className={`form-control mb-3 ${errors.interestRate ? "is-invalid" : ""}`}
+                                          value={formData.interestRate || ""}
+                                          onChange={(e) => handleInputChange("interestRate", e.target.value)}
+                                          placeholder="Enter interest rate"
+                                        />
+                                        {errors.interestRate && (
+                                          <div className="text-danger small">
+                                            <i className="bi bi-exclamation-circle me-1"></i>
+                                            {errors.interestRate}
+                                          </div>
+                                        )}
 
-                                  <label className="form-label">
-                                    Repayment Schedule (months) <span style={{ color: "var(--primary)" }}>*</span>
-                                  </label>
-                                  <input
-                                    type="number"
-                                    className={`form-control mb-3 ${errors.repaymentSchedule ? "is-invalid" : ""}`}
-                                    value={formData.repaymentSchedule || ""}
-                                    onChange={(e) => handleInputChange("repaymentSchedule", e.target.value)}
-                                    placeholder="Enter repayment schedule in months"
-                                  />
-                                  {errors.repaymentSchedule && (
-                                    <div className="text-danger small">
-                                      <i className="bi bi-exclamation-circle me-1"></i>
-                                      {errors.repaymentSchedule}
-                                    </div>
-                                  )}
+                                        <label className="form-label">
+                                          Repayment Schedule (months) <span style={{ color: "var(--primary)" }}>*</span>
+                                        </label>
+                                        <input
+                                          type="number"
+                                          className={`form-control mb-3 ${errors.repaymentSchedule ? "is-invalid" : ""}`}
+                                          value={formData.repaymentSchedule || ""}
+                                          onChange={(e) => handleInputChange("repaymentSchedule", e.target.value)}
+                                          placeholder="Enter repayment schedule in months"
+                                        />
+                                        {errors.repaymentSchedule && (
+                                          <div className="text-danger small">
+                                            <i className="bi bi-exclamation-circle me-1"></i>
+                                            {errors.repaymentSchedule}
+                                          </div>
+                                        )}
 
-                                  <div className="form-check mb-3">
-                                    <input
-                                      type="checkbox"
-                                      className="form-check-input"
-                                      id="hasWarrants_Bank"
-                                      checked={formData.hasWarrants_Bank || false}
-                                      onChange={(e) => handleInputChange("hasWarrants_Bank", e.target.checked)}
-                                    />
-                                    <label className="form-check-label" htmlFor="hasWarrants_Bank">
-                                      Add Warrants (optional)
-                                    </label>
-                                  </div>
+                                        <div className="form-check mb-3">
+                                          <input
+                                            type="checkbox"
+                                            className="form-check-input"
+                                            id="hasWarrants_Bank"
+                                            checked={formData.hasWarrants_Bank || false}
+                                            onChange={(e) => handleInputChange("hasWarrants_Bank", e.target.checked)}
+                                          />
+                                          <label className="form-check-label" htmlFor="hasWarrants_Bank">
+                                            Add Warrants (optional)
+                                          </label>
+                                        </div>
 
-                                  {formData.hasWarrants_Bank && (
-                                    <>
-                                      <label className="form-label">Exercise Price (Strike Price)</label>
-                                      <input
-                                        type="number"
-                                        className="form-control mb-3"
-                                        value={formData.exercisePrice_bank || ""}
-                                        onChange={(e) => handleInputChange("exercisePrice_bank", e.target.value)}
-                                        placeholder="Enter exercise price"
-                                      />
+                                        {formData.hasWarrants_Bank && (
+                                          <>
+                                            <label className="form-label">Exercise Price (Strike Price)</label>
+                                            <input
+                                              type="number"
+                                              className="form-control mb-3"
+                                              value={formData.exercisePrice_bank || ""}
+                                              onChange={(e) => handleInputChange("exercisePrice_bank", e.target.value)}
+                                              placeholder="Enter exercise price"
+                                            />
 
-                                      <label className="form-label">Expiration Date</label>
-                                      <input
-                                        type="date"
-                                        className="form-control mb-3"
-                                        value={formData.exercisedate_bank || ""}
-                                        onChange={(e) => handleInputChange("exercisedate_bank", e.target.value)}
-                                      />
+                                            <label className="form-label">Expiration Date</label>
+                                            <input
+                                              type="date"
+                                              className="form-control mb-3"
+                                              value={formData.exercisedate_bank || ""}
+                                              onChange={(e) => handleInputChange("exercisedate_bank", e.target.value)}
+                                            />
 
-                                      <label className="form-label">Warrant Ratio</label>
-                                      <input
-                                        type="text"
-                                        className="form-control mb-3"
-                                        value={formData.warrantRatio_bank || ""}
-                                        onChange={(e) => handleInputChange("warrantRatio_bank", e.target.value)}
-                                        placeholder="e.g., 1:1"
-                                      />
+                                            <label className="form-label">Warrant Ratio</label>
+                                            <input
+                                              type="text"
+                                              className="form-control mb-3"
+                                              value={formData.warrantRatio_bank || ""}
+                                              onChange={(e) => handleInputChange("warrantRatio_bank", e.target.value)}
+                                              placeholder="e.g., 1:1"
+                                            />
 
-                                      <label className="form-label">Type of Warrant</label>
-                                      <select
-                                        className="form-control mb-3"
-                                        value={formData.warrantType_bank || "CALL"}
-                                        onChange={(e) => handleInputChange("warrantType_bank", e.target.value)}
+                                            <label className="form-label">Type of Warrant</label>
+                                            <select
+                                              className="form-control mb-3"
+                                              value={formData.warrantType_bank || "CALL"}
+                                              onChange={(e) => handleInputChange("warrantType_bank", e.target.value)}
+                                            >
+                                              <option value="CALL">Call Warrant (buy shares)</option>
+                                              <option value="PUT">Put Warrant (sell shares)</option>
+                                            </select>
+                                          </>
+                                        )}
+                                      </div>
+                                    )}
+
+                                    {/* Conditional OTHER input */}
+                                    {formData.instrumentType === "OTHER" && (
+                                      <div className="mb-4">
+                                        <label className="form-label fw-semibold">
+                                          Custom Investment Instrument Name
+                                          <span className="text-danger fs-5 ms-1">*</span>
+                                        </label>
+                                        <input
+                                          type="text"
+                                          placeholder="Enter custom investment instrument name"
+                                          value={formData.customInstrument || ""}
+                                          onChange={(e) => handleInputChange("customInstrument", e.target.value)}
+                                          className={`form-control ${errors.customInstrument ? "is-invalid" : ""}`}
+                                          maxLength={30}
+                                        />
+                                        <div className="form-text">
+                                          {formData.customInstrument ? formData.customInstrument.length : 0}/30 characters
+                                        </div>
+                                        {errors.customInstrument && (
+                                          <div className="text-danger small">
+                                            <i className="bi bi-exclamation-circle me-1"></i>
+                                            {errors.customInstrument}
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+
+                                    {/* Navigation buttons */}
+                                    <div className="d-flex justify-content-between pt-3 border-top gap-2">
+                                      <button
+                                        className="close_btn w-fit"
+                                        onClick={() => navigateToSection('prev')}
                                       >
-                                        <option value="CALL">Call Warrant (buy shares)</option>
-                                        <option value="PUT">Put Warrant (sell shares)</option>
-                                      </select>
-                                    </>
-                                  )}
-                                </div>
-                              )}
+                                        <i className="bi bi-arrow-left me-2"></i>Back
+                                      </button>
+                                      <button
+                                        className="global_btn w-fit"
+                                        onClick={() => {
+                                          const newErrors = {};
 
-                              {/* Conditional OTHER input */}
-                              {formData.instrumentType === "OTHER" && (
-                                <div className="mb-4">
-                                  <label className="form-label fw-semibold">
-                                    Custom Investment Instrument Name
-                                    <span className="text-danger fs-5 ms-1">*</span>
-                                  </label>
-                                  <input
-                                    type="text"
-                                    placeholder="Enter custom investment instrument name"
-                                    value={formData.customInstrument || ""}
-                                    onChange={(e) => handleInputChange("customInstrument", e.target.value)}
-                                    className={`form-control ${errors.customInstrument ? "is-invalid" : ""}`}
-                                    maxLength={30}
-                                  />
-                                  <div className="form-text">
-                                    {formData.customInstrument ? formData.customInstrument.length : 0}/30 characters
-                                  </div>
-                                  {errors.customInstrument && (
-                                    <div className="text-danger small">
-                                      <i className="bi bi-exclamation-circle me-1"></i>
-                                      {errors.customInstrument}
+                                          // Validate instrument type
+                                          if (!formData.instrumentType) {
+                                            newErrors.instrumentType = "Please select an investment instrument type";
+                                          }
+
+                                          if (formData.instrumentType === "OTHER") {
+                                            if (!formData.customInstrument) {
+                                              newErrors.customInstrument = "This field is required";
+                                            }
+                                          }
+
+                                          // Conditional validations per instrument
+                                          switch (formData.instrumentType) {
+                                            case "Preferred Equity":
+                                              // ✅ WARRANT VALIDATION (only if warrants are enabled)
+                                              // if (formData.hasWarrants_preferred) {
+
+                                              //   if (!formData.warrant_coverage_percentage || formData.warrant_coverage_percentage <= 0) {
+                                              //     newErrors.warrant_coverage_percentage = "Warrant coverage percentage is required and must be greater than 0";
+                                              //   } else if (formData.warrant_coverage_percentage > 100) {
+                                              //     newErrors.warrant_coverage_percentage = "Warrant coverage cannot exceed 100%";
+                                              //   }
+
+
+                                              //   if (!formData.warrant_exercise_type) {
+                                              //     newErrors.warrant_exercise_type = "Please select a warrant exercise method";
+                                              //   }
+
+
+                                              //   if (formData.warrant_exercise_type === "next_round_adjusted") {
+                                              //     if (!formData.warrant_adjustment_percent || formData.warrant_adjustment_percent <= 0) {
+                                              //       newErrors.warrant_adjustment_percent = "Adjustment percentage is required when using adjusted exercise price";
+                                              //     } else if (formData.warrant_adjustment_percent > 100) {
+                                              //       newErrors.warrant_adjustment_percent = "Adjustment percentage cannot exceed 100%";
+                                              //     }
+
+                                              //     if (!formData.warrant_adjustment_direction) {
+                                              //       newErrors.warrant_adjustment_direction = "Please select increase or decrease";
+                                              //     }
+                                              //   }
+                                              // }
+                                              break;
+
+                                            case "Safe":
+                                              if (formData.instrumentType === "Safe") {
+                                                if (!formData.valuationCap) newErrors.valuationCap = "This field is required";
+                                                if (!formData.discountRate) newErrors.discountRate = "This field is required";
+                                              }
+                                              break;
+
+                                            case "Convertible Note":
+                                              if (formData.instrumentType === "Convertible Note") {
+                                                if (!formData.valuationCap_note) newErrors.valuationCap_note = "This field is required";
+                                                if (!formData.discountRate_note) newErrors.discountRate_note = "This field is required";
+                                                if (!formData.maturityDate) newErrors.maturityDate = "This field is required";
+                                                if (!formData.interestRate_note) newErrors.interestRate_note = "This field is required";
+                                              }
+                                              break;
+
+                                            case "Venture/Bank DEBT":
+                                              if (!formData.repaymentSchedule) newErrors.repaymentSchedule = "This field is required";
+                                              if (!formData.interestRate) newErrors.interestRate = "This field is required";
+                                              break;
+
+                                            default:
+                                              break;
+                                          }
+
+                                          if (Object.keys(newErrors).length === 0) {
+                                            setErrors({});
+                                            navigateToSection('next');
+                                          } else {
+                                            setErrors(newErrors);
+                                            setTimeout(() => {
+                                              const firstErrorElement = document.querySelector(".is-invalid");
+                                              if (firstErrorElement) {
+                                                firstErrorElement.scrollIntoView({ behavior: "smooth", block: "center" });
+                                              }
+                                            }, 100);
+                                          }
+                                        }}
+                                      >
+                                        Save and Continue
+                                      </button>
                                     </div>
-                                  )}
-                                </div>
-                              )}
-
-                              {/* Navigation buttons */}
-                              <div className="d-flex justify-content-between pt-3 border-top gap-2">
-                                <button
-                                  className="close_btn w-fit"
-                                  onClick={() => navigateToSection('prev')}
-                                >
-                                  <i className="bi bi-arrow-left me-2"></i>Back
-                                </button>
-                                <button
-                                  className="global_btn w-fit"
-                                  onClick={() => {
-                                    const newErrors = {};
-
-                                    // Validate instrument type
-                                    if (!formData.instrumentType) {
-                                      newErrors.instrumentType = "Please select an investment instrument type";
-                                    }
-
-                                    if (formData.instrumentType === "OTHER") {
-                                      if (!formData.customInstrument) {
-                                        newErrors.customInstrument = "This field is required";
-                                      }
-                                    }
-
-                                    // Conditional validations per instrument
-                                    switch (formData.instrumentType) {
-                                      case "Preferred Equity":
-                                        // ✅ WARRANT VALIDATION (only if warrants are enabled)
-                                        if (formData.hasWarrants_preferred) {
-                                          // Coverage percentage is required
-                                          if (!formData.warrant_coverage_percentage || formData.warrant_coverage_percentage <= 0) {
-                                            newErrors.warrant_coverage_percentage = "Warrant coverage percentage is required and must be greater than 0";
-                                          } else if (formData.warrant_coverage_percentage > 100) {
-                                            newErrors.warrant_coverage_percentage = "Warrant coverage cannot exceed 100%";
-                                          }
-
-                                          // Exercise type is required
-                                          if (!formData.warrant_exercise_type) {
-                                            newErrors.warrant_exercise_type = "Please select a warrant exercise method";
-                                          }
-
-                                          // If adjusted type, adjustment percent is required
-                                          if (formData.warrant_exercise_type === "next_round_adjusted") {
-                                            if (!formData.warrant_adjustment_percent || formData.warrant_adjustment_percent <= 0) {
-                                              newErrors.warrant_adjustment_percent = "Adjustment percentage is required when using adjusted exercise price";
-                                            } else if (formData.warrant_adjustment_percent > 100) {
-                                              newErrors.warrant_adjustment_percent = "Adjustment percentage cannot exceed 100%";
-                                            }
-
-                                            if (!formData.warrant_adjustment_direction) {
-                                              newErrors.warrant_adjustment_direction = "Please select increase or decrease";
-                                            }
-                                          }
-                                        }
-                                        break;
-
-                                      case "Safe":
-                                        if (formData.instrumentType === "Safe" && (formData.shareClassType === "Seed" || formData.shareClassType === "Pre-Seed" || formData.shareClassType === "Post-Seed")) {
-                                          if (!formData.valuationCap) newErrors.valuationCap = "This field is required";
-                                          if (!formData.discountRate) newErrors.discountRate = "This field is required";
-                                        }
-                                        break;
-
-                                      case "Convertible Note":
-                                        if (formData.instrumentType === "Convertible Note" && (formData.shareClassType === "Seed" || formData.shareClassType === "Pre-Seed" || formData.shareClassType === "Post-Seed")) {
-                                          if (!formData.valuationCap_note) newErrors.valuationCap_note = "This field is required";
-                                          if (!formData.discountRate_note) newErrors.discountRate_note = "This field is required";
-                                          if (!formData.maturityDate) newErrors.maturityDate = "This field is required";
-                                          if (!formData.interestRate_note) newErrors.interestRate_note = "This field is required";
-                                        }
-                                        break;
-
-                                      case "Venture/Bank DEBT":
-                                        if (!formData.repaymentSchedule) newErrors.repaymentSchedule = "This field is required";
-                                        if (!formData.interestRate) newErrors.interestRate = "This field is required";
-                                        break;
-
-                                      default:
-                                        break;
-                                    }
-
-                                    if (Object.keys(newErrors).length === 0) {
-                                      setErrors({});
-                                      navigateToSection('next');
-                                    } else {
-                                      setErrors(newErrors);
-                                      setTimeout(() => {
-                                        const firstErrorElement = document.querySelector(".is-invalid");
-                                        if (firstErrorElement) {
-                                          firstErrorElement.scrollIntoView({ behavior: "smooth", block: "center" });
-                                        }
-                                      }, 100);
-                                    }
-                                  }}
-                                >
-                                  Save and Continue
-                                </button>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      )}
-                      {/* Description Section */}
-                      {activeSection === "description" && (
-                        <div className="section-content p-4 border rounded-3 shadow-sm bg-white">
-                          {/* Show previous section data */}
-                          <PreviousSection
-                            formData={formData}
-                            otherText={otherText}
-                            selected={selected}
-                            visibleFields={["shareclass",
-                              "description",
-                              "instrument",
-                              "roundsize",
-                              "issuedshares",]}
-                            isFirstRound={isFirstRound}
-                            foundersData={foundersData}
-                            calculateTotalShares={calculateTotalShares}
-                            calculateTotalValue={calculateTotalValue}
-                            founderCount={founderCount}
-                          />
-
-                          <div className="mb-4">
-                            <label className="form-label fw-semibold">
-                              Description{" "}
-                              <span className="tooltip-icon ms-2" tabIndex={0}>
-                                <img
-                                  className="blackdark"
-                                  width="15"
-                                  height="15"
-                                  src="/assets/user/images/question.png"
-                                  alt="Tip"
-                                />
-                                <div
-                                  className="tooltip-text tool-test-white text-white"
-                                  role="tooltip"
-                                >
-                                  <strong>What it is:</strong> A strategic
-                                  summary that links the equity class to its
-                                  purpose, issuance context, and recipient
-                                  group.
-                                  <br />
-                                  <strong>Why it matters:</strong> Investors use
-                                  this to understand the logic behind each
-                                  class, e.g. who holds it, under what
-                                  conditions it was granted.
-                                  <br />
-                                  <strong>How to fill it:</strong> Detail the
-                                  rationale and stakeholders behind issuance.
-                                  Think of this as the "why" behind the class.
-                                  For example:
-                                  <br />– Reserved for key hires under Employee
-                                  Stock Option Pool
-                                  <br />– Issued to seed investors during SAFE
-                                  conversion in 2022
-                                  <br />– Created for strategic Gulf partner
-                                  with board observer rights
-                                </div>
-                              </span>
-                              <span style={{ color: "var(--primary)" }}>*</span>
-                            </label>
-                            <textarea
-                              placeholder="Enter the strategic description of your round..."
-                              className={`textarea_input ${errors.description ? "is-invalid" : ""
-                                }`}
-                              rows="6"
-                              value={formData.description}
-                              onChange={(e) => {
-                                handleInputChange(
-                                  "description",
-                                  e.target.value
-                                );
-                                if (errors.description)
-                                  setErrors((prev) => ({
-                                    ...prev,
-                                    description: "",
-                                  }));
-                              }}
-                            />
-                            {errors.description && (
-                              <div className="text-danger small mt-1">
-                                <i className="bi bi-exclamation-circle me-1"></i>
-                                {errors.description}
+                                  </>
+                                )}
                               </div>
                             )}
-                          </div>
+                            {/* Description Section */}
+                            {activeSection === "description" && (
+                              <div className="section-content p-4 border rounded-3 shadow-sm bg-white">
+                                {/* Show previous section data */}
+                                <PreviousSection
+                                  formData={formData}
+                                  otherText={otherText}
+                                  selected={selected}
+                                  visibleFields={["shareclass",
+                                    "description",
+                                    "instrument",
+                                    "roundsize",
+                                    "issuedshares",]}
+                                  isFirstRound={isFirstRound}
+                                  foundersData={foundersData}
+                                  calculateTotalShares={calculateTotalShares}
+                                  calculateTotalValue={calculateTotalValue}
+                                  founderCount={founderCount}
+                                  CurrDisplay={CurrDisplay}
+                                />
 
-                          <div className="d-flex justify-content-between pt-3 w-100 border-top gap-2">
-                            <button
-                              className="close_btn w-fit"
-                              onClick={() => navigateToSection('prev')}
-                            >
-                              <i className="bi bi-arrow-left me-2"></i>Back
-                            </button>
-                            <button
-                              className="global_btn w-fit"
-                              onClick={() => {
-                                if (!formData.description) {
-                                  setErrors({
-                                    ...errors,
-                                    description: "This field is required",
-                                  });
-                                } else {
-                                  setErrors({ ...errors, description: "" });
-                                  navigateToSection('next');
-                                }
-                              }}
-                            >
-                              Save and Continue
-                            </button>
-                          </div>
-                        </div>
-                      )}
-
-
-
-                      {/* Round Size Section */}
-                      {activeSection === "roundsize" && (
-                        <div className="section-content p-4 border rounded-3 shadow-sm bg-white">
-                          <PreviousSection
-                            formData={formData}
-                            otherText={otherText}
-                            selected={selected}
-                            visibleFields={[
-                              "shareclass",
-                              "description",
-                              "instrument",
-                              "roundsize",
-                              "issuedshares",
-                            ]}
-                            isFirstRound={isFirstRound}
-                            foundersData={foundersData}
-                            calculateTotalShares={calculateTotalShares}
-                            calculateTotalValue={calculateTotalValue}
-                            founderCount={founderCount}
-                          />
-
-                          <h3 className="h5 mb-4 text-gray-800">
-                            {isFirstRound ? "Round 0 - Company Valuation" : "Round Size"}
-                          </h3>
-
-                          {/* ROUND 0 - Show different content */}
-                          {isFirstRound ? (
-                            <div className="round-zero-content">
-                              <div className="alert alert-info mb-4">
-                                <strong>Round 0 Information:</strong> This is your company's incorporation round.
-                                The valuation is based on the share allocation and price per share from your incorporation documents.
-                              </div>
-
-                              {/* Round 0 Valuation Display */}
-                              <div className="calculation-results p-4 border rounded bg-light mb-4">
-                                <h5>Round 0 - Incorporation Valuation</h5>
-                                <div className="row">
-                                  <div className="col-md-6">
-                                    <div className="mb-3">
-                                      <strong>Total Shares Issued:</strong> {calculateTotalShares().toLocaleString()}
-                                    </div>
-                                    <div className="mb-3">
-                                      <strong>Price Per Share:</strong> ${formData.pricePerShare || '0.00'}
-                                    </div>
-                                  </div>
-                                  <div className="col-md-6">
-                                    <div className="mb-3">
-                                      <strong>Total Company Value:</strong> ${calculateTotalValue()}
-                                    </div>
-                                    <div className="mb-3">
-                                      <strong>Number of Founders:</strong> {founderCount}
-                                    </div>
-                                  </div>
-                                </div>
-
-                                {/* Note about Round 0 valuation */}
-                                <div className="alert alert-warning mt-3 mb-0">
-                                  <small>
-                                    <strong>Note:</strong> This valuation is for incorporation purposes only and will not carry over to future investment rounds.
-                                    Each subsequent round will calculate its own price per share based on investment size and pre-money valuation.
-                                  </small>
-                                </div>
-                              </div>
-
-                              {/* Round 0 specific information */}
-                              <div className="mt-4 p-3 bg-light rounded">
-                                <h6>About Round 0 Valuation:</h6>
-                                <ul className="mb-0">
-                                  <li>Based on incorporation documents and initial share allocation</li>
-                                  <li>Price per share is the par value from your incorporation</li>
-                                  <li>This valuation represents the initial capital contribution by founders</li>
-                                  <li>Future rounds will calculate price per share based on investment and valuation inputs</li>
-                                </ul>
-                              </div>
-                            </div>
-                          ) : (
-                            /* OTHER ROUNDS - Show original round size fields */
-                            <div className="investment-round-content">
-                              <div className="row align-items-start">
-                                {/* Investment Amount */}
-                                <div className="col-md-5 mb-4">
+                                <div className="mb-4">
                                   <label className="form-label fw-semibold">
-                                    Investment Amount{" "}({CurrDisplay})
-                                    <span className="text-danger fs-5 ms-1">*</span>
+                                    Description{" "}
+                                    <span className="tooltip-icon ms-2" tabIndex={0}>
+                                      <img
+                                        className="blackdark"
+                                        width="15"
+                                        height="15"
+                                        src="/assets/user/images/question.png"
+                                        alt="Tip"
+                                      />
+                                      <div
+                                        className="tooltip-text tool-test-white text-white"
+                                        role="tooltip"
+                                      >
+                                        <div className="d-flex flex-column gap-2">
+                                          <p> <strong>What it is:</strong> A strategic
+                                            summary that links the equity class to its
+                                            purpose, issuance context, and recipient
+                                            group.</p>
+                                          <p><strong>Why it matters:</strong> Investors use
+                                            this to understand the logic behind each
+                                            class, e.g. who holds it, under what
+                                            conditions it was granted.</p>
+                                          <div className="d-flex flex-column gap-1">
+                                            <p> <strong>How to fill it:</strong> Detail the
+                                              rationale and stakeholders behind issuance.
+                                              Think of this as the why behind the class.
+                                              For example:</p>
+                                            <ul>
+                                              <li>
+                                                <p>– Reserved for key hires under Employee
+                                                  Stock Option Pool</p>
+                                              </li>
+                                              <li>
+                                                <p>– Issued to seed investors during SAFE
+                                                  conversion in 2022</p>
+                                              </li>
+                                              <li>
+                                                <p>– Created for strategic Gulf partner
+                                                  with board observer rights</p>
+                                              </li>
+                                            </ul>
+                                          </div>
+                                        </div>
+
+                                      </div>
+                                    </span>
+                                    <span style={{ color: "var(--primary)" }}>*</span>
                                   </label>
-                                  <NumericFormat
-                                    thousandSeparator={true}
-                                    decimalScale={2}
-                                    fixedDecimalScale={true}
-                                    allowNegative={false}
-                                    placeholder="Enter amount"
-                                    value={formData.roundsize}
-                                    onValueChange={(values) => {
-                                      handleInputChange("roundsize", values.value);
-                                      if (errors.roundsize) {
+                                  <textarea
+                                    placeholder="Enter the strategic description of your round..."
+                                    className={`textarea_input ${errors.description ? "is-invalid" : ""
+                                      }`}
+                                    rows="6"
+                                    value={formData.description}
+                                    onChange={(e) => {
+                                      handleInputChange(
+                                        "description",
+                                        e.target.value
+                                      );
+                                      if (errors.description)
                                         setErrors((prev) => ({
                                           ...prev,
-                                          roundsize: "",
+                                          description: "",
                                         }));
-                                      }
                                     }}
-                                    className={`textarea_input ${errors.roundsize ? "is-invalid" : ""}`}
                                   />
-                                  {errors.roundsize && (
+                                  {errors.description && (
                                     <div className="text-danger small mt-1">
                                       <i className="bi bi-exclamation-circle me-1"></i>
-                                      {errors.roundsize}
+                                      {errors.description}
                                     </div>
                                   )}
                                 </div>
 
-                                {/* Currency */}
-                                <div className="col-md-2 mb-4">
-                                  <label className="form-label fw-semibold">
-                                    Currency <span className="text-danger fs-5 ms-1">*</span>
-                                  </label>
-                                  <select
-                                    className={`textarea_input ${errors.currency ? "is-invalid" : ""}`}
-                                    value={formData.currency}
-                                    onChange={(e) => {
-                                      handleInputChange("currency", e.target.value);
-                                      if (errors.currency) {
-                                        setErrors((prev) => ({
-                                          ...prev,
-                                          currency: "",
-                                        }));
+                                <div className="d-flex justify-content-between pt-3 w-100 border-top gap-2">
+                                  <button
+                                    className="close_btn w-fit"
+                                    onClick={() => navigateToSection('prev')}
+                                  >
+                                    <i className="bi bi-arrow-left me-2"></i>Back
+                                  </button>
+                                  <button
+                                    className="global_btn w-fit"
+                                    onClick={() => {
+                                      if (!formData.description) {
+                                        setErrors({
+                                          ...errors,
+                                          description: "This field is required",
+                                        });
+                                      } else {
+                                        setErrors({ ...errors, description: "" });
+                                        navigateToSection('next');
                                       }
                                     }}
                                   >
-                                    <option value="">-- Select Currency --</option>
-                                    {countrySymbolList.map((item) => (
-                                      <option
-                                        key={item.id}
-                                        value={`${item.currency_code} ${item.currency_symbol}`}
-                                      >
-                                        {item.currency_code} {item.currency_symbol}
-                                      </option>
-                                    ))}
-                                  </select>
-                                  {errors.currency && (
-                                    <div className="text-danger small mt-1">
-                                      <i className="bi bi-exclamation-circle me-1"></i>
-                                      {errors.currency}
-                                    </div>
-                                  )}
+                                    Save and Continue
+                                  </button>
                                 </div>
-                                {/* ✅ Correct Condition */}
-                                {
+                              </div>
+                            )}
+
+
+
+                            {/* Round Size Section */}
+                            {activeSection === "roundsize" && (
+                              <div className="section-content p-4 border rounded-3 shadow-sm bg-white">
+                                <PreviousSection
+                                  formData={formData}
+                                  otherText={otherText}
+                                  selected={selected}
+                                  visibleFields={[
+                                    "shareclass",
+                                    "description",
+                                    "instrument",
+                                    "roundsize",
+                                    "issuedshares",
+                                  ]}
+                                  isFirstRound={isFirstRound}
+                                  foundersData={foundersData}
+                                  calculateTotalShares={calculateTotalShares}
+                                  calculateTotalValue={calculateTotalValue}
+                                  founderCount={founderCount}
+                                  CurrDisplay={CurrDisplay}
+                                />
+
+                                <h3 className="h5 mb-4 text-gray-800">
+                                  {isFirstRound ? "Round 0 - Company Valuation" : "Round Size"}
+                                </h3>
+
+                                {/* ROUND 0 - Show different content */}
+                                {isFirstRound ? (
+                                  <div className="round-zero-content">
+                                    <div className="alert alert-info mb-4">
+                                      <strong>Round 0 Information:</strong> This is your company's incorporation round.
+                                      The valuation is based on the share allocation and price per share from your incorporation documents.
+                                    </div>
+
+                                    {/* Round 0 Valuation Display */}
+                                    <div className="calculation-results p-4 border rounded bg-light mb-4">
+                                      <h5>Round 0 - Incorporation Valuation</h5>
+                                      <div className="row">
+                                        <div className="col-md-6">
+                                          <div className="mb-3">
+                                            <strong>Total Shares Issued:</strong> {calculateTotalShares().toLocaleString()}
+                                          </div>
+                                          <div className="mb-3">
+                                            <strong>Price Per Share:</strong> ${formData.pricePerShare || '0.00'}
+                                          </div>
+                                        </div>
+                                        <div className="col-md-6">
+                                          <div className="mb-3">
+                                            <strong>Total Company Value:</strong> ${calculateTotalValue()}
+                                          </div>
+                                          <div className="mb-3">
+                                            <strong>Number of Founders:</strong> {founderCount}
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      {/* Note about Round 0 valuation */}
+                                      <div className="alert alert-warning mt-3 mb-0">
+                                        <small>
+                                          <strong>Note:</strong> This valuation is for incorporation purposes only and will not carry over to future investment rounds.
+                                          Each subsequent round will calculate its own price per share based on investment size and pre-money valuation.
+                                        </small>
+                                      </div>
+                                    </div>
+
+                                    {/* Round 0 specific information */}
+                                    <div className="mt-4 p-3 bg-light rounded">
+                                      <h6>About Round 0 Valuation:</h6>
+                                      <ul className="mb-0">
+                                        <li>Based on incorporation documents and initial share allocation</li>
+                                        <li>Price per share is the par value from your incorporation</li>
+                                        <li>This valuation represents the initial capital contribution by founders</li>
+                                        <li>Future rounds will calculate price per share based on investment and valuation inputs</li>
+                                      </ul>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  /* OTHER ROUNDS - Show original round size fields */
+                                  <div className="investment-round-content">
+                                    <div className="row align-items-start">
+                                      {/* Investment Amount */}
+                                      <div className="col-md-12 mb-4">
+                                        <div className="card mb-4">
+                                          <div className="card-header bg-light d-flex justify-content-between align-items-center">
+                                            <h6 className="mb-0 fw-semibold">Investment Details</h6>
+                                            <button
+                                              type="button"
+                                              className="btn btn-sm btn-outline-primary"
+                                              onClick={addInvestmentField}
+                                            >
+                                              <i className="bi bi-plus-circle me-1"></i>
+                                              Add Another Investor
+                                            </button>
+                                          </div>
+                                          <div className="card-body">
+                                            {investmentFields.map((field, index) => (
+                                              <div key={field.id} className="card mb-3 border">
+                                                <div className="card-header bg-light py-2">
+                                                  <div className="d-flex justify-content-between align-items-center">
+                                                    <span className="fw-bold">Investor #{index + 1}</span>
+                                                    {investmentFields.length > 1 && (
+                                                      <button
+                                                        type="button"
+                                                        className="btn btn-outline-danger btn-sm"
+                                                        onClick={() => removeInvestmentField(field.id)}
+                                                      >
+                                                        <i className="bi bi-trash me-1"></i>
+                                                        Remove
+                                                      </button>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                                <div className="card-body">
+                                                  <div className="row g-3">
+                                                    {/* First Name */}
+                                                    <div className="col-md-3">
+                                                      <label className="form-label fw-semibold">
+                                                        First Name {index === 0 ? "" : `#${index + 1}`}
+                                                        {index === 0 && <span className="text-danger ms-1">*</span>}
+                                                      </label>
+                                                      <input
+                                                        type="text"
+                                                        className={`form-control form-control-sm ${field.error ? "is-invalid" : ""}`}
+                                                        placeholder="First name"
+                                                        value={field.firstName || ''}
+                                                        onChange={(e) => handleInvestorFieldChange(field.id, 'firstName', e.target.value)}
+                                                      />
+                                                    </div>
+
+                                                    {/* Last Name */}
+                                                    <div className="col-md-3">
+                                                      <label className="form-label fw-semibold">
+                                                        Last Name {index === 0 ? "" : `#${index + 1}`}
+                                                      </label>
+                                                      <input
+                                                        type="text"
+                                                        className="form-control form-control-sm"
+                                                        placeholder="Last name"
+                                                        value={field.lastName || ''}
+                                                        onChange={(e) => handleInvestorFieldChange(field.id, 'lastName', e.target.value)}
+                                                      />
+                                                    </div>
+
+                                                    {/* Email */}
+                                                    <div className="col-md-3">
+                                                      <label className="form-label fw-semibold">
+                                                        Email {index === 0 ? "" : `#${index + 1}`}
+                                                      </label>
+                                                      <input
+                                                        type="email"
+                                                        className={`form-control form-control-sm ${field.error ? "is-invalid" : ""}`}
+                                                        placeholder="email@example.com"
+                                                        value={field.email || ''}
+                                                        onChange={(e) => handleInvestorFieldChange(field.id, 'email', e.target.value)}
+                                                      />
+                                                    </div>
+
+                                                    {/* Phone */}
+                                                    <div className="col-md-3">
+                                                      <label className="form-label fw-semibold">
+                                                        Phone {index === 0 ? "" : `#${index + 1}`}
+                                                      </label>
+                                                      <input
+                                                        type="tel"
+                                                        className="form-control form-control-sm"
+                                                        placeholder="Phone number"
+                                                        value={field.phone || ''}
+                                                        onChange={(e) => handleInvestorFieldChange(field.id, 'phone', e.target.value)}
+                                                      />
+                                                    </div>
+
+                                                    {/* Investment Amount */}
+                                                    <div className="col-md-4">
+                                                      <label className="form-label fw-semibold">
+                                                        Investment Amount {index === 0 ? "" : `#${index + 1}`} ({CurrDisplay})
+                                                        {index === 0 && <span className="text-danger ms-1">*</span>}
+                                                      </label>
+                                                      <NumericFormat
+                                                        thousandSeparator={true}
+                                                        decimalScale={2}
+                                                        fixedDecimalScale={true}
+                                                        allowNegative={false}
+                                                        placeholder="Enter amount"
+                                                        value={field.amount || ''}
+                                                        onValueChange={(values) => handleInvestmentAmountChange(field.id, values)}
+                                                        className={`form-control form-control-sm ${field.error ? "is-invalid" : ""}`}
+                                                      />
+                                                    </div>
+
+                                                    {/* Error Display */}
+                                                    {field.error && (
+                                                      <div className="col-md-12">
+                                                        <div className="text-danger small mt-1">
+                                                          <i className="bi bi-exclamation-circle me-1"></i>
+                                                          {field.error}
+                                                        </div>
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            ))}
+
+                                            {/* Add More Button */}
+                                            <div className="row mb-3">
+                                              <div className="col-md-12">
+                                                <button
+                                                  type="button"
+                                                  className="btn btn-outline-primary btn-sm"
+                                                  onClick={addInvestmentField}
+                                                >
+                                                  <i className="bi bi-plus-circle me-1"></i>
+                                                  Add Another Investor
+                                                </button>
+                                              </div>
+                                            </div>
+
+                                            {/* Total Investment Display */}
+                                            <div className="row mt-3 pt-3 border-top">
+                                              <div className="col-md-9">
+                                                <label className="form-label fw-bold">Total Investment Amount</label>
+                                              </div>
+                                              <div className="col-md-3">
+                                                <div className="input-group">
+                                                  <span className="input-group-text">{CurrDisplay}</span>
+                                                  <NumericFormat
+                                                    thousandSeparator={true}
+                                                    decimalScale={2}
+                                                    fixedDecimalScale={true}
+                                                    allowNegative={false}
+                                                    placeholder="Enter amount"
+                                                    value={investmentFields.reduce((sum, field) => {
+                                                      const val = parseFloat(field.amount);
+                                                      return sum + (isNaN(val) ? 0 : val);
+                                                    }, 0).toFixed(2)}
+                                                    readOnly
+                                                    disabled
+                                                    className="form-control form-control-sm"
+                                                  />
+
+                                                </div>
+                                              </div>
+                                            </div>
+
+
+
+
+
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      {/* Currency */}
+                                      <div className="col-md-6 mb-4">
+                                        <label className="form-label fw-semibold">
+                                          Currency <span className="text-danger fs-5 ms-1">*</span>
+                                        </label>
+                                        <input type="text" disabled value={CurrDisplay} className="form-control" />
+
+                                        {errors.currency && (
+                                          <div className="text-danger small mt-1">
+                                            <i className="bi bi-exclamation-circle me-1"></i>
+                                            {errors.currency}
+                                          </div>
+                                        )}
+                                      </div>
+                                      <div className="col-md-6 mb-4">
+                                        <label className="form-label fw-semibold">
+                                          Target Investment Amount :
+                                          <i
+                                            className="bi bi-info-circle text-muted ms-1"
+                                            title="."
+                                          ></i>
+                                        </label>
+
+                                        <NumericFormat
+                                          thousandSeparator={true}
+                                          decimalScale={2}
+                                          fixedDecimalScale={true}
+                                          allowNegative={false}
+                                          placeholder="Enter target investment amount"
+                                          value={formData.round_target_money}
+                                          onValueChange={(values) => {
+                                            handleInputChange("round_target_money", values.value);
+                                          }}
+                                          className="textarea_input"
+                                        />
+
+
+
+                                      </div>
+                                      {/* ✅ Correct Condition */}
+                                      {/* {
                                   !selected?.includes("Series") &&
                                   formData.instrumentType !== 'Safe' &&
-                                  formData.instrumentType !== 'Convertible Note' && (
+                                  formData.instrumentType !== 'Convertible Note' && formData.instrumentType !== 'Preferred Equity' && (
                                     <div className="col-md-5 mb-4">
                                       <label className="form-label fw-semibold">
                                         Investor Post-Money Ownership(%)
@@ -4106,222 +5172,207 @@ export default function Recordround() {
                                       )}
                                     </div>
                                   )
-                                }
+                                } */}
 
 
-
-                                <div className="col-md-6 mb-4">
-                                  <label className="form-label fw-semibold">{((formData.shareClassType === "Seed" || formData.shareClassType === "Pre-Seed" || formData.shareClassType === "Post-Seed") && formData.instrumentType === "Safe") || (formData.instrumentType === "Convertible Note" && (formData.shareClassType === "Seed" || formData.shareClassType === "Pre-Seed" || formData.shareClassType === "Post-Seed")) ? "Company Value" : "Pre-Money Valuation"} {" "} ({CurrDisplay})</label>
-                                  <NumericFormat
-                                    thousandSeparator
-                                    decimalScale={2}
-                                    fixedDecimalScale
-                                    allowNegative={false}
-                                    placeholder="Enter pre-money valuation"
-                                    value={formData.pre_money}
-                                    onValueChange={(values) => {
-                                      handleInputChange("pre_money", values.value);
-                                      setFormData((prev) => ({
-                                        ...prev,
-                                        isPostEntered: false,
-                                      }));
-                                    }}
-                                    className="textarea_input"
-                                  />
-                                </div>
-
-
-
-                                {(
-
-                                  // Case 2: instrumentType 'Convertible Note' AND shareClassType is Seed/Pre-Seed/Post-Seed
-                                  (formData.instrumentType === 'Safe' && selected?.includes("Series")) ||
-
-                                  // Case 3: instrumentType 'Convertible Note' AND selected includes "Series"
-                                  (formData.instrumentType === 'Convertible Note' && selected?.includes("Series") || (formData.instrumentType === "OTHER") || (formData.instrumentType === "Common Stock"))
-                                ) && (
-                                    <div className="col-md-6 mb-4">
-                                      <label className="form-label fw-semibold">Post-Money Valuation{" "}({CurrDisplay})</label>
-                                      <NumericFormat
-                                        thousandSeparator
-                                        decimalScale={2}
-                                        disabled
-                                        fixedDecimalScale
-                                        allowNegative={false}
-                                        placeholder="Enter post-money valuation"
-                                        value={formData.post_money}
-                                        onValueChange={(values) => {
-                                          handleInputChange("post_money", values.value);
-                                          setFormData((prev) => ({
-                                            ...prev,
-                                            isPostEntered: true,
-                                          }));
-                                        }}
-                                        className="textarea_input"
-                                      />
-                                    </div>
-                                  )}
-
-                                {/* Option Pool Percentage */}
-                                <div className="row">
-                                  {(
-                                    (selected?.includes("Series") &&
-                                      formData.instrumentType === "Common Stock") ||
-                                    (formData.shareClassType === "Seed" || formData.shareClassType === "Pre-Seed" || formData.shareClassType === "Post-Seed" &&
-                                      formData.instrumentType === "Safe") || (formData.shareClassType === "Seed" || formData.shareClassType === "Pre-Seed" || formData.shareClassType === "Post-Seed" &&
-                                        formData.instrumentType === "OTHER") || (formData.shareClassType === "Seed" || formData.shareClassType === "Pre-Seed" || formData.shareClassType === "Post-Seed" &&
-                                          formData.instrumentType === "Convertible Note")
-                                  ) && (
 
                                       <div className="col-md-6 mb-4">
-                                        <label className="form-label fw-semibold">
-                                          Pre-Money Option Pool (%)
-                                          {selected === 'Series A' && formData.instrumentType === 'Common Stock' && (
-                                            <span className="badge bg-info ms-2" style={{ fontSize: '0.7em' }}>
-                                              Auto-filled
-                                            </span>
-                                          )}
-                                          <i
-                                            className="bi bi-info-circle text-muted ms-1"
-                                            title={
-                                              selected === 'Series A' && formData.instrumentType === 'Common Stock'
-                                                ? "Carried over from previous round - This is the existing option pool percentage before Series A investment"
-                                                : "Percentage of equity reserved for employees before this round"
-                                            }
-                                          ></i>
-                                        </label>
-
-                                        {selected === 'Series A' && formData.instrumentType === 'Common Stock' ? (
-
-                                          <>
-                                            <input
-                                              type="text"
-                                              value={formData.optionPoolPercent ? `${formData.optionPoolPercent}%` : "0%"}
-                                              readOnly
-                                              className="form-control bg-light"
-                                              style={{
-                                                backgroundColor: '#f8f9fa',
-                                                cursor: 'not-allowed',
-                                                fontWeight: '500'
-                                              }}
-                                            />
-                                            <small className="text-muted d-block mt-1">
-                                              {formData.optionPoolPercent > 0
-                                                ? `✓ Carried over from previous round (${formData.optionPoolPercent}%)`
-                                                : "No option pool from previous round"
-                                              }
-                                            </small>
-                                          </>
-                                        ) : (
-                                          // EDITABLE for Seed rounds
-                                          <>
-                                            <NumericFormat
-                                              thousandSeparator={true}
-                                              decimalScale={2}
-                                              fixedDecimalScale={true}
-                                              allowNegative={false}
-                                              placeholder="Enter option pool % (e.g. 10)"
-                                              value={formData.optionPoolPercent}
-                                              onValueChange={(values) => {
-                                                handleInputChange("optionPoolPercent", values.floatValue);
-                                              }}
-                                              className="textarea_input"
-                                            />
-                                            {/* <small className="text-muted d-block mt-1">
-                                              Option pool percentage before investment (Pre-Money)
-                                            </small> */}
-                                          </>
-                                        )}
+                                        <label className="form-label fw-semibold"> {(formData.instrumentType === "Safe" || formData.instrumentType === "Convertible Note") ? "Company Valuation" : "Pre-Money Valuation"} {" "} ({CurrDisplay})</label>
+                                        <NumericFormat
+                                          thousandSeparator
+                                          decimalScale={2}
+                                          fixedDecimalScale
+                                          allowNegative={false}
+                                          placeholder="Enter pre-money valuation"
+                                          value={formData.pre_money}
+                                          onValueChange={(values) => {
+                                            handleInputChange("pre_money", values.value);
+                                            setFormData((prev) => ({
+                                              ...prev,
+                                              isPostEntered: false,
+                                            }));
+                                          }}
+                                          className="textarea_input"
+                                        />
                                       </div>
 
 
 
+                                      {(
 
+                                        // Case 2: instrumentType 'Convertible Note' AND shareClassType is Seed/Pre-Seed/Post-Seed
+                                        (formData.instrumentType !== 'Safe' || formData.instrumentType !== 'Convertible Note') &&
 
-                                    )}
-                                  {(
-                                    (selected?.includes("Series") && formData.instrumentType === 'Safe') || (selected?.includes("Series") && formData.instrumentType === "Common Stock") ||
-                                    (selected?.includes("Series") && formData.instrumentType === "Convertible Note")
-                                  ) && (
-                                      <div className="col-md-6 mb-4">
-                                        <label className="form-label fw-semibold">
-                                          {((selected?.includes("Series") && formData.instrumentType === 'Safe') ||
-                                            (selected?.includes("Series") && formData.instrumentType === "Convertible Note"))
-                                            ? "Option Pool"
-                                            : "Post-Money Option Pool Target"
-                                          } (%)
-                                          <span className="text-danger ms-1">*</span>
-                                          <i
-                                            className="bi bi-info-circle text-muted ms-1"
-                                            title="Target percentage of equity reserved for employees after this investment round. If higher than existing pool, additional shares will be created."
-                                          ></i>
-                                        </label>
-
-                                        <NumericFormat
-                                          suffix="%"
-                                          decimalScale={2}
-                                          fixedDecimalScale
-                                          allowNegative={false}
-                                          placeholder="Enter target pool % (e.g. 20)"
-                                          value={formData.optionPoolPercent_post}
-                                          onValueChange={(values) => {
-                                            handleInputChange("optionPoolPercent_post", values.value);
-                                          }}
-                                          className="textarea_input"
-                                        />
-                                        {errors.optionPoolPercent_post && (
-                                          <div className="text-danger small mt-1">
-                                            <i className="bi bi-exclamation-circle me-1"></i>
-                                            {errors.optionPoolPercent_post}
+                                        // Case 3: instrumentType 'Convertible Note' AND selected includes "Series"
+                                        ((formData.instrumentType === "OTHER") || (formData.instrumentType === "Common Stock") || (formData.instrumentType === "Preferred Equity"))
+                                      ) && (
+                                          <div className="col-md-6 mb-4">
+                                            <label className="form-label fw-semibold">Post-Money Valuation{" "}({CurrDisplay})</label>
+                                            <NumericFormat
+                                              thousandSeparator
+                                              decimalScale={2}
+                                              disabled
+                                              fixedDecimalScale
+                                              allowNegative={false}
+                                              placeholder="Enter post-money valuation"
+                                              value={formData.post_money}
+                                              onValueChange={(values) => {
+                                                handleInputChange("post_money", values.value);
+                                                setFormData((prev) => ({
+                                                  ...prev,
+                                                  isPostEntered: true,
+                                                }));
+                                              }}
+                                              className="textarea_input"
+                                            />
                                           </div>
                                         )}
-                                        {formData.instrumentType !== 'Safe' && formData.instrumentType !== 'Convertible Note' && (
+
+                                      {/* Option Pool Percentage */}
+                                      <div className="row">
+                                        {(
+                                          (
+                                            formData.instrumentType === "Common Stock") || (
+                                            formData.instrumentType === "Preferred Equity") ||
+                                          (
+                                            formData.instrumentType === "Safe") || (formData.instrumentType === "OTHER") || (
+                                            formData.instrumentType === "Convertible Note")
+                                        ) && (
+
+                                            <div className="col-md-6 mb-4">
+                                              <label className="form-label fw-semibold">
+                                                Pre-Money Option Pool (%)
+
+                                                <i
+                                                  className="bi bi-info-circle text-muted ms-1"
+                                                  title={
+                                                    formData.instrumentType === 'Common Stock' || formData.instrumentType === 'Preferred Equity'
+                                                      ? "Carried over from previous round - This is the existing option pool percentage before Series A investment"
+                                                      : "Percentage of equity reserved for employees before this round"
+                                                  }
+                                                ></i>
+                                              </label>
+
+                                              {formData.instrumentType === 'Common Stock' || formData.instrumentType === "Preferred Equity" ? (
+
+                                                <>
+                                                  <NumericFormat
+                                                    thousandSeparator={true}
+                                                    decimalScale={2}
+                                                    fixedDecimalScale={true}
+                                                    allowNegative={false}
+                                                    placeholder="Enter option pool % (e.g. 10)"
+                                                    value={formData.optionPoolPercent}
+
+                                                    onValueChange={(values) => {
+                                                      handleInputChange("optionPoolPercent", values.floatValue);
+                                                    }}
+                                                    className="textarea_input"
+                                                  />
+                                                </>
+                                              ) : (
+                                                // EDITABLE for Seed rounds
+                                                <>
+                                                  <NumericFormat
+                                                    thousandSeparator={true}
+                                                    decimalScale={2}
+                                                    fixedDecimalScale={true}
+                                                    allowNegative={false}
+                                                    placeholder="Enter option pool % (e.g. 10)"
+                                                    value={formData.optionPoolPercent}
+                                                    onValueChange={(values) => {
+                                                      handleInputChange("optionPoolPercent", values.floatValue);
+                                                    }}
+                                                    className="textarea_input"
+                                                  />
+                                                  {/* <small className="text-muted d-block mt-1">
+                                              Option pool percentage before investment (Pre-Money)
+                                            </small> */}
+                                                </>
+                                              )}
+                                            </div>
+
+
+
+
+
+                                          )}
+                                        <div className="col-md-6 mb-4">
+                                          <label className="form-label fw-semibold">
+                                            Post-Money Option Pool Target (%)
+
+
+                                            <i
+                                              className="bi bi-info-circle text-muted ms-1"
+                                              title="Target percentage of equity reserved for employees after this investment round. If higher than existing pool, additional shares will be created."
+                                            ></i>
+                                          </label>
+
+                                          <NumericFormat
+                                            suffix="%"
+                                            decimalScale={2}
+                                            fixedDecimalScale
+                                            allowNegative={false}
+                                            placeholder="Enter target pool % (e.g. 20)"
+                                            value={formData.optionPoolPercent_post}
+                                            onValueChange={(values) => {
+                                              handleInputChange("optionPoolPercent_post", values.value);
+                                            }}
+                                            className="textarea_input"
+                                          />
+                                          {errors.optionPoolPercent_post && (
+                                            <div className="text-danger small mt-1">
+                                              <i className="bi bi-exclamation-circle me-1"></i>
+                                              {errors.optionPoolPercent_post}
+                                            </div>
+                                          )}
+
                                           <small className="text-muted d-block mt-1">
                                             Target option pool percentage after investment (Post-Money)
                                           </small>
-                                        )}
 
-                                        {formData.optionPoolPercent && formData.optionPoolPercent_post && (
-                                          <>
-                                            {(formData.instrumentType !== 'Safe' && formData.instrumentType !== 'Convertible Note') && (
-                                              <div className="mt-2">
-                                                {parseFloat(formData.optionPoolPercent_post) > parseFloat(formData.optionPoolPercent) ? (
-                                                  <div className="alert alert-warning py-2 mb-0" style={{ fontSize: '0.85em' }}>
-                                                    <i className="bi bi-exclamation-triangle-fill me-2"></i>
-                                                    <strong>Top-up needed:</strong> Expanding pool from {formData.optionPoolPercent}% to {formData.optionPoolPercent_post}%
-                                                    <br />
-                                                    <small className="text-muted">
+
+                                          {formData.optionPoolPercent && formData.optionPoolPercent_post && (
+                                            <>
+                                              {(formData.instrumentType !== 'Safe' && formData.instrumentType !== 'Convertible Note' && formData.instrumentType !== "Preferred Equity") && (
+                                                <div className="mt-2">
+                                                  {parseFloat(formData.optionPoolPercent_post) > parseFloat(formData.optionPoolPercent) ? (
+                                                    <div className="alert alert-warning py-2 mb-0" style={{ fontSize: '0.85em' }}>
+                                                      <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                                                      <strong>Top-up needed:</strong> Expanding pool from {formData.optionPoolPercent}% to {formData.optionPoolPercent_post}%
+                                                      <br />
+                                                      {/* <small className="text-muted">
                                                       Additional option shares will be created
                                                       {calculatedValues?.newOptionShares > 0 && (
                                                         <> (+{calculatedValues.newOptionShares.toLocaleString()} shares)</>
                                                       )}
-                                                    </small>
-                                                  </div>
-                                                ) : parseFloat(formData.optionPoolPercent_post) === parseFloat(formData.optionPoolPercent) ? (
-                                                  <div className="alert alert-info py-2 mb-0" style={{ fontSize: '0.85em' }}>
-                                                    <i className="bi bi-info-circle-fill me-2"></i>
-                                                    <strong>No change:</strong> Maintaining {formData.optionPoolPercent}% pool
-                                                  </div>
-                                                ) : (
-                                                  <div className="alert alert-success py-2 mb-0" style={{ fontSize: '0.85em' }}>
-                                                    <i className="bi bi-check-circle-fill me-2"></i>
-                                                    <strong>No top-up needed:</strong> Existing {formData.optionPoolPercent}% pool is sufficient
-                                                    <br />
-                                                    <small className="text-muted">
-                                                      No additional option shares will be created
-                                                    </small>
-                                                  </div>
-                                                )}
-                                              </div>
-                                            )}
-                                          </>
-                                        )}
-                                      </div>
-                                    )}
-                                  {formData.shareClassType === "Post-Seed" || formData.shareClassType === "Pre-Seed" || (formData.shareClassType === "Seed" && formData.instrumentType === 'Common Stock') && (
+                                                    </small> */}
+                                                    </div>
+                                                  ) : parseFloat(formData.optionPoolPercent_post) === parseFloat(formData.optionPoolPercent) ? (
+                                                    <div className="alert alert-info py-2 mb-0" style={{ fontSize: '0.85em' }}>
+                                                      <i className="bi bi-info-circle-fill me-2"></i>
+                                                      <strong>No change:</strong> Maintaining {formData.optionPoolPercent}% pool
+                                                    </div>
+                                                  ) : (
+                                                    <div className="alert alert-success py-2 mb-0" style={{ fontSize: '0.85em' }}>
+                                                      <i className="bi bi-check-circle-fill me-2"></i>
+                                                      <strong>No top-up needed:</strong> Existing {formData.optionPoolPercent}% pool is sufficient
+                                                      <br />
+                                                      <small className="text-muted">
+                                                        No additional option shares will be created
+                                                      </small>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              )}
+                                            </>
+                                          )}
+                                        </div>
+
+                                        {/* {formData.shareClassType === "Post-Seed" || formData.shareClassType === "Pre-Seed" || (formData.shareClassType === "Seed" && formData.instrumentType === 'Common Stock') && (
                                     <div className="col-md-6 mb-4">
                                       <label className="form-label fw-semibold">
-                                        Post-Money Option Pool Target (%)
+                                        Post-Money Option Pool Targets (%)
                                         <span className="text-danger ms-1">*</span>
                                         <i
                                           className="bi bi-info-circle text-muted ms-1"
@@ -4383,28 +5434,467 @@ export default function Recordround() {
                                         </div>
                                       )}
                                     </div>
-                                  )}
+                                  )} */}
+                                      </div>
+
+
+                                      {(() => {
+                                        const isSafe = formData.instrumentType === 'Safe';
+                                        const isCommon = formData.instrumentType === 'Common Stock';
+                                        const isConvertibleNote = formData.instrumentType === 'Convertible Note';
+                                        const isSeedType = ["Seed", "Pre-Seed", "Post-Seed"].includes(formData.shareClassType);
+                                        const isSeriesType = selected?.includes("Series");
+
+                                        // Hide if any of these conditions are true
+                                        const shouldHide =
+                                          (isCommon) ||
+                                          (isSafe && isSeedType) ||     // Safe + Series types
+                                          (isSafe && isSeriesType) ||
+                                          (isConvertibleNote && isSeriesType) ||
+                                          (isConvertibleNote && isSeedType) || (formData.instrumentType === 'Preferred Equity'); // Convertible Note + Series types
+
+                                        return !shouldHide && (
+                                          <div className="col-md-6 mb-4">
+                                            <label className="form-label fw-semibold">
+                                              Total Shares Issued in this Round{" "}
+                                              <span className="tooltip-icon ms-2" tabIndex={0}>
+                                                <img
+                                                  className="blackdark"
+                                                  width="15"
+                                                  height="15"
+                                                  src="/assets/user/images/question.png"
+                                                  alt="Tip"
+                                                />
+                                                <div className="tooltip-text tool-test-white text-white" role="tooltip">
+                                                  The number of shares in an early-stage company represents the total units of
+                                                  ownership authorized, issued, or outstanding across the cap table...
+                                                </div>
+                                              </span>
+                                            </label>
+                                            <NumericFormat
+                                              thousandSeparator={true}
+                                              decimalScale={2}
+                                              fixedDecimalScale={true}
+                                              allowNegative={false}
+                                              placeholder="Enter # of shares"
+                                              value={formData.issuedshares}
+                                              onValueChange={(values) => {
+                                                handleInputChange("issuedshares", values.value);
+                                                if (errors.issuedshares) {
+                                                  setErrors((prev) => ({ ...prev, issuedshares: "" }));
+                                                }
+                                              }}
+                                              className="textarea_input"
+                                            />
+                                          </div>
+                                        );
+                                      })()}
+
+
+
+
+                                    </div>
+
+
+
+                                  </div>
+
+                                )}
+
+                                <div className="d-flex justify-content-between gap-2">
+                                  <button
+                                    className="close_btn w-fit"
+                                    onClick={() => navigateToSection('prev')}
+                                  >
+                                    Back
+                                  </button>
+
+                                  <button
+                                    className="global_btn w-fit"
+                                    onClick={() => {
+                                      // Validate before proceeding
+                                      const newErrors = {};
+
+                                      if (isFirstRound) {
+                                        // ROUND 0 VALIDATION - No validation needed for round size in Round 0
+                                        // Round 0 doesn't have traditional round size, it's calculated from share allocation
+                                      } else {
+                                        // OTHER ROUNDS VALIDATION
+                                        if (!formData.currency || formData.currency.trim() === "") {
+                                          newErrors.currency = "Currency selection is required";
+                                        }
+
+                                        // ✅ Validate multiple investment fields
+                                        const isInvestmentValid = validateInvestments();
+                                        if (!isInvestmentValid) {
+                                          // Scroll to first error
+                                          setTimeout(() => {
+                                            const firstErrorElement = document.querySelector(".is-invalid");
+                                            if (firstErrorElement) {
+                                              firstErrorElement.scrollIntoView({
+                                                behavior: "smooth",
+                                                block: "center",
+                                              });
+                                            }
+                                          }, 100);
+                                          return;
+                                        }
+
+                                        // ✅ CONDITIONAL VALIDATION FOR POST-MONEY OPTION POOL
+                                        const isSeriesSafe = selected?.includes("Series") && (formData.instrumentType === 'Safe');
+                                        const isSeriesConvertible = selected?.includes("Series") && formData.instrumentType === 'Convertible Note';
+                                        const isSeedCommonStock = formData.instrumentType === 'Preferred Equity' || formData.instrumentType === 'Common Stock';
+
+                                        // Validate Post-Money Option Pool if required
+                                        // if (isSeedCommonStock && (!formData.optionPoolPercent_post || formData.optionPoolPercent_post.trim() === "")) {
+                                        //   newErrors.optionPoolPercent_post = "Post-Money Option Pool Target is required";
+                                        // }
+
+                                        // if (formData.optionPoolPercent_post && formData.optionPoolPercent_post.trim() !== "") {
+                                        //   const poolPercent = parseFloat(formData.optionPoolPercent_post);
+                                        //   if (isNaN(poolPercent) || poolPercent < 0 || poolPercent > 100) {
+                                        //     newErrors.optionPoolPercent_post = "Please enter a valid percentage between 0 and 100";
+                                        //   }
+                                        // }
+                                      }
+
+                                      if (Object.keys(newErrors).length > 0) {
+                                        setErrors(newErrors);
+
+                                        // Scroll to first error
+                                        setTimeout(() => {
+                                          const firstErrorElement = document.querySelector(".is-invalid");
+                                          if (firstErrorElement) {
+                                            firstErrorElement.scrollIntoView({
+                                              behavior: "smooth",
+                                              block: "center",
+                                            });
+                                          }
+                                        }, 100);
+                                      } else {
+                                        setErrors({});
+
+                                        // Clear any field-specific errors
+                                        setInvestmentFields(prev => prev.map(field => ({ ...field, error: '' })));
+
+                                        navigateToSection('next');
+                                      }
+                                    }}
+                                  >
+                                    Save and Continue
+                                  </button>
                                 </div>
+                              </div>
+                            )}
+
+                            {/* Additional sections would follow the same pattern */}
+                            {/* Issued Shares Section */}
+                            {activeSection === "issuedshares" && (
+                              <div className="section-content p-4 border rounded-3 shadow-sm bg-white">
+                                <PreviousSection
+                                  formData={formData}
+                                  otherText={otherText}
+                                  selected={selected}
+                                  visibleFields={[
+                                    "shareclass",
+                                    "description",
+                                    "instrument",
+                                    "roundsize",
+                                  ]}
+                                  isFirstRound={isFirstRound}
+                                  foundersData={foundersData}
+                                  calculateTotalShares={calculateTotalShares}
+                                  calculateTotalValue={calculateTotalValue}
+                                  founderCount={founderCount}
+                                  CurrDisplay={CurrDisplay}
+                                />
+
+                                <h3 className="h5 mb-4 text-gray-800">
+                                  {isFirstRound ? "Round 0 - Share Allocation Summary" : ""}
+                                </h3>
+
+                                {/* ROUND 0 - Show different content */}
+                                {isFirstRound ? (
+                                  <div className="round-zero-summary">
+                                    <div className="alert alert-info mb-4">
+                                      <strong>Round 0 Summary</strong> - This is your company's incorporation round.
+                                      The shares have already been allocated to founders in the previous section.
+                                    </div>
+
+                                    {/* Display Round 0 Calculations */}
+                                    <div className="calculation-results p-4 border rounded bg-light">
+                                      <h5>Round 0 - Incorporation Summary</h5>
+                                      <div className="row">
+                                        <div className="col-md-6">
+                                          <div className="mb-3">
+                                            <strong>Total Shares Issued:</strong> {calculateTotalShares().toLocaleString()}
+                                          </div>
+                                          <div className="mb-3">
+                                            <strong>Price Per Share:</strong> {formData.currency ? formData.currency.split(' ')[1] : '$'}{formData.pricePerShare || '0.00'}
+                                          </div>
+                                          <div className="mb-3">
+                                            <strong>Total Company Value:</strong> {formData.currency ? formData.currency.split(' ')[1] : '$'}{calculateTotalValue()}
+                                          </div>
+                                          <div className="mb-3">
+                                            <strong>Currency:</strong> {formData.currency}
+                                          </div>
+                                        </div>
+                                        <div className="col-md-6">
+                                          <div className="mb-3">
+                                            <strong>Number of Founders:</strong> {founderCount}
+                                          </div>
+                                          <div className="mb-3">
+                                            <strong>Round Status:</strong> <span className="text-success">COMPLETED</span>
+                                          </div>
+                                          <div className="mb-3">
+                                            <strong>Round Type:</strong> Incorporation Round
+                                          </div>
+                                          <div className="mb-3">
+                                            <strong>Round Date:</strong> {formatCurrentDate(RoundData.created_at)}
+                                          </div>
+                                          <div className="mb-3">
+                                            <strong>Date of Incorporation:</strong> {formatIncorporationDate(RoundData.year_registration)}
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      {/* Founder Ownership Breakdown */}
 
 
-                                {(() => {
-                                  const isSafe = formData.instrumentType === 'Safe';
-                                  const isConvertibleNote = formData.instrumentType === 'Convertible Note';
-                                  const isSeedType = ["Seed", "Pre-Seed", "Post-Seed"].includes(formData.shareClassType);
-                                  const isSeriesType = selected?.includes("Series");
+                                      {/* Additional Statistics */}
+                                      {calculateTotalShares() > 0 && (
+                                        <div className="mt-4 p-3 bg-white rounded border">
 
-                                  // Hide if any of these conditions are true
-                                  const shouldHide =
+                                          <div className="row text-center">
 
-                                    (isSafe && isSeedType) ||     // Safe + Series types
-                                    (isSafe && isSeriesType) ||
-                                    (isConvertibleNote && isSeriesType) ||
-                                    (isConvertibleNote && isSeedType); // Convertible Note + Series types
+                                            <div className="col-md-4">
+                                              <small className="text-muted">Largest Ownership</small>
+                                              <div className="fw-bold">
+                                                {Math.max(...foundersData.map(f => {
+                                                  const shares = parseInt(f.shares) || 0;
+                                                  return calculateTotalShares() > 0 ? (shares / calculateTotalShares()) * 100 : 0;
+                                                })).toFixed(1)}%
+                                              </div>
+                                            </div>
+                                            <div className="col-md-4">
+                                              <small className="text-muted">Smallest Ownership</small>
+                                              <div className="fw-bold">
+                                                {Math.min(...foundersData.map(f => {
+                                                  const shares = parseInt(f.shares) || 0;
+                                                  return calculateTotalShares() > 0 ? (shares / calculateTotalShares()) * 100 : 0;
+                                                })).toFixed(1)}%
+                                              </div>
+                                            </div>
+                                            <div className="col-md-4">
+                                              <small className="text-muted">Founders</small>
+                                              <div className="fw-bold">
+                                                {founderCount}
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
 
-                                  return !shouldHide && (
-                                    <div className="col-md-6 mb-4">
+                                    {/* Round 0 specific information */}
+                                    <div className="mt-4 p-3 bg-light rounded">
+                                      <h6>About Round 0 (Incorporation Round):</h6>
+                                      <ul className="mb-0">
+                                        <li>This round represents the initial share allocation at company incorporation</li>
+                                        <li>Shares are allocated to founders based on the incorporation documents</li>
+                                        <li>Round 0 is automatically considered "COMPLETED" as it happens at company formation</li>
+                                        <li>This forms the foundation of your cap table for future investment rounds</li>
+                                        <li>The valuation shown is for incorporation purposes only and will not carry over to future rounds</li>
+                                        <li>Each subsequent investment round will calculate its own price per share</li>
+                                      </ul>
+                                    </div>
+
+                                    {/* Important Notes */}
+                                    <div className="alert alert-warning mt-3">
+                                      <strong>Important:</strong> This Round 0 data will serve as the foundation for your cap table.
+                                      Make sure all information is accurate before proceeding.
+                                    </div>
+                                  </div>
+                                ) : (
+                                  /* REGULAR INVESTMENT ROUND - Show original fields */
+                                  <div className="row">
+
+                                    <div className="col-md-12 mb-4">
                                       <label className="form-label fw-semibold">
-                                        Total Shares Issued in this Round{" "}
+                                        Is this round closed or active?{" "}
+                                        <span style={{ color: "var(--primary)" }}>*</span>
+                                      </label>
+
+                                      {/* Radio buttons */}
+                                      <div className="form-check">
+                                        <input
+                                          className="form-check-input"
+                                          type="radio"
+                                          name="roundStatus"
+                                          id="roundClosed"
+                                          value="CLOSED"
+                                          checked={formData.roundStatus === "CLOSED"}
+                                          onChange={(e) => handleInputChange("roundStatus", e.target.value)}
+                                        />
+                                        <label className="form-check-label" htmlFor="roundClosed">
+                                          CLOSED
+                                        </label>
+                                      </div>
+                                      <div className="form-check mb-3">
+                                        <input
+                                          className="form-check-input"
+                                          type="radio"
+                                          name="roundStatus"
+                                          id="roundActive"
+                                          value="ACTIVE"
+                                          checked={formData.roundStatus === "ACTIVE"}
+                                          onChange={(e) => handleInputChange("roundStatus", e.target.value)}
+                                        />
+                                        <label className="form-check-label" htmlFor="roundActive">
+                                          ACTIVE
+                                        </label>
+                                      </div>
+
+                                      {errors.roundStatus && (
+                                        <div className="text-danger small">
+                                          <i className="bi bi-exclamation-circle me-1"></i>
+                                          {errors.roundStatus}
+                                        </div>
+                                      )}
+
+                                      {/* Conditional rendering if CLOSED */}
+                                      {formData.roundStatus === "CLOSED" && (
+                                        <>
+                                          <label className="form-label fw-semibold">
+                                            Date Round Closed{" "}
+                                            <span style={{ color: "var(--primary)" }}>*</span>
+                                          </label>
+                                          <input
+                                            type="text"
+                                            placeholder="MM/DD/YYYY"
+                                            value={formData.dateroundclosed || ""}
+                                            onChange={(e) => {
+                                              handleInputChange("dateroundclosed", e.target.value);
+                                              if (errors.dateroundclosed) {
+                                                setErrors((prev) => ({ ...prev, dateroundclosed: "" }));
+                                              }
+                                            }}
+                                            className={`form-control ${errors.dateroundclosed ? "is-invalid" : ""}`}
+                                          />
+                                          {errors.dateroundclosed && (
+                                            <div className="text-danger small mt-1">
+                                              <i className="bi bi-exclamation-circle me-1"></i>
+                                              {errors.dateroundclosed}
+                                            </div>
+                                          )}
+                                          <div className="form-text mb-3">Calendar: MM / DD / YYYY</div>
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+
+                                <div className="d-flex justify-content-between gap-2">
+                                  <button
+                                    className="close_btn w-fit"
+                                    onClick={() => navigateToSection('prev')}
+                                  >
+                                    Back
+                                  </button>
+                                  <button
+                                    className="global_btn w-fit"
+                                    onClick={() => {
+                                      // For Round 0, no validation needed for these fields
+                                      if (isFirstRound) {
+                                        navigateToSection('next');
+                                        return;
+                                      }
+
+                                      // Original validation for investment rounds
+                                      const newErrors = {};
+
+                                      // Validate round status selection
+                                      if (!formData.roundStatus) {
+                                        newErrors.roundStatus = "Please select CLOSED or ACTIVE";
+                                      }
+
+                                      // Validate dateroundclosed only if CLOSED
+                                      if (formData.roundStatus === "CLOSED") {
+                                        const dateRegex = /^(0[1-9]|1[0-2])\/(0[1-9]|[12]\d|3[01])\/\d{4}$/; // MM/DD/YYYY
+                                        const inputValue = formData.dateroundclosed;
+
+                                        if (!inputValue) {
+                                          newErrors.dateroundclosed = "This field is required";
+                                        } else if (!dateRegex.test(inputValue)) {
+                                          newErrors.dateroundclosed = "Enter a valid date (MM/DD/YYYY)";
+                                        } else {
+                                          const [month, day, year] = inputValue.split("/").map(Number);
+                                          const inputDate = new Date(year, month - 1, day);
+                                          const today = new Date();
+                                          today.setHours(0, 0, 0, 0);
+
+                                          if (inputDate < today) {
+                                            newErrors.dateroundclosed = "Date cannot be in the past";
+                                          }
+                                        }
+                                      }
+
+                                      if (Object.keys(newErrors).length > 0) {
+                                        setErrors(newErrors);
+                                        setTimeout(() => {
+                                          const firstErrorElement = document.querySelector(".is-invalid, .border-danger");
+                                          if (firstErrorElement) {
+                                            firstErrorElement.scrollIntoView({ behavior: "smooth", block: "center" });
+                                          }
+                                        }, 100);
+                                      } else {
+                                        setErrors({});
+                                        navigateToSection('next');
+                                      }
+                                    }}
+                                  >
+                                    Save and Continue
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Placeholder for remaining sections - would implement similarly */}
+                            {activeSection === "rights" && (
+                              <div className="section-content p-4 border rounded-3 shadow-sm bg-white">
+                                <PreviousSection
+                                  formData={formData}
+                                  otherText={otherText}
+                                  selected={selected}
+                                  visibleFields={[
+                                    "shareclass",
+                                    "description",
+                                    "instrument",
+                                    "roundsize",
+                                    "issuedshares",
+                                  ]}
+                                  isFirstRound={isFirstRound}
+                                  foundersData={foundersData}
+                                  calculateTotalShares={calculateTotalShares}
+                                  calculateTotalValue={calculateTotalValue}
+                                  founderCount={founderCount}
+                                  CurrDisplay={CurrDisplay}
+                                />
+
+                                <h3 className="h5 mb-4 text-gray-800">
+                                  {isFirstRound ? "Round 0 - Founder Rights & Preferences" : "Rights Associated with this Share Class"}
+                                </h3>
+
+                                {/* ROUND 0 - Founder Rights */}
+                                {isFirstRound ? (
+                                  <div className="round-zero-content">
+                                    <div className="alert alert-info mb-4">
+                                      <strong>Round 0 Information:</strong> These are the rights and preferences for founder shares as per your incorporation documents.
+                                    </div>
+
+                                    <div className="mb-4">
+                                      <label className="form-label fw-semibold">
+                                        Founder Share Rights & Preferences{" "}
                                         <span className="tooltip-icon ms-2" tabIndex={0}>
                                           <img
                                             className="blackdark"
@@ -4413,537 +5903,146 @@ export default function Recordround() {
                                             src="/assets/user/images/question.png"
                                             alt="Tip"
                                           />
-                                          <div className="tooltip-text tool-test-white text-white" role="tooltip">
-                                            The number of shares in an early-stage company represents the total units of
-                                            ownership authorized, issued, or outstanding across the cap table...
+                                          <div
+                                            className="tooltip-text tool-test-white text-white"
+                                            role="tooltip"
+                                          >
+                                            <strong>For Round 0 (Founder Shares):</strong> Describe the rights and preferences
+                                            for founder shares as outlined in your incorporation documents. This typically includes
+                                            voting rights, dividend preferences, transfer restrictions, and any special founder protections.
+                                            <br />
+                                            <strong>Common Founder Rights:</strong>
+                                            – Full voting rights on major company decisions
+                                            <br />– Right to receive dividends if declared
+                                            <br />– Pre-emptive rights to maintain ownership percentage
+                                            <br />– Founder vesting schedules (if applicable)
+                                            <br />– Transfer restrictions and right of first refusal
                                           </div>
                                         </span>
                                       </label>
-                                      <NumericFormat
-                                        thousandSeparator={true}
-                                        decimalScale={2}
-                                        fixedDecimalScale={true}
-                                        allowNegative={false}
-                                        placeholder="Enter # of shares"
-                                        value={formData.issuedshares}
-                                        onValueChange={(values) => {
-                                          handleInputChange("issuedshares", values.value);
-                                          if (errors.issuedshares) {
-                                            setErrors((prev) => ({ ...prev, issuedshares: "" }));
+                                      <textarea
+                                        placeholder="Describe the rights and preferences for founder shares as per incorporation documents (e.g., voting rights, dividend preferences, transfer restrictions)"
+                                        className="textarea_input"
+                                        rows="4"
+                                        value={formData.rights}
+                                        onChange={(e) => handleInputChange("rights", e.target.value)}
+                                      />
+                                      <div className="form-text">
+                                        Example: "Founders hold common shares with full voting rights, pre-emptive rights to maintain ownership percentage, and standard transfer restrictions as per the shareholders agreement."
+                                      </div>
+                                    </div>
+
+                                    {/* Common Founder Rights Information */}
+                                    <div className="common-rights-info p-3 bg-light rounded mb-4">
+                                      <h6>Common Founder Rights in Round 0:</h6>
+                                      <ul className="mb-0 small">
+                                        <li><strong>Voting Rights:</strong> Typically full voting rights on major decisions</li>
+                                        <li><strong>Dividend Rights:</strong> Right to receive dividends if company declares them</li>
+                                        <li><strong>Pre-emptive Rights:</strong> Right to participate in future rounds to maintain ownership</li>
+                                        <li><strong>Transfer Restrictions:</strong> Limitations on selling shares without board approval</li>
+                                        <li><strong>Founder Vesting:</strong> Shares may be subject to vesting schedule</li>
+                                      </ul>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  /* OTHER ROUNDS - Investor Rights */
+                                  <div className="investment-round-content">
+                                    <div className="mb-4">
+                                      <label className="form-label fw-semibold">
+                                        Rights Associated with this Share Class{" "}
+                                        <span className="tooltip-icon ms-2" tabIndex={0}>
+                                          <img
+                                            className="blackdark"
+                                            width="15"
+                                            height="15"
+                                            src="/assets/user/images/question.png"
+                                            alt="Tip"
+                                          />
+                                          <div
+                                            className="tooltip-text tool-test-white text-white"
+                                            role="tooltip"
+                                          >
+                                            <div className="d-flex flex-column gap-3">
+                                              <p><strong>What it is:</strong> Specifies the negotiated powers and entitlements that
+                                                holders of this class enjoy — it's the fine print investors care about.</p>
+                                              <p> <strong>Why it matters:</strong> This defines control dynamics, dividend rights, conversion
+                                                triggers, redemption clauses, anti-dilution, etc. It's the architecture of deal terms.</p>
+                                              <div className="d-flex flex-column gap-2">
+                                                <p><strong>How to fill it:</strong> Reference exact clauses from investor agreements (term
+                                                  sheets or subscription documents) and simplify into readable but accurate summaries.</p>
+                                                <ul>
+                                                  <li>
+                                                    <p>
+                                                      – Non-cumulative dividends at 6% annually
+                                                    </p>
+                                                  </li>
+                                                  <li>
+                                                    <p>
+                                                      – Non-cumulative dividends at 6% annually
+                                                    </p>
+                                                  </li>
+                                                  <li>
+                                                    <p>
+                                                      – Automatic conversion on qualified financing &gt;$5M
+                                                    </p>
+                                                  </li>
+                                                  <li>
+                                                    <p>
+                                                      – Protective provisions for mergers, board expansion, and budget approvals
+                                                    </p>
+                                                  </li>
+                                                  <li>
+                                                    <p>
+                                                      – Anti-dilution protection (full-ratchet or weighted-average)
+                                                    </p>
+                                                  </li>
+                                                  <li>
+                                                    <p>
+                                                      – Redemption rights after 5 years
+                                                    </p>
+                                                  </li>
+                                                  <li>
+                                                    <p>
+                                                      – Pre-emptive rights for future rounds
+                                                    </p>
+                                                  </li>
+                                                </ul>
+                                              </div>
+                                            </div>
+
+
+                                          </div>
+                                        </span>
+                                        <span className="text-danger fs-5 ms-1">*</span>
+                                      </label>
+                                      <textarea
+                                        placeholder="Describe the rights and preferences for this share class (e.g., dividend rights, conversion triggers, protective provisions)"
+                                        className={`textarea_input ${errors.rights ? "is-invalid" : ""}`}
+                                        rows="4"
+                                        value={formData.rights}
+                                        onChange={(e) => {
+                                          handleInputChange("rights", e.target.value);
+                                          if (errors.rights) {
+                                            setErrors((prev) => ({
+                                              ...prev,
+                                              rights: "",
+                                            }));
                                           }
                                         }}
-                                        className="textarea_input"
                                       />
-                                    </div>
-                                  );
-                                })()}
-
-
-
-
-                              </div>
-
-
-
-                            </div>
-
-                          )}
-
-                          <div className="d-flex justify-content-between gap-2">
-                            <button
-                              className="close_btn w-fit"
-                              onClick={() => navigateToSection('prev')}
-                            >
-                              Back
-                            </button>
-
-                            <button
-                              className="global_btn w-fit"
-                              onClick={() => {
-                                // Validate before proceeding
-                                const newErrors = {};
-
-                                if (isFirstRound) {
-                                  // ROUND 0 VALIDATION - No validation needed for round size in Round 0
-                                  // Round 0 doesn't have traditional round size, it's calculated from share allocation
-                                } else {
-                                  // OTHER ROUNDS VALIDATION
-                                  if (!formData.roundsize || formData.roundsize.trim() === "") {
-                                    newErrors.roundsize = "Round amount is required";
-                                  } else if (parseFloat(formData.roundsize) <= 0) {
-                                    newErrors.roundsize = "Round amount must be greater than 0";
-                                  }
-
-                                  if (!formData.currency || formData.currency.trim() === "") {
-                                    newErrors.currency = "Currency selection is required";
-                                  }
-
-                                  // ✅ CONDITIONAL VALIDATION FOR POST-MONEY OPTION POOL
-                                  const isSeriesSafe = selected?.includes("Series") && (formData.instrumentType === 'Safe');
-                                  const isSeriesConvertible = selected?.includes("Series") && formData.instrumentType === 'Convertible Note';
-                                  const isSeedCommonStock = selected === "Seed" && formData.instrumentType === 'Common Stock';
-
-                                  // Only require Post-Money Option Pool for these two conditions
-                                  if ((isSeriesSafe || isSeedCommonStock || isSeriesConvertible) &&
-                                    (!formData.optionPoolPercent_post || formData.optionPoolPercent_post.trim() === "")) {
-                                    newErrors.optionPoolPercent_post = "Post-Money Option Pool Target is required";
-                                  }
-
-                                  // Also validate it's a valid percentage if provided
-                                  if (formData.optionPoolPercent_post && formData.optionPoolPercent_post.trim() !== "") {
-                                    const poolPercent = parseFloat(formData.optionPoolPercent_post);
-                                    if (isNaN(poolPercent) || poolPercent < 0 || poolPercent > 100) {
-                                      newErrors.optionPoolPercent_post = "Please enter a valid percentage between 0 and 100";
-                                    }
-                                  }
-                                }
-
-                                if (Object.keys(newErrors).length > 0) {
-                                  setErrors(newErrors);
-
-                                  // Scroll to first error
-                                  setTimeout(() => {
-                                    const firstErrorElement = document.querySelector(".is-invalid");
-                                    if (firstErrorElement) {
-                                      firstErrorElement.scrollIntoView({
-                                        behavior: "smooth",
-                                        block: "center",
-                                      });
-                                    }
-                                  }, 100);
-                                } else {
-                                  setErrors({});
-                                  navigateToSection('next');
-                                }
-                              }}
-                            >
-                              Save and Continue
-                            </button>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Additional sections would follow the same pattern */}
-                      {/* Issued Shares Section */}
-                      {activeSection === "issuedshares" && (
-                        <div className="section-content p-4 border rounded-3 shadow-sm bg-white">
-                          <PreviousSection
-                            formData={formData}
-                            otherText={otherText}
-                            selected={selected}
-                            visibleFields={[
-                              "shareclass",
-                              "description",
-                              "instrument",
-                              "roundsize",
-                            ]}
-                            isFirstRound={isFirstRound}
-                            foundersData={foundersData}
-                            calculateTotalShares={calculateTotalShares}
-                            calculateTotalValue={calculateTotalValue}
-                            founderCount={founderCount}
-                          />
-
-                          <h3 className="h5 mb-4 text-gray-800">
-                            {isFirstRound ? "Round 0 - Share Allocation Summary" : ""}
-                          </h3>
-
-                          {/* ROUND 0 - Show different content */}
-                          {isFirstRound ? (
-                            <div className="round-zero-summary">
-                              <div className="alert alert-info mb-4">
-                                <strong>Round 0 Summary</strong> - This is your company's incorporation round.
-                                The shares have already been allocated to founders in the previous section.
-                              </div>
-
-                              {/* Display Round 0 Calculations */}
-                              <div className="calculation-results p-4 border rounded bg-light">
-                                <h5>Round 0 - Incorporation Summary</h5>
-                                <div className="row">
-                                  <div className="col-md-6">
-                                    <div className="mb-3">
-                                      <strong>Total Shares Issued:</strong> {calculateTotalShares().toLocaleString()}
-                                    </div>
-                                    <div className="mb-3">
-                                      <strong>Price Per Share:</strong> {formData.currency ? formData.currency.split(' ')[1] : '$'}{formData.pricePerShare || '0.00'}
-                                    </div>
-                                    <div className="mb-3">
-                                      <strong>Total Company Value:</strong> {formData.currency ? formData.currency.split(' ')[1] : '$'}{calculateTotalValue()}
-                                    </div>
-                                    <div className="mb-3">
-                                      <strong>Currency:</strong> {formData.currency || 'CAD $'}
-                                    </div>
-                                  </div>
-                                  <div className="col-md-6">
-                                    <div className="mb-3">
-                                      <strong>Number of Founders:</strong> {founderCount}
-                                    </div>
-                                    <div className="mb-3">
-                                      <strong>Round Status:</strong> <span className="text-success">COMPLETED</span>
-                                    </div>
-                                    <div className="mb-3">
-                                      <strong>Round Type:</strong> Incorporation Round
-                                    </div>
-                                    <div className="mb-3">
-                                      <strong>Round Date:</strong> {new Date().toLocaleDateString()}
-                                    </div>
-                                  </div>
-                                </div>
-
-                                {/* Founder Ownership Breakdown */}
-
-
-                                {/* Additional Statistics */}
-                                {calculateTotalShares() > 0 && (
-                                  <div className="mt-4 p-3 bg-white rounded border">
-                                    <h6>Round 0 Statistics:</h6>
-                                    <div className="row text-center">
-                                      <div className="col-md-3">
-                                        <small className="text-muted">Average Shares per Founder</small>
-                                        <div className="fw-bold">
-                                          {Math.round(calculateTotalShares() / founderCount).toLocaleString()}
+                                      {errors.rights && (
+                                        <div className="text-danger small mt-1">
+                                          <i className="bi bi-exclamation-circle me-1"></i>
+                                          {errors.rights}
                                         </div>
-                                      </div>
-                                      <div className="col-md-3">
-                                        <small className="text-muted">Largest Ownership</small>
-                                        <div className="fw-bold">
-                                          {Math.max(...foundersData.map(f => {
-                                            const shares = parseInt(f.shares) || 0;
-                                            return calculateTotalShares() > 0 ? (shares / calculateTotalShares()) * 100 : 0;
-                                          })).toFixed(1)}%
-                                        </div>
-                                      </div>
-                                      <div className="col-md-3">
-                                        <small className="text-muted">Smallest Ownership</small>
-                                        <div className="fw-bold">
-                                          {Math.min(...foundersData.map(f => {
-                                            const shares = parseInt(f.shares) || 0;
-                                            return calculateTotalShares() > 0 ? (shares / calculateTotalShares()) * 100 : 0;
-                                          })).toFixed(1)}%
-                                        </div>
-                                      </div>
-                                      <div className="col-md-3">
-                                        <small className="text-muted">Voting Founders</small>
-                                        <div className="fw-bold">
-                                          {foundersData.filter(f => f.voting === 'voting').length} / {founderCount}
-                                        </div>
+                                      )}
+                                      <div className="form-text">
+                                        Be specific about dividend preferences, conversion rights, protective provisions, and any special rights.
                                       </div>
                                     </div>
-                                  </div>
-                                )}
-                              </div>
 
-                              {/* Round 0 specific information */}
-                              <div className="mt-4 p-3 bg-light rounded">
-                                <h6>About Round 0 (Incorporation Round):</h6>
-                                <ul className="mb-0">
-                                  <li>This round represents the initial share allocation at company incorporation</li>
-                                  <li>Shares are allocated to founders based on the incorporation documents</li>
-                                  <li>Round 0 is automatically considered "COMPLETED" as it happens at company formation</li>
-                                  <li>This forms the foundation of your cap table for future investment rounds</li>
-                                  <li>The valuation shown is for incorporation purposes only and will not carry over to future rounds</li>
-                                  <li>Each subsequent investment round will calculate its own price per share</li>
-                                </ul>
-                              </div>
-
-                              {/* Important Notes */}
-                              <div className="alert alert-warning mt-3">
-                                <strong>Important:</strong> This Round 0 data will serve as the foundation for your cap table.
-                                Make sure all information is accurate before proceeding.
-                              </div>
-                            </div>
-                          ) : (
-                            /* REGULAR INVESTMENT ROUND - Show original fields */
-                            <div className="row">
-
-                              <div className="col-md-12 mb-4">
-                                <label className="form-label fw-semibold">
-                                  Is this round closed or active?{" "}
-                                  <span style={{ color: "var(--primary)" }}>*</span>
-                                </label>
-
-                                {/* Radio buttons */}
-                                <div className="form-check">
-                                  <input
-                                    className="form-check-input"
-                                    type="radio"
-                                    name="roundStatus"
-                                    id="roundClosed"
-                                    value="CLOSED"
-                                    checked={formData.roundStatus === "CLOSED"}
-                                    onChange={(e) => handleInputChange("roundStatus", e.target.value)}
-                                  />
-                                  <label className="form-check-label" htmlFor="roundClosed">
-                                    CLOSED
-                                  </label>
-                                </div>
-                                <div className="form-check mb-3">
-                                  <input
-                                    className="form-check-input"
-                                    type="radio"
-                                    name="roundStatus"
-                                    id="roundActive"
-                                    value="ACTIVE"
-                                    checked={formData.roundStatus === "ACTIVE"}
-                                    onChange={(e) => handleInputChange("roundStatus", e.target.value)}
-                                  />
-                                  <label className="form-check-label" htmlFor="roundActive">
-                                    ACTIVE
-                                  </label>
-                                </div>
-
-                                {errors.roundStatus && (
-                                  <div className="text-danger small">
-                                    <i className="bi bi-exclamation-circle me-1"></i>
-                                    {errors.roundStatus}
-                                  </div>
-                                )}
-
-                                {/* Conditional rendering if CLOSED */}
-                                {formData.roundStatus === "CLOSED" && (
-                                  <>
-                                    <label className="form-label fw-semibold">
-                                      Date Round Closed{" "}
-                                      <span style={{ color: "var(--primary)" }}>*</span>
-                                    </label>
-                                    <input
-                                      type="text"
-                                      placeholder="MM/DD/YYYY"
-                                      value={formData.dateroundclosed || ""}
-                                      onChange={(e) => {
-                                        handleInputChange("dateroundclosed", e.target.value);
-                                        if (errors.dateroundclosed) {
-                                          setErrors((prev) => ({ ...prev, dateroundclosed: "" }));
-                                        }
-                                      }}
-                                      className={`form-control ${errors.dateroundclosed ? "is-invalid" : ""}`}
-                                    />
-                                    {errors.dateroundclosed && (
-                                      <div className="text-danger small mt-1">
-                                        <i className="bi bi-exclamation-circle me-1"></i>
-                                        {errors.dateroundclosed}
-                                      </div>
-                                    )}
-                                    <div className="form-text mb-3">Calendar: MM / DD / YYYY</div>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          )}
-
-                          <div className="d-flex justify-content-between gap-2">
-                            <button
-                              className="close_btn w-fit"
-                              onClick={() => navigateToSection('prev')}
-                            >
-                              Back
-                            </button>
-                            <button
-                              className="global_btn w-fit"
-                              onClick={() => {
-                                // For Round 0, no validation needed for these fields
-                                if (isFirstRound) {
-                                  navigateToSection('next');
-                                  return;
-                                }
-
-                                // Original validation for investment rounds
-                                const newErrors = {};
-
-                                // Validate round status selection
-                                if (!formData.roundStatus) {
-                                  newErrors.roundStatus = "Please select CLOSED or ACTIVE";
-                                }
-
-                                // Validate dateroundclosed only if CLOSED
-                                if (formData.roundStatus === "CLOSED") {
-                                  const dateRegex = /^(0[1-9]|1[0-2])\/(0[1-9]|[12]\d|3[01])\/\d{4}$/; // MM/DD/YYYY
-                                  const inputValue = formData.dateroundclosed;
-
-                                  if (!inputValue) {
-                                    newErrors.dateroundclosed = "This field is required";
-                                  } else if (!dateRegex.test(inputValue)) {
-                                    newErrors.dateroundclosed = "Enter a valid date (MM/DD/YYYY)";
-                                  } else {
-                                    const [month, day, year] = inputValue.split("/").map(Number);
-                                    const inputDate = new Date(year, month - 1, day);
-                                    const today = new Date();
-                                    today.setHours(0, 0, 0, 0);
-
-                                    if (inputDate < today) {
-                                      newErrors.dateroundclosed = "Date cannot be in the past";
-                                    }
-                                  }
-                                }
-
-                                if (Object.keys(newErrors).length > 0) {
-                                  setErrors(newErrors);
-                                  setTimeout(() => {
-                                    const firstErrorElement = document.querySelector(".is-invalid, .border-danger");
-                                    if (firstErrorElement) {
-                                      firstErrorElement.scrollIntoView({ behavior: "smooth", block: "center" });
-                                    }
-                                  }, 100);
-                                } else {
-                                  setErrors({});
-                                  navigateToSection('next');
-                                }
-                              }}
-                            >
-                              Save and Continue
-                            </button>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Placeholder for remaining sections - would implement similarly */}
-                      {activeSection === "rights" && (
-                        <div className="section-content p-4 border rounded-3 shadow-sm bg-white">
-                          <PreviousSection
-                            formData={formData}
-                            otherText={otherText}
-                            selected={selected}
-                            visibleFields={[
-                              "shareclass",
-                              "description",
-                              "instrument",
-                              "roundsize",
-                              "issuedshares",
-                            ]}
-                            isFirstRound={isFirstRound}
-                            foundersData={foundersData}
-                            calculateTotalShares={calculateTotalShares}
-                            calculateTotalValue={calculateTotalValue}
-                            founderCount={founderCount}
-                          />
-
-                          <h3 className="h5 mb-4 text-gray-800">
-                            {isFirstRound ? "Round 0 - Founder Rights & Preferences" : "Rights Associated with this Share Class"}
-                          </h3>
-
-                          {/* ROUND 0 - Founder Rights */}
-                          {isFirstRound ? (
-                            <div className="round-zero-content">
-                              <div className="alert alert-info mb-4">
-                                <strong>Round 0 Information:</strong> These are the rights and preferences for founder shares as per your incorporation documents.
-                              </div>
-
-                              <div className="mb-4">
-                                <label className="form-label fw-semibold">
-                                  Founder Share Rights & Preferences{" "}
-                                  <span className="tooltip-icon ms-2" tabIndex={0}>
-                                    <img
-                                      className="blackdark"
-                                      width="15"
-                                      height="15"
-                                      src="/assets/user/images/question.png"
-                                      alt="Tip"
-                                    />
-                                    <div
-                                      className="tooltip-text tool-test-white text-white"
-                                      role="tooltip"
-                                    >
-                                      <strong>For Round 0 (Founder Shares):</strong> Describe the rights and preferences
-                                      for founder shares as outlined in your incorporation documents. This typically includes
-                                      voting rights, dividend preferences, transfer restrictions, and any special founder protections.
-                                      <br />
-                                      <strong>Common Founder Rights:</strong>
-                                      <br />– Full voting rights on major company decisions
-                                      <br />– Right to receive dividends if declared
-                                      <br />– Pre-emptive rights to maintain ownership percentage
-                                      <br />– Founder vesting schedules (if applicable)
-                                      <br />– Transfer restrictions and right of first refusal
-                                    </div>
-                                  </span>
-                                </label>
-                                <textarea
-                                  placeholder="Describe the rights and preferences for founder shares as per incorporation documents (e.g., voting rights, dividend preferences, transfer restrictions)"
-                                  className="textarea_input"
-                                  rows="4"
-                                  value={formData.rights}
-                                  onChange={(e) => handleInputChange("rights", e.target.value)}
-                                />
-                                <div className="form-text">
-                                  Example: "Founders hold common shares with full voting rights, pre-emptive rights to maintain ownership percentage, and standard transfer restrictions as per the shareholders agreement."
-                                </div>
-                              </div>
-
-                              {/* Common Founder Rights Information */}
-                              <div className="common-rights-info p-3 bg-light rounded mb-4">
-                                <h6>Common Founder Rights in Round 0:</h6>
-                                <ul className="mb-0 small">
-                                  <li><strong>Voting Rights:</strong> Typically full voting rights on major decisions</li>
-                                  <li><strong>Dividend Rights:</strong> Right to receive dividends if company declares them</li>
-                                  <li><strong>Pre-emptive Rights:</strong> Right to participate in future rounds to maintain ownership</li>
-                                  <li><strong>Transfer Restrictions:</strong> Limitations on selling shares without board approval</li>
-                                  <li><strong>Founder Vesting:</strong> Shares may be subject to vesting schedule</li>
-                                </ul>
-                              </div>
-                            </div>
-                          ) : (
-                            /* OTHER ROUNDS - Investor Rights */
-                            <div className="investment-round-content">
-                              <div className="mb-4">
-                                <label className="form-label fw-semibold">
-                                  Rights Associated with this Share Class{" "}
-                                  <span className="tooltip-icon ms-2" tabIndex={0}>
-                                    <img
-                                      className="blackdark"
-                                      width="15"
-                                      height="15"
-                                      src="/assets/user/images/question.png"
-                                      alt="Tip"
-                                    />
-                                    <div
-                                      className="tooltip-text tool-test-white text-white"
-                                      role="tooltip"
-                                    >
-                                      <strong>What it is:</strong> Specifies the negotiated powers and entitlements that
-                                      holders of this class enjoy — it's the fine print investors care about.
-                                      <br />
-                                      <strong>Why it matters:</strong> This defines control dynamics, dividend rights, conversion
-                                      triggers, redemption clauses, anti-dilution, etc. It's the architecture of deal terms.
-                                      <br />
-                                      <strong>How to fill it:</strong> Reference exact clauses from investor agreements (term
-                                      sheets or subscription documents) and simplify into readable but accurate summaries.
-                                      <br />– Non-cumulative dividends at 6% annually
-                                      <br />– Automatic conversion on qualified financing &gt;$5M
-                                      <br />– Protective provisions for mergers, board expansion, and budget approvals
-                                      <br />– Anti-dilution protection (full-ratchet or weighted-average)
-                                      <br />– Redemption rights after 5 years
-                                      <br />– Pre-emptive rights for future rounds
-                                    </div>
-                                  </span>
-                                  <span className="text-danger fs-5 ms-1">*</span>
-                                </label>
-                                <textarea
-                                  placeholder="Describe the rights and preferences for this share class (e.g., dividend rights, conversion triggers, protective provisions)"
-                                  className={`textarea_input ${errors.rights ? "is-invalid" : ""}`}
-                                  rows="4"
-                                  value={formData.rights}
-                                  onChange={(e) => {
-                                    handleInputChange("rights", e.target.value);
-                                    if (errors.rights) {
-                                      setErrors((prev) => ({
-                                        ...prev,
-                                        rights: "",
-                                      }));
-                                    }
-                                  }}
-                                />
-                                {errors.rights && (
-                                  <div className="text-danger small mt-1">
-                                    <i className="bi bi-exclamation-circle me-1"></i>
-                                    {errors.rights}
-                                  </div>
-                                )}
-                                <div className="form-text">
-                                  Be specific about dividend preferences, conversion rights, protective provisions, and any special rights.
-                                </div>
-                              </div>
-
-                              {/* Common Investor Rights Information */}
-                              {/* <div className="common-rights-info p-3 bg-light rounded mb-4">
+                                    {/* Common Investor Rights Information */}
+                                    {/* <div className="common-rights-info p-3 bg-light rounded mb-4">
                                 <h6>Common Investor Rights in Investment Rounds:</h6>
                                 <ul className="mb-0 small">
                                   <li><strong>Dividend Preferences:</strong> Cumulative/non-cumulative, participation rights</li>
@@ -4954,997 +6053,648 @@ export default function Recordround() {
                                   <li><strong>Redemption Rights:</strong> Option to sell back shares after certain period</li>
                                 </ul>
                               </div> */}
-                            </div>
-                          )}
+                                  </div>
+                                )}
 
-                          <div className="d-flex justify-content-between gap-2">
-                            <button
-                              className="close_btn w-fit"
-                              onClick={() => navigateToSection('prev')}
-                            >
-                              Back
-                            </button>
+                                <div className="d-flex justify-content-between gap-2">
+                                  <button
+                                    className="close_btn w-fit"
+                                    onClick={() => navigateToSection('prev')}
+                                  >
+                                    Back
+                                  </button>
 
-                            <button
-                              className="global_btn w-fit"
-                              onClick={() => {
-                                // Validate before proceeding
-                                const newErrors = {};
+                                  <button
+                                    className="global_btn w-fit"
+                                    onClick={() => {
+                                      // Validate before proceeding
+                                      const newErrors = {};
 
-                                if (isFirstRound) {
-                                  // ROUND 0 VALIDATION - Rights are optional for founder shares
-                                  // No validation needed, can be empty
-                                } else {
-                                  // OTHER ROUNDS VALIDATION - Rights are important for investors
-                                  if (!formData.rights || formData.rights.trim() === "") {
-                                    newErrors.rights = "Please describe the rights associated with this share class";
-                                  } else if (formData.rights.trim().length < 10) {
-                                    newErrors.rights = "Please provide more detailed description of rights";
-                                  }
-                                }
-
-                                if (Object.keys(newErrors).length > 0) {
-                                  setErrors(newErrors);
-
-                                  // Scroll to first error
-                                  setTimeout(() => {
-                                    const firstErrorElement = document.querySelector(".is-invalid");
-                                    if (firstErrorElement) {
-                                      firstErrorElement.scrollIntoView({
-                                        behavior: "smooth",
-                                        block: "center",
-                                      });
-                                    }
-                                  }, 100);
-                                } else {
-                                  setErrors({});
-
-                                  // Navigate to appropriate next section
-                                  if (isFirstRound) {
-                                    navigateToSection('next'); // Skip liquidation for Round 0
-                                  } else {
-                                    navigateToSection('next');
-                                  }
-                                }
-                              }}
-                            >
-                              Save and Continue
-                            </button>
-                          </div>
-                        </div>
-                      )}
-
-                      {activeSection === "liquidation" && !isFirstRound && (
-                        <div className="section-content p-4 border rounded-3 shadow-sm bg-white">
-                          <PreviousSection
-                            formData={formData}
-                            otherText={otherText}
-                            selected={selected}
-                            visibleFields={[
-                              "shareclass",
-                              "description",
-                              "instrument",
-                              "roundsize",
-                              "issuedshares",
-                              "rights",
-                            ]}
-                            isFirstRound={isFirstRound}
-                            foundersData={foundersData}
-                            calculateTotalShares={calculateTotalShares}
-                            calculateTotalValue={calculateTotalValue}
-                            founderCount={founderCount}
-                          />
-
-                          <h3 className="h5 mb-4 text-gray-800">Liquidation Preference</h3>
-
-                          {/* ROUND 0 - Skip this section entirely */}
-                          {isFirstRound ? (
-                            <div className="text-center py-5">
-                              <div className="alert alert-info">
-                                <strong>Round 0 - No Liquidation Preference</strong>
-                                <p className="mb-0 mt-2">
-                                  This is the incorporation round with founder shares only.
-                                  Liquidation preferences typically apply to investor rounds only.
-                                </p>
-                              </div>
-                              <div className="mt-4">
-                                <button
-                                  className="global_btn"
-                                  onClick={() => navigateToSection('next')}
-                                >
-                                  Continue to Next Section
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            /* OTHER ROUNDS - Show liquidation preference fields */
-                            <>
-                              {/* Liquidation Preferences Section - Only for Preferred Equity */}
-                              {formData.instrumentType === "Preferred Equity" && (
-                                <div className="investment-round-content">
-                                  <div className="mb-4">
-                                    <label className="form-label fw-semibold">
-                                      Liquidation Preference Details{" "}
-                                      <span className="tooltip-icon ms-2" tabIndex={0}>
-                                        <img
-                                          className="blackdark"
-                                          width="15"
-                                          height="15"
-                                          src="/assets/user/images/question.png"
-                                          alt="Tip"
-                                        />
-                                        <div
-                                          className="tooltip-text tool-test-white text-white"
-                                          role="tooltip"
-                                        >
-                                          <strong>Note from Meeting:</strong> Liquidation preferences only apply to Preferred Stock in priced rounds.
-                                          <br />
-                                          <strong>For SAFEs/Convertible Notes:</strong> They get liquidation preferences ONLY when they convert to Preferred Stock.
-                                          <br />
-                                          <strong>For Common Stock/Venture Debt:</strong> No liquidation preferences apply.
-                                        </div>
-                                      </span>
-                                    </label>
-                                    <textarea
-                                      placeholder="Describe the liquidation preference terms (e.g., 1x non-participating preference, senior to common shares)"
-                                      className="textarea_input"
-                                      rows="4"
-                                      value={formData.liquidationpreferences}
-                                      onChange={(e) =>
-                                        handleInputChange("liquidationpreferences", e.target.value)
+                                      if (isFirstRound) {
+                                        // ROUND 0 VALIDATION - Rights are optional for founder shares
+                                        // No validation needed, can be empty
+                                      } else {
+                                        // OTHER ROUNDS VALIDATION - Rights are important for investors
+                                        if (!formData.rights || formData.rights.trim() === "") {
+                                          newErrors.rights = "Please describe the rights associated with this share class";
+                                        } else if (formData.rights.trim().length < 10) {
+                                          newErrors.rights = "Please provide more detailed description of rights";
+                                        }
                                       }
-                                    />
-                                    <div className="form-text">
-                                      Example: "Investors receive 1x liquidation preference, non-participating, pari passu with other preferred shares."
-                                      <br />
-                                      <small className="text-muted">
-                                        <i>Note: This section only appears for Preferred Equity rounds as per meeting guidelines.</i>
-                                      </small>
+
+                                      if (Object.keys(newErrors).length > 0) {
+                                        setErrors(newErrors);
+
+                                        // Scroll to first error
+                                        setTimeout(() => {
+                                          const firstErrorElement = document.querySelector(".is-invalid");
+                                          if (firstErrorElement) {
+                                            firstErrorElement.scrollIntoView({
+                                              behavior: "smooth",
+                                              block: "center",
+                                            });
+                                          }
+                                        }, 100);
+                                      } else {
+                                        setErrors({});
+
+                                        // Navigate to appropriate next section
+                                        if (isFirstRound) {
+                                          navigateToSection('next'); // Skip liquidation for Round 0
+                                        } else {
+                                          navigateToSection('next');
+                                        }
+                                      }
+                                    }}
+                                  >
+                                    Save and Continue
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+
+                            {activeSection === "liquidation" && !isFirstRound && (
+                              <div className="section-content p-4 border rounded-3 shadow-sm bg-white">
+                                <PreviousSection
+                                  formData={formData}
+                                  otherText={otherText}
+                                  selected={selected}
+                                  visibleFields={[
+                                    "shareclass",
+                                    "description",
+                                    "instrument",
+                                    "roundsize",
+                                    "issuedshares",
+                                    "rights",
+                                  ]}
+                                  isFirstRound={isFirstRound}
+                                  foundersData={foundersData}
+                                  calculateTotalShares={calculateTotalShares}
+                                  calculateTotalValue={calculateTotalValue}
+                                  founderCount={founderCount}
+                                  CurrDisplay={CurrDisplay}
+                                />
+
+                                <h3 className="h5 mb-4 text-gray-800">Liquidation Preference</h3>
+
+                                {/* ROUND 0 - Skip this section entirely */}
+                                {isFirstRound ? (
+                                  <div className="text-center py-5">
+                                    <div className="alert alert-info">
+                                      <strong>Round 0 - No Liquidation Preference</strong>
+                                      <p className="mb-0 mt-2">
+                                        This is the incorporation round with founder shares only.
+                                        Liquidation preferences typically apply to investor rounds only.
+                                      </p>
+                                    </div>
+                                    <div className="mt-4">
+                                      <button
+                                        className="global_btn"
+                                        onClick={() => navigateToSection('next')}
+                                      >
+                                        Continue to Next Section
+                                      </button>
                                     </div>
                                   </div>
-
-                                  {/* Rest of your liquidation preferences UI remains same */}
-                                  <div className="row mt-3">
-                                    <div className="col-md-6">
-                                      {/* Multiple Preferences Component */}
-                                      <div className="liquidation-group mb-4">
-                                        <h6 className="fw-semibold mb-3 border-bottom pb-2">Preference Multiple</h6>
-                                        <div className="row">
-                                          {liquidationOptions.multiplePreferences.map((opt) => (
-                                            <div key={opt.value} className="col-12 mb-3">
+                                ) : (
+                                  /* OTHER ROUNDS - Show liquidation preference fields */
+                                  <>
+                                    {/* Liquidation Preferences Section - Only for Preferred Equity */}
+                                    {formData.instrumentType === "Preferred Equity" && (
+                                      <div className="investment-round-content">
+                                        <div className="mb-4">
+                                          <label className="form-label fw-semibold">
+                                            Liquidation Preference Details{" "}
+                                            <span className="tooltip-icon ms-2" tabIndex={0}>
+                                              <img
+                                                className="blackdark"
+                                                width="15"
+                                                height="15"
+                                                src="/assets/user/images/question.png"
+                                                alt="Tip"
+                                              />
                                               <div
-                                                className={`form-check-card p-3 border rounded-3 cursor-pointer h-100 ${formData?.liquidation?.includes(opt.value)
-                                                  ? "bg-light border-primary"
-                                                  : "border-gray-300"
-                                                  } ${errors.liquidation ? "is-invalid" : ""}`}
-                                                onClick={() => {
-                                                  let updatedSelection = [...(formData?.liquidation || [])];
-
-                                                  // Remove ALL participation rights when selecting a multiple preference
-                                                  const allParticipationRights = liquidationOptions.participationRights
-                                                    .map(o => o.value);
-
-                                                  // Remove all participation rights
-                                                  updatedSelection = updatedSelection.filter(v => !allParticipationRights.includes(v));
-
-                                                  // Remove other multiple preferences when one is selected
-                                                  const otherMultiples = liquidationOptions.multiplePreferences
-                                                    .map(o => o.value)
-                                                    .filter(v => v !== opt.value);
-
-                                                  updatedSelection = updatedSelection.filter(v => !otherMultiples.includes(v));
-
-                                                  // Remove N/A and OTHER if selecting a preference
-                                                  updatedSelection = updatedSelection.filter(v => v !== "N/A" && v !== "OTHER");
-
-                                                  if (updatedSelection.includes(opt.value)) {
-                                                    updatedSelection = updatedSelection.filter(v => v !== opt.value);
-                                                  } else {
-                                                    updatedSelection.push(opt.value);
-                                                  }
-
-                                                  handleInputChange("liquidation", updatedSelection);
-
-                                                  if (errors.liquidation) {
-                                                    setErrors((prev) => ({
-                                                      ...prev,
-                                                      liquidation: "",
-                                                    }));
-                                                  }
-                                                }}
+                                                className="tooltip-text tool-test-white text-white"
+                                                role="tooltip"
                                               >
-                                                <div className="form-check">
-                                                  <input
-                                                    type="radio"
-                                                    name="multiplePreference"
-                                                    value={opt.value}
-                                                    checked={formData?.liquidation?.includes(opt.value) || false}
-                                                    onChange={() => { }}
-                                                    className="form-check-input"
-                                                  />
-                                                  <label className="form-check-label fw-medium">
-                                                    {opt.label}
-                                                  </label>
-                                                </div>
-                                                <p className="text-muted small mb-0 mt-2">
-                                                  {opt.description}
-                                                </p>
+                                                <strong>Note from Meeting:</strong> Liquidation preferences only apply to Preferred Stock in priced rounds.
+                                                <br />
+                                                <strong>For SAFEs/Convertible Notes:</strong> They get liquidation preferences ONLY when they convert to Preferred Stock.
+                                                <br />
+                                                <strong>For Common Stock/Venture Debt:</strong> No liquidation preferences apply.
                                               </div>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    </div>
-
-                                    <div className="col-md-6">
-                                      {/* Participation Rights Component */}
-                                      <div className="liquidation-group mb-4">
-                                        <h6 className="fw-semibold mb-3 border-bottom pb-2">Participation Rights</h6>
-                                        <div className="row">
-                                          {liquidationOptions.participationRights.map((opt) => (
-                                            <div key={opt.value} className="col-12 mb-3">
-                                              <div
-                                                className={`form-check-card p-3 border rounded-3 cursor-pointer h-100 ${formData?.liquidation?.includes(opt.value)
-                                                  ? "bg-light border-primary"
-                                                  : "border-gray-300"
-                                                  } ${errors.liquidation ? "is-invalid" : ""}`}
-                                                onClick={() => {
-                                                  let updatedSelection = [...(formData?.liquidation || [])];
-
-                                                  if (opt.value === "N/A") {
-                                                    updatedSelection = ["N/A"];
-                                                  } else {
-                                                    // Remove ALL multiple preferences when selecting a participation right
-                                                    const allMultiples = liquidationOptions.multiplePreferences
-                                                      .map(o => o.value);
-
-                                                    // Remove all multiple preferences
-                                                    updatedSelection = updatedSelection.filter(v => !allMultiples.includes(v));
-
-                                                    // Remove N/A and OTHER if selecting participation right
-                                                    updatedSelection = updatedSelection.filter(v => v !== "N/A" && v !== "OTHER");
-
-                                                    // For participation rights, allow multiple selection except for N/A
-                                                    if (updatedSelection.includes(opt.value)) {
-                                                      updatedSelection = updatedSelection.filter(v => v !== opt.value);
-                                                    } else {
-                                                      updatedSelection.push(opt.value);
-                                                    }
-                                                  }
-
-                                                  handleInputChange("liquidation", updatedSelection);
-
-                                                  if (errors.liquidation) {
-                                                    setErrors((prev) => ({
-                                                      ...prev,
-                                                      liquidation: "",
-                                                    }));
-                                                  }
-                                                }}
-                                              >
-                                                <div className="form-check">
-                                                  <input
-                                                    type="checkbox"
-                                                    name="participationRights"
-                                                    value={opt.value}
-                                                    checked={formData?.liquidation?.includes(opt.value) || false}
-                                                    onChange={() => { }}
-                                                    className="form-check-input"
-                                                  />
-                                                  <label className="form-check-label fw-medium">
-                                                    {opt.label}
-                                                  </label>
-                                                </div>
-                                                <p className="text-muted small mb-0 mt-2">
-                                                  {opt.description}
-                                                </p>
-                                              </div>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    </div>
-
-                                    {/* Rest of the code remains same... */}
-                                  </div>
-
-                                  {/* Liquidation Preference Information */}
-                                  <div className="alert alert-info mt-4">
-                                    <strong>Understanding Liquidation Preferences (For Preferred Equity Only):</strong>
-                                    <ul className="mb-0 mt-2 small">
-                                      <li><strong>Applies to:</strong> Preferred Stock only (not Common Stock, SAFEs, or Venture Debt)</li>
-                                      <li><strong>SAFE/Convertible Notes:</strong> Get preferences only when they convert to Preferred Stock</li>
-                                      <li><strong>1x Preference:</strong> Basic protection - get investment back first</li>
-                                      <li><strong>Multiple Preference:</strong> Get 2x, 3x, etc. of investment back first</li>
-                                      <li><strong>Participating:</strong> Get preference amount AND share remaining proceeds</li>
-                                      <li><strong>Non-Participating:</strong> Choose between preference OR converting to common shares</li>
-                                      <li><strong>Capped Participating:</strong> Participation stops at a certain multiple</li>
-                                    </ul>
-                                  </div>
-                                </div>
-                              )}
-                            </>
-                          )}
-
-                          <div className="d-flex justify-content-between gap-2">
-                            <button
-                              className="close_btn w-fit"
-                              onClick={() => navigateToSection('prev')}
-                            >
-                              Back
-                            </button>
-
-                            <button
-                              className="global_btn w-fit"
-                              onClick={() => {
-                                // For Round 0, skip validation and navigate directly
-                                if (isFirstRound) {
-                                  navigateToSection('next');
-                                  return;
-                                }
-
-                                // Validate before proceeding for other rounds
-                                const newErrors = {};
-
-                                // Check if at least one liquidation option is selected
-                                if (formData.liquidation.length === 0) {
-                                  newErrors.liquidation = "Please select a liquidation preference type";
-                                }
-
-                                // Check if OTHER is selected but the text input is empty
-                                if (formData.liquidation.includes("OTHER")) {
-                                  if (!formData.liquidationOther || !formData.liquidationOther.trim()) {
-                                    newErrors.liquidationOther = "This field is required";
-                                  }
-                                }
-
-                                if (Object.keys(newErrors).length > 0) {
-                                  setErrors(newErrors);
-
-                                  // Scroll to the first error
-                                  setTimeout(() => {
-                                    const firstErrorElement = document.querySelector(".is-invalid, .border-danger");
-                                    if (firstErrorElement) {
-                                      firstErrorElement.scrollIntoView({
-                                        behavior: "smooth",
-                                        block: "center",
-                                      });
-                                    }
-                                  }, 100);
-                                } else {
-                                  // Clear errors if validation passes
-                                  setErrors({});
-                                  navigateToSection('next');
-                                }
-                              }}
-                            >
-                              Save and Continue
-                            </button>
-                          </div>
-                        </div>
-                      )}
-
-                      {activeSection === "convertible" && (
-                        <div className="section-content p-4 border rounded-3 shadow-sm bg-white">
-                          <PreviousSection
-                            formData={formData}
-                            otherText={otherText}
-                            selected={selected}
-                            visibleFields={[
-                              "shareclass",
-                              "description",
-                              "instrument",
-                              "roundsize",
-                              "issuedshares",
-                              "rights",
-                              "liquidation",
-                            ]}
-                            isFirstRound={isFirstRound}
-                            foundersData={foundersData}
-                            calculateTotalShares={calculateTotalShares}
-                            calculateTotalValue={calculateTotalValue}
-                            founderCount={founderCount}
-                          />
-
-                          <h3 className="h5 mb-4 text-gray-800">
-                            {isFirstRound ? "Round 0 - Share Convertibility" : "Convertible Features"}
-                          </h3>
-
-                          {/* ROUND 0 - Founder Share Convertibility */}
-                          {isFirstRound ? (
-                            <div className="round-zero-content">
-                              <div className="alert alert-info mb-4">
-                                <strong>Round 0 Information:</strong> Founder shares are typically common shares
-                                and may have specific conversion terms in your incorporation documents.
-                              </div>
-
-                              <div className="mb-4">
-                                <label className="form-label fw-semibold">
-                                  Are Founder Shares Convertible?{" "}
-                                  <span className="tooltip-icon ms-2" tabIndex={0}>
-                                    <img
-                                      className="blackdark"
-                                      width="15"
-                                      height="15"
-                                      src="/assets/user/images/question.png"
-                                      alt="Tip"
-                                    />
-                                    <div
-                                      className="tooltip-text tool-test-white text-white"
-                                      role="tooltip"
-                                    >
-                                      <strong>For Round 0 (Founder Shares):</strong> Indicate if founder shares
-                                      can be converted to other share classes, typically to preferred shares
-                                      during future investment rounds.
-                                      <br />
-                                      <strong>Common Scenarios:</strong>
-                                      <br />– <strong>No:</strong> Founder shares remain as common shares
-                                      <br />– <strong>Yes:</strong> Founder shares can convert to preferred shares
-                                      under specific conditions (rare)
-                                      <br />
-                                      <strong>Note:</strong> Most founder shares are common shares and do not convert.
-                                      Conversion typically applies to investor instruments like convertible notes or SAFEs.
-                                    </div>
-                                  </span>
-                                </label>
-                                <div className="d-flex gap-3">
-                                  <div className="form-check">
-                                    <input
-                                      type="radio"
-                                      name="convertible"
-                                      value="Yes"
-                                      checked={formData.convertible === "Yes"}
-                                      onChange={() => {
-                                        handleInputChange("convertible", "Yes");
-                                        if (errors.convertible) {
-                                          setErrors((prev) => ({
-                                            ...prev,
-                                            convertible: "",
-                                          }));
-                                        }
-                                      }}
-                                      className="form-check-input"
-                                    />
-                                    <label className="form-check-label">Yes</label>
-                                  </div>
-                                  <div className="form-check">
-                                    <input
-                                      type="radio"
-                                      name="convertible"
-                                      value="No"
-                                      checked={formData.convertible === "No" || formData.convertible === ""}
-                                      onChange={() => {
-                                        handleInputChange("convertible", "No");
-                                        if (errors.convertible) {
-                                          setErrors((prev) => ({
-                                            ...prev,
-                                            convertible: "",
-                                          }));
-                                        }
-                                      }}
-                                      className="form-check-input"
-                                    />
-                                    <label className="form-check-label">No</label>
-                                  </div>
-                                </div>
-                                <div className="form-text">
-                                  Most founder shares are common shares and are not convertible. Select "No" unless your incorporation documents specify otherwise.
-                                </div>
-                              </div>
-
-                              {/* Show conversion details only if Yes for Round 0 */}
-                              {formData.convertible === "Yes" && (
-                                <div className="mb-4 p-3 border rounded bg-light">
-                                  <h6>Founder Share Conversion Details</h6>
-                                  <div className="mb-3">
-                                    <label className="form-label fw-semibold">
-                                      Conversion Conditions
-                                    </label>
-                                    <textarea
-                                      placeholder="Describe the conditions under which founder shares can convert (e.g., automatic conversion upon qualified financing, voluntary conversion option)"
-                                      className="textarea_input"
-                                      rows="3"
-                                      value={formData.convertibleType || ""}
-                                      onChange={(e) => handleInputChange("convertibleType", e.target.value)}
-                                    />
-                                    <div className="form-text">
-                                      Example: "Founder common shares automatically convert to Series A preferred shares upon closing of a $1M+ financing round."
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Round 0 Convertibility Information */}
-                              <div className="alert alert-warning mt-3">
-                                <strong>Note about Founder Share Convertibility:</strong>
-                                <ul className="mb-0 mt-2 small">
-                                  <li>Founder shares are typically common shares and remain as common shares</li>
-                                  <li>Conversion features are more common for investor instruments (SAFEs, convertible notes)</li>
-                                  <li>If your incorporation documents don't mention conversion, select "No"</li>
-                                  <li>Consult your legal advisor if unsure about conversion terms</li>
-                                </ul>
-                              </div>
-                            </div>
-                          ) : (
-                            /* OTHER ROUNDS - Investor Convertible Features */
-                            <div className="investment-round-content">
-                              <div className="mb-4">
-                                <label className="form-label fw-semibold">
-                                  Shares are convertible{" "}
-                                  <span className="tooltip-icon ms-2" tabIndex={0}>
-                                    <img
-                                      className="blackdark"
-                                      width="15"
-                                      height="15"
-                                      src="/assets/user/images/question.png"
-                                      alt="Tip"
-                                    />
-                                    <div
-                                      className="tooltip-text tool-test-white text-white"
-                                      role="tooltip"
-                                    >
-                                      <strong>What it is:</strong> Indicate the conditions under which the security,
-                                      typically a convertible note or SAFE, automatically or optionally converts into
-                                      another class of shares, most commonly Common Stock.
-                                      <br />
-                                      <strong>Why it matters:</strong> Impacts equity dilution, IPO readiness, and
-                                      governance transitions. This is key in modelling cap table evolution.
-                                      <br />
-                                      <strong>How to fill it:</strong> Yes/No + trigger mechanisms (voluntary, automatic, conditional)
-                                      <br />
-                                      <strong>Common Convertible Instruments:</strong>
-                                      <br />– <strong>Convertible Notes:</strong> Debt that converts to equity
-                                      <br />– <strong>SAFEs:</strong> Simple Agreement for Future Equity
-                                      <br />– <strong>Preferred Stock:</strong> May convert to common upon IPO
-                                    </div>
-                                  </span>{" "}
-                                  <span style={{ color: "var(--primary)" }}>*</span>
-                                </label>
-                                <div className="d-flex gap-3">
-                                  <div className="form-check">
-                                    <input
-                                      type="radio"
-                                      name="convertible"
-                                      value="Yes"
-                                      checked={formData.convertible === "Yes"}
-                                      onChange={() => {
-                                        handleInputChange("convertible", "Yes");
-                                        if (errors.convertible) {
-                                          setErrors((prev) => ({
-                                            ...prev,
-                                            convertible: "",
-                                          }));
-                                        }
-                                      }}
-                                      className={`form-check-input ${errors.convertible ? "is-invalid" : ""}`}
-                                    />
-                                    <label className="form-check-label">Yes</label>
-                                  </div>
-                                  <div className="form-check">
-                                    <input
-                                      type="radio"
-                                      name="convertible"
-                                      value="No"
-                                      checked={formData.convertible === "No"}
-                                      onChange={() => {
-                                        handleInputChange("convertible", "No");
-                                        if (errors.convertible) {
-                                          setErrors((prev) => ({
-                                            ...prev,
-                                            convertible: "",
-                                          }));
-                                        }
-                                      }}
-                                      className={`form-check-input ${errors.convertible ? "is-invalid" : ""}`}
-                                    />
-                                    <label className="form-check-label">No</label>
-                                  </div>
-                                </div>
-
-                                {errors.convertible && (
-                                  <div className="text-danger small mt-1">
-                                    <i className="bi bi-exclamation-circle me-1"></i>
-                                    {errors.convertible}
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* Show only if YES for investment rounds */}
-                              {formData.convertible === "Yes" && (
-                                <div className="mb-4">
-                                  <label className="form-label fw-semibold">
-                                    Convertible Type{" "}
-                                    <span style={{ color: "var(--primary)" }}>*</span>
-                                  </label>
-                                  <div className="row mt-2">
-                                    {["Voluntary", "Automatic", "Conditional"].map((opt) => (
-                                      <div key={opt} className="col-md-4 mb-3">
-                                        <div
-                                          className={`form-check-card p-3 border rounded-3 cursor-pointer h-100 ${formData.convertibleType === opt
-                                            ? "bg-light"
-                                            : errors.convertibleType
-                                              ? "border-danger"
-                                              : "border-gray-300"
-                                            }`}
-                                          onClick={() => {
-                                            handleInputChange("convertibleType", opt);
-                                            if (errors.convertibleType) {
-                                              setErrors((prev) => ({
-                                                ...prev,
-                                                convertibleType: "",
-                                              }));
+                                            </span>
+                                          </label>
+                                          <textarea
+                                            placeholder="Describe the liquidation preference terms (e.g., 1x non-participating preference, senior to common shares)"
+                                            className="textarea_input"
+                                            rows="4"
+                                            value={formData.liquidationpreferences}
+                                            onChange={(e) =>
+                                              handleInputChange("liquidationpreferences", e.target.value)
                                             }
-                                          }}
-                                        >
-                                          <div className="form-check">
-                                            <input
-                                              type="radio"
-                                              name="convertibleType"
-                                              value={opt}
-                                              checked={formData.convertibleType === opt}
-                                              onChange={() => {
-                                                handleInputChange("convertibleType", opt);
-                                                if (errors.convertibleType) {
-                                                  setErrors((prev) => ({
-                                                    ...prev,
-                                                    convertibleType: "",
-                                                  }));
-                                                }
-                                              }}
-                                              className="form-check-input"
-                                            />
-                                            <label className="form-check-label fw-medium">
-                                              {opt}
-                                            </label>
+                                          />
+                                          <div className="form-text">
+                                            Example: "Investors receive 1x liquidation preference, non-participating, pari passu with other preferred shares."
+                                            <br />
+                                            <small className="text-muted">
+                                              <i>Note: This section only appears for Preferred Equity rounds as per meeting guidelines.</i>
+                                            </small>
                                           </div>
-                                          <p className="text-muted small mb-0 mt-2">
-                                            {opt === "Voluntary" && "Investor chooses when to convert"}
-                                            {opt === "Automatic" && "Automatic conversion upon specific triggers"}
-                                            {opt === "Conditional" && "Conversion based on meeting certain conditions"}
-                                          </p>
+                                        </div>
+
+                                        {/* Rest of your liquidation preferences UI remains same */}
+                                        <div className="row mt-3">
+                                          <div className="col-md-6">
+                                            {/* Multiple Preferences Component */}
+                                            <div className="liquidation-group mb-4">
+                                              <h6 className="fw-semibold mb-3 border-bottom pb-2">Preference Multiple</h6>
+                                              <div className="row">
+                                                {liquidationOptions.multiplePreferences.map((opt) => (
+                                                  <div key={opt.value} className="col-12 mb-3">
+                                                    <div
+                                                      className={`form-check-card p-3 border rounded-3 cursor-pointer h-100 ${formData?.liquidation?.includes(opt.value)
+                                                        ? "bg-light border-primary"
+                                                        : "border-gray-300"
+                                                        } ${errors.liquidation ? "is-invalid" : ""}`}
+                                                      onClick={() => {
+                                                        let updatedSelection = [...(formData?.liquidation || [])];
+
+                                                        // Remove ALL participation rights when selecting a multiple preference
+                                                        const allParticipationRights = liquidationOptions.participationRights
+                                                          .map(o => o.value);
+
+                                                        // Remove all participation rights
+                                                        updatedSelection = updatedSelection.filter(v => !allParticipationRights.includes(v));
+
+                                                        // Remove other multiple preferences when one is selected
+                                                        const otherMultiples = liquidationOptions.multiplePreferences
+                                                          .map(o => o.value)
+                                                          .filter(v => v !== opt.value);
+
+                                                        updatedSelection = updatedSelection.filter(v => !otherMultiples.includes(v));
+
+                                                        // Remove N/A and OTHER if selecting a preference
+                                                        updatedSelection = updatedSelection.filter(v => v !== "N/A" && v !== "OTHER");
+
+                                                        if (updatedSelection.includes(opt.value)) {
+                                                          updatedSelection = updatedSelection.filter(v => v !== opt.value);
+                                                        } else {
+                                                          updatedSelection.push(opt.value);
+                                                        }
+
+                                                        handleInputChange("liquidation", updatedSelection);
+
+                                                        if (errors.liquidation) {
+                                                          setErrors((prev) => ({
+                                                            ...prev,
+                                                            liquidation: "",
+                                                          }));
+                                                        }
+                                                      }}
+                                                    >
+                                                      <div className="form-check">
+                                                        <input
+                                                          type="radio"
+                                                          name="multiplePreference"
+                                                          value={opt.value}
+                                                          checked={formData?.liquidation?.includes(opt.value) || false}
+                                                          onChange={() => { }}
+                                                          className="form-check-input"
+                                                        />
+                                                        <label className="form-check-label fw-medium">
+                                                          {opt.label}
+                                                        </label>
+                                                      </div>
+                                                      <p className="text-muted small mb-0 mt-2">
+                                                        {opt.description}
+                                                      </p>
+                                                    </div>
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          </div>
+
+                                          <div className="col-md-6">
+                                            {/* Participation Rights Component */}
+                                            <div className="liquidation-group mb-4">
+                                              <h6 className="fw-semibold mb-3 border-bottom pb-2">Participation Rights</h6>
+                                              <div className="row">
+                                                {liquidationOptions.participationRights.map((opt) => (
+                                                  <div key={opt.value} className="col-12 mb-3">
+                                                    <div
+                                                      className={`form-check-card p-3 border rounded-3 cursor-pointer h-100 ${formData?.liquidation?.includes(opt.value)
+                                                        ? "bg-light border-primary"
+                                                        : "border-gray-300"
+                                                        } ${errors.liquidation ? "is-invalid" : ""}`}
+                                                      onClick={() => {
+                                                        let updatedSelection = [...(formData?.liquidation || [])];
+
+                                                        if (opt.value === "N/A") {
+                                                          updatedSelection = ["N/A"];
+                                                        } else {
+                                                          // Remove ALL multiple preferences when selecting a participation right
+                                                          const allMultiples = liquidationOptions.multiplePreferences
+                                                            .map(o => o.value);
+
+                                                          // Remove all multiple preferences
+                                                          updatedSelection = updatedSelection.filter(v => !allMultiples.includes(v));
+
+                                                          // Remove N/A and OTHER if selecting participation right
+                                                          updatedSelection = updatedSelection.filter(v => v !== "N/A" && v !== "OTHER");
+
+                                                          // For participation rights, allow multiple selection except for N/A
+                                                          if (updatedSelection.includes(opt.value)) {
+                                                            updatedSelection = updatedSelection.filter(v => v !== opt.value);
+                                                          } else {
+                                                            updatedSelection.push(opt.value);
+                                                          }
+                                                        }
+
+                                                        handleInputChange("liquidation", updatedSelection);
+
+                                                        if (errors.liquidation) {
+                                                          setErrors((prev) => ({
+                                                            ...prev,
+                                                            liquidation: "",
+                                                          }));
+                                                        }
+                                                      }}
+                                                    >
+                                                      <div className="form-check">
+                                                        <input
+                                                          type="checkbox"
+                                                          name="participationRights"
+                                                          value={opt.value}
+                                                          checked={formData?.liquidation?.includes(opt.value) || false}
+                                                          onChange={() => { }}
+                                                          className="form-check-input"
+                                                        />
+                                                        <label className="form-check-label fw-medium">
+                                                          {opt.label}
+                                                        </label>
+                                                      </div>
+                                                      <p className="text-muted small mb-0 mt-2">
+                                                        {opt.description}
+                                                      </p>
+                                                    </div>
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          </div>
+
+                                          {/* Rest of the code remains same... */}
+                                        </div>
+
+                                        {/* Liquidation Preference Information */}
+                                        <div className="alert alert-info mt-4">
+                                          <strong>Understanding Liquidation Preferences (For Preferred Equity Only):</strong>
+                                          <ul className="mb-0 mt-2 small">
+                                            <li><strong>Applies to:</strong> Preferred Stock only (not Common Stock, SAFEs, or Venture Debt)</li>
+                                            <li><strong>SAFE/Convertible Notes:</strong> Get preferences only when they convert to Preferred Stock</li>
+                                            <li><strong>1x Preference:</strong> Basic protection - get investment back first</li>
+                                            <li><strong>Multiple Preference:</strong> Get 2x, 3x, etc. of investment back first</li>
+                                            <li><strong>Participating:</strong> Get preference amount AND share remaining proceeds</li>
+                                            <li><strong>Non-Participating:</strong> Choose between preference OR converting to common shares</li>
+                                            <li><strong>Capped Participating:</strong> Participation stops at a certain multiple</li>
+                                          </ul>
                                         </div>
                                       </div>
-                                    ))}
-                                  </div>
-
-                                  {errors.convertibleType && (
-                                    <div className="text-danger small mt-1">
-                                      <i className="bi bi-exclamation-circle me-1"></i>
-                                      {errors.convertibleType}
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-                          <div className="d-flex justify-content-between gap-2">
-                            <button
-                              className="close_btn w-fit"
-                              onClick={() => navigateToSection('prev')}
-                            >
-                              Back
-                            </button>
-
-                            <button
-                              className="global_btn w-fit"
-                              onClick={() => {
-                                const newErrors = {};
-
-                                if (isFirstRound) {
-                                  // ROUND 0 VALIDATION - Convertible is optional for founder shares
-                                  // No validation needed, can be empty or "No"
-                                  if (formData.convertible === "Yes" && !formData.convertibleType) {
-                                    newErrors.convertibleType = "Please describe the conversion conditions";
-                                  }
-                                } else {
-                                  // OTHER ROUNDS VALIDATION - Convertible is important for investors
-                                  if (!formData.convertible) {
-                                    newErrors.convertible = "Please select Yes or No";
-                                  }
-                                  if (formData.convertible === "Yes" && !formData.convertibleType) {
-                                    newErrors.convertibleType = "Please select Voluntary, Automatic or Conditional";
-                                  }
-                                }
-
-                                if (Object.keys(newErrors).length > 0) {
-                                  setErrors(newErrors);
-
-                                  // Scroll to first error
-                                  setTimeout(() => {
-                                    const firstErrorElement = document.querySelector(".is-invalid, .border-danger");
-                                    if (firstErrorElement) {
-                                      firstErrorElement.scrollIntoView({
-                                        behavior: "smooth",
-                                        block: "center",
-                                      });
-                                    }
-                                  }, 100);
-                                } else {
-                                  setErrors({});
-
-                                  if (isFirstRound) {
-                                    navigateToSection('next'); // Skip term sheet and subscription for Round 0
-                                  } else {
-                                    navigateToSection('next');
-                                  }
-                                }
-                              }}
-                            >
-                              Save and Continue
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                      {activeSection === "voting" && !isFirstRound && (
-                        <div className="section-content p-4 border rounded-3 shadow-sm bg-white">
-                          <PreviousSection
-                            formData={formData}
-                            otherText={otherText}
-                            selected={selected}
-                            visibleFields={[
-                              "shareclass",
-                              "description",
-                              "instrument",
-                              "roundsize",
-                              "issuedshares",
-                              "rights",
-                              "liquidation",
-                              "convertible",
-                            ]}
-                            isFirstRound={isFirstRound}
-                            foundersData={foundersData}
-                            calculateTotalShares={calculateTotalShares}
-                            calculateTotalValue={calculateTotalValue}
-                            founderCount={founderCount}
-                          />
-
-
-                          <h3 className="h5 mb-4 text-gray-800">
-                            {isFirstRound ? "Round 0 - Founder Voting Rights" : "Shareholders Voting Rights"}
-                          </h3>
-
-                          {/* ROUND 0 - Founder Voting Rights */}
-                          {isFirstRound ? (
-                            <div className="round-zero-content">
-                              <div className="alert alert-info mb-4">
-                                <strong>Round 0 Information:</strong> Founder shares typically have voting rights as per your incorporation documents.
-                              </div>
-
-                              <div className="mb-4">
-                                <label className="form-label fw-semibold">
-                                  Do Founder Shares Have Voting Rights?{" "}
-                                  <span className="tooltip-icon ms-2" tabIndex={0}>
-                                    <img
-                                      className="blackdark"
-                                      width="15"
-                                      height="15"
-                                      src="/assets/user/images/question.png"
-                                      alt="Tip"
-                                    />
-                                    <div
-                                      className="tooltip-text tool-test-white text-white"
-                                      role="tooltip"
-                                    >
-                                      <strong>For Round 0 (Founder Shares):</strong> Indicate whether founder shares
-                                      carry voting rights for company decisions, board appointments, and major corporate actions.
-                                      <br />
-                                      <strong>Common Founder Voting Rights:</strong>
-                                      <br />– <strong>Yes:</strong> Founders can vote on major company decisions
-                                      <br />– <strong>No:</strong> Founders have non-voting shares (rare for founders)
-                                      <br />
-                                      <strong>Typical Scenario:</strong> Most founder shares have full voting rights
-                                      allowing participation in key decisions like:
-                                      <br />• Board of directors elections
-                                      <br />• Major corporate transactions
-                                      <br />• Approval of future funding rounds
-                                      <br />• Changes to company bylaws
-                                    </div>
-                                  </span>
-                                </label>
-                                <div className="d-flex gap-3">
-                                  <div className="form-check">
-                                    <input
-                                      type="radio"
-                                      name="voting"
-                                      value="Yes"
-                                      checked={formData.voting === "Yes"}
-                                      onChange={() => {
-                                        handleInputChange("voting", "Yes");
-                                        if (errors.voting) {
-                                          setErrors((prev) => ({
-                                            ...prev,
-                                            voting: "",
-                                          }));
-                                        }
-                                      }}
-                                      className="form-check-input"
-                                    />
-                                    <label className="form-check-label">Yes</label>
-                                  </div>
-                                  <div className="form-check">
-                                    <input
-                                      type="radio"
-                                      name="voting"
-                                      value="No"
-                                      checked={formData.voting === "No"}
-                                      onChange={() => {
-                                        handleInputChange("voting", "No");
-                                        if (errors.voting) {
-                                          setErrors((prev) => ({
-                                            ...prev,
-                                            voting: "",
-                                          }));
-                                        }
-                                      }}
-                                      className="form-check-input"
-                                    />
-                                    <label className="form-check-label">No</label>
-                                  </div>
-                                </div>
-                                <div className="form-text">
-                                  Most founder shares have voting rights. Select "Yes" unless your incorporation documents specify non-voting shares.
-                                </div>
-                              </div>
-
-                              {/* Founder Voting Details */}
-                              {formData.voting === "Yes" && (
-                                <div className="mb-4 p-3 border rounded bg-light">
-                                  <h6>Founder Voting Rights Details</h6>
-                                  <div className="mb-3">
-                                    <label className="form-label">
-                                      Voting Power Distribution
-                                    </label>
-                                    <div className="table-responsive">
-                                      <table className="table table-sm table-bordered">
-                                        <thead>
-                                          <tr>
-                                            <th>Founder</th>
-                                            <th>Shares</th>
-                                            <th>Voting Power</th>
-                                          </tr>
-                                        </thead>
-                                        <tbody>
-                                          {foundersData.map((founder, index) => {
-                                            const shares = parseInt(founder.shares) || 0;
-                                            const totalShares = calculateTotalShares();
-                                            const votingPercentage = totalShares > 0 ? ((shares / totalShares) * 100).toFixed(1) : '0.0';
-                                            return (
-                                              <tr key={index}>
-                                                <td>Founder {index + 1}</td>
-                                                <td>{shares.toLocaleString()}</td>
-                                                <td>{votingPercentage}%</td>
-                                              </tr>
-                                            );
-                                          })}
-                                        </tbody>
-                                      </table>
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Round 0 Voting Information */}
-                              <div className="alert alert-warning mt-3">
-                                <strong>About Founder Voting Rights:</strong>
-                                <ul className="mb-0 mt-2 small">
-                                  <li>Founder voting rights are typically proportional to share ownership</li>
-                                  <li>Each share usually equals one vote (one-share-one-vote principle)</li>
-                                  <li>Voting rights allow participation in major corporate decisions</li>
-                                  <li>Some decisions may require supermajority votes for extra protection</li>
-                                </ul>
-                              </div>
-                            </div>
-                          ) : (
-                            /* OTHER ROUNDS - Investor Voting Rights */
-                            <div className="investment-round-content">
-                              <div className="mb-4">
-                                <label className="form-label fw-semibold">
-                                  Shareholders Voting Rights{" "}
-                                  <span className="tooltip-icon ms-2" tabIndex={0}>
-                                    <img
-                                      className="blackdark"
-                                      width="15"
-                                      height="15"
-                                      src="/assets/user/images/question.png"
-                                      alt="Tip"
-                                    />
-                                    <div
-                                      className="tooltip-text tool-test-white text-white"
-                                      role="tooltip"
-                                    >
-                                      <strong>What it is:</strong> Determines how much influence equity holders
-                                      wield in company decisions, including board appointments, strategic pivots,
-                                      and future fundraising.
-                                      <br />
-                                      <strong>Why it matters:</strong> Control rights shape governance — founders
-                                      often trade economic upside for retaining voting control. Investors may
-                                      require protective provisions and veto rights.
-                                      <br />
-                                      <strong>Investor Voting Scenarios:</strong>
-                                      <br />– <strong>Yes:</strong> Investors have voting rights (common for preferred shares)
-                                      <br />– <strong>No:</strong> Investors have non-voting shares (rare for equity investors)
-                                      <br />– <strong>Protective Provisions:</strong> Veto rights on specific major decisions
-                                      <br />– <strong>Board Seats:</strong> Right to appoint board directors
-                                    </div>
-                                  </span>{" "}
-                                  <span style={{ color: "var(--primary)" }}>*</span>
-                                </label>
-                                <div className="d-flex gap-3">
-                                  <div className="form-check">
-                                    <input
-                                      type="radio"
-                                      name="voting"
-                                      value="Yes"
-                                      checked={formData.voting === "Yes"}
-                                      onChange={() => {
-                                        handleInputChange("voting", "Yes");
-                                        if (errors.voting) {
-                                          setErrors((prev) => ({
-                                            ...prev,
-                                            voting: "",
-                                          }));
-                                        }
-                                      }}
-                                      className={`form-check-input ${errors.voting ? "is-invalid" : ""}`}
-                                    />
-                                    <label className="form-check-label">Yes</label>
-                                  </div>
-                                  <div className="form-check">
-                                    <input
-                                      type="radio"
-                                      name="voting"
-                                      value="No"
-                                      checked={formData.voting === "No"}
-                                      onChange={() => {
-                                        handleInputChange("voting", "No");
-                                        if (errors.voting) {
-                                          setErrors((prev) => ({
-                                            ...prev,
-                                            voting: "",
-                                          }));
-                                        }
-                                      }}
-                                      className={`form-check-input ${errors.voting ? "is-invalid" : ""}`}
-                                    />
-                                    <label className="form-check-label">No</label>
-                                  </div>
-                                </div>
-
-                                {errors.voting && (
-                                  <div className="text-danger small mt-1">
-                                    <i className="bi bi-exclamation-circle me-1"></i>
-                                    {errors.voting}
-                                  </div>
+                                    )}
+                                  </>
                                 )}
 
-                                {/* Additional voting details for investment rounds */}
-                                {formData.voting === "Yes" && (
-                                  <div className="mt-3 p-3 bg-light rounded">
-                                    <h6>Investor Voting Rights Details</h6>
-                                    <div className="form-text">
-                                      <strong>Common Investor Voting Rights Include:</strong>
-                                      <br />
-                                      <div className="alert alert-warning p-2 mt-2 mb-2">
-                                        <strong className="d-block text-center">
-                                          <i className="bi bi-exclamation-triangle me-2"></i>
-                                          Please connect with your Legal Council and make sure that all your voting rights of this round are included in term sheet as subscription document
-                                        </strong>
+                                <div className="d-flex justify-content-between gap-2">
+                                  <button
+                                    className="close_btn w-fit"
+                                    onClick={() => navigateToSection('prev')}
+                                  >
+                                    Back
+                                  </button>
+
+                                  <button
+                                    className="global_btn w-fit"
+                                    onClick={() => {
+                                      // For Round 0, skip validation and navigate directly
+                                      if (isFirstRound) {
+                                        navigateToSection('next');
+                                        return;
+                                      }
+
+                                      // Validate before proceeding for other rounds
+                                      const newErrors = {};
+
+                                      // Check if at least one liquidation option is selected
+                                      // if (formData.liquidation.length === 0) {
+                                      //   newErrors.liquidation = "Please select a liquidation preference type";
+                                      // }
+
+                                      // // Check if OTHER is selected but the text input is empty
+                                      // if (formData.liquidation.includes("OTHER")) {
+                                      //   if (!formData.liquidationOther || !formData.liquidationOther.trim()) {
+                                      //     newErrors.liquidationOther = "This field is required";
+                                      //   }
+                                      // }
+
+                                      if (Object.keys(newErrors).length > 0) {
+                                        setErrors(newErrors);
+
+                                        // Scroll to the first error
+                                        setTimeout(() => {
+                                          const firstErrorElement = document.querySelector(".is-invalid, .border-danger");
+                                          if (firstErrorElement) {
+                                            firstErrorElement.scrollIntoView({
+                                              behavior: "smooth",
+                                              block: "center",
+                                            });
+                                          }
+                                        }, 100);
+                                      } else {
+                                        // Clear errors if validation passes
+                                        setErrors({});
+                                        navigateToSection('next');
+                                      }
+                                    }}
+                                  >
+                                    Save and Continue
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+
+
+                            {activeSection === "voting" && !isFirstRound && (
+                              <div className="section-content p-4 border rounded-3 shadow-sm bg-white">
+                                <PreviousSection
+                                  formData={formData}
+                                  otherText={otherText}
+                                  selected={selected}
+                                  visibleFields={[
+                                    "shareclass",
+                                    "description",
+                                    "instrument",
+                                    "roundsize",
+                                    "issuedshares",
+                                    "rights",
+                                    "liquidation",
+                                    "convertible",
+                                  ]}
+                                  isFirstRound={isFirstRound}
+                                  foundersData={foundersData}
+                                  calculateTotalShares={calculateTotalShares}
+                                  calculateTotalValue={calculateTotalValue}
+                                  founderCount={founderCount}
+                                  CurrDisplay={CurrDisplay}
+                                />
+
+
+                                <h3 className="h5 mb-4 text-gray-800">
+                                  {isFirstRound ? "Round 0 - Founder Voting Rights" : "Shareholders Voting Rights"}
+                                </h3>
+
+                                {/* ROUND 0 - Founder Voting Rights */}
+                                {isFirstRound ? (
+                                  <div className="round-zero-content">
+                                    <div className="alert alert-info mb-4">
+                                      <strong>Round 0 Information:</strong> Founder shares typically have voting rights as per your incorporation documents.
+                                    </div>
+
+                                    <div className="mb-4">
+                                      <label className="form-label fw-semibold">
+                                        Do Founder Shares Have Voting Rights?{" "}
+                                        <span className="tooltip-icon ms-2" tabIndex={0}>
+                                          <img
+                                            className="blackdark"
+                                            width="15"
+                                            height="15"
+                                            src="/assets/user/images/question.png"
+                                            alt="Tip"
+                                          />
+                                          <div
+                                            className="tooltip-text tool-test-white text-white"
+                                            role="tooltip"
+                                          >
+                                            <strong>For Round 0 (Founder Shares):</strong> Indicate whether founder shares
+                                            carry voting rights for company decisions, board appointments, and major corporate actions.
+                                            <br />
+                                            <strong>Common Founder Voting Rights:</strong>
+                                            <br />– <strong>Yes:</strong> Founders can vote on major company decisions
+                                            <br />– <strong>No:</strong> Founders have non-voting shares (rare for founders)
+                                            <br />
+                                            <strong>Typical Scenario:</strong> Most founder shares have full voting rights
+                                            allowing participation in key decisions like:
+                                            <br />• Board of directors elections
+                                            <br />• Major corporate transactions
+                                            <br />• Approval of future funding rounds
+                                            <br />• Changes to company bylaws
+                                          </div>
+                                        </span>
+                                      </label>
+                                      <div className="d-flex gap-3">
+                                        <div className="form-check">
+                                          <input
+                                            type="radio"
+                                            name="voting"
+                                            value="Yes"
+                                            checked={formData.voting === "Yes"}
+                                            onChange={() => {
+                                              handleInputChange("voting", "Yes");
+                                              if (errors.voting) {
+                                                setErrors((prev) => ({
+                                                  ...prev,
+                                                  voting: "",
+                                                }));
+                                              }
+                                            }}
+                                            className="form-check-input"
+                                          />
+                                          <label className="form-check-label">Yes</label>
+                                        </div>
+                                        <div className="form-check">
+                                          <input
+                                            type="radio"
+                                            name="voting"
+                                            value="No"
+                                            checked={formData.voting === "No"}
+                                            onChange={() => {
+                                              handleInputChange("voting", "No");
+                                              if (errors.voting) {
+                                                setErrors((prev) => ({
+                                                  ...prev,
+                                                  voting: "",
+                                                }));
+                                              }
+                                            }}
+                                            className="form-check-input"
+                                          />
+                                          <label className="form-check-label">No</label>
+                                        </div>
                                       </div>
-                                      <ul className="mb-0 mt-2">
-                                        <li>May included Election of board directors</li>
-                                        <li>May included Approval of major corporate transactions</li>
-                                        <li>May included Changes to company charter or bylaws</li>
-                                        <li>May included Issuance of new equity securities</li>
-                                        <li>May included Approval of annual budgets</li>
+                                      <div className="form-text">
+                                        Most founder shares have voting rights. Select "Yes" unless your incorporation documents specify non-voting shares.
+                                      </div>
+                                    </div>
+
+                                    {/* Founder Voting Details */}
+                                    {formData.voting === "Yes" && (
+                                      <div className="mb-4 p-3 border rounded bg-light">
+                                        <h6>Founder Voting Rights Details</h6>
+                                        <div className="mb-3">
+                                          <label className="form-label">
+                                            Voting Power Distribution
+                                          </label>
+                                          <div className="table-responsive">
+                                            <table className="table table-sm table-bordered">
+                                              <thead>
+                                                <tr>
+                                                  <th>Founder</th>
+                                                  <th>Shares</th>
+                                                  <th>Voting Power</th>
+                                                </tr>
+                                              </thead>
+                                              <tbody>
+                                                {foundersData.map((founder, index) => {
+                                                  const shares = parseInt(founder.shares) || 0;
+                                                  const totalShares = calculateTotalShares();
+                                                  const votingPercentage = totalShares > 0 ? ((shares / totalShares) * 100).toFixed(1) : '0.0';
+                                                  return (
+                                                    <tr key={index}>
+                                                      <td>Founder {index + 1}</td>
+                                                      <td>{shares.toLocaleString()}</td>
+                                                      <td>{votingPercentage}%</td>
+                                                    </tr>
+                                                  );
+                                                })}
+                                              </tbody>
+                                            </table>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Round 0 Voting Information */}
+                                    <div className="alert alert-warning mt-3">
+                                      <strong>About Founder Voting Rights:</strong>
+                                      <ul className="mb-0 mt-2 small">
+                                        <li>Founder voting rights are typically proportional to share ownership</li>
+                                        <li>Each share usually equals one vote (one-share-one-vote principle)</li>
+                                        <li>Voting rights allow participation in major corporate decisions</li>
+                                        <li>Some decisions may require supermajority votes for extra protection</li>
                                       </ul>
                                     </div>
                                   </div>
-                                )}
-                              </div>
+                                ) : (
+                                  /* OTHER ROUNDS - Investor Voting Rights */
+                                  <div className="investment-round-content">
+                                    <div className="mb-4">
+                                      <label className="form-label fw-semibold">
+                                        Shareholders Voting Rights{" "}
+                                        <span className="tooltip-icon ms-2" tabIndex={0}>
+                                          <img
+                                            className="blackdark"
+                                            width="15"
+                                            height="15"
+                                            src="/assets/user/images/question.png"
+                                            alt="Tip"
+                                          />
+                                          <div
+                                            className="tooltip-text tool-test-white text-white"
+                                            role="tooltip"
+                                          >
+                                            <strong>What it is:</strong> Determines how much influence equity holders
+                                            wield in company decisions, including board appointments, strategic pivots,
+                                            and future fundraising.
+                                            <br />
+                                            <strong>Why it matters:</strong> Control rights shape governance — founders
+                                            often trade economic upside for retaining voting control. Investors may
+                                            require protective provisions and veto rights.
+                                            <br />
+                                            <strong>Investor Voting Scenarios:</strong>
+                                            <br />– <strong>Yes:</strong> Investors have voting rights (common for preferred shares)
+                                            <br />– <strong>No:</strong> Investors have non-voting shares (rare for equity investors)
+                                            <br />– <strong>Protective Provisions:</strong> Veto rights on specific major decisions
+                                            <br />– <strong>Board Seats:</strong> Right to appoint board directors
+                                          </div>
+                                        </span>{" "}
+                                        <span style={{ color: "var(--primary)" }}>*</span>
+                                      </label>
+                                      <div className="d-flex gap-3">
+                                        <div className="form-check">
+                                          <input
+                                            type="radio"
+                                            name="voting"
+                                            value="Yes"
+                                            checked={formData.voting === "Yes"}
+                                            onChange={() => {
+                                              handleInputChange("voting", "Yes");
+                                              if (errors.voting) {
+                                                setErrors((prev) => ({
+                                                  ...prev,
+                                                  voting: "",
+                                                }));
+                                              }
+                                            }}
+                                            className={`form-check-input ${errors.voting ? "is-invalid" : ""}`}
+                                          />
+                                          <label className="form-check-label">Yes</label>
+                                        </div>
+                                        <div className="form-check">
+                                          <input
+                                            type="radio"
+                                            name="voting"
+                                            value="No"
+                                            checked={formData.voting === "No"}
+                                            onChange={() => {
+                                              handleInputChange("voting", "No");
+                                              if (errors.voting) {
+                                                setErrors((prev) => ({
+                                                  ...prev,
+                                                  voting: "",
+                                                }));
+                                              }
+                                            }}
+                                            className={`form-check-input ${errors.voting ? "is-invalid" : ""}`}
+                                          />
+                                          <label className="form-check-label">No</label>
+                                        </div>
+                                      </div>
 
-                              {/* Investor Voting Information */}
-                              {/* <div className="alert alert-info mt-3">
+                                      {errors.voting && (
+                                        <div className="text-danger small mt-1">
+                                          <i className="bi bi-exclamation-circle me-1"></i>
+                                          {errors.voting}
+                                        </div>
+                                      )}
+
+                                      {/* Additional voting details for investment rounds */}
+                                      {formData.voting === "Yes" && (
+                                        <div className="mt-3 p-3 bg-light rounded">
+                                          <h6>Investor Voting Rights Details</h6>
+                                          <div className="form-text">
+                                            <strong>Common Investor Voting Rights Include:</strong>
+                                            <br />
+                                            <div className="alert alert-warning p-2 mt-2 mb-2">
+                                              <strong className="d-block text-center">
+                                                <i className="bi bi-exclamation-triangle me-2"></i>
+                                                Please connect with your Legal Council and make sure that all your voting rights of this round are included in term sheet as subscription document
+                                              </strong>
+                                            </div>
+                                            <ul className="mb-0 mt-2">
+                                              <li>May included Election of board directors</li>
+                                              <li>May included Approval of major corporate transactions</li>
+                                              <li>May included Changes to company charter or bylaws</li>
+                                              <li>May included Issuance of new equity securities</li>
+                                              <li>May included Approval of annual budgets</li>
+                                            </ul>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {/* Investor Voting Information */}
+                                    {/* <div className="alert alert-info mt-3">
                                 <strong>Note about Investor Voting Rights:</strong>
                                 <ul className="mb-0 mt-2 small">
                                   <li>Preferred shareholders typically have voting rights on as-converted basis</li>
@@ -5953,672 +6703,654 @@ export default function Recordround() {
                                   <li>Voting agreements may pool votes for board representation</li>
                                 </ul>
                               </div> */}
-                            </div>
-                          )}
-
-                          <div className="d-flex justify-content-between gap-2">
-                            <button
-                              className="close_btn w-fit"
-                              onClick={() => navigateToSection('prev')}
-                            >
-                              Back
-                            </button>
-
-                            <button
-                              className="global_btn w-fit"
-                              onClick={() => {
-                                const newErrors = {};
-
-                                if (isFirstRound) {
-                                  // ROUND 0 VALIDATION - Voting rights are important but default to "Yes"
-                                  // No strict validation needed as most founder shares have voting rights
-                                  if (!formData.voting) {
-                                    // Auto-set to "Yes" if not selected (most common case)
-                                    handleInputChange("voting", "Yes");
-                                  }
-                                } else {
-                                  // OTHER ROUNDS VALIDATION - Voting rights are required for investor shares
-                                  if (!formData.voting) {
-                                    newErrors.voting = "Please select Yes or No";
-                                  }
-                                }
-
-                                if (Object.keys(newErrors).length > 0) {
-                                  setErrors(newErrors);
-
-                                  // Scroll to first error
-                                  setTimeout(() => {
-                                    const firstErrorElement = document.querySelector(".is-invalid, .border-danger");
-                                    if (firstErrorElement) {
-                                      firstErrorElement.scrollIntoView({
-                                        behavior: "smooth",
-                                        block: "center",
-                                      });
-                                    }
-                                  }, 100);
-                                } else {
-                                  setErrors({});
-
-                                  // Navigate to appropriate next section
-                                  if (isFirstRound) {
-                                    navigateToSection('next'); // Skip term sheet and subscription for Round 0
-                                  } else {
-                                    navigateToSection('next');
-                                  }
-                                }
-                              }}
-                            >
-                              Save and Continue
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                      {activeSection === "termsheet" && !isFirstRound && (
-                        <div className="section-content p-4 border rounded-3 shadow-sm bg-white">
-                          <PreviousSection
-                            formData={formData}
-                            otherText={otherText}
-                            selected={selected}
-                            visibleFields={[
-                              "shareclass",
-                              "description",
-                              "instrument",
-                              "roundsize",
-                              "issuedshares",
-                              "rights",
-                              "liquidation",
-                              "convertible",
-                              "voting",
-                            ]}
-                            isFirstRound={isFirstRound}
-                            foundersData={foundersData}
-                            calculateTotalShares={calculateTotalShares}
-                            calculateTotalValue={calculateTotalValue}
-                            founderCount={founderCount}
-                          />
-
-                          <h3 className="h5 mb-4 text-gray-800">Investment Documents - Term Sheet</h3>
-
-                          {/* ROUND 0 - Skip this section entirely */}
-                          {isFirstRound ? (
-                            <div className="text-center py-5">
-                              <div className="alert alert-info">
-                                <strong>Round 0 - No Term Sheet Required</strong>
-                                <p className="mb-0 mt-2">
-                                  This is the incorporation round with founder shares only.
-                                  Term sheets are typically used for investor funding rounds.
-                                </p>
-                              </div>
-                              <div className="mt-4">
-                                <button
-                                  className="global_btn"
-                                  onClick={() => navigateToSection('next')}
-                                >
-                                  Continue to Notes Section
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            /* OTHER ROUNDS - Show term sheet upload */
-                            <div className="investment-round-content">
-                              <div className="mb-4">
-                                <label className="form-label fw-semibold d-flex align-items-center">
-                                  Upload Your Term Sheet(s){" "}
-                                  <span className="tooltip-icon ms-2" tabIndex={0}>
-                                    <img
-                                      className="blackdark"
-                                      width="15"
-                                      height="15"
-                                      src="/assets/user/images/question.png"
-                                      alt="Tip"
-                                    />
-                                    <div
-                                      className="tooltip-text tool-test-white text-white"
-                                      role="tooltip"
-                                    >
-                                      A term sheet is a non-binding document that sets the stage for an investment
-                                      by outlining the essential terms of the deal: valuation, share type, governance
-                                      rights, investor protections, and expected post-money ownership. It is the
-                                      'strategic handshake' between founders and investors before drafting legal documents.
-                                      <br />
-                                      <br />
-                                      <strong>Key Elements in Term Sheets:</strong>
-                                      <br />– Valuation (pre-money and post-money)
-                                      <br />– Investment amount and share price
-                                      <br />– Liquidation preferences
-                                      <br />– Voting rights and protective provisions
-                                      <br />– Board composition
-                                      <br />– Anti-dilution provisions
-                                      <br />– Dividend preferences
-                                    </div>
-                                  </span>
-                                  <span style={{ color: "var(--primary)" }}>*</span>
-                                </label>
-
-                                <input
-                                  type="file"
-                                  multiple
-                                  accept=".pdf,.doc,.docx,.txt"
-                                  onChange={(e) => {
-                                    handleInputChange(
-                                      "termsheetFile",
-                                      Array.from(e.target.files)
-                                    );
-                                    if (errors.termsheetFile) {
-                                      setErrors((prev) => ({
-                                        ...prev,
-                                        termsheetFile: "",
-                                      }));
-                                    }
-                                  }}
-                                  className={`textarea_input ${errors.termsheetFile ? "is-invalid" : ""}`}
-                                />
-
-                                {/* Show selected file names */}
-                                {formData.termsheetFile && formData.termsheetFile.length > 0 && (
-                                  <div className="mt-2">
-                                    <strong>Selected Files:</strong>
-                                    <ul className="small text-muted mt-1 mb-0">
-                                      {formData.termsheetFile.map((file, index) => (
-                                        <li key={index}>
-                                          <strong>{file.name}</strong>
-                                        </li>
-                                      ))}
-                                    </ul>
                                   </div>
                                 )}
 
-                                {errors.termsheetFile && (
-                                  <div className="text-danger small mt-1">
-                                    <i className="bi bi-exclamation-circle me-1"></i>
-                                    {errors.termsheetFile}
+                                <div className="d-flex justify-content-between gap-2">
+                                  <button
+                                    className="close_btn w-fit"
+                                    onClick={() => navigateToSection('prev')}
+                                  >
+                                    Back
+                                  </button>
+
+                                  <button
+                                    className="global_btn w-fit"
+                                    onClick={() => {
+                                      const newErrors = {};
+
+                                      if (isFirstRound) {
+
+                                        if (!formData.voting) {
+
+                                          handleInputChange("voting", "Yes");
+                                        }
+                                      } else {
+
+                                        if (!formData.voting) {
+                                          newErrors.voting = "Please select Yes or No";
+                                        }
+                                      }
+
+                                      if (Object.keys(newErrors).length > 0) {
+                                        setErrors(newErrors);
+
+
+                                        setTimeout(() => {
+                                          const firstErrorElement = document.querySelector(".is-invalid, .border-danger");
+                                          if (firstErrorElement) {
+                                            firstErrorElement.scrollIntoView({
+                                              behavior: "smooth",
+                                              block: "center",
+                                            });
+                                          }
+                                        }, 100);
+                                      } else {
+                                        setErrors({});
+
+
+                                        if (isFirstRound) {
+                                          navigateToSection('next'); // Skip term sheet and subscription for Round 0
+                                        } else {
+                                          navigateToSection('next');
+                                        }
+                                      }
+                                    }}
+                                  >
+                                    Save and Continue
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                            {activeSection === "termsheet" && !isFirstRound && (
+                              <div className="section-content p-4 border rounded-3 shadow-sm bg-white">
+                                <PreviousSection
+                                  formData={formData}
+                                  otherText={otherText}
+                                  selected={selected}
+                                  visibleFields={[
+                                    "shareclass",
+                                    "description",
+                                    "instrument",
+                                    "roundsize",
+                                    "issuedshares",
+                                    "rights",
+                                    "liquidation",
+                                    "convertible",
+                                    "voting",
+                                  ]}
+                                  isFirstRound={isFirstRound}
+                                  foundersData={foundersData}
+                                  calculateTotalShares={calculateTotalShares}
+                                  calculateTotalValue={calculateTotalValue}
+                                  founderCount={founderCount}
+                                  CurrDisplay={CurrDisplay}
+                                />
+
+                                <h3 className="h5 mb-4 text-gray-800">Investment Documents - Term Sheet</h3>
+
+                                {/* ROUND 0 - Skip this section entirely */}
+                                {isFirstRound ? (
+                                  <div className="text-center py-5">
+                                    <div className="alert alert-info">
+                                      <strong>Round 0 - No Term Sheet Required</strong>
+                                      <p className="mb-0 mt-2">
+                                        This is the incorporation round with founder shares only.
+                                        Term sheets are typically used for investor funding rounds.
+                                      </p>
+                                    </div>
+                                    <div className="mt-4">
+                                      <button
+                                        className="global_btn"
+                                        onClick={() => navigateToSection('next')}
+                                      >
+                                        Continue to Notes Section
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  /* OTHER ROUNDS - Show term sheet upload */
+                                  <div className="investment-round-content">
+                                    <div className="mb-4">
+                                      <label className="form-label fw-semibold d-flex align-items-center">
+                                        Upload Your Term Sheet(s){" "}
+                                        <span className="tooltip-icon ms-2" tabIndex={0}>
+                                          <img
+                                            className="blackdark"
+                                            width="15"
+                                            height="15"
+                                            src="/assets/user/images/question.png"
+                                            alt="Tip"
+                                          />
+                                          <div
+                                            className="tooltip-text tool-test-white text-white"
+                                            role="tooltip"
+                                          >
+                                            A term sheet is a non-binding document that sets the stage for an investment
+                                            by outlining the essential terms of the deal: valuation, share type, governance
+                                            rights, investor protections, and expected post-money ownership. It is the
+                                            'strategic handshake' between founders and investors before drafting legal documents.
+                                            <br />
+                                            <strong>Key Elements in Term Sheets:</strong>
+                                            – Valuation (pre-money and post-money)
+                                            <br />– Investment amount and share price
+                                            <br />– Liquidation preferences
+                                            <br />– Voting rights and protective provisions
+                                            <br />– Board composition
+                                            <br />– Anti-dilution provisions
+                                            <br />– Dividend preferences
+                                          </div>
+                                        </span>
+                                        <span style={{ color: "var(--primary)" }}>*</span>
+                                      </label>
+
+                                      <input
+                                        type="file"
+                                        multiple
+                                        accept=".pdf,.doc,.docx,.txt"
+                                        onChange={(e) => {
+                                          handleInputChange(
+                                            "termsheetFile",
+                                            Array.from(e.target.files)
+                                          );
+                                          if (errors.termsheetFile) {
+                                            setErrors((prev) => ({
+                                              ...prev,
+                                              termsheetFile: "",
+                                            }));
+                                          }
+                                        }}
+                                        className={`textarea_input ${errors.termsheetFile ? "is-invalid" : ""}`}
+                                      />
+
+                                      {/* Show selected file names */}
+                                      {formData.termsheetFile && formData.termsheetFile.length > 0 && (
+                                        <div className="mt-2">
+                                          <strong>Selected Files:</strong>
+                                          <ul className="small text-muted mt-1 mb-0">
+                                            {formData.termsheetFile.map((file, index) => (
+                                              <li key={index}>
+                                                <strong>{file.name}</strong>
+                                              </li>
+                                            ))}
+                                          </ul>
+                                        </div>
+                                      )}
+
+                                      {errors.termsheetFile && (
+                                        <div className="text-danger small mt-1">
+                                          <i className="bi bi-exclamation-circle me-1"></i>
+                                          {errors.termsheetFile}
+                                        </div>
+                                      )}
+
+                                      <div className="form-text">
+                                        Supported formats: PDF, DOC, DOCX, TXT. Maximum file size: 10MB per file.
+                                      </div>
+                                    </div>
+
+
                                   </div>
                                 )}
 
-                                <div className="form-text">
-                                  Supported formats: PDF, DOC, DOCX, TXT. Maximum file size: 10MB per file.
+                                <div className="d-flex justify-content-between gap-2">
+                                  <button
+                                    className="close_btn w-fit"
+                                    onClick={() => navigateToSection('prev')}
+                                  >
+                                    Back
+                                  </button>
+
+                                  <button
+                                    className="global_btn w-fit"
+                                    onClick={() => {
+                                      // For Round 0, skip validation and navigate directly to notes
+                                      if (isFirstRound) {
+                                        navigateToSection('next');
+                                        return;
+                                      }
+
+                                      // Validate before proceeding for other rounds
+                                      const newErrors = {};
+
+                                      if (!formData.termsheetFile || formData.termsheetFile.length === 0) {
+                                        newErrors.termsheetFile = "Please upload at least one term sheet file";
+                                      } else {
+                                        // Validate file types and sizes
+                                        const validExtensions = ["pdf", "doc", "docx", "txt"];
+                                        const maxSize = 10 * 1024 * 1024; // 10MB
+
+                                        for (const file of formData.termsheetFile) {
+                                          const fileExtension = file.name.split(".").pop().toLowerCase();
+
+                                          // ✅ Validate extension
+                                          if (!validExtensions.includes(fileExtension)) {
+                                            newErrors.termsheetFile =
+                                              "Invalid file type. Please upload PDF, DOC, DOCX, or TXT files only";
+                                            break;
+                                          }
+
+                                          // ✅ Validate file size
+                                          if (file.size > maxSize) {
+                                            newErrors.termsheetFile = `File ${file.name} exceeds 10MB size limit`;
+                                            break;
+                                          }
+                                        }
+                                      }
+
+                                      if (Object.keys(newErrors).length > 0) {
+                                        setErrors(newErrors);
+
+                                        // Scroll to first error
+                                        setTimeout(() => {
+                                          const firstErrorElement = document.querySelector(
+                                            ".is-invalid, .border-danger"
+                                          );
+                                          if (firstErrorElement) {
+                                            firstErrorElement.scrollIntoView({
+                                              behavior: "smooth",
+                                              block: "center",
+                                            });
+                                          }
+                                        }, 100);
+                                      } else {
+                                        setErrors({});
+                                        navigateToSection('next');
+                                      }
+                                    }}
+                                  >
+                                    Save and Continue
+                                  </button>
+
                                 </div>
                               </div>
+                            )}
 
-                              {/* Term Sheet Information */}
-                              {/* <div className="alert alert-info mt-3">
-                                <strong>About Term Sheets:</strong>
-                                <ul className="mb-0 mt-2 small">
-                                  <li>Term sheets are non-binding but set the framework for the deal</li>
-                                  <li>They outline key economic and control terms</li>
-                                  <li>Typically negotiated between company and lead investor</li>
-                                  <li>Forms the basis for legal documentation</li>
-                                  <li>Exclusivity periods are common in term sheets</li>
-                                </ul>
-                              </div> */}
-                            </div>
-                          )}
-
-                          <div className="d-flex justify-content-between gap-2">
-                            <button
-                              className="close_btn w-fit"
-                              onClick={() => navigateToSection('prev')}
-                            >
-                              Back
-                            </button>
-
-                            <button
-                              className="global_btn w-fit"
-                              onClick={() => {
-                                // For Round 0, skip validation and navigate directly to notes
-                                if (isFirstRound) {
-                                  navigateToSection('next');
-                                  return;
-                                }
-
-                                // Validate before proceeding for other rounds
-                                const newErrors = {};
-
-                                if (!formData.termsheetFile || formData.termsheetFile.length === 0) {
-                                  newErrors.termsheetFile = "Please upload at least one term sheet file";
-                                } else {
-                                  // Validate file types and sizes
-                                  const validExtensions = ["pdf", "doc", "docx", "txt"];
-                                  const maxSize = 10 * 1024 * 1024; // 10MB
-
-                                  for (const file of formData.termsheetFile) {
-                                    const fileExtension = file.name.split(".").pop().toLowerCase();
-
-                                    // ✅ Validate extension
-                                    if (!validExtensions.includes(fileExtension)) {
-                                      newErrors.termsheetFile =
-                                        "Invalid file type. Please upload PDF, DOC, DOCX, or TXT files only";
-                                      break;
-                                    }
-
-                                    // ✅ Validate file size
-                                    if (file.size > maxSize) {
-                                      newErrors.termsheetFile = `File ${file.name} exceeds 10MB size limit`;
-                                      break;
-                                    }
-                                  }
-                                }
-
-                                if (Object.keys(newErrors).length > 0) {
-                                  setErrors(newErrors);
-
-                                  // Scroll to first error
-                                  setTimeout(() => {
-                                    const firstErrorElement = document.querySelector(
-                                      ".is-invalid, .border-danger"
-                                    );
-                                    if (firstErrorElement) {
-                                      firstErrorElement.scrollIntoView({
-                                        behavior: "smooth",
-                                        block: "center",
-                                      });
-                                    }
-                                  }, 100);
-                                } else {
-                                  setErrors({});
-                                  navigateToSection('next');
-                                }
-                              }}
-                            >
-                              Save and Continue
-                            </button>
-
-                          </div>
-                        </div>
-                      )}
-
-                      {activeSection === "subscription" && !isFirstRound && (
-                        <div className="section-content p-4 border rounded-3 shadow-sm bg-white">
-                          <PreviousSection
-                            formData={formData}
-                            otherText={otherText}
-                            selected={selected}
-                            visibleFields={[
-                              "shareclass",
-                              "description",
-                              "instrument",
-                              "roundsize",
-                              "issuedshares",
-                              "rights",
-                              "liquidation",
-                              "convertible",
-                              "voting",
-                              "termsheet",
-                            ]}
-                            isFirstRound={isFirstRound}
-                            foundersData={foundersData}
-                            calculateTotalShares={calculateTotalShares}
-                            calculateTotalValue={calculateTotalValue}
-                            founderCount={founderCount}
-                          />
-
-                          <h3 className="h5 mb-4 text-gray-800">Investment Documents - Subscription</h3>
-
-                          {/* ROUND 0 - Skip this section entirely */}
-                          {isFirstRound ? (
-                            <div className="text-center py-5">
-                              <div className="alert alert-info">
-                                <strong>Round 0 - No Subscription Documents Required</strong>
-                                <p className="mb-0 mt-2">
-                                  This is the incorporation round with founder shares only.
-                                  Subscription documents are used for investor funding rounds.
-                                </p>
-                              </div>
-                              <div className="mt-4">
-                                <button
-                                  className="global_btn"
-                                  onClick={() => navigateToSection('next')}
-                                >
-                                  Continue to Notes Section
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            /* OTHER ROUNDS - Show subscription document upload */
-                            <div className="investment-round-content">
-                              <div className="mb-4">
-                                <label className="form-label fw-semibold d-flex align-items-center">
-                                  Upload Your Subscription Documents
-                                  <span className="tooltip-icon ms-2" tabIndex={0}>
-                                    <img
-                                      className="blackdark"
-                                      width="15"
-                                      height="15"
-                                      src="/assets/user/images/question.png"
-                                      alt="Tip"
-                                    />
-                                    <div
-                                      className="tooltip-text tool-test-white text-white"
-                                      role="tooltip"
-                                    >
-                                      Subscription documents are the formal, legally binding agreements that an investor
-                                      signs to purchase equity in a company after a term sheet has been agreed upon.
-                                      These include the Subscription Agreement, which outlines how many shares the
-                                      investor is buying, at what price, and under what terms.
-                                      <br />
-                                      <br />
-                                      <strong>Common Subscription Documents:</strong>
-                                      <br />– <strong>Subscription Agreement:</strong> Primary investment contract
-                                      <br />– <strong>Shareholders' Agreement:</strong> Governance and rights
-                                      <br />– <strong>Investor Rights Agreement:</strong> Information and registration rights
-                                      <br />– <strong>Board Consent:</strong> Formal board approval of the round
-                                      <br />– <strong>Side Letters:</strong> Special terms for specific investors
-                                      <br />
-                                      <br />
-                                      These documents legally commit the investor to the deal and obligate the company
-                                      to issue shares in exchange for capital.
-                                    </div>
-                                  </span>
-                                  <span style={{ color: "var(--primary)" }}>*</span>
-                                </label>
-
-                                <input
-                                  type="file"
-                                  multiple
-                                  accept=".pdf,.doc,.docx,.txt"
-                                  onChange={(e) => {
-                                    handleInputChange(
-                                      "subscriptiondocument",
-                                      Array.from(e.target.files)
-                                    );
-                                    if (errors.subscriptiondocument) {
-                                      setErrors((prev) => ({
-                                        ...prev,
-                                        subscriptiondocument: "",
-                                      }));
-                                    }
-                                  }}
-                                  className={`textarea_input ${errors.subscriptiondocument ? "is-invalid" : ""}`}
+                            {activeSection === "subscription" && !isFirstRound && (
+                              <div className="section-content p-4 border rounded-3 shadow-sm bg-white">
+                                <PreviousSection
+                                  formData={formData}
+                                  otherText={otherText}
+                                  selected={selected}
+                                  visibleFields={[
+                                    "shareclass",
+                                    "description",
+                                    "instrument",
+                                    "roundsize",
+                                    "issuedshares",
+                                    "rights",
+                                    "liquidation",
+                                    "convertible",
+                                    "voting",
+                                    "termsheet",
+                                  ]}
+                                  isFirstRound={isFirstRound}
+                                  foundersData={foundersData}
+                                  calculateTotalShares={calculateTotalShares}
+                                  calculateTotalValue={calculateTotalValue}
+                                  founderCount={founderCount}
+                                  CurrDisplay={CurrDisplay}
                                 />
 
-                                {/* Show selected file names */}
-                                {formData.subscriptiondocument && formData.subscriptiondocument.length > 0 && (
-                                  <div className="mt-2">
-                                    <strong>Selected Files:</strong>
-                                    <ul className="small text-muted mt-1 mb-0">
-                                      {formData.subscriptiondocument.map((file, index) => (
-                                        <li key={index}>
-                                          <strong>{file.name}</strong>
-                                        </li>
-                                      ))}
-                                    </ul>
+                                <h3 className="h5 mb-4 text-gray-800">Investment Documents - Subscription</h3>
+
+                                {/* ROUND 0 - Skip this section entirely */}
+                                {isFirstRound ? (
+                                  <div className="text-center py-5">
+                                    <div className="alert alert-info">
+                                      <strong>Round 0 - No Subscription Documents Required</strong>
+                                      <p className="mb-0 mt-2">
+                                        This is the incorporation round with founder shares only.
+                                        Subscription documents are used for investor funding rounds.
+                                      </p>
+                                    </div>
+                                    <div className="mt-4">
+                                      <button
+                                        className="global_btn"
+                                        onClick={() => navigateToSection('next')}
+                                      >
+                                        Continue to Notes Section
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  /* OTHER ROUNDS - Show subscription document upload */
+                                  <div className="investment-round-content">
+                                    <div className="mb-4">
+                                      <label className="form-label fw-semibold d-flex align-items-center">
+                                        Upload Your Subscription Documents
+                                        <span className="tooltip-icon ms-2" tabIndex={0}>
+                                          <img
+                                            className="blackdark"
+                                            width="15"
+                                            height="15"
+                                            src="/assets/user/images/question.png"
+                                            alt="Tip"
+                                          />
+                                          <div
+                                            className="tooltip-text tool-test-white text-white"
+                                            role="tooltip"
+                                          >
+                                            <div className="d-flex flex-column gap-2">
+                                              <p>
+                                                Subscription documents are the formal, legally binding agreements that an investor
+                                                signs to purchase equity in a company after a term sheet has been agreed upon.
+                                                These include the Subscription Agreement, which outlines how many shares the
+                                                investor is buying, at what price, and under what terms.
+                                              </p>
+                                              <p><strong>Common Subscription Documents:</strong></p>
+                                              <p><b>Subscription Agreement:</b> Primary investment contract</p>
+                                              <p><b>Shareholders' Agreement:</b> Governance and rights</p>
+                                              <p><b>Investor Rights Agreement:</b> Information and registration rights</p>
+                                              <p><b>Board Consent:</b> Formal board approval of the round</p>
+                                              <p><b>Side Letters:</b> Special terms for specific investors</p>
+                                              <p> These documents legally commit the investor to the deal and obligate the company
+                                                to issue shares in exchange for capital.</p>
+                                            </div>
+
+
+                                          </div>
+                                        </span>
+                                        <span style={{ color: "var(--primary)" }}>*</span>
+                                      </label>
+
+                                      <input
+                                        type="file"
+                                        multiple
+                                        accept=".pdf,.doc,.docx,.txt"
+                                        onChange={(e) => {
+                                          handleInputChange(
+                                            "subscriptiondocument",
+                                            Array.from(e.target.files)
+                                          );
+                                          if (errors.subscriptiondocument) {
+                                            setErrors((prev) => ({
+                                              ...prev,
+                                              subscriptiondocument: "",
+                                            }));
+                                          }
+                                        }}
+                                        className={`textarea_input ${errors.subscriptiondocument ? "is-invalid" : ""}`}
+                                      />
+
+
+                                      {formData.subscriptiondocument && formData.subscriptiondocument.length > 0 && (
+                                        <div className="mt-2">
+                                          <strong>Selected Files:</strong>
+                                          <ul className="small text-muted mt-1 mb-0">
+                                            {formData.subscriptiondocument.map((file, index) => (
+                                              <li key={index}>
+                                                <strong>{file.name}</strong>
+                                              </li>
+                                            ))}
+                                          </ul>
+                                        </div>
+                                      )}
+
+                                      {errors.subscriptiondocument && (
+                                        <div className="text-danger small mt-1">
+                                          <i className="bi bi-exclamation-circle me-1"></i>
+                                          {errors.subscriptiondocument}
+                                        </div>
+                                      )}
+
+                                      <div className="form-text">
+                                        Upload all relevant subscription documents. Supported formats: PDF, DOC, DOCX, TXT. Maximum file size: 10MB per file.
+                                      </div>
+                                    </div>
+
+
                                   </div>
                                 )}
 
-                                {errors.subscriptiondocument && (
-                                  <div className="text-danger small mt-1">
-                                    <i className="bi bi-exclamation-circle me-1"></i>
-                                    {errors.subscriptiondocument}
-                                  </div>
-                                )}
+                                <div className="d-flex justify-content-between gap-2">
+                                  <button
+                                    className="close_btn w-fit"
+                                    onClick={() => navigateToSection('prev')}
+                                  >
+                                    Back
+                                  </button>
 
-                                <div className="form-text">
-                                  Upload all relevant subscription documents. Supported formats: PDF, DOC, DOCX, TXT. Maximum file size: 10MB per file.
+                                  <button
+                                    className="global_btn w-fit"
+                                    onClick={() => {
+
+                                      if (isFirstRound) {
+                                        navigateToSection('next');
+                                        return;
+                                      }
+
+
+                                      const newErrors = {};
+
+                                      if (
+                                        !formData.subscriptiondocument ||
+                                        formData.subscriptiondocument.length === 0
+                                      ) {
+                                        newErrors.subscriptiondocument =
+                                          "Please upload at least one subscription document";
+                                      } else {
+                                        // Validate file extensions and sizes safely
+                                        const validExtensions = ["pdf", "doc", "docx", "txt"];
+                                        const maxSize = 10 * 1024 * 1024; // 10MB
+
+                                        for (const file of formData.subscriptiondocument) {
+                                          const fileName = file?.name || "";
+                                          const fileExtension = fileName.split(".").pop()?.toLowerCase() || "";
+
+                                          // ✅ Validate extension instead of MIME type
+                                          if (!validExtensions.includes(fileExtension)) {
+                                            newErrors.subscriptiondocument =
+                                              "Invalid file type. Please upload PDF, DOC, DOCX, or TXT files only";
+                                            break;
+                                          }
+
+                                          // ✅ Validate file size
+                                          if (file.size > maxSize) {
+                                            newErrors.subscriptiondocument = `File ${file.name} exceeds 10MB size limit`;
+                                            break;
+                                          }
+                                        }
+                                      }
+
+                                      // ✅ Handle validation result
+                                      if (Object.keys(newErrors).length > 0) {
+                                        setErrors(newErrors);
+
+                                        // Scroll to first error
+                                        setTimeout(() => {
+                                          const firstErrorElement = document.querySelector(
+                                            ".is-invalid, .border-danger"
+                                          );
+                                          if (firstErrorElement) {
+                                            firstErrorElement.scrollIntoView({
+                                              behavior: "smooth",
+                                              block: "center",
+                                            });
+                                          }
+                                        }, 100);
+                                      } else {
+                                        setErrors({});
+                                        navigateToSection('next');
+                                      }
+                                    }}
+                                  >
+                                    Save and Continue
+                                  </button>
+
                                 </div>
                               </div>
-
-                              {/* Subscription Documents Information */}
-                              {/* <div className="alert alert-info mt-3">
-                                <strong>About Subscription Documents:</strong>
-                                <ul className="mb-0 mt-2 small">
-                                  <li>These are legally binding contracts that finalize the investment</li>
-                                  <li>Typically include representations, warranties, and covenants</li>
-                                  <li>Must be signed by both company and investors</li>
-                                  <li>Funds are transferred upon execution of these documents</li>
-                                  <li>Shares are issued after documents are fully executed</li>
-                                </ul>
-                              </div> */}
-                            </div>
-                          )}
-
-                          <div className="d-flex justify-content-between gap-2">
-                            <button
-                              className="close_btn w-fit"
-                              onClick={() => navigateToSection('prev')}
-                            >
-                              Back
-                            </button>
-
-                            <button
-                              className="global_btn w-fit"
-                              onClick={() => {
-                                // For Round 0, skip validation and navigate directly to notes
-                                if (isFirstRound) {
-                                  navigateToSection('next');
-                                  return;
-                                }
-
-                                // Validate before proceeding for other rounds
-                                const newErrors = {};
-
-                                if (
-                                  !formData.subscriptiondocument ||
-                                  formData.subscriptiondocument.length === 0
-                                ) {
-                                  newErrors.subscriptiondocument =
-                                    "Please upload at least one subscription document";
-                                } else {
-                                  // Validate file extensions and sizes safely
-                                  const validExtensions = ["pdf", "doc", "docx", "txt"];
-                                  const maxSize = 10 * 1024 * 1024; // 10MB
-
-                                  for (const file of formData.subscriptiondocument) {
-                                    const fileName = file?.name || "";
-                                    const fileExtension = fileName.split(".").pop()?.toLowerCase() || "";
-
-                                    // ✅ Validate extension instead of MIME type
-                                    if (!validExtensions.includes(fileExtension)) {
-                                      newErrors.subscriptiondocument =
-                                        "Invalid file type. Please upload PDF, DOC, DOCX, or TXT files only";
-                                      break;
-                                    }
-
-                                    // ✅ Validate file size
-                                    if (file.size > maxSize) {
-                                      newErrors.subscriptiondocument = `File ${file.name} exceeds 10MB size limit`;
-                                      break;
-                                    }
-                                  }
-                                }
-
-                                // ✅ Handle validation result
-                                if (Object.keys(newErrors).length > 0) {
-                                  setErrors(newErrors);
-
-                                  // Scroll to first error
-                                  setTimeout(() => {
-                                    const firstErrorElement = document.querySelector(
-                                      ".is-invalid, .border-danger"
-                                    );
-                                    if (firstErrorElement) {
-                                      firstErrorElement.scrollIntoView({
-                                        behavior: "smooth",
-                                        block: "center",
-                                      });
-                                    }
-                                  }, 100);
-                                } else {
-                                  setErrors({});
-                                  navigateToSection('next');
-                                }
-                              }}
-                            >
-                              Save and Continue
-                            </button>
-
-                          </div>
-                        </div>
-                      )}
-                      {activeSection === "notes" && (
-                        <div className="section-content p-4 border rounded-3 shadow-sm bg-white">
-                          <PreviousSection
-                            formData={formData}
-                            otherText={otherText}
-                            selected={selected}
-                            visibleFields={[
-                              "shareclass",
-                              "description",
-                              "instrument",
-                              "roundsize",
-                              "issuedshares",
-                              "rights",
-                              "liquidation",
-                              "convertible",
-                              "voting",
-                              "termsheet",
-                              "subscription",
-                            ]}
-                            isFirstRound={isFirstRound}
-                            foundersData={foundersData}
-                            calculateTotalShares={calculateTotalShares}
-                            calculateTotalValue={calculateTotalValue}
-                            founderCount={founderCount}
-                          />
-
-                          <h3 className="h5 mb-4 text-gray-800">
-                            {isFirstRound ? "Round 0 - Additional Notes" : "General Notes About the Round"}
-                          </h3>
-
-                          {/* ROUND 0 - Founder Round Notes */}
-                          {isFirstRound ? (
-                            <div className="round-zero-content">
-                              <div className="alert alert-info mb-4">
-                                <strong>Round 0 Information:</strong> Add any additional notes about your company's incorporation and founder share allocation.
-                              </div>
-
-                              <div className="mb-4">
-                                <label className="form-label fw-semibold d-flex align-items-center">
-                                  Incorporation & Founder Notes
-                                  <span className="tooltip-icon ms-2" tabIndex={0}>
-                                    <img
-                                      className="blackdark"
-                                      width="15"
-                                      height="15"
-                                      src="/assets/user/images/question.png"
-                                      alt="Tip"
-                                    />
-                                    <div
-                                      className="tooltip-text tool-test-white text-white"
-                                      role="tooltip"
-                                    >
-                                      <strong>For Round 0 (Founder Shares):</strong> Add any additional information
-                                      about your company's incorporation that wasn't captured in previous sections.
-                                      <br />
-                                      <br />
-                                      <strong>What to include:</strong>
-                                      <br />– Special founder arrangements or vesting schedules
-                                      <br />– Notes about the incorporation process or timeline
-                                      <br />– Any unique terms from your incorporation documents
-                                      <br />– Future plans for the company
-                                      <br />– Additional context about founder relationships
-                                      <br />– Any restrictions or special conditions on founder shares
-                                    </div>
-                                  </span>
-                                </label>
-
-                                <textarea
-                                  placeholder="Enter any additional notes about company incorporation, founder arrangements, or special terms from your incorporation documents..."
-                                  className="textarea_input"
-                                  rows="6"
-                                  value={formData.generalnotes}
-                                  onChange={(e) =>
-                                    handleInputChange("generalnotes", e.target.value)
-                                  }
+                            )}
+                            {activeSection === "notes" && (
+                              <div className="section-content p-4 border rounded-3 shadow-sm bg-white">
+                                <PreviousSection
+                                  formData={formData}
+                                  otherText={otherText}
+                                  selected={selected}
+                                  visibleFields={[
+                                    "shareclass",
+                                    "description",
+                                    "instrument",
+                                    "roundsize",
+                                    "issuedshares",
+                                    "rights",
+                                    "liquidation",
+                                    "convertible",
+                                    "voting",
+                                    "termsheet",
+                                    "subscription",
+                                  ]}
+                                  isFirstRound={isFirstRound}
+                                  foundersData={foundersData}
+                                  calculateTotalShares={calculateTotalShares}
+                                  calculateTotalValue={calculateTotalValue}
+                                  founderCount={founderCount}
+                                  CurrDisplay={CurrDisplay}
                                 />
-                                <div className="form-text">
-                                  This information helps provide context for your company's founding and initial share structure.
-                                </div>
-                              </div>
 
-                              {/* Round 0 Summary Display */}
-                              <div className="calculation-results p-4 border rounded bg-light mb-4">
-                                <h5>Round 0 - Incorporation Summary</h5>
-                                <div className="row">
-                                  <div className="col-md-6">
-                                    <div className="mb-2">
-                                      <strong>Total Shares:</strong> {calculateTotalShares().toLocaleString()}
-                                    </div>
-                                    <div className="mb-2">
-                                      <strong>Price Per Share:</strong> ${formData.pricePerShare || '0.00'}
-                                    </div>
-                                    <div className="mb-2">
-                                      <strong>Total Value:</strong> ${calculateTotalValue()}
-                                    </div>
-                                  </div>
-                                  <div className="col-md-6">
-                                    <div className="mb-2">
-                                      <strong>Founders:</strong> {founderCount}
-                                    </div>
-                                    <div className="mb-2">
-                                      <strong>Share Type:</strong> Common Shares
-                                    </div>
-                                    <div className="mb-2">
-                                      <strong>Voting Rights:</strong> {formData.voting === "Yes" ? "Yes" : "No"}
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
+                                <h3 className="h5 mb-4 text-gray-800">
+                                  {isFirstRound ? "Round 0 - Additional Notes" : "General Notes About the Round"}
+                                </h3>
 
-                              {/* Round 0 Completion Information */}
-                              <div className="alert alert-success mt-3">
-                                <strong>Ready to Complete Round 0</strong>
-                                <p className="mb-0 mt-2">
-                                  You've successfully entered all the information for your company's incorporation round.
-                                  This will serve as the foundation for your cap table and future investment rounds.
-                                </p>
-                              </div>
-                            </div>
-                          ) : (
-                            /* OTHER ROUNDS - Investment Round Notes */
-                            <div className="investment-round-content">
-                              <div className="mb-4">
-                                <label className="form-label fw-semibold d-flex align-items-center">
-                                  General Notes About the Round
-                                  <span className="tooltip-icon ms-2" tabIndex={0}>
-                                    <img
-                                      className="blackdark"
-                                      width="15"
-                                      height="15"
-                                      src="/assets/user/images/question.png"
-                                      alt="Tip"
-                                    />
-                                    <div
-                                      className="tooltip-text tool-test-white text-white"
-                                      role="tooltip"
-                                    >
-                                      <strong>For Investment Rounds:</strong> Add any additional information,
-                                      context, or special considerations about this funding round that weren't
-                                      captured in previous sections.
-                                      <br />
-                                      <br />
-                                      <strong>What to include:</strong>
-                                      <br />– Background on investor negotiations
-                                      <br />– Special terms or side agreements
-                                      <br />– Timeline and process notes
-                                      <br />– Key people involved in the round
-                                      <br />– Future plans tied to this funding
-                                      <br />– Any unusual or noteworthy aspects of the deal
-                                      <br />– Conditions precedent or subsequent
+                                {/* ROUND 0 - Founder Round Notes */}
+                                {isFirstRound ? (
+                                  // <div className="round-zero-content">
+                                  //   <div className="alert alert-info mb-4">
+                                  //     <strong>Round 0 Information:</strong> Add any additional notes about your company's incorporation and founder share allocation.
+                                  //   </div>
+
+                                  //   <div className="mb-4">
+                                  //     <label className="form-label fw-semibold d-flex align-items-center">
+                                  //       Incorporation & Founder Notes
+                                  //       <span className="tooltip-icon ms-2" tabIndex={0}>
+                                  //         <img
+                                  //           className="blackdark"
+                                  //           width="15"
+                                  //           height="15"
+                                  //           src="/assets/user/images/question.png"
+                                  //           alt="Tip"
+                                  //         />
+                                  //         <div
+                                  //           className="tooltip-text tool-test-white text-white"
+                                  //           role="tooltip"
+                                  //         >
+                                  //           <strong>For Round 0 (Founder Shares):</strong> Add any additional information
+                                  //           about your company's incorporation that wasn't captured in previous sections.
+                                  //           <br />
+                                  //           <strong>What to include:</strong>
+                                  //           – Special founder arrangements or vesting schedules
+                                  //           <br />– Notes about the incorporation process or timeline
+                                  //           <br />– Any unique terms from your incorporation documents
+                                  //           <br />– Future plans for the company
+                                  //           <br />– Additional context about founder relationships
+                                  //           <br />– Any restrictions or special conditions on founder shares
+                                  //         </div>
+                                  //       </span>
+                                  //     </label>
+
+                                  //     <textarea
+                                  //       placeholder="Enter any additional notes about company incorporation, founder arrangements, or special terms from your incorporation documents..."
+                                  //       className="textarea_input"
+                                  //       rows="6"
+                                  //       value={formData.generalnotes}
+                                  //       onChange={(e) =>
+                                  //         handleInputChange("generalnotes", e.target.value)
+                                  //       }
+                                  //     />
+                                  //     <div className="form-text">
+                                  //       This information helps provide context for your company's founding and initial share structure.
+                                  //     </div>
+                                  //   </div>
+
+
+                                  //   <div className="calculation-results p-4 border rounded bg-light mb-4">
+                                  //     <h5>Round 0 - Incorporation Summary</h5>
+                                  //     <div className="row">
+                                  //       <div className="col-md-6">
+                                  //         <div className="mb-2">
+                                  //           <strong>Total Shares:</strong> {calculateTotalShares().toLocaleString()}
+                                  //         </div>
+                                  //         <div className="mb-2">
+                                  //           <strong>Price Per Share:</strong> ${formData.pricePerShare || '0.00'}
+                                  //         </div>
+                                  //         <div className="mb-2">
+                                  //           <strong>Total Value:</strong> ${calculateTotalValue()}
+                                  //         </div>
+                                  //       </div>
+                                  //       <div className="col-md-6">
+                                  //         <div className="mb-2">
+                                  //           <strong>Founders:</strong> {founderCount}
+                                  //         </div>
+                                  //         <div className="mb-2">
+                                  //           <strong>Share Type:</strong> Common Shares
+                                  //         </div>
+                                  //         <div className="mb-2">
+                                  //           <strong>Voting Rights:</strong> {formData.voting === "Yes" ? "Yes" : "No"}
+                                  //         </div>
+                                  //       </div>
+                                  //     </div>
+                                  //   </div>
+
+
+                                  //   <div className="alert alert-success mt-3">
+                                  //     <strong>Ready to Complete Round 0</strong>
+                                  //     <p className="mb-0 mt-2">
+                                  //       You've successfully entered all the information for your company's incorporation round.
+                                  //       This will serve as the foundation for your cap table and future investment rounds.
+                                  //     </p>
+                                  //   </div>
+                                  // </div>
+                                  <></>
+                                ) : (
+                                  /* OTHER ROUNDS - Investment Round Notes */
+                                  <div className="investment-round-content">
+                                    <div className="mb-4">
+                                      <label className="form-label fw-semibold d-flex align-items-center">
+                                        General Notes About the Round
+                                        <span className="tooltip-icon ms-2" tabIndex={0}>
+                                          <img
+                                            className="blackdark"
+                                            width="15"
+                                            height="15"
+                                            src="/assets/user/images/question.png"
+                                            alt="Tip"
+                                          />
+                                          <div
+                                            className="tooltip-text tool-test-white text-white"
+                                            role="tooltip"
+                                          >
+                                            <strong>For Investment Rounds:</strong> Add any additional information,
+                                            context, or special considerations about this funding round that weren't
+                                            captured in previous sections.
+                                            <br />
+                                            <strong>What to include:</strong>
+                                            – Background on investor negotiations
+                                            <br />– Special terms or side agreements
+                                            <br />– Timeline and process notes
+                                            <br />– Key people involved in the round
+                                            <br />– Future plans tied to this funding
+                                            <br />– Any unusual or noteworthy aspects of the deal
+                                            <br />– Conditions precedent or subsequent
+                                          </div>
+                                        </span>
+                                      </label>
+
+                                      <textarea
+                                        placeholder="Enter any additional notes about the investment round, investor relationships, special terms, or context that would be helpful for future reference..."
+                                        className="textarea_input"
+                                        rows="6"
+                                        value={formData.generalnotes}
+                                        onChange={(e) =>
+                                          handleInputChange("generalnotes", e.target.value)
+                                        }
+                                      />
+                                      <div className="form-text">
+                                        These notes will be stored with your round information for future reference and reporting.
+                                      </div>
                                     </div>
-                                  </span>
-                                </label>
 
-                                <textarea
-                                  placeholder="Enter any additional notes about the investment round, investor relationships, special terms, or context that would be helpful for future reference..."
-                                  className="textarea_input"
-                                  rows="6"
-                                  value={formData.generalnotes}
-                                  onChange={(e) =>
-                                    handleInputChange("generalnotes", e.target.value)
-                                  }
-                                />
-                                <div className="form-text">
-                                  These notes will be stored with your round information for future reference and reporting.
-                                </div>
-                              </div>
-
-                              {/* Investment Round Summary Information */}
-                              {/* <div className="alert alert-info mt-3">
+                                    {/* Investment Round Summary Information */}
+                                    {/* <div className="alert alert-info mt-3">
                                 <strong>About Investment Round Notes:</strong>
                                 <ul className="mb-0 mt-2 small">
                                   <li>Notes are searchable and can be referenced in future rounds</li>
@@ -6628,62 +7360,67 @@ export default function Recordround() {
                                   <li>Record any conditions or milestones tied to the investment</li>
                                 </ul>
                               </div> */}
-                            </div>
-                          )}
+                                  </div>
+                                )}
 
-                          <div className="d-flex justify-content-between gap-2">
-                            <button
-                              className="close_btn w-fit"
-                              onClick={() => navigateToSection('prev')}
-                            >
-                              Back
-                            </button>
+                                <div className="d-flex justify-content-between gap-2">
+                                  <button
+                                    className="close_btn w-fit"
+                                    onClick={() => navigateToSection('prev')}
+                                  >
+                                    Back
+                                  </button>
 
-                            <button
-                              className="global_btn w-fit"
-                              type="button"
-                              onClick={() => {
-                                // For both Round 0 and other rounds, proceed to review
-                                // Notes are optional, so no validation needed
-                                handleReviewpage();
-                              }}
-                            >
-                              {isFirstRound ? "Complete Round 0" : "Save and Review"}
-                            </button>
-                          </div>
-
-                          {/* Progress indicator for Round 0 */}
-                          {isFirstRound && (
-                            <div className="mt-4 pt-3 border-top">
-                              <div className="progress" style={{ height: "8px" }}>
-                                <div
-                                  className="progress-bar bg-success"
-                                  role="progressbar"
-                                  style={{ width: "100%" }}
-                                  aria-valuenow={100}
-                                  aria-valuemin={0}
-                                  aria-valuemax={100}
-                                >
+                                  <button
+                                    className="global_btn w-fit"
+                                    type="button"
+                                    onClick={() => {
+                                      // For both Round 0 and other rounds, proceed to review
+                                      // Notes are optional, so no validation needed
+                                      handleReviewpage();
+                                    }}
+                                  >
+                                    {isFirstRound ? "Complete Round 0" : "Save and Review"}
+                                  </button>
                                 </div>
-                              </div>
-                              <div className="d-flex justify-content-between mt-2 small text-muted">
-                                <span>Round 0 Setup</span>
-                                <span>100% Complete</span>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
 
-                      {/* Add similar sections for the remaining form fields */}
+                                {/* Progress indicator for Round 0 */}
+                                {isFirstRound && (
+                                  <div className="mt-4 pt-3 border-top">
+                                    <div className="progress" style={{ height: "8px" }}>
+                                      <div
+                                        className="progress-bar bg-success"
+                                        role="progressbar"
+                                        style={{ width: "100%" }}
+                                        aria-valuenow={100}
+                                        aria-valuemin={0}
+                                        aria-valuemax={100}
+                                      >
+                                      </div>
+                                    </div>
+                                    <div className="d-flex justify-content-between mt-2 small text-muted">
+                                      <span>Round 0 Setup</span>
+                                      <span>100% Complete</span>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Add similar sections for the remaining form fields */}
+                          </div>
+                        </form>
+                      </div>
                     </div>
-                  </form>
+                  </SectionWrapper >
                 </div>
+
               </div>
-            </SectionWrapper>
-          </div>
-        </div >
-      </div >
-    </Wrapper >
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+
   );
 }

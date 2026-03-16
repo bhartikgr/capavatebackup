@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import DataTable from "react-data-table-component";
-import TopBar from "../../../components/Users/TopBar";
+import SideBar from '../../../components/social/SideBar';
+import TopBar from '../../../components/social/TopBar';
 import ModuleSideNav from "../../../components/Users/ModuleSideNav.jsx";
 import "bootstrap/dist/css/bootstrap.min.css";
 import {
@@ -290,99 +291,101 @@ export default function InvestorEntry() {
   return (
     <>
       <>
-        <Wrapper>
-          <div className="fullpage d-block">
-            <div className="d-flex align-items-start gap-0">
-              <ModuleSideNav
-                isCollapsed={isCollapsed}
-                setIsCollapsed={setIsCollapsed}
-              />
-              <div
-                className={`global_view ${isCollapsed ? "global_view_col" : ""
-                  }`}
-              >
-                <TopBar />
-                <SectionWrapper className="d-block p-md-4 p-3">
-                  <div className="container-fluid">
-                    {dangerMessagealertDoc && (
-                      <DangerAlertPopup
-                        message={dangerMessagealertDoc}
-                        onConfirm={handleConfirm}
-                        onCancel={() => {
-                          setdangerMessagealertDoc("");
-                        }}
-                      />
-                    )}
-                    {messagesuccessError && (
-                      <p
-                        className={
-                          errr ? " mt-3 error_pop" : "success_pop mt-3"
-                        }
-                      >
-                        {messagesuccessError}
-                      </p>
-                    )}
-                    <DataRoomSection className="d-flex flex-column gap-2">
-                      <div className="titleroom d-flex justify-content-between align-items-center border-bottom pb-3">
-                        <div className="pb-3 bar_design">
-                          <h4 className="h5 mb-0">Investor Entry</h4>
+
+        <main>
+          <div className='d-flex align-items-start gap-0'>
+            <SideBar />
+            <div className='d-flex flex-grow-1 flex-column gap-0'>
+              <TopBar />
+              <section className='px-md-3 py-4'>
+                <div className='container-fluid'>
+                  <div className='row gy-4'>
+                    <div className='col-md-12 order-1 order-md-0'>
+                      <SectionWrapper className="d-block p-md-4 p-3">
+                        <div className="container-fluid">
+                          {dangerMessagealertDoc && (
+                            <DangerAlertPopup
+                              message={dangerMessagealertDoc}
+                              onConfirm={handleConfirm}
+                              onCancel={() => {
+                                setdangerMessagealertDoc("");
+                              }}
+                            />
+                          )}
+                          {messagesuccessError && (
+                            <p
+                              className={
+                                errr ? " mt-3 error_pop" : "success_pop mt-3"
+                              }
+                            >
+                              {messagesuccessError}
+                            </p>
+                          )}
+                          <DataRoomSection className="d-flex flex-column gap-2">
+                            <div className="titleroom d-flex justify-content-between align-items-center border-bottom pb-3">
+                              <div className="pb-3 bar_design">
+                                <h4 className="h5 mb-0">Investor Entry</h4>
+                              </div>
+                              <Link
+                                to="javascript:void(0)"
+                                onClick={handlenewinvestor}
+                                className="btn btn-outline-dark active"
+                                style={{
+                                  opacity:
+                                    userLogin.role === "owner" ||
+                                      authorizedData?.approve === "Yes"
+                                      ? 1
+                                      : 0.6,
+                                  pointerEvents:
+                                    userLogin.role === "owner" ||
+                                      authorizedData?.approve === "Yes"
+                                      ? "auto"
+                                      : "none", // disables click if not approved and not owner
+                                }}
+                              >
+                                Add New Investor
+                              </Link>
+                            </div>
+                            <div className="d-flex justify-content-end my-2 p-0">
+                              <input
+                                type="search"
+                                placeholder="Search Here..."
+                                className="form-control"
+                                value={searchText} // link input to state
+                                onChange={(e) => setSearchText(e.target.value)}
+                                style={{
+                                  padding: "10px 15px",
+                                  width: "100%",
+                                  maxWidth: "300px",
+                                  fontSize: "14px",
+                                  borderRadius: "10px",
+                                }}
+                              />
+                            </div>
+                            <div className="d-flex flex-column justify-content-between align-items-start tb-box">
+                              <DataTable
+                                customStyles={customStyles}
+                                conditionalRowStyles={conditionalRowStyles}
+                                columns={columns}
+                                className="datatb-report"
+                                data={filteredData}
+                                pagination
+                                highlightOnHover
+                                striped
+                                responsive
+                              />
+                            </div>
+                          </DataRoomSection>
                         </div>
-                        <Link
-                          to="javascript:void(0)"
-                          onClick={handlenewinvestor}
-                          className="btn btn-outline-dark active"
-                          style={{
-                            opacity:
-                              userLogin.role === "owner" ||
-                                authorizedData?.approve === "Yes"
-                                ? 1
-                                : 0.6,
-                            pointerEvents:
-                              userLogin.role === "owner" ||
-                                authorizedData?.approve === "Yes"
-                                ? "auto"
-                                : "none", // disables click if not approved and not owner
-                          }}
-                        >
-                          Add New Investor
-                        </Link>
-                      </div>
-                      <div className="d-flex justify-content-end my-2 p-0">
-                        <input
-                          type="search"
-                          placeholder="Search Here..."
-                          className="form-control"
-                          value={searchText} // link input to state
-                          onChange={(e) => setSearchText(e.target.value)}
-                          style={{
-                            padding: "10px 15px",
-                            width: "100%",
-                            maxWidth: "300px",
-                            fontSize: "14px",
-                            borderRadius: "10px",
-                          }}
-                        />
-                      </div>
-                      <div className="d-flex flex-column justify-content-between align-items-start tb-box">
-                        <DataTable
-                          customStyles={customStyles}
-                          conditionalRowStyles={conditionalRowStyles}
-                          columns={columns}
-                          className="datatb-report"
-                          data={filteredData}
-                          pagination
-                          highlightOnHover
-                          striped
-                          responsive
-                        />
-                      </div>
-                    </DataRoomSection>
+                      </SectionWrapper>
+                    </div>
+
                   </div>
-                </SectionWrapper>
-              </div>
+                </div>
+              </section>
             </div>
           </div>
-        </Wrapper>
+        </main>
       </>
     </>
   );

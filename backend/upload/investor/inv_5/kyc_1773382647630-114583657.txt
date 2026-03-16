@@ -1,0 +1,11 @@
+
+INVESTOR DETAILS
+================
+Company: Test
+Name: Avinay Kumar
+Email: avinayquicktech@gmail.com
+Phone: 14805555555
+City: Dharamshala
+Country: India
+Joined Date: Mar 10th, 2026
+        

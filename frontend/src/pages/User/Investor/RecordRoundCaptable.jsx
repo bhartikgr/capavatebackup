@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from "react";
-import TopBar from "../../../components/Users/TopBar";
+import React, { useState, useEffect, useCallback } from "react";
+import SideBar from '../../../components/social/SideBar'
+import TopBar from '../../../components/social/TopBar'
 import ModuleSideNav from "../../../components/Users/ModuleSideNav.jsx";
+import { FaChevronRight, FaChevronDown } from 'react-icons/fa';
 import "bootstrap/dist/css/bootstrap.min.css";
 import {
   SectionWrapper,
@@ -9,9 +11,8 @@ import {
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import { API_BASE_URL } from "../../../config/config.js";
-
-
 import { Pie, Bar } from "react-chartjs-2";
+
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -20,10 +21,12 @@ import {
   Title,
   Tooltip,
   Legend,
-  ArcElement // Pie chart के लिए add करें
+  ArcElement
 } from 'chart.js';
+import CurrencyFormatter from "../../../components/CurrencyFormatter.jsx";
+import ChartDataLabels from 'chartjs-plugin-datalabels';
 
-// ✅ Register all required components
+
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -31,31 +34,160 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
-  ArcElement // Pie chart के लिए
+  ArcElement,
+  ChartDataLabels
 );
-export default function RecordRoundCaptable() {
-  const navigate = useNavigate();
-  const storedUsername = localStorage.getItem("SignatoryLoginData");
-  const userLogin = JSON.parse(storedUsername);
-  const API_URL_CAPTABLE = API_BASE_URL + "api/user/capitalround/";
-  document.title = "Round Cap Table";
-  const { id } = useParams();
 
-  const [capTableData, setCapTableData] = useState(null);
-  const [roundData, setRoundData] = useState(null);
+export default function RecordRoundCaptable() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const API_URL_CAPTABLE = `${API_BASE_URL}api/user/capitalround/`;
+  const apiUrlRound = API_BASE_URL + "api/user/capitalround/";
+  const storedUsername = localStorage.getItem("SignatoryLoginData");
+  const userLogin = storedUsername ? JSON.parse(storedUsername) : null;
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [capTableData, setCapTableData] = useState({
+    pre_money: { items: [], totals: {} },
+    post_money: { items: [], totals: {} }
+  });
+  const [roundData, setRoundData] = useState(null);
+  const [pendingConversions, setPendingConversions] = useState([]);
+  const [calculations, setCalculations] = useState({});
+  const [summaryDetails, setSummaryDetails] = useState(null);
+
+  // Chart states
+  const [preMoneyChartData, setPreMoneyChartData] = useState(null);
+  const [postMoneyChartData, setPostMoneyChartData] = useState(null);
+
+  const [activeTab, setActiveTab] = useState("pre-money");
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [conversionStatus, setConversionStatus] = useState(null);
+  const [conversionData, setConversionData] = useState([]); // ✅ ADD THIS LINE
+  // Format currency function
 
+  const [currencyMap, setCurrencyMap] = useState({});
+
+
+  // Fetch currency symbols from API
   useEffect(() => {
-    getCapTableData();
-  }, [id]);
+    const getCountrySymbolList = async () => {
+      let formData = { id: "" };
+      try {
+        const res = await axios.post(
+          apiUrlRound + "getallcountrySymbolList",
+          formData,
+          {
+            headers: {
+              Accept: "application/json",
+              "Content-Type": "application/json",
+            },
+          }
+        );
 
-  const getCapTableData = async () => {
+        const respo = res.data.results;
+
+        // Create a map of currency_code -> currency_symbol for quick lookup
+        const currencySymbolMap = {};
+        respo.forEach(country => {
+          if (country.currency_code && !currencySymbolMap[country.currency_code]) {
+            currencySymbolMap[country.currency_code] = {
+              symbol: country.currency_symbol,
+              name: country.currency_name
+            };
+          }
+        });
+
+        setCurrencyMap(currencySymbolMap);
+        setLoading(false);
+      } catch (err) {
+        console.error('Error fetching currency symbols:', err);
+        setLoading(false);
+      }
+    };
+
+    getCountrySymbolList();
+  }, [apiUrlRound]);
+  const formatCurrency = (amount, currency = 'USD') => {
+    const numAmount = parseFloat(amount) || 0;
+    const cleanCurrency = currency?.trim() || ' ';
+
+    // Get symbol from map or fallback
+    const currencyInfo = currencyMap[cleanCurrency.toUpperCase()];
+    const symbol = currencyInfo?.symbol || '';
+
+    try {
+      // Use Intl.NumberFormat if currency is valid
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: cleanCurrency.toUpperCase(),
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(numAmount);
+    } catch (error) {
+      // Fallback: Use symbol from database with commas
+      const formattedNumber = numAmount.toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+      if (symbol) {
+        return `${symbol} ${formattedNumber}`;
+      }
+      return `${cleanCurrency} ${formattedNumber}`;
+    }
+  };
+  const formatCurrencyNotRound = (amount, currency = 'USD') => {
+    const numAmount = parseFloat(amount) || 0;
+    const cleanCurrency = currency?.trim() || ' ';
+
+    // Get symbol from map or fallback
+    const currencyInfo = currencyMap[cleanCurrency.toUpperCase()];
+    const symbol = currencyInfo?.symbol || '';
+
+    try {
+      // Use Intl.NumberFormat if currency is valid
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: cleanCurrency.toUpperCase(),
+        minimumFractionDigits: 3,
+        maximumFractionDigits: 3,
+      }).format(numAmount);
+    } catch (error) {
+      // Fallback: Use symbol from database with commas
+      const formattedNumber = numAmount.toLocaleString("en-US", {
+        minimumFractionDigits: 3,
+        maximumFractionDigits: 3,
+      });
+      if (symbol) {
+        return `${symbol} ${formattedNumber}`;
+      }
+      return `${cleanCurrency} ${formattedNumber}`;
+    }
+  };
+
+  const formatPercentage = (value) => {
+    if (!value && value !== 0) return '0.00%';
+    return `${parseFloat(value).toFixed(2)}%`;
+  };
+
+  const formatNumber = (num) => {
+    if (!num && num !== 0) return '0';
+    return new Intl.NumberFormat('en-US').format(num);
+  };
+
+  // Data fetching function
+  const getCapTableData = useCallback(async () => {
+    if (!id || !userLogin) {
+      setError("Missing required parameters");
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
-    let formData = {
+    const formData = {
       company_id: userLogin.companies[0].id,
       round_id: id,
     };
@@ -73,3887 +205,3958 @@ export default function RecordRoundCaptable() {
       );
 
       if (res.data.success) {
-        setCapTableData(res.data.capTable);
-        setRoundData(res.data.round);
+        const capTable = res.data.cap_table || {
+          pre_money: { items: [], totals: {} },
+          post_money: { items: [], totals: {} }
+        };
+        console.log(res.data)
+        setCapTableData(capTable);
+        setConversionStatus(res.data.conversion_status);
+        setRoundData(res.data.round || null);
+        setPendingConversions(res.data.pending_conversions || []);
+        setCalculations(res.data.calculations || {});
+        setConversionData(res.data.conversions || []);
+        // Calculate summary details based on CPAVATE formulas
+        calculateSummaryDetails(res.data);
+
+        // Prepare chart data
+        if (capTable?.pre_money?.items?.length > 0) {
+
+          // ✅ STEP 1: Items ko expand karo (grouped investors → individual)
+          const expandedItems = [];
+
+          capTable.pre_money.items.forEach((item, originalIndex) => {
+
+            if (item.type === 'investor') {
+              const detailsArr = Array.isArray(item.investor_details) ? item.investor_details : [];
+
+              if (detailsArr.length <= 1) {
+                // Single investor 0 directly add
+                const inv = detailsArr[0] || {};
+                const name = `${inv.firstName || ''} ${inv.lastName || ''}`.trim() || item.name || 'Investor';
+                expandedItems.push({
+                  ...item,
+                  _displayName: `👤 ${name}`,
+                  _shares: item.shares || 0,
+                  _email: inv.email || '',
+                  _phone: inv.phone || '',
+                  _originalIndex: originalIndex,
+                  _isExpanded: false,
+                });
+              } else {
+                // Multiple investors 0 each investor alag row
+                // Group shares equally split (ya per-investor shares agar available ho)
+                const perInvShares = Math.round((item.shares || 0) / detailsArr.length);
+
+                detailsArr.forEach((inv, invIdx) => {
+                  const name = `${inv.firstName || ''} ${inv.lastName || ''}`.trim() || `Investor ${invIdx + 1}`;
+                  expandedItems.push({
+                    ...item,
+                    _displayName: `👤 ${name}`,
+                    _shares: inv.shares || perInvShares,  // use individual shares if available
+                    _email: inv.email || '',
+                    _phone: inv.phone || '',
+                    _originalIndex: originalIndex,
+                    _isExpanded: true,
+                    _invIdx: invIdx,
+                    _groupName: item.name,
+                    _inv: inv,
+                  });
+                });
+              }
+            }
+
+            else if (item.type === 'founder') {
+              expandedItems.push({
+                ...item,
+                _displayName: `${item.founder_code || 'F'} - ${item.name}`,
+                _shares: item.shares || 0,
+                _email: item.email || '',
+                _phone: item.phone || '',
+                _originalIndex: originalIndex,
+                _isExpanded: false,
+              });
+            }
+
+            else if (item.type === 'option_pool') {
+              expandedItems.push({
+                ...item,
+                _displayName: 'Employee Option Pool',
+                _shares: item.shares || 0,
+                _email: '',
+                _phone: '',
+                _originalIndex: originalIndex,
+                _isExpanded: false,
+              });
+            }
+
+            // ✅ FIXED: pending_group ke har investor ke liye alag entry
+            else if (item.type === 'pending_group') {
+              const pendingInvestors = item.items || [];
+
+              if (pendingInvestors.length > 0) {
+                pendingInvestors.forEach(inv => {
+                  const invDetails = inv.investor_details || {};
+                  const name = inv.name ||
+                    `${invDetails.firstName || ''} ${invDetails.lastName || ''}`.trim() ||
+                    'Pending Investor';
+
+                  expandedItems.push({
+                    ...inv,
+                    // Group info bhi rakho reference ke liye
+                    _groupRoundName: item.round_name,
+                    _groupInstrumentType: item.instrument_type,
+                    _displayName: `👤 ${name}`,
+                    _shares: 0,  // pending = 0 in chart
+                    _email: invDetails.email || inv.email || '',
+                    _phone: invDetails.phone || inv.phone || '',
+                    _originalIndex: originalIndex,
+                    _isExpanded: false,
+                    _isPending: true,
+                  });
+                });
+              } else {
+                // Fallback — group level entry
+                expandedItems.push({
+                  ...item,
+                  _displayName: `👤 ${item.round_name || 'Pending Investor'}`,
+                  _shares: 0,
+                  _email: '',
+                  _phone: '',
+                  _originalIndex: originalIndex,
+                  _isExpanded: false,
+                  _isPending: true,
+                });
+              }
+            }
+          });
+
+          // ✅ STEP 2: Colors array (enough for expanded items)
+          const colors = [
+            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40',
+            '#8AC926', '#1982C4', '#6A0572', '#118AB2', '#06D6A0', '#FFD166',
+            '#E5989B', '#B5838D', '#6D6875', '#FFB4A2', '#C9CBFF', '#FDFFB6',
+          ];
+
+          const preMoneyData = {
+            labels: expandedItems.map(item => item._displayName),
+            datasets: [{
+              label: 'Shares',
+              data: expandedItems.map(item => item._shares),
+              backgroundColor: expandedItems.map((item, i) =>
+                item.type === 'pending' ? '#FFC107' : colors[i % colors.length]
+              ),
+              borderWidth: 1,
+            }],
+            // ✅ Store expanded items for tooltip/legend access
+            _expandedItems: expandedItems,
+          };
+
+          setPreMoneyChartData(preMoneyData);
+        }
+
+        // Prepare Post-Money Chart Data
+        // Prepare Post-Money Chart Data - UPDATED with proper labels
+        if (capTable?.post_money?.items?.length > 0) {
+          // ✅ STEP 1: Items ko expand karo - HAR INVESTOR ALAG ROW
+          const expandedItems = [];
+
+          capTable.post_money.items.forEach((item, originalIndex) => {
+            // INVESTOR TYPE - with array of investors
+            if (item.type === 'investor' && Array.isArray(item.investor_details) && item.investor_details.length > 0) {
+              // Multiple investors in array - create separate entry for EACH
+              item.investor_details.forEach((inv, invIdx) => {
+                const shareType = item.share_class_type || '';
+                const investorName = `${inv.firstName || ''} ${inv.lastName || ''}`.trim() || inv.name || `Investor ${invIdx + 1}`;
+
+                // Calculate per-investor shares (split equally if not available individually)
+                const perInvShares = item.shares ? Math.round(item.shares / item.investor_details.length) : 0;
+
+                expandedItems.push({
+                  ...item,
+                  _displayName: `👤 ${investorName}${shareType ? ` (${shareType})` : ''}`,
+                  _shares: inv.shares || perInvShares,
+                  _email: inv.email || '',
+                  _phone: inv.phone || '',
+                  _originalIndex: originalIndex,
+                  _type: 'investor',
+                  _isPrevious: true,
+                  _roundName: item.round_name,
+                  _investmentAmount: inv.investment_amount || item.investment_amount,
+                  _groupId: item.name, // Store group name for reference
+                });
+              });
+            }
+            // INVESTOR TYPE - single investor (no array)
+            else if (item.type === 'investor') {
+              const inv = item.investor_details || {};
+              const shareType = item.share_class_type || '';
+              const investorName = `${inv.firstName || ''} ${inv.lastName || ''}`.trim() || item.name || 'Investor';
+
+              let icon = '👤';
+              if (item.is_new_investment) icon = '🆕';
+              if (item.is_converted) icon = '🔄';
+
+              expandedItems.push({
+                ...item,
+                _displayName: `${icon} ${investorName}${shareType ? ` (${shareType})` : ''}`,
+                _shares: item.shares || 0,
+                _email: inv.email || item.email || '',
+                _phone: inv.phone || item.phone || '',
+                _originalIndex: originalIndex,
+                _type: 'investor',
+                _isNew: item.is_new_investment,
+                _isPrevious: item.is_previous,
+                _roundName: item.round_name,
+                _investmentAmount: item.investment_amount,
+              });
+            }
+            // FOUNDER TYPE
+            else if (item.type === 'founder') {
+              expandedItems.push({
+                ...item,
+                _displayName: `${item.founder_code || 'F'} - ${item.name}`,
+                _shares: item.shares || 0,
+                _email: item.email || '',
+                _phone: item.phone || '',
+                _originalIndex: originalIndex,
+                _type: 'founder',
+              });
+            }
+            // OPTION POOL
+            else if (item.type === 'option_pool') {
+              expandedItems.push({
+                ...item,
+                _displayName: 'Employee Option Pool',
+                _shares: item.shares || 0,
+                _existing_shares: item.existing_shares,
+                _new_shares: item.new_shares,
+                _originalIndex: originalIndex,
+                _type: 'option_pool',
+              });
+            }
+            // PENDING (SAFE)
+            // ✅ Legacy flat 'pending' items ke liye fallback (Safe etc.)
+            else if (item.type === 'pending_group') {
+              const investors = item.items || [];
+
+              if (investors.length > 0) {
+                investors.forEach(inv => {
+                  const invDetails = inv.investor_details || {};
+                  const name = inv.name ||
+                    `${invDetails.firstName || ''} ${invDetails.lastName || ''}`.trim() ||
+                    'Pending Investor';
+
+                  expandedItems.push({
+                    ...inv,
+                    _displayName: `👤 ${name} (${item.round_name})`,
+                    _shares: 0,
+                    _email: invDetails.email || inv.email || '',
+                    _phone: invDetails.phone || inv.phone || '',
+                    _originalIndex: originalIndex,
+                    _type: 'pending',
+                    _isPending: true,
+                    _groupRoundName: item.round_name,
+                    _groupInstrumentType: item.instrument_type,
+                    // ✅ investor level se fields lo — group level se nahi
+                    investment: parseFloat(inv.investment) || 0,
+                    potential_shares: inv.potential_shares || 0,
+                    discount_rate: inv.discount_rate || 0,
+                    valuation_cap: inv.valuation_cap || 0,
+                    conversion_price: inv.conversion_price || 0,
+                    interest_rate: inv.interest_rate || 0,
+                    years: inv.years || 0,
+                    interest_accrued: inv.interest_accrued || 0,
+                    total_conversion_amount: inv.total_conversion_amount || parseFloat(inv.investment) || 0,
+                    maturity_date: inv.maturity_date || null,
+                  });
+                });
+              } else {
+                // Fallback — group level
+                expandedItems.push({
+                  ...item,
+                  _displayName: `👤 ${item.round_name || 'Pending Investor'}`,
+                  _shares: 0,
+                  _email: '',
+                  _phone: '',
+                  _originalIndex: originalIndex,
+                  _type: 'pending',
+                  _isPending: true,
+                });
+              }
+            }
+          });
+
+          // ✅ STEP 2: Colors array
+          const colors = [
+            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40',
+            '#8AC926', '#1982C4', '#6A0572', '#118AB2', '#06D6A0', '#FFD166',
+            '#E5989B', '#B5838D', '#6D6875', '#FFB4A2', '#C9CBFF', '#FDFFB6',
+          ];
+
+          const postMoneyData = {
+            labels: expandedItems.map(item => item._displayName),
+            datasets: [{
+              label: 'Shares',
+              data: expandedItems.map(item => item._shares),
+              backgroundColor: expandedItems.map((item, i) =>
+                item.type === 'pending' ? '#FFC107' : colors[i % colors.length]
+              ),
+              borderWidth: 1,
+            }],
+            // ✅ Store expanded items for legend
+            _expandedItems: expandedItems,
+          };
+
+          setPostMoneyChartData(postMoneyData);
+        }
       } else {
         setError(res.data.message || "Failed to load cap table");
       }
     } catch (err) {
       setError(err.response?.data?.message || "Error loading cap table data");
-      console.error("Error:", err);
+      console.error("API Error:", err);
     } finally {
       setLoading(false);
     }
-  };
-  const formatCurrency = (amount, currency = "USD") => {
-    // Clean currency code - remove spaces and symbols
-    const cleanCurrency = currency?.trim().split(" ")[0] || "USD";
+  }, [id, userLogin, API_URL_CAPTABLE]);
 
-    // Valid currency codes
-    const validCurrencies = ["USD", "CAD", "EUR", "GBP", "INR", "AUD", "JPY"];
-    const currencyCode = validCurrencies.includes(cleanCurrency.toUpperCase())
-      ? cleanCurrency.toUpperCase()
-      : "USD";
+  const isUnpricedRound = roundData?.instrument === 'Safe' || roundData?.instrument === 'Convertible Note';
+  const isConverted = conversionStatus?.is_converted === true;
+  const isSeedRound = roundData?.instrument === 'Safe' && roundData?.issued_shares === 0 && roundData?.type !== 'Round 0';
+  const isSeriesA = roundData?.instrument === 'Preferred Equity';
+  const isRound0 = roundData?.type === 'Round 0';
 
-    try {
-      return new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: currencyCode,
-        minimumFractionDigits: 2,
-      }).format(amount || 0);
-    } catch (error) {
-      // Fallback if currency is still invalid
-      return `${currencyCode} ${parseFloat(amount || 0).toFixed(2)}`;
+  // ✅ DISPLAY VALUES
+  let displaySharePrice = '';
+  let displayIssuedShares = '';
+
+  if (isUnpricedRound) {
+    if (isConverted) {
+      displaySharePrice = roundData?.share_price;
+      displayIssuedShares = conversionStatus.converted_shares;
+    } else {
+      displaySharePrice = 'N/A';
+      displayIssuedShares = 'N/A';
     }
+  } else {
+    displaySharePrice = roundData?.share_price;
+    displayIssuedShares = capTableData?.post_money?.totals?.total_new_shares;
+  }
+
+  // Calculate summary details based on CPAVATE formulas
+  const calculateSummaryDetails = (data) => {
+    if (!data.cap_table || !data.round) return;
+
+    const preMoneyTable = data.cap_table.pre_money;
+    const postMoneyTable = data.cap_table.post_money;
+    const round = data.round;
+
+    const preMoneyVal = parseFloat(round.pre_money) || 0;
+    const investment = parseFloat(round.investment) || 0;
+    const postMoneyVal = preMoneyVal + investment;
+
+    const totalSharesPre = preMoneyTable.totals.total_shares || 0;
+    const totalSharesPost = postMoneyTable.totals.total_shares || 0;
+
+    const sharePricePre = totalSharesPre > 0 ? preMoneyVal / totalSharesPre : 0;
+    const sharePricePost = totalSharesPost > 0 ? postMoneyVal / totalSharesPost : 0;
+
+    const founderShares = preMoneyTable.items.filter(item => item.type === 'founder').reduce((sum, item) => sum + item.shares, 0);
+    const founderValuePre = founderShares * sharePricePre;
+    const founderValuePost = founderShares * sharePricePost;
+
+    const investorShares = postMoneyTable.items.filter(item => item.type === 'investor').reduce((sum, item) => sum + item.shares, 0);
+    const investorValue = investorShares * sharePricePost;
+
+    const optionPoolShares = postMoneyTable.totals.total_option_pool || 0;
+    const optionPoolValue = optionPoolShares * sharePricePost;
+
+    setSummaryDetails({
+      founderValuePre: founderValuePre,
+      founderValuePost: founderValuePost,
+      investorValue: investorValue,
+      optionPoolValue: optionPoolValue,
+      sharePricePre: sharePricePre,
+      sharePricePost: sharePricePost,
+      totalSharesPre: totalSharesPre,
+      totalSharesPost: totalSharesPost,
+    });
   };
-  const formatCurrencyPricePerShare = (amount = 0, currency = "USD") => {
-    // Clean currency code - remove spaces and symbols
-    const cleanCurrency = currency?.trim().split(" ")[0] || "USD";
 
-    // Valid currency codes
-    const validCurrencies = ["USD", "CAD", "EUR", "GBP", "INR", "AUD", "JPY"];
-    const currencyCode = validCurrencies.includes(cleanCurrency.toUpperCase())
-      ? cleanCurrency.toUpperCase()
-      : "USD";
+  useEffect(() => {
+    getCapTableData();
+  }, []);
 
-    try {
-      // Parse amount to ensure it's a number
-      const numAmount = parseFloat(amount) || 0;
+  function formatCurrentDate(input) {
+    const date = new Date(input);
+    if (isNaN(date)) return "";
 
-      return new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: currencyCode,
-        minimumFractionDigits: 3, // Always show 3 decimal places
-        maximumFractionDigits: 3, // Exactly 3 decimal places, not more
-      }).format(numAmount);
-    } catch (error) {
-      // Fallback if currency is still invalid
-      return `${currencyCode} ${(parseFloat(amount) || 0).toFixed(3)}`;
-    }
-  };
-  const formatPriceThreeDecimal = (amount = 0) => {
-    try {
-      // Parse amount to ensure it's a number
-      const numAmount = parseFloat(amount) || 0;
+    const months = [
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    ];
 
-      return new Intl.NumberFormat("en-US", {
-        minimumFractionDigits: 3, // Always show 3 decimal places
-        maximumFractionDigits: 3, // Exactly 3 decimal places
-      }).format(numAmount);
-    } catch (error) {
-      // Fallback
-      return (parseFloat(amount) || 0).toFixed(3);
-    }
-  };
+    const day = date.getDate();
+    const month = months[date.getMonth()];
+    const year = date.getFullYear();
 
-  const formatNumber = (num) => {
-    return new Intl.NumberFormat("en-US").format(num || 0);
-  };
-
-  const formatPercentage = (percent) => {
-    return `${(percent || 0).toFixed(2)}%`;
-  };
-  const RoundCapChart = ({ chartData }) => {
-    const options = {
-      responsive: true,
-      plugins: {
-        legend: { display: false },
-        title: { display: true, text: "Fully Diluted Ownership %" },
-      },
-      scales: {
-        y: { beginAtZero: true, max: 100 },
-      },
+    const getOrdinal = (n) => {
+      if (n >= 11 && n <= 13) return "th";
+      switch (n % 10) {
+        case 1: return "st";
+        case 2: return "nd";
+        case 3: return "rd";
+        default: return "th";
+      }
     };
 
-    return (
-      <div style={{ height: "300px" }}>
-        <Bar data={chartData} options={options} />
-      </div>
-    );
-  };
-  const renderRoundZeroTable = () => {
-    if (!capTableData) return null;
+    let hours = date.getHours();
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    const seconds = date.getSeconds().toString().padStart(2, "0");
+    const ampm = hours >= 12 ? "PM" : "AM";
 
-    // Check for error in Round 0 data
-    if (capTableData.error) {
-      return (
-        <div className="alert alert-danger">
-          <h5>Data Error</h5>
-          <p>{capTableData.error}</p>
-          <p className="mb-0">
-            Please check Round 0 data structure. Founder allocation data is required.
-          </p>
-        </div>
-      );
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+
+    return `${month} ${day}${getOrdinal(day)}, ${year}`;
+  }
+  const formatIncorporationDate = (value) => {
+    if (!value) return "Not provided";
+
+    // Only year
+    if (/^\d{4}$/.test(value)) {
+      return value;
     }
 
-    return (
-      <div className="cap-table-section">
-        <div className="card mb-4">
-          <div className="card-header bg-primary text-white">
-            <h4 className="mb-0">{capTableData.roundType}</h4>
-            <small className="opacity-75">Company Incorporation - Founder Shares Allocation</small>
-          </div>
-          <div className="card-body">
-            {/* Platform Inputs Summary */}
-            <h5 className="mb-3">Platform Inputs</h5>
-            <div className="row mb-4">
-              <div className="col-md-4">
-                <div className="info-box p-3 border rounded bg-light">
-                  <small className="text-muted">Founder Share Allocation</small>
-                  <h6>{capTableData.calculations.founderCount} Founders</h6>
-                </div>
-              </div>
-              <div className="col-md-4">
-                <div className="info-box p-3 border rounded bg-light">
-                  <small className="text-muted">Share Types</small>
-                  <h6>Common Shares</h6>
-                </div>
-              </div>
-              <div className="col-md-4">
-                <div className="info-box p-3 border rounded bg-light">
-                  <small className="text-muted">Price Per Share</small>
-                  <h6>{formatCurrencyPricePerShare(capTableData.calculations.sharePrice, capTableData.currency)}</h6>
-                </div>
-              </div>
-            </div>
-
-            {/* Platform Outputs */}
-            <h5 className="mb-3">Platform Outputs</h5>
-            <div className="row mb-4">
-              <div className="col-md-4">
-                <div className="info-box p-3 border rounded bg-success text-white">
-                  <small>Total Shares Issued</small>
-                  <h5>{formatNumber(capTableData.calculations.totalSharesIssued)}</h5>
-                </div>
-              </div>
-              <div className="col-md-4">
-                <div className="info-box p-3 border rounded bg-info text-white">
-                  <small>Total Company Value</small>
-                  <h5>{formatCurrency(capTableData.calculations.totalValue, capTableData.currency)}</h5>
-                </div>
-              </div>
-              <div className="col-md-4">
-                <div className="info-box p-3 border rounded bg-warning text-dark">
-                  <small>Founder Count</small>
-                  <h5>{capTableData.calculations.founderCount}</h5>
-                </div>
-              </div>
-            </div>
-
-            {/* Ownership Chart */}
-            <div className="mb-4">
-              <RoundCapChart chartData={capTableData.chartData} />
-            </div>
-
-            {/* Founder Share Allocation Table - CLIENT EXAMPLE के according */}
-            <h5 className="mt-4 mb-3">Founder Share Allocation</h5>
-            <div className="table-responsive">
-              <table className="table table-striped table-hover">
-                <thead className="table-dark">
-                  <tr>
-                    <th>Founder Name</th>
-                    <th>Email</th>
-                    <th>Phone</th>
-                    <th>Share Type</th>
-                    <th>Share Class</th>
-                    <th>Voting Rights</th>
-                    <th className="text-end">Numbers of Shares</th>
-                    <th className="text-end">Price Per Share</th>
-                    <th className="text-end">Ownership %</th>
-                    <th className="text-end">Value</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {capTableData.shareholders.map((sh, idx) => (
-                    <tr key={idx}>
-                      <td>
-                        <strong>
-                          {sh.firstName && sh.lastName ?
-                            `${sh.firstName} ${sh.lastName}` :
-                            `Founder ${idx + 1}`
-                          }
-                        </strong>
-                      </td>
-                      <td>
-                        {sh.email ? (
-                          <a href={`mailto:${sh.email}`} className="text-decoration-none">
-                            {sh.email}
-                          </a>
-                        ) : (
-                          '-'
-                        )}
-                      </td>
-                      <td>
-                        {sh.phone ? (
-                          <a href={`tel:${sh.phone}`} className="text-decoration-none">
-                            {sh.phone}
-                          </a>
-                        ) : (
-                          '-'
-                        )}
-                      </td>
-                      <td>
-                        <span className="badge bg-secondary text-capitalize">
-                          {sh.shareType === 'common' ? 'Common Shares' :
-                            sh.shareType === 'preferred' ? 'Preferred Shares' :
-                              sh.shareType === 'other' && sh.customShareType ? sh.customShareType :
-                                'Common Shares'}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="badge bg-light text-dark border">
-                          {sh.shareClass === 'other' && sh.customShareClass ?
-                            sh.customShareClass :
-                            sh.shareClass || 'Class A'}
-                        </span>
-                      </td>
-                      <td>
-                        <span className={`badge ${sh.votingRights === 'voting' ? 'bg-success' : 'bg-warning'}`}>
-                          {sh.votingRights === 'voting' ? 'Voting' : 'Non-Voting'}
-                        </span>
-                      </td>
-                      <td className="text-end">{formatNumber(sh.shares)}</td>
-                      <td className="text-end">
-                        {formatCurrencyPricePerShare(capTableData.calculations.sharePrice, capTableData.currency)}
-                      </td>
-                      <td className="text-end">
-                        <span className="badge bg-danger" style={{ fontSize: '16px' }}>
-                          {formatPercentage(sh.ownership)}
-                        </span>
-                      </td>
-                      <td className="text-end">
-                        {formatCurrency(sh.value, capTableData.currency)}
-                      </td>
-                    </tr>
-                  ))}
-
-                  {/* Total Row */}
-                  <tr className="table-secondary fw-bold">
-                    <td colSpan="6">TOTAL</td>
-                    <td className="text-end">
-                      {formatNumber(capTableData.calculations.totalSharesIssued)}
-                    </td>
-                    <td className="text-end">
-                      {formatCurrencyPricePerShare(capTableData.calculations.sharePrice, capTableData.currency)}
-                    </td>
-                    <td className="text-end">
-                      {formatPercentage(100)}
-                    </td>
-                    <td className="text-end">
-                      {formatCurrency(capTableData.calculations.totalValue, capTableData.currency)}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            {/* Additional Summary Information */}
-            <div className="row mt-4">
-              <div className="col-md-3">
-                <div className="card bg-light">
-                  <div className="card-body text-center">
-                    <h6 className="card-title text-muted">Total Founders</h6>
-                    <h4 className="text-primary">{capTableData.shareholders.length}</h4>
-                  </div>
-                </div>
-              </div>
-              <div className="col-md-3">
-                <div className="card bg-light">
-                  <div className="card-body text-center">
-                    <h6 className="card-title text-muted">Total Shares</h6>
-                    <h4 className="text-success">{formatNumber(capTableData.calculations.totalSharesIssued)}</h4>
-                  </div>
-                </div>
-              </div>
-              <div className="col-md-3">
-                <div className="card bg-light">
-                  <div className="card-body text-center">
-                    <h6 className="card-title text-muted">Price Per Share</h6>
-                    <h4 className="text-info">
-                      {formatCurrencyPricePerShare(
-                        capTableData.calculations.sharePrice,
-                        capTableData.currency
-                      )}
-                    </h4>
-                  </div>
-                </div>
-              </div>
-              <div className="col-md-3">
-                <div className="card bg-light">
-                  <div className="card-body text-center">
-                    <h6 className="card-title text-muted">Total Value</h6>
-                    <h4 className="text-warning">
-                      {formatCurrency(capTableData.calculations.totalValue, capTableData.currency)}
-                    </h4>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="row mt-4">
-              <div className="col-md-6">
-                <div className="alert alert-info">
-                  <h6 className="alert-heading">📊 Platform Inputs</h6>
-                  <ul className="mb-0 small">
-                    <li>Number of shares issued to each founder</li>
-                    <li>Type of shares as per incorporation documents</li>
-                    <li>Price per share as per incorporation</li>
-                  </ul>
-                </div>
-              </div>
-              <div className="col-md-6">
-                <div className="alert alert-success">
-                  <h6 className="alert-heading">📈 Platform Outputs</h6>
-                  <ul className="mb-0 small">
-                    <li>Total number of shares issued</li>
-                    <li>Ownership % based on shares issued</li>
-                    <li>Total company value at incorporation</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-
-            {/* Carry Over Information - CLIENT REQUIREMENTS के according */}
-            <div className="alert alert-warning mt-3">
-              <h6 className="alert-heading">⚠️ Important Note</h6>
-              <p className="mb-2 small">
-                <strong>Total shares ({formatNumber(capTableData.calculations.totalSharesIssued)}) will carry forward to Round 1.</strong>
-              </p>
-              <p className="mb-0 small">
-                <strong>Price per share ({formatCurrencyPricePerShare(capTableData.calculations.sharePrice, capTableData.currency)}) and company valuation ({formatCurrency(capTableData.calculations.totalValue, capTableData.currency)}) will NOT carry over to investment rounds.</strong>
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    // Full date
+    return formatCurrentDate(value);
   };
 
-  const renderSeedRoundTable = () => {
+  // ============================================
+  // Add this function in your component before return
+  // ============================================
 
-    if (!capTableData || !capTableData.calculations) return null;
+  const getOwnershipStats = (items) => {
+    const founders = items.filter(item => item.type === 'founder');
 
-    const calc = capTableData.calculations;
-    const currency = capTableData.currency || "USD";
-
-    if (capTableData.error) {
-      return (
-        <div className="alert alert-danger">
-          <h5>Calculation Error</h5>
-          <p>{capTableData.error}</p>
-        </div>
-      );
+    if (founders.length === 0) {
+      return { largest: 0, smallest: 0, votingCount: 0, totalFounders: 0 };
     }
 
-    // Check if this is a Convertible Note round
-    const isConvertibleNote = capTableData.isConvertibleNoteRound ||
-      capTableData.instrumentType === "Convertible Note";
+    const percentages = founders.map(f => parseFloat(f.percentage || 0));
+    const largest = Math.max(...percentages);
+    const smallest = Math.min(...percentages);
 
+    const votingCount = founders.filter(f =>
+      f.voting === 'voting' || f.voting === true || f.voting === 'yes'
+    ).length;
 
-    return (
-      <div className="cap-table-section">
-        <div className="card mb-4">
-          <div className="card-header bg-success text-white">
-            <h4 className="mb-0">{capTableData.roundType}</h4>
-            <small className="opacity-75">
-              {isConvertibleNote ? "Convertible Note Round - Cap Table Calculations" : "Seed Round - Cap Table Calculations"}
-            </small>
-          </div>
-          <div className="card-body">
-            {/* Platform Inputs */}
-            <h5 className="mb-3">Platform Inputs</h5>
-            <div className="row mb-4">
-              <div className="col-md-3">
-                <div className="info-box p-3 border rounded bg-light">
-                  <small className="text-muted">Investment Size</small>
-                  <h5>{formatCurrency(calc.investmentSize, currency)}</h5>
-                </div>
-              </div>
-              <div className="col-md-3">
-                <div className="info-box p-3 border rounded bg-light">
-                  <small className="text-muted">Pre-Money Valuation</small>
-                  <h5>{formatCurrency(calc.preMoneyValuation, currency)}</h5>
-                </div>
-              </div>
-              <div className="col-md-3">
-                <div className="info-box p-3 border rounded bg-light">
-                  <small className="text-muted">Option Pool %</small>
-                  <h5>{formatPercentage(calc.optionPoolPercent)}</h5>
-                </div>
-              </div>
-              <div className="col-md-3">
-                <div className="info-box p-3 border rounded bg-light">
-                  <small className="text-muted">Round Type</small>
-                  <h5>{isConvertibleNote ? "Convertible Note" : "Equity Round"}</h5>
-                </div>
-              </div>
-            </div>
-
-            {/* Convertible Note Specific Inputs */}
-            {isConvertibleNote && calc.valuationCap && (
-              <div className="row mb-4">
-                <div className="col-md-4">
-                  <div className="info-box p-3 border rounded bg-info text-white">
-                    <small className="text-white">Valuation Cap</small>
-                    <h6>{formatCurrency(calc.valuationCap, currency)}</h6>
-                  </div>
-                </div>
-                <div className="col-md-4">
-                  <div className="info-box p-3 border rounded bg-warning text-dark">
-                    <small>Discount Rate</small>
-                    <h6>{formatPercentage(calc.discountRate)}</h6>
-                  </div>
-                </div>
-                <div className="col-md-4">
-                  <div className="info-box p-3 border rounded bg-secondary text-white">
-                    <small>Interest Rate</small>
-                    <h6>{formatPercentage(calc.interestRate)}</h6>
-                  </div>
-                </div>
-                {/* <div className="col-md-3">
-                  <div className="info-box p-3 border rounded bg-dark text-white">
-                    <small>Conversion Trigger</small>
-                    <h6>{calc.convertibleTrigger || "QUALIFIED_FINANCING"}</h6>
-                  </div>
-                </div> */}
-              </div>
-            )}
-
-            {/* Platform Outputs */}
-            <h5 className="mb-3">Platform Outputs</h5>
-            <div className="row mb-4">
-              <div className="col-md-2">
-                <div className="info-box p-3 border rounded bg-primary text-white">
-                  <small>Post-Money Valuation</small>
-                  <h6>{formatCurrency(calc.postMoneyValuation, currency)}</h6>
-                </div>
-              </div>
-              <div className="col-md-2">
-                <div className="info-box p-3 border rounded bg-info text-white">
-                  <small>Post-Investment # Shares</small>
-                  <h6>{formatNumber(calc.postInvestmentTotalShares)}</h6>
-                </div>
-              </div>
-              <div className="col-md-2">
-                <div className="info-box p-3 border rounded bg-warning text-dark">
-                  <small>New Shares Issued</small>
-                  <h6>{formatPriceThreeDecimal(calc.newShares)}</h6>
-                </div>
-              </div>
-              <div className="col-md-2">
-                <div className="info-box p-3 border rounded bg-success text-white">
-                  <small>
-                    {isConvertibleNote ? "Theoretical Share Price" : "Share Price"}
-                  </small>
-                  <h6>{formatCurrencyPricePerShare(calc.sharePrice, currency)}</h6>
-                </div>
-              </div>
-
-              {/* Conditional Investor Ownership Display */}
-              <div className="col-md-2">
-                <div className="info-box p-3 border rounded bg-secondary text-white">
-                  <small>
-                    {isConvertibleNote ? "Note Investment" : "Investor Ownership"}
-                  </small>
-                  <h6>
-                    {isConvertibleNote
-                      ? formatCurrency(calc.totalNoteInvestment || 0, currency)
-                      : formatPercentage(calc.investorOwnershipPercent)
-                    }
-                  </h6>
-                </div>
-              </div>
-
-              <div className="col-md-2">
-                <div className="info-box p-3 border rounded bg-dark text-white">
-                  <small>Option Pool</small>
-                  <h6>{formatNumber(calc.optionPoolShares)} shares</h6>
-                </div>
-              </div>
-            </div>
-
-            {/* Available for Investment Display */}
-            {isConvertibleNote && calc.availableForInvestment > 0 && (
-              <div className="row mb-4">
-                <div className="col-md-12">
-                  <div className="alert alert-danger">
-                    <h6 className="alert-heading">💰 Available for Investment</h6>
-                    <p className="mb-0">
-                      <strong>{formatCurrency(calc.availableForInvestment, currency)}</strong> remaining in this convertible note round.
-                      {calc.totalNoteInvestment > 0 && (
-                        <span> ({formatCurrency(calc.totalNoteInvestment, currency)} already committed)</span>
-                      )}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Ownership Chart */}
-            <div className="mb-4">
-              <RoundCapChart chartData={capTableData.chartData} />
-            </div>
-
-            {/* ========== PRE-SEED CAP TABLE ========== */}
-            <div className="row mb-5">
-              <div className="col-md-12">
-                <div className="card">
-                  <div className="card-header bg-primary text-white">
-                    <h5 className="mb-0">Pre-Seed Cap Table</h5>
-                    <small>(# shares, Ownership %, Currency Value)</small>
-                  </div>
-                  <div className="card-body">
-                    <div className="table-responsive">
-                      <table className="table table-bordered table-hover">
-                        <thead className="table-dark">
-                          <tr>
-                            <th>Shareholder</th>
-                            <th className="text-center">Contact Info</th>
-                            <th className="text-center">Common Shares</th>
-                            <th className="text-center">Fully Diluted Ownership %</th>
-                            <th className="text-center">Currency Value</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {capTableData.preSeedShareholders && capTableData.preSeedShareholders.length > 0 ? (
-                            capTableData.preSeedShareholders.map((sh, idx) => (
-                              <tr key={idx}>
-                                <td>
-                                  <div>
-                                    <strong className="text-danger">{sh.name}</strong>
-                                    {sh.fullName && sh.fullName !== sh.name && (
-                                      <div className="small fw-bold text-dark">{sh.fullName}</div>
-                                    )}
-                                    {sh.type === "Founder" && (
-                                      <span className="badge bg-success mt-1">Founder</span>
-                                    )}
-                                    {sh.type === "Options Pool" && (
-                                      <span className="badge bg-warning text-dark mt-1">Option Pool</span>
-                                    )}
-                                  </div>
-                                </td>
-                                <td className="text-center small">
-                                  {sh.email && sh.email !== "-" && (
-                                    <div className="text-muted mb-1">
-                                      📧 {sh.email}
-                                    </div>
-                                  )}
-                                  {sh.phone && sh.phone !== "-" && (
-                                    <div className="text-muted">
-                                      📱 {sh.phone}
-                                    </div>
-                                  )}
-                                  {(!sh.email || sh.email === "-") && (!sh.phone || sh.phone === "-") && (
-                                    <span className="text-muted">-</span>
-                                  )}
-                                </td>
-                                <td className="text-center">
-                                  <strong>{formatNumber(sh.shares)}</strong>
-                                </td>
-                                <td className="text-center">
-                                  <span className={`fSize-16 badge ${sh.type === "Founder" ? "bg-danger" : "bg-warning text-white"}`}>
-                                    {formatPercentage(sh.ownership)}
-                                  </span>
-                                </td>
-                                <td className="text-center">
-                                  <strong>{formatCurrency(sh.value, currency)}</strong>
-                                </td>
-                              </tr>
-                            ))
-                          ) : (
-                            <tr>
-                              <td colSpan="5" className="text-center text-danger">
-                                <strong>⚠️ No shareholders data available</strong>
-                              </td>
-                            </tr>
-                          )}
-
-                          {/* TOTAL ROW */}
-                          <tr className="table-secondary fw-bold">
-                            <td colSpan="2">TOTAL</td>
-                            <td className="text-center">{formatNumber(calc.preSeedTotalShares)}</td>
-                            <td className="text-center">{formatPercentage(100)}</td>
-                            <td className="text-center">{formatCurrency(calc.preMoneyValuation, currency)}</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-
-                    {/* Summary Cards */}
-                    <div className="row mt-3">
-                      <div className="col-md-4">
-                        <div className="alert alert-info mb-0">
-                          <strong>Total Founders Ownership:</strong> {formatPercentage(
-                            (capTableData.preSeedShareholders || [])
-                              .filter(sh => sh.type === "Founder")
-                              .reduce((sum, sh) => sum + sh.ownership, 0)
-                          )}
-                        </div>
-                      </div>
-                      <div className="col-md-4">
-                        <div className="alert alert-warning mb-0">
-                          <strong>Employee Ownership:</strong> {formatPercentage(
-                            (capTableData.preSeedShareholders || [])
-                              .filter(sh => sh.type === "Options Pool")
-                              .reduce((sum, sh) => sum + sh.ownership, 0)
-                          )}
-                        </div>
-                      </div>
-                      <div className="col-md-4">
-                        <div className="alert alert-success mb-0">
-                          <strong>Total Pre-Seed Value:</strong> {formatCurrency(calc.preMoneyValuation, currency)}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* ========== POST-SEED CAP TABLE ========== */}
-            <div className="row">
-              <div className="col-md-12">
-                <div className="card">
-                  <div className="card-header bg-success text-white">
-                    <h5 className="mb-0">Post-Seed Cap Table</h5>
-                    <small>(# shares, Ownership %, Currency Value)</small>
-                  </div>
-                  <div className="card-body">
-                    <div className="table-responsive">
-                      <table className="table table-bordered table-hover">
-                        <thead className="table-dark">
-                          <tr>
-                            <th>Shareholder</th>
-                            <th className="text-center">Contact Info</th>
-                            <th className="text-center">Common Shares</th>
-                            <th className="text-center">New Shares</th>
-                            <th className="text-center">Total Shares</th>
-                            <th className="text-center">Fully Diluted Ownership %</th>
-                            <th className="text-center">Currency Value</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {capTableData.shareholders && capTableData.shareholders.length > 0 ? (
-                            capTableData.shareholders.map((sh, idx) => (
-                              <tr key={idx}>
-                                <td>
-                                  <div>
-                                    <strong className="text-danger">{sh.name}</strong>
-                                    {sh.fullName && sh.fullName !== sh.name && (
-                                      <div className="small fw-bold text-dark">{sh.fullName}</div>
-                                    )}
-                                    {/* Type badges for all shareholder types */}
-                                    {sh.type === "Investor" && (
-                                      <span className="badge bg-success mt-1">
-                                        {sh.isGeneric ? "" : "Investor"}
-                                        {sh.isConvertibleNote && " (Convertible Note)"}
-                                      </span>
-                                    )}
-                                    {sh.type === "Founder" && (
-                                      <span className="badge bg-primary mt-1">Founder</span>
-                                    )}
-                                    {sh.type === "Options Pool" && (
-                                      <span className="badge bg-warning text-dark mt-1">Option Pool</span>
-                                    )}
-                                    {sh.type === "Available" && (
-                                      <span className="badge bg-danger mt-1">Available for Investment</span>
-                                    )}
-                                  </div>
-                                </td>
-                                <td className="text-center small">
-                                  {/* Hide contact info for Available for Investment */}
-                                  {sh.type !== "Available" && sh.email && sh.email !== "-" && (
-                                    <div className="text-muted mb-1">
-                                      📧 {sh.email}
-                                    </div>
-                                  )}
-                                  {sh.type !== "Available" && sh.phone && sh.phone !== "-" && (
-                                    <div className="text-muted">
-                                      📱 {sh.phone}
-                                    </div>
-                                  )}
-                                  {(sh.type === "Available" || !sh.email || sh.email === "-") &&
-                                    (!sh.phone || sh.phone === "-") && (
-                                      <span className="text-muted">-</span>
-                                    )}
-                                </td>
-                                <td className="text-center">
-                                  {sh.type === "Founder" || sh.type === "Options Pool" ? (
-                                    <strong>{formatNumber(sh.shares)}</strong>
-                                  ) : (
-                                    <span className="text-muted">-</span>
-                                  )}
-                                </td>
-                                <td className="text-center">
-                                  {sh.newShares > 0 ? (
-                                    <span className="badge bg-warning text-dark">
-                                      {formatNumber(sh.newShares)}
-                                    </span>
-                                  ) : (
-                                    <span className="text-muted">-</span>
-                                  )}
-                                </td>
-                                <td className="text-center">
-                                  <strong>{formatNumber(sh.shares)}</strong>
-                                </td>
-                                <td className="text-center">
-                                  <span className={`fSize-16 badge ${sh.type === "Founder" ? "bg-danger" :
-                                    sh.type === "Options Pool" ? "bg-warning text-dark" :
-                                      sh.type === "Available" ? "bg-danger" :
-                                        "bg-success"
-                                    }`}>
-                                    {formatPercentage(sh.ownership)}
-                                  </span>
-                                </td>
-                                <td className="text-center">
-                                  <strong>{formatCurrency(sh.value, currency)}</strong>
-
-                                  {/* Investment amount for Available for Investment */}
-                                  {sh.type === "Available" && sh.investmentAmount > 0 && (
-                                    <div className="small text-success">
-                                      Available: {formatCurrency(sh.investmentAmount, currency)}
-                                    </div>
-                                  )}
-
-                                  {/* Investment amount for investors */}
-                                  {/* {sh.type === "Investor" && sh.investmentAmount && sh.investmentAmount > 0 && (
-                                    <div className="small text-success">
-                                      Invested: {formatCurrency(sh.investmentAmount, currency)}
-                                    </div>
-                                  )} */}
-
-                                  {/* Note for convertible note investors */}
-                                  {sh.type === "Investor" && sh.isConvertibleNote && (
-                                    <div className="small text-muted">
-                                      Convertible Note - 0 shares issued
-                                    </div>
-                                  )}
-                                </td>
-                              </tr>
-                            ))
-                          ) : (
-                            <tr>
-                              <td colSpan="7" className="text-center text-danger">
-                                <strong>⚠️ No shareholders data available</strong>
-                              </td>
-                            </tr>
-                          )}
-
-                          {/* TOTAL ROW */}
-                          <tr className="table-secondary fw-bold">
-                            <td colSpan="2">TOTAL</td>
-                            <td className="text-center">{formatNumber(calc.preSeedTotalShares)}</td>
-                            <td className="text-center">{formatNumber(calc.newShares)}</td>
-                            <td className="text-center">{formatNumber(calc.postInvestmentTotalShares)}</td>
-                            <td className="text-center">{formatPercentage(100)}</td>
-                            <td className="text-center">{formatCurrency(calc.postMoneyValuation, currency)}</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-
-                    {/* Summary Cards */}
-                    <div className="row mt-3">
-                      <div className="col-md-6">
-                        <div className="alert alert-primary mb-0">
-                          <strong>Total Founders:</strong> {formatPercentage(
-                            (capTableData.shareholders || [])
-                              .filter(sh => sh.type === "Founder")
-                              .reduce((sum, sh) => sum + sh.ownership, 0)
-                          )}
-                        </div>
-                      </div>
-                      <div className="col-md-6">
-                        <div className="alert alert-warning mb-0">
-                          <strong>Option Pool:</strong> {formatPercentage(
-                            (capTableData.shareholders || [])
-                              .filter(sh => sh.type === "Options Pool")
-                              .reduce((sum, sh) => sum + sh.ownership, 0)
-                          )}
-                        </div>
-                      </div>
-
-                    </div>
-                    <div className="row mt-3">
-
-                      <div className="col-md-4">
-                        <div className="alert alert-success mb-0">
-                          <strong>Investors:</strong> {formatPercentage(
-                            (capTableData.shareholders || [])
-                              .filter(sh => sh.type === "Investor")
-                              .reduce((sum, sh) => sum + sh.ownership, 0)
-                          )}
-                        </div>
-                      </div>
-                      {/* Available for Investment Summary */}
-                      <div className="col-md-4">
-                        <div className="alert alert-danger mb-0">
-                          <strong>Available:</strong> {formatPercentage(
-                            (capTableData.shareholders || [])
-                              .filter(sh => sh.type === "Available")
-                              .reduce((sum, sh) => sum + sh.ownership, 0)
-                          )}
-                        </div>
-                      </div>
-                      <div className="col-md-4">
-                        <div className="alert alert-info mb-0">
-                          <strong>Post-Money Value:</strong> {formatCurrency(calc.postMoneyValuation, currency)}
-                        </div>
-                      </div>
-                    </div>
-
-
-                    {/* Formula Verification */}
-                    <div className="alert alert-dark mt-3">
-                      <h6 className="alert-heading">🔍 Formula</h6>
-                      <div className="row small">
-                        <div className="col-md-4">
-                          <strong>Post-Money Valuation:</strong><br />
-                          {formatCurrency(calc.investmentSize, currency)} + {formatCurrency(calc.preMoneyValuation, currency)} = {formatCurrency(calc.postMoneyValuation, currency)}
-                        </div>
-
-                        {/* Conditional Formulas based on Round Type */}
-                        {isConvertibleNote ? (
-                          <>
-                            <div className="col-md-4">
-                              <strong>Convertible Note Investment:</strong><br />
-                              Confirmed: {formatCurrency(calc.totalNoteInvestment || 0, currency)}<br />
-                              Available: {formatCurrency(calc.availableForInvestment || 0, currency)}
-                            </div>
-                            <div className="col-md-4">
-                              <strong>Theoretical Share Price:</strong><br />
-                              {formatCurrencyPricePerShare(calc.preMoneyValuation, currency)} ÷ {formatNumber(calc.preSeedTotalShares)} = {formatCurrencyPricePerShare(calc.sharePrice, currency)}
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <div className="col-md-4">
-                              <strong>Investor Ownership:</strong><br />
-                              {formatCurrency(calc.investmentSize, currency)} ÷ {formatCurrency(calc.postMoneyValuation, currency)} = {formatPercentage(calc.investorOwnershipPercent)}
-                            </div>
-                            <div className="col-md-4">
-                              <strong>Share Price:</strong><br />
-                              {calc.newShares > 0 ? (
-                                <>
-                                  {formatCurrency(calc.investmentSize, currency)} ÷ {formatNumber(calc.newShares)} = {formatCurrencyPricePerShare(calc.sharePrice, currency)}
-                                </>
-                              ) : (
-                                "No new shares issued"
-                              )}
-                            </div>
-                          </>
-                        )}
-                      </div>
-
-                      {/* Convertible Note Specific Information */}
-                      {isConvertibleNote && (
-                        <div className="mt-2 p-2 bg-warning text-dark rounded">
-                          <strong>💡 Convertible Note Round:</strong> No shares issued immediately.
-                          {calc.discountRate > 0 && ` Conversion will happen at next qualified financing round with ${formatPercentage(calc.discountRate)} discount`}
-                          {calc.valuationCap > 0 && ` and ${formatCurrency(calc.valuationCap, currency)} valuation cap.`}
-                          {calc.interestRate > 0 && ` Interest rate: ${formatPercentage(calc.interestRate)}.`}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return {
+      largest: largest.toFixed(1),
+      smallest: smallest.toFixed(1),
+      votingCount: founders.length,
+      totalFounders: founders.length
+    };
   };
 
-  const renderSAFERoundTable = () => {
-    if (!capTableData || !capTableData.calculations) return null;
-
-    const calc = capTableData.calculations;
-    const currency = capTableData.currency || "USD";
-
-    // ✅ FIX 1: Need BOTH Pre-Seed and Post-Seed tables
-    const preSeedTable = capTableData.preSeedCapTable;
-    const postSeedTable = capTableData.postSeedCapTable;
-    var roundname = capTableData.instrumentType + ' ' + capTableData.shareClassType;
-    return (
-      <div className="cap-table-section">
-        <div className="card mb-4">
-          <div className="card-header bg-warning text-dark">
-            <h4 className="mb-0">{capTableData.roundType}</h4>
-            <small>{roundname} Investment with Option Pool</small>
-          </div>
-          <div className="card-body">
-
-            {/* ===== PLATFORM INPUTS ===== */}
-            <h5 className="mb-3">📊 Platform Inputs</h5>
-            <div className="row mb-4">
-              <div className="col-md-3">
-                <div className="info-box p-3 border rounded bg-light">
-                  <small className="text-muted">Investment Size</small>
-                  <h5>{formatCurrency(calc.investmentSize, currency)}</h5>
-                </div>
-              </div>
-              <div className="col-md-3">
-                <div className="info-box p-3 border rounded bg-light">
-                  <small className="text-muted">Company Value</small>
-                  <h5>{formatCurrency(calc.companyValue, currency)}</h5>
-                </div>
-              </div>
-              <div className="col-md-3">
-                <div className="info-box p-3 border rounded bg-light">
-                  <small className="text-muted">Valuation Cap</small>
-                  <h5>{formatCurrency(calc.valuationCap, currency)}</h5>
-                </div>
-              </div>
-              <div className="col-md-3">
-                <div className="info-box p-3 border rounded bg-light">
-                  <small className="text-muted">Discount Rate</small>
-                  <h5>{formatPercentage(calc.discountRate)}</h5>
-                </div>
-              </div>
-            </div>
-
-            <div className="row mb-4">
-              <div className="col-md-4">
-                <div className="info-box p-3 border rounded bg-info text-white">
-                  <small>Pre-Seed Option Pool %</small>
-                  <h5>{formatPercentage(calc.optionPoolPercent)}</h5>
-                </div>
-              </div>
-              <div className="col-md-4">
-                <div className="info-box p-3 border rounded bg-success text-white">
-                  <small>Round 0 Total Shares</small>
-                  <h5>{formatNumber(calc.roundZeroTotalShares)}</h5>
-                </div>
-              </div>
-              <div className="col-md-4">
-                <div className="info-box p-3 border rounded bg-warning text-dark">
-                  <small>Employee Shares Created</small>
-                  <h5>{formatNumber(calc.employeeShares)}</h5>
-                </div>
-              </div>
-            </div>
-
-            {/* ===== CALCULATION FORMULA BOX ===== */}
-            <div className="alert alert-info mb-4">
-              <h6 className="alert-heading">📐 Employee Pool Calculation</h6>
-              <p className="mb-1">
-                <strong>Formula:</strong> Employee Shares = Total Founder Shares ÷ (1 - Pool %) × Pool %
-              </p>
-              <p className="mb-0">
-                <strong>Calculation:</strong> {formatNumber(calc.roundZeroTotalShares)} ÷ (1 - {formatPercentage(calc.optionPoolPercent)}) × {formatPercentage(calc.optionPoolPercent)}
-                = <span className="badge bg-warning text-dark">{formatNumber(calc.employeeShares)} shares</span>
-              </p>
-            </div>
-
-            {/* ⚠️ IMPORTANT: SAFE Notes Explanation */}
-            <div className="alert alert-warning mb-4">
-              <h6 className="alert-heading">⚠️ SAFE Notes - NO SHARES ISSUED YET</h6>
-              <p className="mb-2">
-                <strong>Important:</strong> SAFE (Simple Agreement for Future Equity) notes are <u>NOT converted into shares</u> during this round.
-              </p>
-              <ul className="mb-2">
-                <li>SAFE investors have invested <strong>{formatCurrency(calc.investmentSize, currency)}</strong></li>
-                <li>They will receive <strong>0 shares</strong> in this round</li>
-                <li>Conversion happens at the <strong>next priced equity round</strong> (Series A)</li>
-              </ul>
-              <p className="mb-0">
-                <strong>Conversion Price (at Series A):</strong> LOWER of:
-                <br />• Series A price × (1 - {formatPercentage(calc.discountRate)})
-                <br />• Valuation Cap ÷ Total Shares
-              </p>
-            </div>
-
-            {/* ===== PRE-SEED CAP TABLE ===== */}
-            {preSeedTable && (
-              <div className="row mb-5">
-                <div className="col-md-12">
-                  <div className="card">
-                    <div className="card-header bg-primary text-white">
-                      <h5 className="mb-0">📋 Common Shares at Pre-Seed Round 1</h5>
-                      <small>{preSeedTable.message}</small>
-                    </div>
-                    <div className="card-body">
-                      <div className="table-responsive">
-                        <table className="table table-bordered table-hover">
-                          <thead className="table-dark">
-                            <tr>
-                              <th>Management</th>
-                              <th className="text-center">Contact Info</th>
-                              <th className="text-center">Common Shares</th>
-                              <th className="text-center">New Shares</th>
-                              <th className="text-center">Fully Diluted Ownership %</th>
-                              <th className="text-center">Value ($)</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {preSeedTable.shareholders.map((sh, idx) => (
-                              <tr key={idx} className={sh.type === "Options Pool" ? "table-warning" : ""}>
-                                <td>
-                                  <div>
-                                    <strong className={
-                                      sh.type === "Founder" ? "text-primary" :
-                                        sh.type === "Options Pool" ? "text-warning" : "text-info"
-                                    }>
-                                      {sh.name}
-                                    </strong>
-                                    {sh.fullName && sh.fullName !== sh.name && (
-                                      <div className="small text-muted">{sh.fullName}</div>
-                                    )}
-                                    <span className={`badge mt-1 ${sh.type === "Founder" ? "bg-primary" :
-                                      sh.type === "Options Pool" ? "bg-warning text-dark" : "bg-info"
-                                      }`}>
-                                      {sh.type}
-                                    </span>
-                                  </div>
-                                </td>
-                                <td className="text-center small">
-                                  {sh.email && sh.email !== "-" ? (
-                                    <div className="text-muted">📧 {sh.email}</div>
-                                  ) : <span className="text-muted">-</span>}
-                                </td>
-                                <td className="text-center">
-                                  <strong className="text-dark">{formatNumber(sh.shares)}</strong>
-                                </td>
-                                <td className="text-center">
-                                  <span className={`badge ${sh.newShares > 0 ? "bg-success" : "bg-secondary"}`}>
-                                    {formatNumber(sh.newShares)}
-                                  </span>
-                                </td>
-                                <td className="text-center">
-                                  <span className={`fSize-16 badge ${sh.type === "Founder" ? "bg-primary" :
-                                    sh.type === "Options Pool" ? "bg-warning text-dark" : "bg-secondary"
-                                    }`}>
-                                    {formatPercentage(sh.ownership)}
-                                  </span>
-                                </td>
-                                <td className="text-center">
-                                  <strong>{formatCurrency(sh.value, currency)}</strong>
-                                </td>
-                              </tr>
-                            ))}
-
-                            {/* TOTAL ROW */}
-                            <tr className="table-secondary fw-bold">
-                              <td colSpan="2">TOTAL</td>
-                              <td className="text-center">{formatNumber(preSeedTable.totalShares)}</td>
-                              <td className="text-center">
-                                {formatNumber(preSeedTable.shareholders.reduce((sum, sh) => sum + sh.newShares, 0))}
-                              </td>
-                              <td className="text-center">{formatPercentage(100)}</td>
-                              <td className="text-center">{formatCurrency(preSeedTable.totalValue, currency)}</td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-
-                      {/* Ownership Breakdown */}
-                      <div className="row mt-3">
-                        <div className="col-md-6">
-                          <div className="alert alert-primary mb-0">
-                            <strong>Total Founders Ownership:</strong> {formatPercentage(
-                              preSeedTable.shareholders
-                                .filter(sh => sh.type === "Founder")
-                                .reduce((sum, sh) => sum + sh.ownership, 0)
-                            )}
-                          </div>
-                        </div>
-                        <div className="col-md-6">
-                          <div className="alert alert-warning mb-0">
-                            <strong>Employee Pool Ownership:</strong> {formatPercentage(
-                              preSeedTable.shareholders
-                                .filter(sh => sh.type === "Options Pool")
-                                .reduce((sum, sh) => sum + sh.ownership, 0)
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ===== POST-SEED CAP TABLE ===== */}
-            {postSeedTable && (
-              <div className="row mb-5">
-                <div className="col-md-12">
-                  <div className="card border-success">
-                    <div className="card-header bg-success text-white">
-                      <h5 className="mb-0">📋 Common Shares at Post-Seed Round 1</h5>
-                      <small>{postSeedTable.message}</small>
-                    </div>
-                    <div className="card-body">
-
-                      {/* Highlight Box */}
-                      <div className="alert alert-info mb-3">
-                        <strong>📌 Key Point:</strong> Since SAFE notes do NOT convert to shares in this round,
-                        the total number of shares remains <strong>{formatNumber(postSeedTable.totalShares)}</strong>
-                        (same as Pre-Seed). SAFE investors are listed with 0 shares.
-                      </div>
-
-                      <div className="table-responsive">
-                        <table className="table table-bordered table-hover">
-                          <thead className="table-dark">
-                            <tr>
-                              <th>Shareholder</th>
-                              <th className="text-center">Contact Info</th>
-                              <th className="text-center">Common Shares</th>
-                              <th className="text-center">New Shares</th>
-                              <th className="text-center">Total Shares</th>
-                              <th className="text-center">Fully Diluted Ownership %</th>
-                              <th className="text-center">Value ($)</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {postSeedTable.shareholders.map((sh, idx) => (
-                              <tr key={idx} className={
-                                sh.type === "Options Pool" ? "table-warning" :
-                                  sh.type === "SAFE Investor" ? "table-info" : ""
-                              }>
-                                <td>
-                                  <div>
-                                    <strong className={
-                                      sh.type === "Founder" ? "text-primary" :
-                                        sh.type === "Options Pool" ? "text-warning" :
-                                          sh.type === "SAFE Investor" ? "text-info" : "text-dark"
-                                    }>
-                                      {sh.name}
-                                    </strong>
-                                    {sh.fullName && sh.fullName !== sh.name && (
-                                      <div className="small text-muted">{sh.fullName}</div>
-                                    )}
-                                    <span className={`badge mt-1 ${sh.type === "Founder" ? "bg-primary" :
-                                      sh.type === "Options Pool" ? "bg-warning text-dark" :
-                                        sh.type === "SAFE Investor" ? "bg-info" : "bg-secondary"
-                                      }`}>
-                                      {sh.type}
-                                    </span>
-                                  </div>
-                                </td>
-                                <td className="text-center small">
-                                  {sh.email && sh.email !== "-" ? (
-                                    <div className="text-muted">📧 {sh.email}</div>
-                                  ) : <span className="text-muted">-</span>}
-                                </td>
-                                <td className="text-center">
-                                  <strong className="text-dark">{formatNumber(sh.shares)}</strong>
-                                  {sh.type === "SAFE Investor" && (
-                                    <div className="small text-danger fw-bold mt-1">
-                                      ⚠️ Not converted
-                                    </div>
-                                  )}
-                                </td>
-                                <td className="text-center">
-                                  <span className={`badge ${sh.newShares > 0 ? "bg-success" : "bg-secondary"}`}>
-                                    {formatNumber(sh.newShares)}
-                                  </span>
-                                </td>
-                                <td className="text-center">
-                                  <strong className="text-primary">{formatNumber(sh.shares + sh.newShares)}</strong>
-                                </td>
-                                <td className="text-center">
-                                  <span className={`fSize-16 badge ${sh.type === "Founder" ? "bg-primary" :
-                                    sh.type === "Options Pool" ? "bg-warning text-dark" :
-                                      sh.type === "SAFE Investor" ? "bg-info" : "bg-secondary"
-                                    }`}>
-                                    {formatPercentage(sh.ownership)}
-                                  </span>
-                                </td>
-                                <td className="text-center">
-                                  <strong>{formatCurrency(sh.value, currency)}</strong>
-                                  {sh.investmentAmount > 0 && (
-                                    <div className="small text-success mt-1">
-                                      💰 SAFE: {formatCurrency(sh.investmentAmount, currency)}
-                                    </div>
-                                  )}
-                                  {sh.note && (
-                                    <div className="small text-muted mt-1">{sh.note}</div>
-                                  )}
-                                </td>
-                              </tr>
-                            ))}
-
-                            {/* TOTAL ROW */}
-                            <tr className="table-success fw-bold">
-                              <td colSpan="2">TOTAL</td>
-                              <td className="text-center">{formatNumber(postSeedTable.totalShares)}</td>
-                              <td className="text-center">
-                                {formatNumber(postSeedTable.shareholders.reduce((sum, sh) => sum + sh.newShares, 0))}
-                              </td>
-                              <td className="text-center">{formatNumber(postSeedTable.totalShares)}</td>
-                              <td className="text-center">{formatPercentage(100)}</td>
-                              <td className="text-center">{formatCurrency(postSeedTable.totalValue, currency)}</td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-
-                      {/* Ownership Summary */}
-                      <div className="row mt-4">
-                        <div className="col-md-4">
-                          <div className="alert alert-primary mb-0">
-                            <small>Total Founders Ownership</small>
-                            <h5 className="mb-0">{formatPercentage(
-                              postSeedTable.shareholders
-                                .filter(sh => sh.type === "Founder")
-                                .reduce((sum, sh) => sum + sh.ownership, 0)
-                            )}</h5>
-                          </div>
-                        </div>
-                        <div className="col-md-4">
-                          <div className="alert alert-warning mb-0">
-                            <small>Employee Pool</small>
-                            <h5 className="mb-0">{formatPercentage(
-                              postSeedTable.shareholders
-                                .filter(sh => sh.type === "Options Pool")
-                                .reduce((sum, sh) => sum + sh.ownership, 0)
-                            )}</h5>
-                          </div>
-                        </div>
-                        <div className="col-md-4">
-                          <div className="alert alert-info mb-0">
-                            <small>SAFE Investment (Not Converted)</small>
-                            <h5 className="mb-0">{formatCurrency(postSeedTable.safeInvestment || 0, currency)}</h5>
-                            <small className="text-muted">{postSeedTable.safeInvestorCount || 0} investors</small>
-                          </div>
-                        </div>
-                      </div>
+  // Use it
+  const stats = getOwnershipStats(capTableData?.pre_money?.items || []);
 
 
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+  const getPostMoneyOwnershipStats = (items = []) => {
+    if (!items.length) {
+      return { largest: '0.00', smallest: '0.00', totalCount: 0 };
+    }
 
-            {/* ===== PLATFORM OUTPUTS SUMMARY ===== */}
-            <div className="card bg-light">
-              <div className="card-header">
-                <h5 className="mb-0">📊 Platform Outputs Summary</h5>
-              </div>
-              <div className="card-body">
-                <div className="row">
-                  <div className="col-md-6">
-                    <h6 className="text-primary">Pre-Seed Round 1</h6>
-                    <ul className="list-unstyled">
-                      <li>✅ Total Shares: <strong>{formatNumber(calc.totalSharesPreSeed)}</strong></li>
-                      <li>✅ Founder Shares: <strong>{formatNumber(calc.roundZeroTotalShares)}</strong></li>
-                      <li>✅ Employee Shares: <strong>{formatNumber(calc.employeeShares)}</strong></li>
-                      <li>✅ Total Value: <strong>{formatCurrency(calc.companyValue, currency)}</strong></li>
-                    </ul>
-                  </div>
-                  <div className="col-md-6">
-                    <h6 className="text-success">Post-Seed Round 1</h6>
-                    <ul className="list-unstyled">
-                      <li>✅ Total Shares: <strong>{formatNumber(calc.totalSharesPostSeed)}</strong> (Same as Pre-Seed)</li>
-                      <li>✅ SAFE Investment: <strong>{formatCurrency(calc.investmentSize, currency)}</strong></li>
-                      <li>⚠️ SAFE Shares: <strong className="text-danger">0</strong> (Not converted)</li>
-                      <li>✅ Total Value: <strong>{formatCurrency(calc.companyValue, currency)}</strong></li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
+    const percentages = [];
+    let totalIndividualCount = 0;
 
-            {/* Conversion Info */}
-            {capTableData.conversionInfo && (
-              <div className="alert alert-secondary mt-4">
-                <h6 className="alert-heading">📋 {capTableData.conversionInfo.note}</h6>
-                <div className="row">
-                  <div className="col-md-4">
-                    <small className="text-muted">Conversion Trigger</small>
-                    <div><strong>{capTableData.conversionInfo.conversionTrigger}</strong></div>
-                  </div>
-                  <div className="col-md-4">
-                    <small className="text-muted">Valuation Cap</small>
-                    <div><strong>{formatCurrency(capTableData.conversionInfo.valuationCap, currency)}</strong></div>
-                  </div>
-                  <div className="col-md-4">
-                    <small className="text-muted">Discount Rate</small>
-                    <div><strong>{formatPercentage(capTableData.conversionInfo.discountRate)}</strong></div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  };
-  const renderSAFESeriesRoundTable = () => {
-    if (!capTableData || !capTableData.calculations) return null;
+    items.forEach(item => {
+      // ✅ INVESTOR TYPE - with investor_details array
+      if (item.type === 'investor' && Array.isArray(item.investor_details) && item.investor_details.length > 0) {
+        // Group with multiple investors - count each investor individually
+        item.investor_details.forEach(inv => {
+          const invPct = parseFloat(inv.percentage) || 0;
+          if (invPct > 0) percentages.push(invPct);
+          totalIndividualCount++;
 
-    console.log("Cap Table Data:", capTableData);
-    const calc = capTableData.calculations;
+        });
+      }
+      // ✅ INVESTOR TYPE - single investor (no array)
+      else if (item.type === 'investor') {
+        const pct = parseFloat(item.percentage) || 0;
+        if (pct > 0) percentages.push(pct);
+        totalIndividualCount++;
 
-    // ✅ Get data from backend response structure
-    const preTable = capTableData.preSeedCapTable;
-    const postTable = capTableData.postSeedCapTable;
-    const inputs = capTableData.inputs || {};
+      }
+      // ✅ FOUNDER TYPE
+      else if (item.type === 'founder') {
+        const pct = parseFloat(item.percentage) || 0;
+        if (pct > 0) percentages.push(pct);
+        totalIndividualCount++;
 
-    // ✅ Determine round type from backend data
-    const isSeriesA = capTableData.isSeriesA ||
-      (capTableData.shareClassType || "").toLowerCase().includes("series");
-
-    const hasSAFEConversion = capTableData.hasSAFEConversion ||
-      (calc.seedConversionShares > 0);
-
-    // Helper functions
-    const formatCurrency = (amount) => {
-      const currency = capTableData.currency || "USD";
-      const currencyCode = currency.split(' ')[0] || 'USD';
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: currencyCode,
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 2
-      }).format(amount || 0);
-    };
-
-    const formatNumber = (num) => {
-      return new Intl.NumberFormat('en-US').format(Math.round(num || 0));
-    };
-
-    const formatPercentage = (percent) => {
-      const numValue = typeof percent === 'string' ? parseFloat(percent) : (percent || 0);
-      return `${numValue.toFixed(1)}%`;
-    };
-
-    // ✅ Calculate ownership percentages
-    const getOwnershipSummary = (shareholders, totalShares) => {
-      if (!shareholders || !totalShares) return {
-        founders: 0,
-        employees: 0,
-        seedInvestors: 0,
-        seriesAInvestors: 0
-      };
-
-      let founders = 0;
-      let employees = 0;
-      let seedInvestors = 0;
-      let seriesAInvestors = 0;
-
-      shareholders.forEach(sh => {
-        const ownership = (sh.shares / totalShares) * 100;
-        if (sh.type === "Founder") founders += ownership;
-        else if (sh.type === "Options Pool" || sh.type.includes("Employee")) employees += ownership;
-        else if (sh.type === "SAFE Investor" || sh.type.includes("Seed")) seedInvestors += ownership;
-        else if (sh.type === "Series A Investor") seriesAInvestors += ownership;
-      });
-
-      return {
-        founders: founders.toFixed(1),
-        employees: employees.toFixed(1),
-        seedInvestors: seedInvestors.toFixed(1),
-        seriesAInvestors: seriesAInvestors.toFixed(1)
-      };
-    };
-
-    // ✅ Get ownership data
-    const preOwnership = getOwnershipSummary(preTable?.shareholders, preTable?.totalShares);
-    const postOwnership = getOwnershipSummary(postTable?.shareholders, postTable?.totalShares);
-
-    // ✅ Debug information
-    console.log("Calculations:", {
-      seedInvestment: calc.seedInvestment,
-      valuationCap: calc.valuationCap,
-      discountRate: calc.discountRate,
-      sharePrice: calc.sharePrice,
-      seedOptimalPrice: calc.seedOptimalPrice,
-      seedConversionShares: calc.seedConversionShares,
-      seriesAShares: calc.seriesAShares,
-      totalPostShares: calc.totalSharesPostSeed
+      }
+      // ✅ OPTION POOL TYPE
+      else if (item.type === 'option_pool') {
+        const pct = parseFloat(item.percentage) || 0;
+        if (pct > 0) percentages.push(pct);
+        totalIndividualCount++;
+      }
+      // ✅ PENDING TYPE (SAFE investors)
+      else if (item.type === 'pending_group') {
+        if (Array.isArray(item.items) && item.items.length > 0) {
+          totalIndividualCount += item.items.length;
+        } else {
+          totalIndividualCount++;
+        }
+      }
     });
 
-    var roundname = capTableData.instrumentType + ' ' + capTableData.shareClassType;
-    const formatCurrencyTwoDecimals = (value) => {
-      const currency = capTableData.currency || "USD";
-      const currencyCode = currency.split(' ')[0] || 'USD';
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: currencyCode,
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      }).format(value || 0);
-    }
-    return (
-      <div className="cap-table-section">
-        <div className="card mb-4">
-          <div className={`card-header ${isSeriesA ? 'bg-primary' : 'bg-success'} text-white`}>
-            <h4 className="mb-0">{capTableData.roundType || "Series A Round"}</h4>
-            <small>
-              {isSeriesA ? roundname : "Investment Round"}
-              {hasSAFEConversion && " with SAFE Conversion"}
-            </small>
-          </div>
-          <div className="card-body">
+    const largest = percentages.length > 0 ? Math.max(...percentages) : 0;
+    const smallest = percentages.length > 0 ? Math.min(...percentages) : 0;
 
-            {/* ===== INPUT PARAMETERS SECTION ===== */}
-            <h5 className="mb-3">📊 {capTableData.roundType}</h5>
-            <div className="row mb-4">
-              <div className="col-md-4">
-                <div className="info-box p-3 border rounded bg-light">
-                  <small className="text-muted">Pre-Money Valuation</small>
-                  <h5>{formatCurrency(inputs.preMoneyValuation || calc.preMoneyValuation)}</h5>
-                </div>
-              </div>
-
-              <div className="col-md-4">
-                <div className="info-box p-3 border rounded bg-light">
-                  <small className="text-muted">{capTableData.shareClassType} Investment</small>
-                  <h5>{formatCurrency(inputs.seriesAInvestment || calc.seriesAInvestment)}</h5>
-                </div>
-              </div>
-
-              <div className="col-md-4">
-                <div className="info-box p-3 border rounded bg-light">
-                  <small className="text-muted">Founder Shares (Round 0)</small>
-                  <h5>{formatNumber(inputs.roundZeroShares || calc.roundZeroTotalShares)}</h5>
-                  <small>{inputs.founderCount || preTable?.shareholders?.filter(sh => sh.type === "Founder").length || 0} founder(s)</small>
-                </div>
-              </div>
-
-
-            </div>
-
-            {/* SAFE CONVERSION SECTION (Only if has SAFE conversion) */}
-            {hasSAFEConversion && calc.seedInvestment > 0 && (
-              <>
-                <div className="row mb-4">
-                  <div className="col-md-4">
-                    <div className="info-box p-3 border rounded bg-info text-white">
-                      <small>Seed SAFE Investment</small>
-                      <h5>{formatCurrency(calc.seedInvestment)}</h5>
-                      <small>From previous SAFE round</small>
-                    </div>
-                  </div>
-                  <div className="col-md-4">
-                    <div className="info-box p-3 border rounded bg-warning text-dark">
-                      <small>Valuation Cap</small>
-                      <h5>{formatCurrency(calc.valuationCap)}</h5>
-                      <small>From SAFE terms</small>
-                    </div>
-                  </div>
-                  <div className="col-md-4">
-                    <div className="info-box p-3 border rounded bg-success text-white">
-                      <small>Discount Rate</small>
-                      <h5>{calc.discountRate}%</h5>
-                      <small>From SAFE terms</small>
-                    </div>
-                  </div>
-                </div>
-
-                {/* SAFE CONVERSION CALCULATIONS */}
-                {calc.seedOptimalPrice > 0 && (
-                  <div className="alert alert-success mb-4">
-                    <h6 className="alert-heading">🔄 SAFE Conversion Calculations</h6>
-                    <div className="row">
-                      <div className="col-md-6">
-                        <p><strong>1. {capTableData.shareClassType} Share Price:</strong></p>
-                        <p className="small">
-                          {formatCurrency(inputs.preMoneyValuation || calc.preMoneyValuation)} ÷ {formatNumber(inputs.totalSharesPreSeed || calc.roundZeroTotalShares + calc.employeeSharesSeedRound)} =
-                          <span className="fw-bold ms-2">{formatCurrency(calc.sharePrice)}</span>
-                        </p>
-
-                        <p><strong>2. Seed Discount Price:</strong></p>
-                        <p className="small">
-                          {formatCurrency(calc.sharePrice)} × (1 - {calc.discountRate / 100}) =
-                          <span className="fw-bold ms-2">{formatCurrency(calc.seedDiscountPrice)}</span>
-                        </p>
-
-                        <p><strong>3. Seed Cap Price:</strong></p>
-                        <p className="small">
-                          {formatCurrency(calc.valuationCap)} ÷ {formatNumber(calc.totalSharesPreSeed)} =
-                          <span className="fw-bold ms-2">{formatCurrencyTwoDecimals(calc.valuationCap / calc.totalSharesPreSeed)}</span>
-                        </p>
-                      </div>
-
-                      <div className="col-md-6">
-                        <p><strong>4. Optimal Price (Lower of the two):</strong></p>
-                        <p className="small">
-                          MIN({formatCurrency(calc.seedDiscountPrice)}) =
-                          <span className="fw-bold ms-2 text-success">{formatCurrency(calc.seedOptimalPrice)}</span>
-                        </p>
-
-                        <p><strong>5. Seed Conversion Shares:</strong></p>
-                        <p className="small">
-                          {formatCurrency(calc.seedInvestment)} ÷ {formatCurrency(calc.seedOptimalPrice)} =
-                          <span className="fw-bold ms-2">{formatNumber(calc.seedConversionShares)} shares</span>
-                        </p>
-
-                        <p><strong>6. Seed Conversion Value:</strong></p>
-                        <p className="small">
-                          {formatNumber(calc.seedConversionShares)} × {formatCurrency(calc.sharePrice)} =
-                          <span className="fw-bold ms-2">{formatCurrency(calc.seedConversionValue)}</span>
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* MOIC Information */}
-                    <div className="mt-3 p-2 bg-white rounded border">
-                      <p className="mb-1"><strong>MOIC (Multiple on Invested Capital):</strong></p>
-                      <p className="mb-0 small">
-                        Seed Investors: <strong>{calc.seedMOIC}</strong> ({formatCurrency(calc.seedConversionValue)} value / {formatCurrency(calc.seedInvestment)} investment)
-                        {calc.seriesAMOIC && calc.seriesAMOIC !== "0X" && (
-                          <> | {capTableData.shareClassType} Investors: <strong>{calc.seriesAMOIC}</strong></>
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-
-            {/* OPTION POOL SECTION */}
-            {/* <div className="row mb-4">
-              <div className="col-md-4">
-                <div className="info-box p-3 border rounded bg-light">
-                  <small className="text-muted">Existing Option Pool</small>
-                  <h5>{formatPercentage(calc.existingOptionPoolPercent)}</h5>
-                  <small>{formatNumber(calc.employeeSharesSeedRound)} shares</small>
-                </div>
-              </div>
-
-              <div className="col-md-4">
-                <div className="info-box p-3 border rounded bg-primary text-white">
-                  <small className="text-white">Target Option Pool</small>
-                  <h5>{formatPercentage(calc.targetOptionPoolPercent)}</h5>
-                  <small>Post-investment target</small>
-                </div>
-              </div>
-
-              <div className="col-md-4">
-                <div className="info-box p-3 border rounded bg-success text-white">
-                  <small>New Option Shares</small>
-                  <h5>{formatNumber(calc.newOptionShares)}</h5>
-                  <small>Top-up required</small>
-                </div>
-              </div>
-            </div> */}
-
-            {/* OPTION POOL CALCULATION EXPLANATION */}
-            {calc.newOptionShares > 0 && (
-              <div className="alert alert-info mb-4">
-                <h6 className="alert-heading">📐 Option Pool</h6>
-                <p className="mb-2 small">
-                  <strong>Formula:</strong> Total Post Shares = (Founders + Seed Investors + {capTableData.shareClassType} Investors) ÷ (1 - Target Option Pool %)
-                </p>
-                <p className="mb-2 small">
-                  <strong>Calculation:</strong>
-                  ({formatNumber(inputs.roundZeroShares || calc.roundZeroTotalShares)} + {formatNumber(calc.seedConversionShares)} + {formatNumber(calc.seriesAShares)}) ÷ (1 - {calc.targetOptionPoolPercent / 100})
-                </p>
-                <p className="mb-0 small">
-                  <strong>Result:</strong> Need to add {formatNumber(calc.newOptionShares)} new option shares to reach {formatPercentage(calc.targetOptionPoolPercent)} target pool
-                </p>
-              </div>
-            )}
-
-            {/* ===== PRE-INVESTMENT CAP TABLE ===== */}
-            {/* ===== PRE-INVESTMENT CAP TABLE ===== */}
-            {preTable && preTable.shareholders && preTable.shareholders.length > 0 && (
-              <div className="row mb-5">
-                <div className="col-md-12">
-                  <div className="card">
-                    <div className="card-header bg-secondary text-white">
-                      <h5 className="mb-0">📋 Common Shares at Pre-{capTableData.shareClassType} Round</h5>
-                      <small>{preTable.message}</small>
-                    </div>
-                    <div className="card-body">
-                      <div className="table-responsive">
-                        <table className="table table-bordered table-hover">
-                          <thead className="table-dark">
-                            <tr>
-                              <th>Shareholder</th>
-                              <th className="text-center">Type</th>
-                              <th className="text-center">Existing Shares</th>
-                              <th className="text-center">New Shares</th>
-                              <th className="text-center">Total Shares</th>
-                              <th className="text-center">Ownership %</th>
-                              <th className="text-center">Value</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {preTable.shareholders.map((sh, idx) => {
-                              const hasNewShares = sh.newShares > 0;
-                              const totalShares = sh.shares;
-                              const existingShares = totalShares - (sh.newShares || 0);
-
-                              return (
-                                <tr key={idx} className={
-                                  sh.type === "Options Pool" || sh.type.includes("Employee") ? "table-warning" :
-                                    sh.type === "Founder" ? "" : "table-light"
-                                }>
-                                  <td>
-                                    <div>
-                                      <strong>{sh.name || sh.fullName}</strong>
-                                      {sh.note && <div className="small text-muted">{sh.note}</div>}
-                                    </div>
-                                  </td>
-                                  <td className="text-center">
-                                    <span className={`badge ${sh.type === "Founder" ? "bg-primary" :
-                                      sh.type === "Options Pool" || sh.type.includes("Employee") ? "bg-warning text-dark" : "bg-info"
-                                      }`}>
-                                      {sh.type}
-                                    </span>
-                                  </td>
-                                  <td className="text-center">
-                                    <strong>{formatNumber(existingShares)}</strong>
-                                  </td>
-                                  <td className="text-center">
-                                    {hasNewShares ? (
-                                      <>
-                                        <strong className="text-success">+{formatNumber(sh.newShares)}</strong>
-
-                                      </>
-                                    ) : (
-                                      <span className="text-muted">—</span>
-                                    )}
-                                  </td>
-                                  <td className="text-center">
-                                    <strong>{formatNumber(totalShares)}</strong>
-                                    {hasNewShares && (
-                                      <div className="small text-success">
-                                        {/* ↑ from {formatNumber(existingShares)} */}
-                                      </div>
-                                    )}
-                                  </td>
-                                  <td className="text-center">
-                                    <span className="badge bg-dark">
-                                      {formatPercentage(sh.ownership || ((totalShares / preTable.totalShares) * 100))}
-                                    </span>
-                                  </td>
-                                  <td className="text-center">
-                                    <strong>{formatCurrency(sh.value)}</strong>
-                                  </td>
-                                </tr>
-                              );
-                            })}
-
-                            {/* TOTAL ROW */}
-                            <tr className="table-secondary fw-bold">
-                              <td colSpan="2">TOTAL</td>
-                              <td className="text-center">
-                                {formatNumber(
-                                  preTable.shareholders.reduce((sum, sh) => sum + (sh.shares - (sh.newShares || 0)), 0)
-                                )}
-                              </td>
-                              <td className="text-center">
-                                {formatNumber(
-                                  preTable.shareholders.reduce((sum, sh) => sum + (sh.newShares || 0), 0)
-                                )}
-                              </td>
-                              <td className="text-center">{formatNumber(preTable.totalShares)}</td>
-                              <td className="text-center">100%</td>
-                              <td className="text-center">{formatCurrency(preTable.totalValue)}</td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ===== POST-INVESTMENT CAP TABLE ===== */}
-            {postTable && postTable.shareholders && postTable.shareholders.length > 0 && (
-              <div className="row mb-5">
-                <div className="col-md-12">
-                  <div className={`card border-primary`}>
-                    <div className="card-header bg-primary text-white">
-                      <h5 className="mb-0">📋 Common Shares at Post-{capTableData.shareClassType} Round</h5>
-                      <small>{postTable.message}</small>
-                    </div>
-                    <div className="card-body">
-                      <div className="table-responsive">
-                        <table className="table table-bordered table-hover">
-                          <thead className="table-dark">
-                            <tr>
-                              <th>Shareholder</th>
-                              <th className="text-center">Type</th>
-                              <th className="text-center">Common Shares</th>
-                              <th className="text-center">New Shares</th>
-                              <th className="text-center">Total Shares</th>
-                              <th className="text-center">Ownership %</th>
-                              <th className="text-center">Value</th>
-                              {hasSAFEConversion && <th className="text-center">Investment / Conversion Price</th>}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {postTable.shareholders.map((sh, idx) => (
-                              sh.isTotal ? (
-                                // TOTAL ROW - Show at the end
-                                <tr key={idx} className="table-primary fw-bold">
-                                  <td colSpan="2"><strong>TOTAL</strong></td>
-                                  <td className="text-center"><strong>{formatNumber(sh.commonShares)}</strong></td>
-                                  <td className="text-center"><strong>{formatNumber(sh.newShares)}</strong></td>
-                                  <td className="text-center"><strong>{formatNumber(sh.totalShares)}</strong></td>
-                                  <td className="text-center"><strong>100%</strong></td>
-                                  <td className="text-center"><strong>{formatCurrency(sh.value)}</strong></td>
-                                  {hasSAFEConversion && (
-                                    <td className="text-center">
-                                      <strong>{formatCurrency(postTable.safeInvestment || calc.seedInvestment + calc.seriesAInvestment)}</strong>
-                                    </td>
-                                  )}
-                                </tr>
-                              ) : (
-                                // REGULAR ROWS
-                                <tr key={idx} className={
-                                  sh.type === "Options Pool" || sh.type.includes("Employee") ? "table-warning" :
-                                    sh.type === "SAFE Investor" || sh.type.includes("Seed") ? "table-info" :
-                                      sh.type === "Series A Investor" ? "table-primary" : ""
-                                }>
-                                  <td>
-                                    <strong>{sh.name || sh.fullName}</strong>
-                                    {sh.note && <div className="small text-muted">{sh.note}</div>}
-                                  </td>
-                                  <td className="text-center">
-                                    <span className={`badge ${sh.type === "Founder" ? "bg-primary" :
-                                      sh.type === "Options Pool" || sh.type.includes("Employee") ? "bg-warning text-dark" :
-                                        sh.type === "SAFE Investor" || sh.type.includes("Seed") ? "bg-info" :
-                                          sh.type === "Series A Investor" ? "bg-success" : "bg-secondary"
-                                      }`}>
-                                      {sh.type}
-                                    </span>
-                                  </td>
-                                  <td className="text-center">
-                                    {sh.commonShares > 0 ? (
-                                      <strong>{formatNumber(sh.commonShares)}</strong>
-                                    ) : (
-                                      <span className="text-muted">-</span>
-                                    )}
-                                  </td>
-                                  <td className="text-center">
-                                    {sh.newShares > 0 ? (
-                                      <div>
-                                        <strong className="text-success">{formatNumber(sh.newShares)}</strong>
-                                        {sh.displayText && (
-                                          <div className="small text-success">{sh.displayText}</div>
-                                        )}
-                                      </div>
-                                    ) : (
-                                      <span className="text-muted">-</span>
-                                    )}
-                                  </td>
-                                  <td className="text-center">
-                                    <strong>{formatNumber(sh.totalShares || sh.shares)}</strong>
-                                    {/* Show breakdown for Option Pool if available */}
-                                    {sh.breakdown && (
-                                      <div className="small text-muted">
-                                        {sh.breakdown.existingShares > 0 && (
-                                          <div>{formatNumber(sh.breakdown.existingShares)} existing</div>
-                                        )}
-                                        {sh.breakdown.newShares > 0 && (
-                                          <div>+{formatNumber(sh.breakdown.newShares)} new</div>
-                                        )}
-                                      </div>
-                                    )}
-                                  </td>
-                                  <td className="text-center">
-                                    <span className={`badge ${sh.type === "Founder" ? "bg-dark" :
-                                      sh.type === "Options Pool" || sh.type.includes("Employee") ? "bg-warning text-dark" :
-                                        sh.type === "SAFE Investor" || sh.type.includes("Seed") ? "bg-info" :
-                                          sh.type === "Series A Investor" ? "bg-success" : "bg-secondary"
-                                      }`}>
-                                      {formatPercentage(sh.ownership || ((sh.totalShares || sh.shares) / postTable.totalShares) * 100)}
-                                    </span>
-                                  </td>
-                                  <td className="text-center">
-                                    <strong>{formatCurrency(sh.value)}</strong>
-                                  </td>
-                                  {hasSAFEConversion && (
-                                    <td className="text-center">
-                                      {sh.investmentAmount ? (
-                                        <div>
-                                          <div className="fw-bold">{formatCurrency(sh.investmentAmount)}</div>
-                                          {sh.conversionPrice && (
-                                            <div className="small">
-                                              @ {formatCurrency(sh.conversionPrice)}/share
-                                            </div>
-                                          )}
-                                          {sh.moic && sh.moic !== "0X" && (
-                                            <div className="small text-success">
-                                              MOIC: {sh.moic}
-                                            </div>
-                                          )}
-                                        </div>
-                                      ) : (
-                                        <span className="text-muted">-</span>
-                                      )}
-                                    </td>
-                                  )}
-                                </tr>
-                              )
-                            ))}
-
-                            {/* OLD TOTAL ROW - Remove if using isTotal flag in data */}
-                            {/* <tr className="table-primary fw-bold">
-      <td colSpan="2">TOTAL</td>
-      <td className="text-center">{formatNumber(postTable.totalShares)}</td>
-      <td className="text-center">100%</td>
-      <td className="text-center">{formatCurrency(postTable.totalValue)}</td>
-      {hasSAFEConversion && <td className="text-center">
-        {formatCurrency(postTable.safeInvestment || calc.seedInvestment + calc.seriesAInvestment)}
-      </td>}
-    </tr> */}
-                          </tbody>
-                        </table>
-                      </div>
-
-                      {/* Final Summary */}
-                      <div className="row mt-4">
-                        <div className="col-md-6">
-                          <div className="alert alert-success">
-                            <h6 className="mb-2">Final Ownership Distribution</h6>
-                            <div className="row small">
-                              <div className="col-6">Founders:</div>
-                              <div className="col-6 text-end">{formatPercentage(postOwnership.founders)}</div>
-                              <div className="col-6">Employees:</div>
-                              <div className="col-6 text-end">{formatPercentage(postOwnership.employees)}</div>
-                              {hasSAFEConversion && (
-                                <>
-                                  <div className="col-6">Seed Investors:</div>
-                                  <div className="col-6 text-end">{formatPercentage(postOwnership.seedInvestors)}</div>
-                                  <div className="col-6">Series A Investors:</div>
-                                  <div className="col-6 text-end">{formatPercentage(postOwnership.seriesAInvestors)}</div>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* <div className="col-md-6">
-                          <div className="alert alert-primary">
-                            <h6 className="mb-2">Financial Summary</h6>
-                            <div className="row small">
-                              <div className="col-6">Post-Money Valuation:</div>
-                              <div className="col-6 text-end">{formatCurrency(calc.finalPostMoneyValuation || postTable.totalValue)}</div>
-                              <div className="col-6">Total Investment:</div>
-                              <div className="col-6 text-end">{formatCurrency(calc.seedInvestment + calc.seriesAInvestment)}</div>
-                              <div className="col-6">Total Shares:</div>
-                              <div className="col-6 text-end">{formatNumber(postTable.totalShares)}</div>
-                              <div className="col-6">Share Price:</div>
-                              <div className="col-6 text-end">{formatCurrency(calc.sharePrice)}</div>
-                            </div>
-                          </div>
-                        </div> */}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ===== SUMMARY ===== */}
-            <div className="card bg-light">
-              <div className="card-header">
-                <h5 className="mb-0">📊 Round Summary</h5>
-              </div>
-              <div className="card-body">
-                <div className="row">
-                  <div className="col-md-6">
-                    <h6>Key Outcomes:</h6>
-                    <ul className="mb-0">
-                      <li>✅ Total capital raised: <strong>{formatCurrency(calc.seedInvestment + calc.seriesAInvestment)}</strong></li>
-                      <li>✅ Post-money valuation: <strong>{formatCurrency(calc.finalPostMoneyValuation)}</strong></li>
-                      <li>✅ Total shares outstanding: <strong>{formatNumber(calc.totalSharesPostSeed)}</strong></li>
-                      <li>✅ Share price: <strong>{formatCurrency(calc.sharePrice)}</strong></li>
-                      {hasSAFEConversion && calc.seedConversionShares > 0 && (
-                        <li>✅ SAFE conversion completed: <strong>{formatNumber(calc.seedConversionShares)} shares @ {formatCurrency(calc.seedOptimalPrice)} each</strong></li>
-                      )}
-                      {calc.newOptionShares > 0 && (
-                        <li>✅ Option pool: <strong>{formatNumber(calc.newOptionShares)} new shares added</strong></li>
-                      )}
-                    </ul>
-                  </div>
-
-                  <div className="col-md-6">
-                    <h6>Next Steps:</h6>
-                    <ul className="mb-0">
-                      <li>✅ SAFE notes converted to shares</li>
-                      <li>✅ New Series A investors onboarded</li>
-                      <li>🔜 Update cap table with new shareholders</li>
-                      <li>🔜 Issue share certificates</li>
-                      <li>🔜 Prepare for Series B round</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return {
+      largest: largest.toFixed(2),
+      smallest: smallest.toFixed(2),
+      totalCount: totalIndividualCount,
+      debug: {
+        percentagesFound: percentages.length,
+        itemsProcessed: items.length,
+        largestValue: largest,
+        smallestValue: smallest
+      }
+    };
   };
 
-  const renderSeriesATable = () => {
-    if (!capTableData || !capTableData.calculations) return null;
 
-    const calc = capTableData.calculations;
-    const currency = capTableData.currency || "USD";
+  // Helper function to get voting count
+  const getVotingCount = (items) => {
+    return items.filter(item =>
+      item.voting === 'voting' ||
+      item.voting === 'non-voting' ||
+      item.voting === true ||
+      item.voting === 'yes' ||
+      item.voting === 'voting_rights'
+    ).length;
+  };
 
-    if (capTableData.error) {
-      return (
-        <div className="alert alert-danger">
-          <h5>Calculation Error</h5>
-          <p>{capTableData.error}</p>
-          {capTableData.details && (
-            <pre className="small">{JSON.stringify(capTableData.details, null, 2)}</pre>
-          )}
-        </div>
-      );
-    }
+  // Use it in your component
 
-    const isPostMoneyOptionPool = capTableData.isPostMoneyOptionPool || calc.needsExpansion;
+  // Use it in your component
+  const postStats = getPostMoneyOwnershipStats(capTableData?.post_money?.items || []);
 
-    // ✅ FIX: Calculate foundersSeedShares if not provided
-    const foundersSeedShares = calc.foundersSeedShares ||
-      (calc.preInvestmentTotalShares - calc.existingOptionPoolShares);
-    var roundname = capTableData.instrumentType + ' ' + capTableData.shareClassType;
+  const postMoneyItems = capTableData?.post_money?.items || [];
+
+  const totalCommonShares = postMoneyItems.reduce((sum, item) => {
+    // founders + previous investors + option existing shares
+    if (item.type === 'founder') return sum + Number(item.shares || 0);
+    if (item.type === 'investor' && item.is_previous) return sum + Number(item.shares || 0);
+    if (item.type === 'option_pool') return sum + Number(item.existing_shares || item.shares || 0);
+    return sum;
+  }, 0);
+
+  const totalNewShares = postMoneyItems.reduce((sum, item) => {
+    // new investors + option pool new shares
+    if (item.type === 'investor' && item.is_new_investment) return sum + Number(item.shares || 0);
+    if (item.type === 'option_pool') return sum + Number(item.new_shares || 0);
+    return sum;
+  }, 0);
+  const [expandedRows, setExpandedRows] = useState({});
+  const toggleRow = (rowKey) => {
+    setExpandedRows(prev => ({
+      ...prev,
+      [rowKey]: !prev[rowKey]
+    }));
+  };
+
+  // Render loading state
+  if (loading) {
     return (
-      <div className="cap-table-section">
-        <div className="card mb-4">
-          <div className="card-header bg-warning text-dark">
-            <h4 className="mb-0">{capTableData.roundType || "Series A Round"}</h4>
-            <small className="opacity-75">
-              {isPostMoneyOptionPool ? "Post-Money Option Pool Calculation" : "Standard Calculation"}
-            </small>
+      <Wrapper>
+        <div className="fullpage d-block">
+          <div className="d-flex align-items-start gap-0">
+            <ModuleSideNav isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
+            <div className={`global_view ${isCollapsed ? "global_view_col" : ""}`}>
+              <TopBar />
+              <SectionWrapper className="d-block p-md-4 p-3">
+                <div className="text-center py-5">
+                  <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                  </div>
+                  <p className="mt-3">Loading Cap Table Data...</p>
+                </div>
+              </SectionWrapper>
+            </div>
           </div>
+        </div>
+      </Wrapper>
+    );
+  }
 
-          <div className="card-body">
-            {/* SERIES A INPUTS */}
-            <h5 className="mb-3">{roundname} Inputs</h5>
-            <div className="row mb-4">
-              <div className="col-md-3">
-                <div className="info-box p-3 border rounded bg-light">
-                  <small className="text-muted">Investment Size</small>
-                  <h5>{formatCurrency(calc.investmentSize, currency)}</h5>
-                </div>
-              </div>
-              <div className="col-md-3">
-                <div className="info-box p-3 border rounded bg-light">
-                  <small className="text-muted">Pre-Money Valuation</small>
-                  <h5>{formatCurrency(calc.preMoneyValuation, currency)}</h5>
-                </div>
-              </div>
-              <div className="col-md-3">
-                <div className="info-box p-3 border rounded bg-light">
-                  <small className="text-muted">Existing Option Pool %</small>
-                  <h5>{formatPercentage(calc.existingOptionPoolPercent)}</h5>
-                  <small className="text-muted">(Before Series A)</small>
-                </div>
-              </div>
-              <div className="col-md-3">
-                <div className="info-box p-3 border rounded bg-light">
-                  <small className="text-muted">Target Option Pool %</small>
-                  <h5 className="text-success">{formatPercentage(calc.optionPoolPercentPost)}</h5>
-                  <small className="text-success">(Post-Money Target)</small>
-                </div>
-              </div>
-            </div>
+  // Render error state
+  if (error && !roundData) {
+    return (
 
-            {/* SERIES A OUTPUTS */}
-            <h5 className="mb-3">Calculated Outputs</h5>
-            <div className="row mb-4">
-              <div className="col-md-2">
-                <div className="info-box p-3 border rounded bg-primary text-white">
-                  <small>Post-Money Valuation</small>
-                  <h6>{formatCurrency(calc.postMoneyValuation, currency)}</h6>
-                </div>
-              </div>
-              <div className="col-md-2">
-                <div className="info-box p-3 border rounded bg-success text-white">
-                  <small>Share Price</small>
-                  <h6>{formatCurrencyPricePerShare(calc.sharePrice, currency)}</h6>
-                  <small className="opacity-75">per share</small>
-                </div>
-              </div>
-              <div className="col-md-2">
-                <div className="info-box p-3 border rounded bg-info text-white">
-                  <small>Pre-Investment Shares</small>
-                  <h6>{formatNumber(calc.preInvestmentTotalShares)}</h6>
-                  <small className="opacity-75">Before Series A</small>
-                </div>
-              </div>
-              <div className="col-md-2">
-                <div className="info-box p-3 border rounded bg-warning text-dark">
-                  <small>New Shares Issued</small>
-                  <h6>{formatNumber(calc.totalNewShares)}</h6>
-                  <small className="opacity-75">Total new shares</small>
-                </div>
-              </div>
-              <div className="col-md-2">
-                <div className="info-box p-3 border rounded bg-dark text-white">
-                  <small>Post-Investment Shares</small>
-                  <h6>{formatNumber(calc.postInvestmentTotalShares)}</h6>
-                  <small className="opacity-75">After Series A</small>
-                </div>
-              </div>
-              <div className="col-md-2">
-                <div className="info-box p-3 border rounded bg-secondary text-white">
-                  <small>Investor Ownership</small>
-                  <h6>{formatPercentage(calc.investorOwnershipPercent)}</h6>
-                  <small className="opacity-75">Series A %</small>
-                </div>
-              </div>
-            </div>
+      <main>
+        <div className='d-flex align-items-start gap-0'>
+          <SideBar />
+          <div className='d-flex flex-grow-1 flex-column gap-0'>
+            <TopBar />
+            <section className='px-md-3 py-4'>
+              <div className='container-fluid'>
+                <div className='row gy-4'>
+                  <div className='col-md-12 order-1 order-md-0'>
+                    <SectionWrapper className="d-block p-md-4 p-3">
+                      <div className="alert alert-danger">
+                        <h5>Error Loading Cap Table</h5>
+                        <p>{error}</p>
+                        <button className="btn btn-primary" onClick={() => navigate(-1)}>Go Back</button>
+                        <button className="btn btn-secondary ms-2" onClick={getCapTableData}>Try Again</button>
+                      </div>
+                    </SectionWrapper>
+                  </div>
 
-            {/* NEW SHARES BREAKDOWN */}
-            <div className="row mb-4">
-              <div className="col-md-6">
-                <div className="alert alert-warning">
-                  <h6 className="alert-heading">📊 New Shares Breakdown</h6>
-                  <div className="row">
-                    <div className="col-6">
-                      <strong>Series A Investors:</strong>
-                      <div className="h5 mb-0">{formatNumber(calc.seriesAInvestorShares)}</div>
-                    </div>
-                    <div className="col-6">
-                      <strong>Option Pool Expansion:</strong>
-                      <div className="h5 mb-0">{formatNumber(calc.additionalOptionPoolShares)}</div>
-                    </div>
-                  </div>
-                  <hr />
-                  <div className="d-flex justify-content-between">
-                    <strong>Total New Shares:</strong>
-                    <strong>{formatNumber(calc.totalNewShares)}</strong>
-                  </div>
                 </div>
               </div>
-              <div className="col-md-6">
-                <div className="alert alert-info">
-                  <h6 className="alert-heading">🎯 Option Pool Status</h6>
-                  <div className="mb-2">
-                    <strong>Existing Pool:</strong> {formatNumber(calc.existingOptionPoolShares)} shares
-                    ({formatPercentage(calc.existingOptionPoolPercent)})
-                  </div>
-                  <div className="mb-2">
-                    <strong>Additional:</strong> {formatNumber(calc.additionalOptionPoolShares)} shares
-                  </div>
-                  <hr />
-                  <div className="d-flex justify-content-between">
-                    <strong>Total Pool (Post):</strong>
-                    <strong>{formatNumber(calc.totalOptionPoolShares)}
-                      ({formatPercentage(calc.optionPoolPercentPost)})</strong>
-                  </div>
-                </div>
-              </div>
-            </div>
+            </section>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
-            {/* OWNERSHIP CHART */}
-            <div className="mb-4">
-              <RoundCapChart chartData={capTableData.chartData} />
-            </div>
+  return (
 
-            {/* ========== PRE-SERIES A CAP TABLE ========== */}
-            <div className="row mb-5">
-              <div className="col-md-12">
-                <div className="card">
-                  <div className="card-header bg-primary text-white">
-                    <h5 className="mb-0">📋 Pre-Series A Cap Table</h5>
-                    <small>Before Series A Investment | Pre-Money Valuation: {formatCurrency(calc.preMoneyValuation, currency)}</small>
-                  </div>
-                  <div className="card-body">
-                    <div className="table-responsive">
-                      <table className="table table-bordered table-hover">
-                        <thead className="table-dark">
-                          <tr>
-                            <th>Shareholder</th>
-                            <th className="text-center">Type</th>
-                            <th className="text-center">Common Shares</th>
-                            <th className="text-center">Fully Diluted Ownership %</th>
-                            <th className="text-center">Value ({currency})</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {capTableData.preSeriesAShareholders && capTableData.preSeriesAShareholders.length > 0 ? (
-                            capTableData.preSeriesAShareholders.map((sh, idx) => (
-                              <tr key={idx}>
-                                <td>
-                                  <strong>{sh.name}</strong>
-                                  {sh.source && (
-                                    <div className="small text-muted">Source: {sh.source}</div>
-                                  )}
-                                </td>
-                                <td className="text-center">
-                                  {sh.type === "Founder" && (
-                                    <span className="badge bg-primary">Founder</span>
-                                  )}
-                                  {sh.type === "Options Pool" && (
-                                    <span className="badge bg-warning text-dark">Option Pool</span>
-                                  )}
-                                  {sh.type === "Investor" && (
-                                    <span className="badge bg-success">
-                                      {sh.originalType === "Seed Investor" ? "Seed Investor" : "Investor"}
-                                    </span>
-                                  )}
-                                </td>
-                                <td className="text-center">
-                                  <strong>{formatNumber(sh.shares)}</strong>
-                                </td>
-                                <td className="text-center">
-                                  <span className={`badge ${sh.type === "Founder" ? "bg-primary" :
-                                    sh.type === "Options Pool" ? "bg-warning text-dark" :
-                                      "bg-success"
-                                    }`}>
-                                    {formatPercentage(sh.ownership)}
+
+    <main>
+      <div className='d-flex align-items-start gap-0'>
+        <SideBar />
+        <div className='d-flex flex-grow-1 flex-column gap-0'>
+          <TopBar />
+          <section className='px-md-3 py-4'>
+            <div className='container-fluid'>
+              <div className='row gy-4'>
+                <div className='col-md-12 order-1 order-md-0'>
+                  <SectionWrapper className="d-block p-md-4 p-3">
+
+                    {error && (
+                      <div className="alert alert-danger mb-4">
+                        <i className="bi bi-exclamation-triangle me-2"></i>
+                        {error}
+                      </div>
+                    )}
+
+                    {/* Round Header */}
+                    {roundData && (
+                      <div className="card mb-4">
+                        <div className="card-header bg-primary text-white">
+                          <h4 className="mb-0">Round: {roundData.name}</h4>
+                        </div>
+                        <div className="card-body">
+                          <div className="row">
+                            <div className="col-md-4">
+                              <p>
+                                <strong>Type:</strong>{' '}
+                                {roundData?.type === 'Round 0' ? (
+                                  <span>Incorporation Round 0</span>
+                                ) : (
+                                  <span>{roundData?.instrument}</span>
+                                )}
+                              </p>
+                              <p><strong>Status:</strong>
+                                <span className={`badge ${roundData.status === 'CLOSED' ? 'bg-success' : 'bg-warning'} ms-2`}>
+                                  {roundData.status || 'ACTIVE'}
+                                </span>
+                              </p>
+                              <p><strong>Date of Incorporation:</strong> {formatIncorporationDate(roundData.incorporation_date) || 'Not specified'}</p>
+                            </div>
+                            {roundData?.type !== 'Round 0' && (
+                              <div className="col-md-4">
+                                <p><strong>
+                                  {roundData?.instrument === "Safe" || roundData?.instrument === "Convertible Note"
+                                    ? "Company Valuation"
+                                    : "Pre-Money"}
+                                  :
+                                </strong> {<CurrencyFormatter
+                                  amount={roundData.pre_money}
+                                  currency={roundData.currency}
+                                />} </p>
+                                <p><strong>Investment:</strong> {<CurrencyFormatter
+                                  amount={roundData.investment}
+                                  currency={roundData.currency}
+                                />} </p>
+                                {roundData?.instrument !== "Safe" && roundData?.instrument !== "Convertible Note" && (
+                                  <p>
+                                    <strong>Post-Money:</strong>{" "}
+                                    <CurrencyFormatter
+                                      amount={capTableData?.post_money?.totals?.total_value}
+                                      currency={roundData.currency}
+                                    />
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                            <div className="col-md-4">
+                              <p><strong>Share Price:</strong> {
+                                isUnpricedRound && !isConverted
+                                  ? 'N/A'
+                                  : <CurrencyFormatter
+                                    amount={displaySharePrice}
+                                    currency={roundData?.currency}
+                                    digit={3}
+                                  />
+
+                              }</p>
+                              <p><strong>Issued Shares:</strong> {
+                                isUnpricedRound && !isConverted
+                                  ? 'N/A'
+                                  : formatNumber(displayIssuedShares)
+                              }</p>
+                              {isUnpricedRound && (
+                                <p>
+                                  <strong>Status:</strong>{' '}
+                                  <span className={isConverted ? 'text-success' : 'text-warning'}>
+                                    {conversionStatus?.message || (isConverted ? '✅ Converted' : '👤 Not Converted')}
                                   </span>
-                                </td>
-                                <td className="text-center">
-                                  <strong>{formatCurrency(sh.value, currency)}</strong>
-                                </td>
-                              </tr>
-                            ))
-                          ) : (
-                            <tr>
-                              <td colSpan="5" className="text-center text-danger">
-                                <strong>⚠️ No pre-Series A shareholders data available</strong>
-                              </td>
-                            </tr>
-                          )}
+                                </p>
+                              )}
+                              {isUnpricedRound && isConverted && (
+                                <div className="mt-2 p-2 bg-light rounded">
+                                  <small>
+                                    <strong>Converted in:</strong> Round {conversionStatus.converted_in_round} ({conversionStatus.converted_round_name})<br />
+                                    <strong>Conversion Price:</strong> <CurrencyFormatter
+                                      amount={conversionStatus.conversion_price}
+                                      currency={roundData?.currency}
+                                      digit={3}
+                                    />
+                                    <br />
+                                    <strong>Converted Shares:</strong> {formatNumber(conversionStatus.converted_shares)}
+                                  </small>
+                                </div>
+                              )}
+                              {/* ✅ OPTION POOL HEADING - DYNAMIC BASED ON ROUND TYPE */}
+                              {roundData?.type !== 'Round 0' && (
+                                <p>
+                                  {(() => {
+                                    const isPricedRound =
+                                      roundData?.instrument === 'Common Stock' ||
+                                      roundData?.instrument === 'Preferred Equity' || roundData?.instrument === 'Safe' || roundData?.instrument === 'Convertible Note';
 
-                          {/* TOTAL ROW */}
-                          <tr className="table-secondary fw-bold">
-                            <td colSpan="2">TOTAL</td>
-                            <td className="text-center">{formatNumber(calc.preInvestmentTotalShares)}</td>
-                            <td className="text-center">
-                              <span className="badge bg-dark">{formatPercentage(100)}</span>
-                            </td>
-                            <td className="text-center">{formatCurrency(calc.preMoneyValuation, currency)}</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
+                                    const existingPool = parseFloat(roundData?.option_pool_percent || 0);
+                                    const targetPool = parseFloat(roundData?.option_pool_percent_post || 0);
 
-                    {/* Pre-Series A Summary */}
-                    <div className="row mt-3">
-                      <div className="col-md-4">
-                        <div className="alert alert-primary mb-0">
-                          <strong>Founders:</strong> {formatPercentage(
-                            (capTableData.preSeriesAShareholders || [])
-                              .filter(sh => sh.type === "Founder")
-                              .reduce((sum, sh) => sum + sh.ownership, 0)
-                          )}
-                        </div>
-                      </div>
-                      <div className="col-md-4">
-                        <div className="alert alert-warning mb-0">
-                          <strong>Employee Option Pool:</strong> {formatPercentage(
-                            (capTableData.preSeriesAShareholders || [])
-                              .filter(sh => sh.type === "Options Pool")
-                              .reduce((sum, sh) => sum + sh.ownership, 0)
-                          )}
-                        </div>
-                      </div>
-                      <div className="col-md-4">
-                        <div className="alert alert-success mb-0">
-                          <strong>Seed Investors:</strong> {formatPercentage(
-                            (capTableData.preSeriesAShareholders || [])
-                              .filter(sh => sh.type === "Investor")
-                              .reduce((sum, sh) => sum + sh.ownership, 0)
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+                                    // 🚫 UNPRICED ROUND
+                                    if (!isPricedRound) {
+                                      return (
+                                        <>
+                                          <strong>Pre Option Pool:</strong>{' '}
+                                          <span className="fw-bold text-success">
+                                            {formatPercentage(targetPool)}
+                                          </span>
+                                        </>
+                                      );
+                                    }
 
-            {/* ========== POST-SERIES A CAP TABLE ========== */}
-            <div className="row">
-              <div className="col-md-12">
-                <div className="card">
-                  <div className="card-header bg-success text-white">
-                    <h5 className="mb-0">📊 Post-Series A Cap Table</h5>
-                    <small>After Series A Investment | Post-Money Valuation: {formatCurrency(calc.postMoneyValuation, currency)}</small>
-                  </div>
-                  <div className="card-body">
-                    <div className="table-responsive">
-                      <table className="table table-bordered table-hover">
-                        <thead className="table-dark">
-                          <tr>
-                            <th>Shareholder</th>
-                            <th className="text-center">Type</th>
-                            <th className="text-center">Common Shares</th>
-                            <th className="text-center">New Shares</th>
-                            <th className="text-center">Total Shares</th>
-                            <th className="text-center">Fully Diluted Ownership %</th>
-                            <th className="text-center">Value ({currency})</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {capTableData.shareholders && capTableData.shareholders.length > 0 ? (
-                            capTableData.shareholders.map((sh, idx) => {
-                              const existingShares = sh.preSeriesAShares || 0;
-                              const newShares = sh.newShares || 0;
+                                    // 🎯 PRICED ROUND
+                                    return (
+                                      <>
+                                        {targetPool > 0 ? (
+                                          <>
+                                            <strong>Post Option Pool:</strong>{' '}
+                                            <span className="fw-bold text-primary">
+                                              {formatPercentage(targetPool)}
+                                            </span>
+                                          </>
+                                        ) : existingPool > 0 ? (
+                                          <>
+                                            <strong>Pre Option Pool:</strong>{' '}
+                                            <span className="fw-bold text-success">
+                                              {formatPercentage(existingPool)}
+                                            </span>
+                                          </>
+                                        ) : null}
+                                      </>
+                                    );
+                                  })()}
+                                </p>
+                              )}
 
-                              return (
-                                <tr key={idx}>
-                                  <td>
-                                    <strong>{sh.name}</strong>
-                                    {sh.source && (
-                                      <div className="small text-muted">Source: {sh.source}</div>
-                                    )}
-                                    {sh.email && (
-                                      <div className="small text-muted">📧 {sh.email}</div>
-                                    )}
-                                  </td>
-                                  <td className="text-center">
-                                    {sh.type === "Founder" && (
-                                      <span className="badge bg-primary">Founder</span>
-                                    )}
-                                    {sh.type === "Options Pool" && (
-                                      <span className="badge bg-warning text-dark">
-                                        {newShares > 0 ? "Option Pool (Expanded)" : "Option Pool"}
-                                      </span>
-                                    )}
-                                    {sh.type === "Investor" && (
-                                      <span className={`badge ${sh.originalType === "Seed Investor" ? "bg-info" : "bg-danger"
-                                        }`}>
-                                        {sh.originalType === "Seed Investor" ? "Seed Investor" : "Series A Investor"}
-                                      </span>
-                                    )}
-                                  </td>
-                                  <td className="text-center">
-                                    {existingShares > 0 ? (
-                                      <strong>{formatNumber(existingShares)}</strong>
-                                    ) : (
-                                      <span className="text-muted">—</span>
-                                    )}
-                                  </td>
-                                  <td className="text-center">
-                                    {newShares > 0 ? (
-                                      <span className="badge bg-warning text-dark">
-                                        +{formatNumber(newShares)}
-                                      </span>
-                                    ) : (
-                                      <span className="text-muted">—</span>
-                                    )}
-                                  </td>
-                                  <td className="text-center">
-                                    <strong>{formatNumber(sh.shares)}</strong>
-                                  </td>
-                                  <td className="text-center">
-                                    <span className={`badge ${sh.type === "Founder" ? "bg-primary" :
-                                      sh.type === "Options Pool" ? "bg-warning text-dark" :
-                                        sh.originalType === "Seed Investor" ? "bg-info" :
-                                          "bg-danger"
-                                      }`}>
-                                      {formatPercentage(sh.ownership)}
-                                    </span>
-                                  </td>
-                                  <td className="text-center">
-                                    <strong>{formatCurrency(sh.value, currency)}</strong>
-                                    {sh.investmentAmount && sh.investmentAmount > 0 && (
-                                      <div className="small text-success">
-                                        💰 Invested: {formatCurrency(sh.investmentAmount, currency)}
+                            </div>
+                          </div>
+                          {roundData?.type !== 'Round 0' && (
+                            <div className="row">
+                              {roundData?.round_target_money > 0 && (
+                                <div className="col-12 mt-2">
+                                  <div className="custome_card">
+                                    <div className="custome_card_body py-3">
+                                      <div className="row">
+                                        <div className="col-md-3">
+                                          <div className="d-flex custome_card_box flex-column gap-3">
+                                            <p className="mb-0 bg-success custome_cardp">
+                                              <i className="bi bi-bullseye me-1"></i>
+                                              Target Investment
+                                            </p>
+                                            <h5 className="mb-0 text-success">
+                                              <CurrencyFormatter
+                                                amount={roundData.round_target_money}
+                                                currency={roundData?.currency}
+                                              />
+                                            </h5>
+                                          </div>
+                                        </div>
+                                        <div className="col-md-3">
+                                          <div className="d-flex custome_card_box flex-column gap-3">
+                                            <p className="mb-0 bg-primary  custome_cardp">Current Investment</p>
+                                            <h5 className="mb-0 text-primary ">
+                                              <CurrencyFormatter
+                                                amount={roundData?.investment}
+                                                currency={roundData?.currency}
+                                              />
+                                            </h5>
+                                          </div>
+                                        </div>
+                                        <div className="col-md-3">
+                                          <div className="d-flex custome_card_box flex-column gap-3">
+                                            <p className="mb-0 bg-danger custome_cardp">Remaining to Target</p>
+                                            <h5 className="mb-0" style={{
+                                              color: (roundData.round_target_money - parseFloat(roundData.investment)) > 0
+                                                ? '#CC0000'
+                                                : '#28a745'
+                                            }}>
+                                              <CurrencyFormatter
+                                                amount={Math.max(0, roundData.round_target_money - parseFloat(roundData.investment))}
+                                                currency={roundData?.currency}
+                                              />
+                                            </h5>
+                                          </div>
+                                        </div>
+                                        <div className="col-md-3">
+                                          <div className="d-flex custome_card_box flex-column gap-3 h-100">
+                                            <div className="d-flex align-items-center justify-content-between">
+                                              <p className="mb-0 custome_cardp bg-info">Achieved</p>
+                                              <h5 className="mb-0">
+                                                {((parseFloat(roundData.investment) / roundData.round_target_money) * 100).toFixed(2)}%
+                                              </h5>
+                                            </div>
+                                            <div className="progress mt-1" style={{ height: '6px' }}>
+                                              <div
+                                                className="progress-bar bg-warning"
+                                                style={{
+                                                  width: `${(parseFloat(roundData.investment) / roundData.round_target_money) * 100}%`
+                                                }}
+                                              ></div>
+                                            </div>
+                                          </div>
+                                        </div>
                                       </div>
-                                    )}
-                                  </td>
-                                </tr>
-                              );
-                            })
-                          ) : (
-                            <tr>
-                              <td colSpan="7" className="text-center text-danger">
-                                <strong>⚠️ No post-Series A shareholders data available</strong>
-                              </td>
-                            </tr>
-                          )}
-
-                          {/* TOTAL ROW */}
-                          <tr className="table-secondary fw-bold">
-                            <td colSpan="2">TOTAL</td>
-                            <td className="text-center">{formatNumber(calc.preInvestmentTotalShares)}</td>
-                            <td className="text-center">
-                              <span className="badge bg-warning text-dark">
-                                +{formatNumber(calc.totalNewShares)}
-                              </span>
-                            </td>
-                            <td className="text-center">{formatNumber(calc.postInvestmentTotalShares)}</td>
-                            <td className="text-center">
-                              <span className="badge bg-dark">{formatPercentage(100)}</span>
-                            </td>
-                            <td className="text-center">{formatCurrency(calc.postMoneyValuation, currency)}</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-
-                    {/* Post-Series A Summary */}
-                    <div className="row mt-3">
-                      <div className="col-md-3">
-                        <div className="alert alert-primary mb-0">
-                          <strong>Founders:</strong> {formatPercentage(
-                            (capTableData.shareholders || [])
-                              .filter(sh => sh.type === "Founder")
-                              .reduce((sum, sh) => sum + sh.ownership, 0)
-                          )}
-                        </div>
-                      </div>
-                      <div className="col-md-3">
-                        <div className="alert alert-warning mb-0">
-                          <strong>Option Pool:</strong> {formatPercentage(
-                            (capTableData.shareholders || [])
-                              .filter(sh => sh.type === "Options Pool")
-                              .reduce((sum, sh) => sum + sh.ownership, 0)
-                          )}
-                        </div>
-                      </div>
-                      <div className="col-md-3">
-                        <div className="alert alert-info mb-0">
-                          <strong>Seed Investors:</strong> {formatPercentage(
-                            (capTableData.shareholders || [])
-                              .filter(sh => sh.type === "Investor" && sh.originalType === "Seed Investor")
-                              .reduce((sum, sh) => sum + sh.ownership, 0)
-                          )}
-                        </div>
-                      </div>
-                      <div className="col-md-3">
-                        <div className="alert alert-danger mb-0">
-                          <strong>Series A Investors:</strong> {formatPercentage(
-                            (capTableData.shareholders || [])
-                              .filter(sh => sh.type === "Investor" && sh.originalType === "Series A Investor")
-                              .reduce((sum, sh) => sum + sh.ownership, 0)
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* ✅ CORRECTED CALCULATION FORMULAS */}
-                    <div className="alert alert-dark mt-4">
-                      <h6 className="alert-heading">📐 Series A Calculation Formulas</h6>
-
-                      <div className="mb-3">
-                        <strong className="badge bg-warning text-dark fSize-14">Post-Money Option Pool Method</strong>
-                        {/* <div className="small text-muted">
-                          When target option pool (20%) {'>'} existing pool (8%), additional shares are created
-                        </div> */}
-                      </div>
-
-                      <div className="row small mb-3">
-                        <div className="col-md-6">
-                          <strong>1. Post-Money Valuation:</strong><br />
-                          <code className="bg-light p-1 rounded">
-                            Investment + Pre-Money = Post-Money<br />
-                            {formatCurrency(calc.investmentSize, currency)} + {formatCurrency(calc.preMoneyValuation, currency)}
-                            = {formatCurrency(calc.postMoneyValuation, currency)}
-                          </code>
-                        </div>
-                        <div className="col-md-6">
-                          <strong>2. Investor Ownership %:</strong><br />
-                          <code className="bg-light p-1 rounded">
-                            Investment ÷ Post-Money<br />
-                            {formatCurrency(calc.investmentSize, currency)} ÷ {formatCurrency(calc.postMoneyValuation, currency)}
-                            = {formatPercentage(calc.investorOwnershipPercent)}
-                          </code>
-                        </div>
-                      </div>
-
-                      <div className="row small mb-3">
-                        <div className="col-md-6">
-                          <strong>3. Founders + Seed Ownership %:</strong><br />
-                          <code className="bg-light p-1 rounded">
-                            100% - Investor% - Target Pool%<br />
-                            100% - {formatPercentage(calc.investorOwnershipPercent)} - {formatPercentage(calc.optionPoolPercentPost)}
-                            = {formatPercentage(calc.existingShareholdersPercent)}
-                          </code>
-                        </div>
-                        <div className="col-md-6">
-                          <strong>4. Post-Investment Total Shares:</strong><br />
-                          <code className="bg-light p-1 rounded">
-                            {/* ✅ CORRECTED FORMULA */}
-                            Founders+Seed Shares ÷ Founders+Seed %<br />
-                            {formatNumber(foundersSeedShares)} ÷ {formatPercentage(calc.existingShareholdersPercent)}
-                            = {formatNumber(calc.postInvestmentTotalShares)}
-                          </code>
-                        </div>
-                      </div>
-
-                      <div className="row small mb-3">
-                        <div className="col-md-6">
-                          <strong>5. Total New Shares Needed:</strong><br />
-                          <code className="bg-light p-1 rounded">
-                            Post-Investment Total - Existing Total<br />
-                            {formatNumber(calc.postInvestmentTotalShares)} - {formatNumber(calc.preInvestmentTotalShares)}
-                            = {formatNumber(calc.totalNewShares)}
-                          </code>
-                        </div>
-                        <div className="col-md-6">
-                          <strong>6. Additional Option Pool Shares:</strong><br />
-                          <code className="bg-light p-1 rounded">
-                            (Target% × Post Total) - Existing Pool<br />
-                            ({formatPercentage(calc.optionPoolPercentPost)} × {formatNumber(calc.postInvestmentTotalShares)})
-                            - {formatNumber(calc.existingOptionPoolShares)} = {formatNumber(calc.additionalOptionPoolShares)}
-                          </code>
-                        </div>
-                      </div>
-
-                      <div className="row small">
-                        <div className="col-md-6">
-                          <strong>7. Series A Investor Shares:</strong><br />
-                          <code className="bg-light p-1 rounded">
-                            Total New Shares - Additional Option Shares<br />
-                            {formatNumber(calc.totalNewShares)} - {formatNumber(calc.additionalOptionPoolShares)}
-                            = {formatNumber(calc.seriesAInvestorShares)}
-                          </code>
-                        </div>
-                        <div className="col-md-6">
-                          <strong>8. Share Price:</strong><br />
-                          <code className="bg-light p-1 rounded">
-                            Pre-Money ÷ (Existing + New Option Shares)<br />
-                            {formatCurrency(calc.preMoneyValuation, currency)} ÷
-                            ({formatNumber(calc.preInvestmentTotalShares)} + {formatNumber(calc.additionalOptionPoolShares)})
-                            = {formatCurrencyPricePerShare(calc.sharePrice, currency)}
-                          </code>
-                        </div>
-                      </div>
-                    </div>
-
-
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-  const PreferredEquityCapTable = ({ capTableData }) => {
-    if (!capTableData || !capTableData.calculations) {
-      return (
-        <div className="alert alert-warning">
-          <h5>⚠️ No Data Available</h5>
-          <p>Cap table data is not available for this round.</p>
-        </div>
-      );
-    }
-
-    const calc = capTableData.calculations;
-    const currency = capTableData.currency || "USD";
-
-    if (capTableData.error) {
-      return (
-        <div className="alert alert-danger">
-          <h5>❌ Calculation Error</h5>
-          <p>{capTableData.error}</p>
-          {capTableData.details && (
-            <pre className="small">{JSON.stringify(capTableData.details, null, 2)}</pre>
-          )}
-        </div>
-      );
-    }
-
-    // Get data from backend response structure
-    const preCapTable = capTableData.preSeriesACapTable || {};
-    const postCapTable = capTableData.postSeriesACapTable || {};
-
-    const preSeriesAShareholders = preCapTable.shareholders || [];
-    const postSeriesAShareholders = postCapTable.shareholders || [];
-
-    const totalPreShares = preCapTable.totalShares || 0;
-    const totalPostSharesBeforeWarrants = postCapTable.totalSharesBeforeWarrants || 0;
-    const totalPostSharesAfterWarrants = postCapTable.totalSharesAfterWarrants || 0;
-
-    // Group shareholders by type
-    const founders = postSeriesAShareholders.filter(sh => sh.type === "Founder") || [];
-    const optionPool = postSeriesAShareholders.filter(sh => sh.type === "Options Pool") || [];
-    const seedInvestors = postSeriesAShareholders.filter(sh => sh.originalType === "Seed Investor") || [];
-    const seriesAInvestors = postSeriesAShareholders.filter(sh => sh.originalType === "Series A Investor") || [];
-    const warrantHolders = postSeriesAShareholders.filter(sh => sh.type === "Warrant") || [];
-    var roundname = capTableData.instrumentType + ' ' + capTableData.shareClassType;
-    return (
-      <div className="container-fluid py-4" style={{ backgroundColor: '#f8f9fa' }}>
-        {/* Header */}
-        <div className="card mb-4 shadow">
-          <div className="card-header text-white" style={{ backgroundColor: '#6f42c1' }}>
-            <h3 className="mb-0">💎 {capTableData.roundType || "Preferred Equity Round"}</h3>
-            <small className="opacity-75">
-              {capTableData.hasConversions && roundname}
-              {capTableData.hasWarrants && " | Includes Warrants"}
-            </small>
-          </div>
-
-          <div className="card-body">
-            {/* Investment Overview */}
-            <h5 className="mb-3 text-primary">📊 Investment Overview</h5>
-            <div className="row mb-4">
-              <div className="col-md-3">
-                <div className="p-3 border rounded" style={{ backgroundColor: '#e3f2fd' }}>
-                  <small className="text-muted d-block">Investment Amount</small>
-                  <h5 className="mb-0">{formatCurrency(calc.investmentSize, currency)}</h5>
-                </div>
-              </div>
-              <div className="col-md-3">
-                <div className="p-3 border rounded" style={{ backgroundColor: '#f3e5f5' }}>
-                  <small className="text-muted d-block">Pre-Money Valuation</small>
-                  <h5 className="mb-0">{formatCurrency(calc.preMoneyValuation, currency)}</h5>
-                </div>
-              </div>
-              <div className="col-md-3">
-                <div className="p-3 border rounded" style={{ backgroundColor: '#e8f5e9' }}>
-                  <small className="text-muted d-block">Post-Money Valuation</small>
-                  <h5 className="mb-0">{formatCurrency(calc.postMoneyValuation, currency)}</h5>
-                </div>
-              </div>
-              <div className="col-md-3">
-                <div className="p-3 border rounded" style={{ backgroundColor: '#fff3e0' }}>
-                  <small className="text-muted d-block">Share Price</small>
-                  <h5 className="mb-0">{formatCurrencyPricePerShare(calc.sharePrice, currency)}</h5>
-                </div>
-              </div>
-            </div>
-
-            {/* Key Metrics */}
-            <div className="row mb-4">
-              <div className="col-md-3">
-                <div className="p-3 border rounded bg-white">
-                  <small className="text-muted d-block">Series A Shares</small>
-                  <h6 className="mb-0">{formatNumber(calc.seriesAShares)}</h6>
-                </div>
-              </div>
-              <div className="col-md-3">
-                <div className="p-3 border rounded bg-white">
-                  <small className="text-muted d-block">Converted Shares (Seed)</small>
-                  <h6 className="mb-0">{formatNumber(calc.convertibleNoteShares)}</h6>
-                </div>
-              </div>
-              <div className="col-md-3">
-                <div className="p-3 border rounded bg-white">
-                  <small className="text-muted d-block">New Option Shares</small>
-                  <h6 className="mb-0">{formatNumber(calc.newOptionShares)}</h6>
-                </div>
-              </div>
-              <div className="col-md-3">
-                <div className="p-3 border rounded bg-white">
-                  <small className="text-muted d-block">Total Post Shares</small>
-                  <h6 className="mb-0">{formatNumber(totalPostSharesAfterWarrants)}</h6>
-                </div>
-              </div>
-            </div>
-
-            {/* Warrants Alert */}
-            {capTableData.hasWarrants && capTableData.warrants?.length > 0 && (
-              <div className="alert alert-info mb-4">
-                <h6 className="alert-heading">📜 Warrants Exercised</h6>
-                {capTableData.warrants.map((warrant, idx) => (
-                  <div key={idx}>
-                    <strong>Warrant #{warrant.id}:</strong> {warrant.coverage}% coverage |
-                    Exercise Price: {formatCurrencyPricePerShare(warrant.exercisePrice, currency)} |
-                    Shares: {formatNumber(warrant.shares)} |
-                    Status: {warrant.status}
-                  </div>
-                ))}
-                <div className="mt-2 small text-muted">
-                  Total Warrant Value: {formatCurrency(calc.warrantValue, currency)}
-                </div>
-              </div>
-            )}
-
-            {/* Convertible Note Conversion Details */}
-            {calc.convertibleNoteShares > 0 && (
-              <div className="alert alert-success mb-4">
-                <h6 className="alert-heading">💰 Convertible Note Conversion</h6>
-                <div className="row">
-                  <div className="col-md-3">
-                    <strong>Original Investment:</strong><br />
-                    {formatCurrency(calc.convertibleNotePrincipal, currency)}
-                  </div>
-                  <div className="col-md-3">
-                    <strong>Principal + Interest:</strong><br />
-                    {formatCurrency(calc.convertibleNotePrincipalPlusInterest, currency)}
-                  </div>
-                  <div className="col-md-3">
-                    <strong>Converted Shares:</strong><br />
-                    {formatNumber(calc.convertibleNoteShares)}
-                  </div>
-                  <div className="col-md-3">
-                    <strong>Current Value:</strong><br />
-                    {formatCurrency(calc.convertibleNoteValue, currency)}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* PRE-INVESTMENT CAP TABLE */}
-            <div className="card mb-4 shadow-sm">
-              <div className="card-header bg-info text-white">
-                <h5 className="mb-0">📋 Pre-{capTableData.roundType} Cap Table</h5>
-                <small>Before Investment | Pre-Money: {formatCurrency(calc.preMoneyValuation, currency)}</small>
-              </div>
-              <div className="card-body">
-                <div className="table-responsive">
-                  <table className="table table-bordered table-hover">
-                    <thead style={{ backgroundColor: '#343a40', color: 'white' }}>
-                      <tr>
-                        <th>Shareholder</th>
-                        <th className="text-center">Type</th>
-                        <th className="text-center">Shares</th>
-                        <th className="text-center">Ownership %</th>
-                        <th className="text-center">Value ({currency})</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {preSeriesAShareholders.length > 0 ? (
-                        preSeriesAShareholders.map((sh, idx) => (
-                          <tr key={idx}>
-                            <td>
-                              <strong>{sh.name}</strong>
-                              {sh.note && <div className="small text-muted">{sh.note}</div>}
-                            </td>
-                            <td className="text-center">
-                              <span className={`badge ${sh.type === "Founder" ? "bg-primary" :
-                                sh.type === "Options Pool" ? "bg-warning text-dark" :
-                                  "bg-success"
-                                }`}>
-                                {sh.type}
-                              </span>
-                            </td>
-                            <td className="text-center"><strong>{formatNumber(sh.shares)}</strong></td>
-                            <td className="text-center">
-                              <span className="badge bg-secondary">{formatPercentage(sh.ownership)}</span>
-                            </td>
-                            <td className="text-center"><strong>{formatCurrency(sh.value, currency)}</strong></td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td colSpan="5" className="text-center text-muted">No pre-investment data available</td>
-                        </tr>
-                      )}
-
-                      {/* TOTAL ROW */}
-                      {totalPreShares > 0 && (
-                        <tr style={{ backgroundColor: '#e9ecef', fontWeight: 'bold' }}>
-                          <td colSpan="2">TOTAL</td>
-                          <td className="text-center">{formatNumber(totalPreShares)}</td>
-                          <td className="text-center">
-                            <span className="badge bg-dark">{formatPercentage(100)}</span>
-                          </td>
-                          <td className="text-center">{formatCurrency(calc.preMoneyValuation, currency)}</td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Pre-Investment Summary */}
-                {preSeriesAShareholders.length > 0 && (
-                  <div className="row mt-3">
-                    <div className="col-md-4">
-                      <div className="alert alert-primary mb-0">
-                        <strong>Founders:</strong> {formatPercentage(
-                          preSeriesAShareholders
-                            .filter(sh => sh.type === "Founder")
-                            .reduce((sum, sh) => sum + sh.ownership, 0)
-                        )}
-                      </div>
-                    </div>
-                    <div className="col-md-4">
-                      <div className="alert alert-warning mb-0">
-                        <strong>Employee:</strong> {formatPercentage(
-                          preSeriesAShareholders
-                            .filter(sh => sh.type === "Options Pool")
-                            .reduce((sum, sh) => sum + sh.ownership, 0)
-                        )}
-                      </div>
-                    </div>
-                    <div className="col-md-4">
-                      <div className="alert alert-success mb-0">
-                        <strong>Seed Investors:</strong> {formatPercentage(
-                          preSeriesAShareholders
-                            .filter(sh => sh.type === "Investor")
-                            .reduce((sum, sh) => sum + sh.ownership, 0)
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* POST-INVESTMENT CAP TABLE */}
-            <div className="card shadow-sm mb-4">
-              <div className="card-header bg-success text-white">
-                <h5 className="mb-0">📊 Post-{capTableData.roundType} Cap Table</h5>
-                <small>After Investment | Post-Money: {formatCurrency(calc.postMoneyValuation, currency)}</small>
-              </div>
-              <div className="card-body">
-                <div className="table-responsive">
-                  <table className="table table-bordered table-hover">
-                    <thead style={{ backgroundColor: '#343a40', color: 'white' }}>
-                      <tr>
-                        <th>Shareholder</th>
-                        <th className="text-center">Type</th>
-                        <th className="text-center">Existing Shares</th>
-                        <th className="text-center">New Shares</th>
-                        <th className="text-center">Total Shares</th>
-                        <th className="text-center">Ownership %</th>
-                        <th className="text-center">Value ({currency})</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {postSeriesAShareholders.length > 0 ? (
-                        postSeriesAShareholders.map((sh, idx) => (
-                          <tr key={idx}>
-                            <td>
-                              <strong>{sh.name}</strong>
-                              {sh.email && sh.email !== "-" && (
-                                <div className="small text-muted">📧 {sh.email}</div>
-                              )}
-                              {sh.moic && (
-                                <div className="small text-success">
-                                  MOIC: {sh.moic}x
+                                    </div>
+                                  </div>
                                 </div>
                               )}
-                              {sh.note && (
-                                <div className="small text-info">{sh.note}</div>
-                              )}
-                            </td>
-                            <td className="text-center">
-                              <span className={`badge ${sh.type === "Founder" ? "bg-primary" :
-                                sh.type === "Options Pool" ? "bg-warning text-dark" :
-                                  sh.type === "Warrant" ? "bg-secondary" :
-                                    sh.originalType === "Seed Investor" ? "bg-info" :
-                                      "bg-danger"
-                                }`}>
-                                {sh.originalType || sh.type}
-                              </span>
-                            </td>
-                            <td className="text-center">
-                              {sh.existingShares > 0 ? formatNumber(sh.existingShares) : "—"}
-                            </td>
-                            <td className="text-center">
-                              {sh.newShares > 0 ? (
-                                <span className="badge bg-warning text-dark">+{formatNumber(sh.newShares)}</span>
-                              ) : "—"}
-                            </td>
-                            <td className="text-center"><strong>{formatNumber(sh.shares)}</strong></td>
-                            <td className="text-center">
-                              <span className={`badge ${sh.type === "Founder" ? "bg-primary" :
-                                sh.type === "Options Pool" ? "bg-warning text-dark" :
-                                  sh.type === "Warrant" ? "bg-secondary" :
-                                    sh.originalType === "Seed Investor" ? "bg-info" :
-                                      "bg-danger"
-                                }`}>
-                                {formatPercentage(sh.ownership)}
-                              </span>
-                            </td>
-                            <td className="text-center">
-                              <strong>{formatCurrency(sh.value, currency)}</strong>
-                              {sh.investmentAmount && sh.investmentAmount > 0 && (
-                                <div className="small text-success">
-                                  💰 Invested: {formatCurrency(sh.investmentAmount, currency)}
-                                </div>
-                              )}
-                            </td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td colSpan="7" className="text-center text-muted">No post-investment data available</td>
-                        </tr>
-                      )}
-
-                      {/* TOTAL ROW */}
-                      {totalPostSharesAfterWarrants > 0 && (
-                        <tr style={{ backgroundColor: '#e9ecef', fontWeight: 'bold' }}>
-                          <td colSpan="2">TOTAL</td>
-                          <td className="text-center">{formatNumber(totalPreShares)}</td>
-                          <td className="text-center">
-                            <span className="badge bg-warning text-dark">
-                              +{formatNumber(totalPostSharesAfterWarrants - totalPreShares)}
-                            </span>
-                          </td>
-                          <td className="text-center">{formatNumber(totalPostSharesAfterWarrants)}</td>
-                          <td className="text-center">
-                            <span className="badge bg-dark">{formatPercentage(100)}</span>
-                          </td>
-                          <td className="text-center">{formatCurrency(calc.postMoneyValuation, currency)}</td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Post-Investment Summary */}
-                {postSeriesAShareholders.length > 0 && (
-                  <div className="row mt-3">
-                    <div className="col-md-3">
-                      <div className="alert alert-primary mb-0">
-                        <strong>Founders:</strong> {formatPercentage(calc.foundersOwnership)}
-                      </div>
-                    </div>
-                    <div className="col-md-3">
-                      <div className="alert alert-warning mb-0">
-                        <strong>Employee:</strong> {formatPercentage(calc.poolOwnership)}
-                      </div>
-                    </div>
-                    <div className="col-md-3">
-                      <div className="alert alert-info mb-0">
-                        <strong>Seed Investors:</strong> {formatPercentage(calc.seedInvestorsOwnership)}
-                      </div>
-                    </div>
-                    <div className="col-md-3">
-                      <div className="alert alert-danger mb-0">
-                        <strong>Series A Investors:</strong> {formatPercentage(calc.seriesAInvestorsOwnership)}
-                      </div>
-                    </div>
-                    {calc.warrantHoldersOwnership > 0 && (
-                      <div className="col-md-3 mt-2">
-                        <div className="alert alert-secondary mb-0">
-                          <strong>Warrant Holders:</strong> {formatPercentage(calc.warrantHoldersOwnership)}
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
-                  </div>
-                )}
-              </div>
-            </div>
 
-            {/* CALCULATION FORMULAS */}
-            <div className="alert alert-dark">
-              <h6 className="alert-heading">📐 Calculation Formulas</h6>
-
-              <div className="row small mb-3">
-                <div className="col-md-6">
-                  <strong>1. Share Price:</strong><br />
-                  <code style={{ backgroundColor: '#f8f9fa', padding: '4px 8px', borderRadius: '4px', display: 'block' }}>
-                    Pre-Money ÷ Total Shares from Seed Round<br />
-                    {formatCurrency(calc.preMoneyValuation, currency)} ÷ {formatNumber(totalPreShares)}
-                    = {formatCurrencyPricePerShare(calc.sharePrice, currency)}
-                  </code>
-                </div>
-                <div className="col-md-6">
-                  <strong>2. Series A Shares:</strong><br />
-                  <code style={{ backgroundColor: '#f8f9fa', padding: '4px 8px', borderRadius: '4px', display: 'block' }}>
-                    Investment ÷ Share Price<br />
-                    {formatCurrency(calc.investmentSize, currency)} ÷ {formatCurrencyPricePerShare(calc.sharePrice, currency)}
-                    = {formatNumber(calc.seriesAShares)}
-                  </code>
-                </div>
-              </div>
-
-              <div className="row small">
-                <div className="col-md-6">
-                  <strong>3. Post-Money Valuation:</strong><br />
-                  <code style={{ backgroundColor: '#f8f9fa', padding: '4px 8px', borderRadius: '4px', display: 'block' }}>
-                    Total Shares × Share Price<br />
-                    {formatNumber(totalPostSharesBeforeWarrants)} × {formatCurrencyPricePerShare(calc.sharePrice, currency)}
-                    = {formatCurrency(calc.postMoneyValuation, currency)}
-                  </code>
-                </div>
-
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-  const renderConvertibleNoteRoundTable = () => {
-    if (!capTableData || !capTableData.calculations) return null;
-
-    console.log("Convertible Note Data:", capTableData);
-    const calc = capTableData.calculations;
-    const preTable = capTableData.preSeedCapTable;
-    const postTable = capTableData.postSeedCapTable;
-
-    // Helper functions
-    const formatCurrency = (amount) => {
-      const currency = capTableData.currency || "USD";
-      const currencyCode = currency.split(' ')[0] || 'USD';
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: currencyCode,
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 2
-      }).format(amount || 0);
-    };
-
-    const formatNumber = (num) => {
-      return new Intl.NumberFormat('en-US').format(Math.round(num || 0));
-    };
-
-    const formatPercentage = (percent) => {
-      const numValue = typeof percent === 'string' ? parseFloat(percent) : (percent || 0);
-      return `${numValue.toFixed(1)}%`;
-    };
-    var roundname = capTableData.instrumentType + ' ' + capTableData.shareClassType;
-    return (
-      <div className="cap-table-section">
-        <div className="card mb-4">
-          <div className="card-header bg-warning text-dark">
-            <h4 className="mb-0">{capTableData.roundType || "Convertible Note Round"}</h4>
-            <small>{roundname} - Convertible Notes (NO SHARES ISSUED)</small>
-          </div>
-          <div className="card-body">
-
-            {/* ===== INPUT PARAMETERS SECTION ===== */}
-            <h5 className="mb-3">📊 Platform Inputs</h5>
-            <div className="row mb-4">
-              <div className="col-md-3">
-                <div className="info-box p-3 border rounded bg-light">
-                  <small className="text-muted">Company Value (Input #1)</small>
-                  <h5>{formatCurrency(calc.companyValue)}</h5>
-                </div>
-              </div>
-
-              <div className="col-md-3">
-                <div className="info-box p-3 border rounded bg-light">
-                  <small className="text-muted">Investment Size (Input #2 & #4)</small>
-                  <h5>{formatCurrency(calc.investmentSize)}</h5>
-                </div>
-              </div>
-
-              <div className="col-md-3">
-                <div className="info-box p-3 border rounded bg-light">
-                  <small className="text-muted">Conversion Discount (Input #3)</small>
-                  <h5>{calc.discountRate}%</h5>
-                </div>
-              </div>
-
-              <div className="col-md-3">
-                <div className="info-box p-3 border rounded bg-light">
-                  <small className="text-muted">Valuation Cap</small>
-                  <h5>{formatCurrency(calc.valuationCap)}</h5>
-                </div>
-              </div>
-            </div>
-
-            <div className="row mb-4">
-              <div className="col-md-4">
-                <div className="info-box p-3 border rounded bg-info text-white">
-                  <small>Pre-Seed Option Pool % (Input #5)</small>
-                  <h5>{calc.optionPoolPercent}%</h5>
-                  <small>{formatNumber(calc.employeeShares)} employee shares created</small>
-                </div>
-              </div>
-
-              <div className="col-md-4">
-                <div className="info-box p-3 border rounded bg-light">
-                  <small>Interest Rate</small>
-                  <h5>{calc.interestRate}%</h5>
-                  <small>Annual interest on convertible notes</small>
-                </div>
-              </div>
-
-              <div className="col-md-4">
-                <div className="info-box p-3 border rounded bg-light">
-                  <small>Round 0 Founder Shares</small>
-                  <h5>{formatNumber(calc.roundZeroTotalShares)}</h5>
-                  <small>Total shares from incorporation</small>
-                </div>
-              </div>
-            </div>
-
-            {/* ===== CALCULATION DETAILS ===== */}
-            <div className="alert alert-info mb-4">
-              <h6 className="alert-heading">📐 Employee Pool Calculation</h6>
-              <p className="mb-2 small">
-                <strong>Formula:</strong> Employee Shares = Total Founder Shares ÷ (1 - Pool %) × Pool %
-              </p>
-              <p className="mb-2 small">
-                <strong>Calculation:</strong> {formatNumber(calc.roundZeroTotalShares)} ÷ (1 - {calc.optionPoolPercent / 100}) × {calc.optionPoolPercent / 100} = {formatNumber(calc.employeeShares)} shares
-              </p>
-              <p className="mb-0 small">
-                <strong>Total Shares:</strong> {formatNumber(calc.roundZeroTotalShares)} (founders) + {formatNumber(calc.employeeShares)} (employees) = {formatNumber(calc.totalSharesPreSeed)} shares
-              </p>
-            </div>
-
-            {/* ⚠️ IMPORTANT NOTE - NO SHARES ISSUED */}
-            <div className="alert alert-warning mb-4">
-              <h6 className="alert-heading">⚠️ CONVERTIBLE NOTES - NO SHARES ISSUED YET</h6>
-              <p className="mb-0">
-                <strong>Important:</strong> Convertible notes are <strong>NOT converted into shares</strong> during this round.
-                <br />
-                Convertible note investors have invested {formatCurrency(calc.totalConfirmedInvestment || calc.investmentSize)} but receive <strong>0 shares</strong> in this round.
-                <br />
-                Conversion happens at the next priced equity round (Series A).
-              </p>
-            </div>
-
-            {/* ===== PRE-SEED CAP TABLE ===== */}
-            {preTable && preTable.shareholders && preTable.shareholders.length > 0 && (
-              <div className="row mb-5">
-                <div className="col-md-12">
-                  <div className="card">
-                    <div className="card-header bg-secondary text-white">
-                      <h5 className="mb-0">📋 Common Shares at Pre-Seed Round 1 (Output #3)</h5>
-                      <small>Before Convertible Note investment (with {calc.optionPoolPercent}% option pool)</small>
-                    </div>
-                    <div className="card-body">
-                      <div className="table-responsive">
-                        <table className="table table-bordered table-hover">
-                          <thead className="table-dark">
-                            <tr>
-                              <th>Management</th>
-                              <th>Contact Info</th>
-                              <th>Common Shares</th>
-                              <th>New Shares</th>
-                              <th>Fully Diluted Ownership %</th>
-                              <th>Value ($)</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {preTable.shareholders.map((sh, idx) => (
-                              <tr key={idx} className={
-                                sh.type === "Options Pool" ? "table-warning" :
-                                  sh.type === "Founder" ? "" : "table-light"
-                              }>
-                                <td>
-                                  <div>
-                                    <strong>{sh.name || sh.fullName}</strong>
-                                    <div className="small">{sh.note || sh.type}</div>
-                                  </div>
-                                </td>
-                                <td>
-                                  {sh.email && sh.email !== "-" && (
-                                    <div className="small">
-                                      📧 {sh.email}
-                                    </div>
-                                  )}
-                                  {sh.voting && (
-                                    <div className="small">
-                                      {sh.voting === "voting" ? "✅ Voting" : "❌ Non-voting"}
-                                    </div>
-                                  )}
-                                </td>
-                                <td className="text-center">
-                                  <strong>{formatNumber(sh.shares)}</strong>
-                                </td>
-                                <td className="text-center">
-
-                                  <span className="text-muted">0</span>
-
-                                </td>
-                                <td className="text-center">
-                                  <span className="badge bg-dark">
-                                    {formatPercentage(sh.ownership)}
-                                  </span>
-                                </td>
-                                <td className="text-center">
-                                  <strong>{formatCurrency(sh.value)}</strong>
-                                </td>
-                              </tr>
-                            ))}
-
-                            {/* TOTAL ROW */}
-                            <tr className="table-secondary fw-bold">
-                              <td colSpan="2">TOTAL</td>
-                              <td className="text-center">{formatNumber(preTable.totalShares)}</td>
-                              <td className="text-center">{formatNumber(0)}</td>
-                              <td className="text-center">100%</td>
-                              <td className="text-center">{formatCurrency(preTable.totalValue)}</td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-
-                      {/* Ownership Summary */}
-                      <div className="row mt-3">
-                        <div className="col-md-6">
-                          <div className="alert alert-info mb-0">
-                            <h6 className="mb-2">Ownership Summary (Pre-Investment)</h6>
-                            <div className="row small">
-                              <div className="col-6">Founders:</div>
-                              <div className="col-6 text-end">{formatPercentage(calc.totalFoundersOwnership)}</div>
-                              <div className="col-6">Employees:</div>
-                              <div className="col-6 text-end">{formatPercentage(calc.totalEmployeeOwnership)}</div>
-                              <div className="col-6">Convertible Note Investors:</div>
-                              <div className="col-6 text-end">0%</div>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="col-md-6">
-                          <div className="alert alert-light mb-0">
-                            <h6 className="mb-2">Financial Summary</h6>
-                            <div className="row small">
-                              <div className="col-6">Company Value:</div>
-                              <div className="col-6 text-end">{formatCurrency(calc.companyValue)}</div>
-                              <div className="col-6">Share Price:</div>
-                              <div className="col-6 text-end">{formatCurrency(calc.sharePrice)}</div>
-                              <div className="col-6">Total Shares:</div>
-                              <div className="col-6 text-end">{formatNumber(calc.totalSharesPreSeed)}</div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ===== POST-SEED CAP TABLE ===== */}
-            {postTable && postTable.shareholders && postTable.shareholders.length > 0 && (
-              <div className="row mb-5">
-                <div className="col-md-12">
-                  <div className="card border-warning">
-                    <div className="card-header bg-warning text-dark">
-                      <h5 className="mb-0">📋 Common Shares at Post-Seed Round 1 (Output #4)</h5>
-                      <small>After Convertible Note investment - Notes have NOT converted yet</small>
-                    </div>
-                    <div className="card-body">
-                      <p className="text-center mb-4">
-                        <strong>📌 Key Point:</strong> Since Convertible notes do NOT convert to shares in this round,
-                        the total number of shares remains {formatNumber(postTable.totalShares)} (same as Pre-Seed).
-                        Convertible note investors are listed with 0 shares.
-                      </p>
-
-                      <div className="table-responsive">
-                        <table className="table table-bordered table-hover">
-                          <thead className="table-dark">
-                            <tr>
-                              <th>Shareholder</th>
-                              <th>Contact Info</th>
-                              <th>Common Shares</th>
-                              <th>New Shares</th>
-                              <th>Total Shares</th>
-                              <th>Fully Diluted Ownership %</th>
-                              <th>Value ($)</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {postTable.shareholders.map((sh, idx) => (
-                              <tr key={idx} className={
-                                sh.type === "Options Pool" ? "table-warning" :
-                                  sh.type === "Convertible Note Investor" ? "table-info" :
-                                    sh.type === "Available Investment" ? "table-danger" :
-                                      sh.type === "Founder" ? "" : "table-light"
-                              }>
-                                <td>
-                                  <strong>{sh.name || sh.fullName}</strong>
-                                  {sh.note && <div className="small text-muted">{sh.note}</div>}
-                                  {sh.isConvertibleNote && (
-                                    <div className="small text-info">
-                                      ⚡ Convertible Note Investor
-                                    </div>
-                                  )}
-                                  {sh.isAvailable && (
-                                    <div className="small text-danger">
-                                      🔥 Available for investment
-                                    </div>
-                                  )}
-                                </td>
-                                <td>
-                                  {sh.email && sh.email !== "-" && (
-                                    <div className="small">📧 {sh.email}</div>
-                                  )}
-                                  {sh.voting && (
-                                    <div className="small">
-                                      {sh.voting === "voting" ? "✅ Voting" : "❌ Non-voting"}
-                                    </div>
-                                  )}
-                                  {sh.investmentAmount > 0 && (
-                                    <div className="small fw-bold">
-                                      💰 {formatCurrency(sh.investmentAmount)}
-                                    </div>
-                                  )}
-                                </td>
-                                <td className="text-center">
-                                  <strong>{formatNumber(sh.shares)}</strong>
-                                </td>
-                                <td className="text-center">
-
-                                  <span className="text-muted">0</span>
-
-                                </td>
-                                <td className="text-center">
-                                  <strong>{formatNumber(sh.shares)}</strong>
-                                </td>
-                                <td className="text-center">
-                                  <span className={`badge ${sh.shares === 0 ? "bg-secondary" : "bg-dark"
-                                    }`}>
-                                    {formatPercentage(sh.ownership)}
-                                  </span>
-                                </td>
-                                <td className="text-center">
-                                  <strong>{formatCurrency(sh.value)}</strong>
-                                </td>
-                              </tr>
-                            ))}
-
-                            {/* TOTAL ROW */}
-                            <tr className="table-warning fw-bold">
-                              <td colSpan="2">TOTAL</td>
-                              <td className="text-center">{formatNumber(postTable.totalShares)}</td>
-                              <td className="text-center">0</td>
-                              <td className="text-center">{formatNumber(postTable.totalShares)}</td>
-                              <td className="text-center">100%</td>
-                              <td className="text-center">{formatCurrency(postTable.totalValue)}</td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-
-                      {/* Investment Summary */}
-                      <div className="row mt-4">
-                        <div className="col-md-6">
-                          <div className="alert alert-warning">
-                            <h6 className="mb-2">Investment Summary</h6>
-                            <div className="row small">
-                              <div className="col-6">Total Convertible Note Investment:</div>
-                              <div className="col-6 text-end">{formatCurrency(calc.totalConfirmedInvestment)}</div>
-                              <div className="col-6">Available for Investment:</div>
-                              <div className="col-6 text-end">{formatCurrency(calc.availableForInvestment)}</div>
-                              <div className="col-6">Number of Investors:</div>
-                              <div className="col-6 text-end">{calc.investorCount}</div>
-                              <div className="col-6">Shares Issued to Investors:</div>
-                              <div className="col-6 text-end">0</div>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="col-md-6">
-                          <div className="alert alert-primary">
-                            <h6 className="mb-2">Platform Outputs Summary</h6>
-                            <div className="row small">
-                              <div className="col-6">Post-Money Valuation (Output #1):</div>
-                              <div className="col-6 text-end">{formatCurrency(calc.postMoneyValuation)}</div>
-                              <div className="col-6">Post-Investment Shares (Output #2):</div>
-                              <div className="col-6 text-end">{formatNumber(calc.postInvestmentShares)}</div>
-                              <div className="col-6">Total Shares (No Change):</div>
-                              <div className="col-6 text-end">{formatNumber(postTable.totalShares)}</div>
-                              <div className="col-6">Total Value:</div>
-                              <div className="col-6 text-end">{formatCurrency(postTable.totalValue)}</div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ===== CONVERSION DETAILS ===== */}
-            <div className="card bg-light">
-              <div className="card-header">
-                <h5 className="mb-0">📋 ⚠️ Convertible Notes will convert at next priced equity round</h5>
-              </div>
-              <div className="card-body">
-                <div className="row">
-                  <div className="col-md-6">
-                    <h6>Conversion Terms:</h6>
-                    <ul className="mb-0">
-                      <li><strong>Conversion Trigger:</strong> Next priced equity financing (Series A)</li>
-                      <li><strong>Valuation Cap:</strong> {formatCurrency(calc.valuationCap)}</li>
-                      <li><strong>Discount Rate:</strong> {calc.discountRate}%</li>
-                      <li><strong>Interest Rate:</strong> {calc.interestRate}% per annum</li>
-                      <li><strong>Conversion Price:</strong> Lower of (Series A price × discount) OR (Cap ÷ Total Shares)</li>
-                    </ul>
-                  </div>
-
-                  <div className="col-md-6">
-                    <h6>Next Steps:</h6>
-                    <ul className="mb-0">
-                      <li>✅ Convertible notes issued (0 shares)</li>
-                      <li>✅ Investment received: {formatCurrency(calc.totalConfirmedInvestment)}</li>
-                      <li>🔜 Prepare for Series A priced round</li>
-                      <li>🔜 Convertible notes will automatically convert</li>
-                      <li>🔜 Update cap table after conversion</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </div>
-    );
-  };
-  const renderConvertibleNoteSeriesRoundTable = () => {
-
-
-    if (!capTableData) {
-      return <div className="alert alert-warning">No data available</div>;
-    }
-
-    // ✅ Extract data
-    const calc = capTableData.calculations || {};
-    const preTable = capTableData.preSeedCapTable || {};
-    const postTable = capTableData.postSeedCapTable || {};
-
-    console.log("Post Table Shareholders:", calc.sharePrice);
-
-    // ✅ Helper functions
-    const formatCurrency = (amount) => {
-      const currency = capTableData.currency || "CAD";
-      const currencyCode = currency.split(' ')[0] || 'CAD';
-
-      // For small amounts (< 1000), show 2 decimal places
-      if (Math.abs(amount) < 1000) {
-        return new Intl.NumberFormat('en-CA', {
-          style: 'currency',
-          currency: currencyCode,
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2
-        }).format(amount || 0);
-      }
-
-      // For larger amounts, no decimal places
-      return new Intl.NumberFormat('en-CA', {
-        style: 'currency',
-        currency: currencyCode,
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-      }).format(amount || 0);
-    };
-
-    const formatNumber = (num) => {
-      return new Intl.NumberFormat('en-CA').format(Math.round(num || 0));
-    };
-
-    const formatPercentage = (percent) => {
-      const numValue = typeof percent === 'string' ? parseFloat(percent) : (percent || 0);
-      return `${numValue.toFixed(1)}%`;
-    };
-
-    // ✅ Prepare chart data
-    const prepareChartData = () => {
-      if (!postTable.shareholders || postTable.shareholders.length === 0) {
-        return null;
-      }
-
-      const labels = postTable.shareholders.map(sh => sh.name || "Shareholder");
-      const data = postTable.shareholders.map(sh => parseFloat(sh.ownership) || 0);
-      const backgroundColors = postTable.shareholders.map(sh => {
-        if (sh.type?.includes("Founder")) return '#4e73df';
-        if (sh.type?.includes("Option")) return '#f6c23e';
-        if (sh.type?.includes("Convertible") || sh.type?.includes("Seed")) return '#1cc88a';
-        if (sh.type?.includes("Series")) return '#36b9cc';
-        return '#858796';
-      });
-
-      return {
-        labels,
-        datasets: [{
-          data,
-          backgroundColor: backgroundColors,
-          borderColor: '#fff',
-          borderWidth: 1
-        }]
-      };
-    };
-
-    const chartData = prepareChartData();
-
-    // ✅ Chart options
-    const chartOptions = {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          position: 'right',
-          labels: {
-            padding: 20,
-            usePointStyle: true,
-          }
-        },
-        title: {
-          display: true,
-          text: 'Post-Series A Ownership Distribution',
-          font: {
-            size: 16
-          }
-        },
-        tooltip: {
-          callbacks: {
-            label: function (context) {
-              const label = context.label || '';
-              const value = context.parsed || 0;
-              return `${label}: ${value.toFixed(1)}%`;
-            }
-          }
-        }
-      }
-    };
-
-    var roundname = capTableData.instrumentType + ' ' + capTableData.shareClassType;
-
-    // ✅ Calculate current shares from pre-table for comparison
-    const getPreSharesForShareholder = (name) => {
-      if (!preTable.shareholders) return 0;
-      const shareholder = preTable.shareholders.find(sh =>
-        sh.name.includes(name) || name.includes(sh.name)
-      );
-      return shareholder ? shareholder.shares : 0;
-    };
-
-    return (
-      <div className="cap-table-section">
-        <div className="card mb-4">
-          <div className="card-header bg-primary text-white">
-            <h4 className="mb-0">📊 {roundname} with Convertible Note Conversion</h4>
-            <small>{capTableData.message || "Convertible Note conversion completed"}</small>
-          </div>
-
-          <div className="card-body">
-            {/* ✅ CHART SECTION */}
-            {chartData ? (
-              <div className="row mb-4">
-                <div className="col-md-6">
-                  <div className="card">
-                    <div className="card-header">
-                      <h6 className="mb-0">Ownership Distribution (Pie Chart)</h6>
-                    </div>
-                    <div className="card-body">
-                      <div style={{ height: '300px' }}>
-                        {(() => {
-                          try {
-                            return <Pie data={chartData} options={chartOptions} />;
-                          } catch (e) {
-                            return <Bar data={chartData} options={chartOptions} />;
-                          }
-                        })()}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="col-md-6">
-                  <div className="card">
-                    <div className="card-header">
-                      <h6 className="mb-0">Ownership Breakdown</h6>
-                    </div>
-                    <div className="card-body">
-                      <ul className="list-group">
-                        {postTable.shareholders.map((sh, idx) => (
-                          <li key={idx} className="list-group-item d-flex justify-content-between align-items-center">
-                            <span>
-                              <strong>{sh.name}</strong>
-                              <small className="text-muted ms-2">{sh.type}</small>
-                            </span>
-                            <span className="badge bg-primary rounded-pill">
-                              {formatPercentage(sh.ownership)}
-                            </span>
+                    {/* Tab Navigation */}
+                    <div className="mb-4">
+                      <ul className="nav nav-tabs gap-1">
+                        {roundData?.type !== 'Round 0' && (
+                          <li className="nav-item bg-primary">
+                            <button
+                              className={`nav-link text-white backcolor ${activeTab === 'pre-money' ? 'active' : ''}`}
+                              onClick={() => setActiveTab('pre-money')}
+                            >
+                              Pre-Money Cap Table
+                            </button>
                           </li>
-                        ))}
+                        )}
+                        {roundData?.type !== 'Round 0' && (
+                          <li className="nav-item bg-primary">
+                            <button
+                              className={`nav-link text-white backcolor ${activeTab === 'post-money' ? 'active' : ''}`}
+                              onClick={() => setActiveTab('post-money')}
+                            >
+                              Post-Money Cap Table
+                            </button>
+                          </li>
+                        )}
+                        {roundData?.type !== 'Round 0' && (
+                          <li className="nav-item bg-primary">
+                            <button
+                              className={`nav-link text-white backcolor ${activeTab === 'summary' ? 'active' : ''}`}
+                              onClick={() => setActiveTab('summary')}
+                            >
+                              Chat & Analysis
+                            </button>
+                          </li>
+                        )}
+                        {pendingConversions.length > 0 && (
+                          <li className="nav-item bg-primary">
+                            <button
+                              className={`nav-link text-white backcolor ${activeTab === 'pending' ? 'active' : ''}`}
+                              onClick={() => setActiveTab('pending')}
+                            >
+                              Pending Conversions
+                            </button>
+                          </li>
+                        )}
                       </ul>
                     </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="alert alert-warning mb-4">
-                No shareholder data available for chart
-              </div>
-            )}
+                    {/* ========== PRE-MONEY CAP TABLE - FIXED ========== */}
+                    {activeTab === 'pre-money' && roundData?.type === 'Round 0' && (
+                      <div className="card">
+                        <div className="card-header bg-light">
+                          {roundData?.type === 'Round 0' ? (
+                            <h5 className="mb-0">Incorporation Capitalization Table</h5>
+                          ) : (
+                            <h5 className="mb-0">Pre-Money Capitalization Table</h5>
+                          )}
 
-            {/* ✅ CONVERTIBLE NOTE CONVERSION DETAILS */}
-            <div className="alert alert-success mb-4">
-              <h6 className="mb-2">🔄 Convertible Note Conversion</h6>
-              <div className="row">
-                <div className="col-md-4">
-                  <p><strong>Original Investment:</strong> {formatCurrency(calc.seedInvestment || 0)}</p>
-                  <p><strong>Interest Rate:</strong> {calc.interestRate || '0'}%</p>
-                  <p><strong>Discount Rate:</strong> {calc.discountRate || '0'}%</p>
-                </div>
-                <div className="col-md-4">
-                  <p><strong>Valuation Cap:</strong> {formatCurrency(calc.valuationCap || 0)}</p>
-                  <p><strong>Years Between Rounds:</strong> {calc.yearsBetweenRounds || 2}</p>
-                  <p><strong>Principal + Interest:</strong> {formatCurrency(calc.principalPlusInterest || 0)}</p>
-                </div>
-                <div className="col-md-4">
-                  <p><strong>Shares Converted:</strong> {formatNumber(calc.seedConversionShares || 0)}</p>
-                  <p><strong>Conversion Value:</strong> {formatCurrency(calc.seedConversionValue || 0)}</p>
-                  <p><strong>MOIC:</strong> <strong className="text-success">{calc.seedMOIC || "0X"}</strong></p>
-                </div>
-              </div>
-            </div>
+                        </div>
+                        <div className="card-body">
+                          <div className="table-responsive mt-4">
+                            <table className="table table-striped table-hover">
+                              <thead>
+                                <tr>
+                                  <th>#</th>
+                                  <th>Shareholder</th>
+                                  <th className="text-end">Shares</th>
+                                  <th className="text-end">Ownership %</th>
+                                  <th className="text-end">Currency Value</th>
+                                  {/*<th>Details</th>*/}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {/* Founders - PRE-MONEY DISPLAY VALUE use karo */}
+                                {capTableData?.pre_money?.items
+                                  ?.filter(item => item.type === 'founder')
+                                  .map((item, index) => (
+                                    <tr key={`founder-${index}`}>
+                                      <td><span className="badge bg-info me-2">{item.founder_code || `F${index + 1}`}</span></td>
+                                      <td>
+                                        <strong>{item.name}</strong>
+                                        {item.email && <div className="small text-muted">{item.email}</div>}
+                                      </td>
+                                      <td className="text-end">
+                                        {Number(item.shares) > 0
+                                          ? Number(item.shares).toLocaleString()
+                                          : item.shares}
+                                      </td>
 
-            {/* ✅ SERIES A INVESTMENT DETAILS */}
-            <div className="alert alert-primary mb-4">
-              <h6 className="mb-2">💰 Series A Investment</h6>
-              <div className="row">
-                <div className="col-md-6">
-                  <p><strong>Investment Amount:</strong> {formatCurrency(calc.seriesAInvestment || 0)}</p>
-                  <p><strong>Shares Purchased:</strong> {formatNumber(calc.seriesAShares || 0)}</p>
-                  <p><strong>Share Price:</strong> {formatCurrency(calc.sharePrice || 0)}</p>
-                </div>
-                <div className="col-md-6">
-                  <p><strong>Investment Value:</strong> {formatCurrency(calc.seriesAValue || 0)}</p>
-                  <p><strong>MOIC:</strong> <strong>{calc.seriesAMOIC || "0X"}</strong></p>
-                  <p><strong>Pre-Money Valuation:</strong> {formatCurrency(calc.preMoneyValuation || 0)}</p>
-                </div>
-              </div>
-            </div>
+                                      <td className="text-end fw-bold text-primary">{item.percentage}%</td>
+                                      <td className="text-end fw-bold text-primary">
+                                        {/* ✅ FIX: Use pre_money_display_value instead of value */}
+                                        {<CurrencyFormatter
+                                          amount={item.pre_money_display_value || item.value}
+                                          currency={roundData.currency}
+                                        />}
+                                      </td>
+                                      {/* <td>
+                                  <small>Type: {item.share_type || 'common'}<br />Voting: {item.voting || 'voting'}</small>
+                                </td> */}
+                                    </tr>
+                                  ))}
 
-            {/* ✅ PRE-SERIES A CAP TABLE */}
-            {preTable.shareholders && preTable.shareholders.length > 0 && (
-              <div className="card mb-4">
-                <div className="card-header bg-secondary text-white">
-                  <h5 className="mb-0">📋 Pre-Series A Cap Table</h5>
-                  <small>Total Shares: {formatNumber(preTable.totalShares || 0)} | Total Value: {formatCurrency(preTable.totalValue || 0)}</small>
-                </div>
-                <div className="card-body">
-                  <div className="table-responsive">
-                    <table className="table table-bordered table-hover">
-                      <thead className="table-dark">
-                        <tr>
-                          <th>Shareholder</th>
-                          <th className="text-center">Type</th>
-                          <th className="text-center">Shares</th>
-                          <th className="text-center">Ownership %</th>
-                          <th className="text-center">Value</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {preTable.shareholders.map((sh, idx) => (
-                          <tr key={idx}>
-                            <td>
-                              <strong>{sh.name || `Shareholder ${idx + 1}`}</strong>
-                              {sh.note && <div className="small text-muted">{sh.note}</div>}
-                            </td>
-                            <td className="text-center">
-                              <span className={`badge ${sh.type?.includes("Founder") ? "bg-primary" :
-                                sh.type?.includes("Option") ? "bg-warning text-dark" :
-                                  "bg-info"
-                                }`}>
-                                {sh.type || "Shareholder"}
-                              </span>
-                            </td>
-                            <td className="text-center">
-                              <strong>{formatNumber(sh.shares || 0)}</strong>
-                            </td>
-                            <td className="text-center">
-                              <span className="badge bg-dark">
-                                {formatPercentage(sh.ownership || 0)}
-                              </span>
-                            </td>
-                            <td className="text-center">
-                              <strong>{formatCurrency(sh.value || 0)}</strong>
-                            </td>
-                          </tr>
-                        ))}
-                        <tr className="table-secondary fw-bold">
-                          <td colSpan="2">TOTAL</td>
-                          <td className="text-center">{formatNumber(preTable.totalShares || 0)}</td>
-                          <td className="text-center">100%</td>
-                          <td className="text-center">{formatCurrency(preTable.totalValue || 0)}</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            )}
+                                {/* Option Pool - PRE-MONEY DISPLAY VALUE use karo */}
+                                {/* Option Pool - SINGLE ENTRY (all option pools combined) */}
+                                {(() => {
+                                  // Get all option pool items
+                                  const optionItems = capTableData?.pre_money?.items
+                                    ?.filter(item => item.type === 'option_pool') || [];
 
-            {/* ✅ POST-SERIES A CAP TABLE WITH 3 COLUMNS */}
-            {postTable.shareholders && postTable.shareholders.length > 0 && (
-              <div className="card mb-4">
-                <div className="card-header bg-primary text-white">
-                  <h5 className="mb-0">📋 Post-Series A Cap Table</h5>
-                  <small>Total Shares: {formatNumber(postTable.totalShares || 0)} | Total Value: {formatCurrency(postTable.totalValue || 0)}</small>
-                </div>
-                <div className="card-body">
-                  <div className="table-responsive">
-                    <table className="table table-bordered table-hover">
-                      <thead className="table-dark">
-                        <tr>
-                          <th>Shareholder</th>
-                          <th className="text-center">Type</th>
-                          <th className="text-center">Shares</th>
-                          <th className="text-center">New Shares</th>
-                          <th className="text-center">Total Shares</th>
-                          <th className="text-center">Ownership %</th>
-                          <th className="text-center">Value</th>
-                          <th className="text-center">Investment Details</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {postTable.shareholders.map((sh, idx) => {
-                          // Calculate current shares from pre-table
-                          const preShares = getPreSharesForShareholder(sh.name);
-                          const newShares = sh.newShares || (sh.shares - preShares);
-                          const totalShares = sh.shares;
+                                  if (optionItems.length === 0) return null;
 
-                          return (
-                            <tr key={idx}>
-                              <td>
-                                <strong>{sh.name || `Shareholder ${idx + 1}`}</strong>
-                                {sh.note && <div className="small text-muted">{sh.note}</div>}
-                              </td>
-                              <td className="text-center">
-                                <span className={`badge ${sh.type?.includes("Founder") ? "bg-primary" :
-                                  sh.type?.includes("Option") ? "bg-warning text-dark" :
-                                    sh.type?.includes("Convertible") || sh.type?.includes("Seed") ? "bg-info" :
-                                      sh.type?.includes("Series") ? "bg-success" :
-                                        "bg-secondary"
-                                  }`}>
-                                  {sh.type || "Shareholder"}
-                                </span>
-                              </td>
-                              <td className="text-center">
-                                <strong>{formatNumber(preShares)}</strong>
-                              </td>
-                              <td className="text-center">
-                                {newShares > 0 ? (
-                                  <div className="text-success fw-bold">
-                                    +{formatNumber(newShares)}
-                                  </div>
-                                ) : (
-                                  <span className="text-muted">0</span>
-                                )}
-                              </td>
-                              <td className="text-center">
-                                <strong>{formatNumber(totalShares)}</strong>
-                              </td>
-                              <td className="text-center">
-                                <span className="badge bg-dark">
-                                  {formatPercentage(sh.ownership || 0)}
-                                </span>
-                              </td>
-                              <td className="text-center">
-                                <strong>{formatCurrency(sh.value || 0)}</strong>
-                              </td>
-                              <td className="text-center">
-                                {sh.conversionPrice ? (
-                                  <div className="small">
-                                    @ {formatCurrency(sh.conversionPrice)}/share
-                                    {sh.moic && <div className="text-success">MOIC: {sh.moic}</div>}
-                                    {sh.principalPlusInterest && (
-                                      <div className="text-info">Principal + Interest: {formatCurrency(sh.principalPlusInterest)}</div>
+                                  // Calculate total option shares
+                                  const totalOptionShares = optionItems.reduce((sum, item) => sum + (item.shares || 0), 0);
+
+                                  // Calculate weighted average percentage
+                                  const totalShares = capTableData?.pre_money?.totals?.total_shares || 0;
+                                  const optionPercentage = totalShares > 0
+                                    ? ((totalOptionShares / totalShares) * 100).toFixed(2)
+                                    : '0.00';
+
+                                  // Calculate total value
+                                  const preMoneyVal = parseFloat(roundData?.pre_money) || 0;
+                                  const optionValue = totalShares > 0
+                                    ? (totalOptionShares / totalShares) * preMoneyVal
+                                    : 0;
+
+                                  // Get creation details
+                                  const createdInRounds = optionItems
+                                    .map(item => item.round_name || `Round ${item.round_id}`)
+                                    .join(', ');
+
+                                  return (
+                                    <tr key="option-pool-combined" className="table-info">
+                                      <td><span className="badge bg-warning me-2">O</span></td>
+                                      <td>
+                                        <strong>Employee Option Pool</strong>
+                                        {optionItems.length > 1 && (
+                                          <div className="small text-muted">
+                                            Combined from: {createdInRounds}
+                                          </div>
+                                        )}
+                                      </td>
+                                      <td className="text-end">{Number(totalOptionShares).toLocaleString()}</td>
+                                      <td className="text-end fw-bold text-warning">{optionPercentage}%</td>
+                                      <td className="text-end fw-bold text-warning">
+                                        {<CurrencyFormatter
+                                          amount={optionValue}
+                                          currency={roundData.currency}
+                                        />}
+                                      </td>
+                                      {/* <td>
+                                  <small>
+                                    {optionItems.length === 1 ? (
+                                      <>From {optionItems[0].round_name || `Round ${optionItems[0].round_id}`}</>
+                                    ) : (
+                                      <>
+                                        <div>Total pools: {optionItems.length}</div>
+                                        <div className="text-muted">
+                                          {optionItems.map((item, i) => (
+                                            <span key={i}>
+                                              {i > 0 && ' + '}
+                                              {item.shares?.toLocaleString()} shares
+                                            </span>
+                                          ))}
+                                        </div>
+                                      </>
                                     )}
-                                  </div>
-                                ) : sh.investment ? (
-                                  <div className="small">
-                                    Invested: {formatCurrency(sh.investment)}
-                                    {sh.moic && <div className="text-success">MOIC: {sh.moic}</div>}
-                                  </div>
-                                ) : sh.originalInvestment ? (
-                                  <div className="small">
-                                    Original: {formatCurrency(sh.originalInvestment)}
-                                    {sh.moic && <div className="text-success">MOIC: {sh.moic}</div>}
-                                  </div>
-                                ) : (
-                                  <span className="text-muted">-</span>
-                                )}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                        <tr className="table-primary fw-bold">
-                          <td colSpan="2">TOTAL</td>
-                          <td className="text-center">{formatNumber(preTable.totalShares || 0)}</td>
-                          <td className="text-center">{formatNumber(calc.newSharesIssued || 0)}</td>
-                          <td className="text-center">{formatNumber(postTable.totalShares || 0)}</td>
-                          <td className="text-center">100%</td>
-                          <td className="text-center">{formatCurrency(postTable.totalValue || 0)}</td>
-                          <td className="text-center">
-                            {formatCurrency((calc.seedInvestment || 0) + (calc.seriesAInvestment || 0))}
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
+                                  </small>
+                                </td> */}
+                                    </tr>
+                                  );
+                                })()}
 
-                  {/* ✅ SUMMARY OF NEW SHARES */}
-                  <div className="alert alert-info mt-3">
-                    <h6>📊 New Shares Summary</h6>
-                    <div className="row">
-                      <div className="col-md-3">
-                        <p><strong>Convertible Note Conversion:</strong> {formatNumber(calc.seedConversionShares || 0)} shares</p>
-                      </div>
-                      <div className="col-md-3">
-                        <p><strong>Series A Investment:</strong> {formatNumber(calc.seriesAShares || 0)} shares</p>
-                      </div>
-                      <div className="col-md-3">
-                        <p><strong>New Option Pool:</strong> {formatNumber(calc.newOptionShares || 0)} shares</p>
-                      </div>
-                      <div className="col-md-3">
-                        <p><strong>Total New Shares:</strong> {formatNumber(calc.newSharesIssued || 0)} shares</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+                                {/* Investors in Pre-Money (if any) */}
+                                {capTableData?.pre_money?.items
+                                  ?.filter(item => item.type === 'investor')
+                                  .map((item, index) => (
+                                    <tr key={`investor-${index}`} className="table-success">
+                                      <td><span className="badge bg-success me-2">I</span></td>
+                                      <td><strong>{item.name}</strong></td>
+                                      <td className="text-end">{Number(item.shares).toLocaleString()}</td>
+                                      <td className="text-end">{item.percentage}%</td>
+                                      <td className="text-end fw-bold text-success">
+                                        {<CurrencyFormatter
+                                          amount={item.pre_money_display_value || item.value}
+                                          currency={roundData.currency}
+                                        />}
+                                      </td>
+                                      {/* <td><small>{item.round_name}</small></td> */}
+                                    </tr>
+                                  ))}
 
-            {/* ✅ FINAL SUMMARY */}
-            <div className="alert alert-info">
-              <h6>📊 Final Summary</h6>
-              <div className="row">
-                <div className="col-md-4">
-                  <p><strong>Pre-Money Valuation:</strong> {formatCurrency(calc.preMoneyValuation || 0)}</p>
-                  <p><strong>Post-Money Valuation:</strong> {formatCurrency(calc.postMoneyValuation || 0)}</p>
-                  <p><strong>Valuation Increase:</strong> {
-                    (((calc.postMoneyValuation || 0) - (calc.preMoneyValuation || 0)) /
-                      (calc.preMoneyValuation || 1) * 100).toFixed(1)}%
-                  </p>
-                </div>
-                <div className="col-md-4">
-                  <p><strong>Total Capital Raised:</strong> {
-                    formatCurrency((calc.seedInvestment || 0) + (calc.seriesAInvestment || 0))
-                  }</p>
-                  <p><strong>Share Price:</strong> {formatCurrency(calc.sharePrice || 0)}</p>
-                  <p><strong>Total Shares Outstanding:</strong> {formatNumber(postTable.totalShares || 0)}</p>
-                </div>
-                <div className="col-md-4">
-                  <p><strong>New Shares Issued:</strong> {formatNumber(calc.newSharesIssued || 0)}</p>
-                  <p><strong>Option Pool Created:</strong> {formatNumber(calc.newOptionShares || 0)} shares</p>
-                  <p><strong>Existing Option Pool:</strong> {formatNumber(calc.employeeSharesSeedRound || 0)} shares</p>
-                </div>
-              </div>
+                                {/* Pending Instruments */}
+                                {capTableData?.pre_money?.items
+                                  ?.filter(item => item.type === 'pending')
+                                  .map((item, index) => (
+                                    <tr key={`pending-${index}`} className="table-warning">
+                                      <td><span className="badge bg-warning me-2">👤</span></td>
+                                      <td><strong>{item.name}</strong></td>
+                                      <td className="text-end text-muted">0</td>
+                                      <td className="text-end text-muted">0.00%</td>
+                                      <td className="text-end text-muted">0</td>
+                                      {/* <td>
+                                  <small>
+                                    Investment: <CurrencyFormatter
+                                      amount={item.investment}
+                                      currency={roundData?.currency}
+                                    />
 
-              {/* ✅ NEW: Ownership Summary Section */}
-              <div className="row mt-3">
-                <div className="col-md-12">
-                  <h6>🏢 Ownership Distribution</h6>
-                  <div className="row">
-                    <div className="col-md-3">
-                      <p><strong>Total Founders Ownership:</strong> {
-                        (() => {
-                          // Calculate total founders shares from postSeedShareholders
-                          const founders = postTable.shareholders?.filter(s => s.type === "Founder") || [];
-                          const totalFounderShares = founders.reduce((sum, f) => sum + (f.shares || 0), 0);
-                          const totalPostShares = postTable.totalShares || 1;
-                          const founderPercentage = (totalFounderShares / totalPostShares * 100).toFixed(1);
-                          return `${founderPercentage}%`;
-                        })()
-                      }</p>
+                                    {item.discount_rate > 0 && <div>Discount: {item.discount_rate}%</div>}
+                                    {item.valuation_cap > 0 && <div>Cap: <CurrencyFormatter
+                                      amount={item.valuation_cap}
+                                      currency={roundData?.currency}
+                                    />
+                                    </div>}
+                                    {item.interest_rate > 0 && <div>Interest: {item.interest_rate}%</div>}
+                                  </small>
+                                </td> */}
+                                    </tr>
+                                  ))}
+                              </tbody>
+                              <tfoot className="table-light">
+                                <tr>
+                                  <th colSpan="2">TOTAL</th>
+                                  <th className="text-end"><CurrencyFormatter
+                                    amount={capTableData?.pre_money?.totals?.total_shares}
+                                    currency={" "}
+                                    digit={0}
+                                  /></th>
+                                  <th className="text-end">100%</th>
+                                  <th className="text-end fw-bold text-primary">
+                                    <CurrencyFormatter
+                                      amount={capTableData?.pre_money?.totals?.total_value}
+                                      currency={roundData?.currency}
+                                    />
+
+                                  </th>
+                                  {/* <th></th> */}
+                                </tr>
+                                {/* Optional: Show original Round 0 value for reference */}
+
+                              </tfoot>
+                            </table>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {activeTab === 'pre-money' && roundData?.type !== 'Round 0' && (
+                      <div className="card">
+                        <div className="card-header bg-light">
+                          <h5 className="mb-0">Pre-Money Capitalization Table</h5>
+                        </div>
+                        <div className="card-body">
+                          <div className="table-responsive mt-4">
+                            <table className="table table-striped table-hover">
+                              <thead>
+                                <tr>
+                                  <th style={{ width: '40px' }}></th>
+                                  <th>Shareholder</th>
+                                  <th className="text-end">Shares</th>
+                                  <th className="text-end">Ownership %</th>
+                                  <th className="text-end">Currency Value</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {(() => {
+                                  const preMoneyData = capTableData?.pre_money;
+                                  const allItems = preMoneyData?.items || [];
+
+                                  const founders = allItems.filter(item => item.type === 'founder');
+                                  const optionPools = allItems.filter(item => item.type === 'option_pool');
+                                  // ✅ Both 'investor' and 'investor_group' types handle karo
+                                  const investorItems = allItems.filter(item =>
+                                    item.type === 'investor' || item.type === 'investor_group'
+                                  );
+                                  const pendingItems = allItems.filter(item => item.type === 'pending');
+
+                                  return (
+                                    <>
+                                      {/* 1. Founders */}
+                                      {founders.map((item, index) => (
+                                        <tr key={`founder-${index}`}>
+                                          <td><span className="badge bg-info me-2">{item.founder_code || `F${index + 1}`}</span></td>
+                                          <td>
+                                            <strong>{item.name}</strong>
+                                            {item.email && <div className="small text-muted">{item.email}</div>}
+                                          </td>
+                                          <td className="text-end">{Number(item.shares).toLocaleString()}</td>
+                                          <td className="text-end fw-bold text-primary">{item.percentage_formatted}</td>
+                                          <td className="text-end fw-bold text-primary">
+                                            <CurrencyFormatter amount={item.value} currency={roundData?.currency} />
+                                          </td>
+                                        </tr>
+                                      ))}
+
+                                      {/* 2. Option Pool */}
+                                      {optionPools.map((item, index) => (
+                                        <tr key={`option-${index}`} className="table-info">
+                                          <td><span className="badge bg-warning me-2">O</span></td>
+                                          <td><strong>Employee Option Pool</strong></td>
+                                          <td className="text-end">{Number(item.shares).toLocaleString()}</td>
+                                          <td className="text-end fw-bold text-warning">{item.percentage_formatted}</td>
+                                          <td className="text-end fw-bold text-warning">
+                                            <CurrencyFormatter amount={item.value} currency={roundData?.currency} />
+                                          </td>
+                                        </tr>
+                                      ))}
+
+                                      {/* 3. Investor Groups - expandable */}
+                                      {investorItems.map((group, groupIndex) => {
+                                        const rowKey = `pre-group-${groupIndex}-${group.name}`;
+                                        const isExpanded = !!expandedRows[rowKey];
+
+                                        // ✅ investor_details array hai
+                                        const detailsArr = Array.isArray(group.investor_details)
+                                          ? group.investor_details
+                                          : (group.investor_details ? [group.investor_details] : []);
+
+                                        const groupLabel = group.label || `${detailsArr.length} investor${detailsArr.length !== 1 ? 's' : ''}`;
+
+                                        return (
+                                          <React.Fragment key={rowKey}>
+                                            {/* Group Header Row */}
+                                            <tr
+                                              className="table-secondary"
+                                              onClick={() => toggleRow(rowKey)}
+                                              style={{ cursor: 'pointer' }}
+                                            >
+                                              <td className="text-center">
+                                                {isExpanded ? <FaChevronDown /> : <FaChevronRight />}
+                                              </td>
+                                              <td>
+                                                <strong>{group.name}</strong>
+                                                <small className="text-muted d-block">{groupLabel}</small>
+                                              </td>
+                                              <td className="text-end">{Number(group.shares || 0).toLocaleString()}</td>
+                                              <td className="text-end fw-bold text-primary">{group.percentage_formatted}</td>
+                                              <td className="text-end fw-bold text-primary">
+                                                <CurrencyFormatter amount={group.value} currency={roundData?.currency} />
+                                              </td>
+                                            </tr>
+
+                                            {/* Expanded: Individual Investors - Directly API se values */}
+                                            {isExpanded && detailsArr.map((investor, idx) => {
+                                              return (
+                                                <tr key={`${rowKey}-inv-${idx}`} className="table-light">
+                                                  <td></td>
+                                                  <td className="ps-5">
+                                                    <strong>{investor.name}</strong>
+                                                    {investor.email && (
+                                                      <div className="small text-muted">
+                                                        <i className="bi bi-envelope me-1"></i>
+                                                        {investor.email}
+                                                      </div>
+                                                    )}
+                                                    {investor.phone && (
+                                                      <div className="small text-muted">
+                                                        <i className="bi bi-telephone me-1"></i>
+                                                        {investor.phone}
+                                                      </div>
+                                                    )}
+                                                    {investor.round_name && (
+                                                      <div className="small text-muted">
+                                                        <i className="bi bi-hash me-1"></i>
+                                                        {investor.round_name}
+                                                      </div>
+                                                    )}
+                                                  </td>
+                                                  {/* ✅ Investor shares - directly from API */}
+                                                  <td className="text-end">
+                                                    {Number(investor.shares || 0).toLocaleString()}
+                                                  </td>
+                                                  {/* ✅ Investor percentage - directly from API */}
+                                                  <td className="text-end">
+                                                    {investor.percentage_formatted}
+                                                  </td>
+                                                  {/* ✅ Investor value - directly from API */}
+                                                  <td className="text-end">
+                                                    <CurrencyFormatter amount={investor.value} currency={roundData?.currency} />
+                                                  </td>
+                                                </tr>
+                                              );
+                                            })}
+                                          </React.Fragment>
+                                        );
+                                      })}
+
+                                      {/* 4. Pending SAFE/Convertible */}
+                                      {/* 4. Pending SAFE/Convertible 0 pending_group type handle karo */}
+                                      {(() => {
+                                        const pendingGroups = allItems.filter(item => item.type === 'pending_group');
+
+                                        return pendingGroups.map((group, groupIndex) => {
+                                          const rowKey = `pre-pending-group-${groupIndex}-${group.round_id}`;
+                                          const isExpanded = !!expandedRows[rowKey];
+                                          const isConvertibleNote = group.instrument_type === 'Convertible Note';
+
+                                          return (
+                                            <React.Fragment key={rowKey}>
+                                              {/* Group Header Row */}
+                                              <tr
+                                                className="table-warning"
+                                                onClick={() => toggleRow(rowKey)}
+                                                style={{ cursor: 'pointer' }}
+                                              >
+                                                <td className="text-center">
+                                                  {isExpanded ? <FaChevronDown /> : <FaChevronRight />}
+                                                </td>
+                                                <td>
+                                                  <strong>{group.instrument_type}</strong>
+                                                  <span className="badge bg-warning text-dark ms-2">Pending</span>
+                                                  <small className="text-muted d-block">{group.label}</small>
+                                                  <div className="small text-muted mt-1">
+                                                    <span className="badge bg-light text-dark border">{group.instrument_type}</span>
+                                                    {group.total_investment > 0 && (
+                                                      <span className="ms-2">
+                                                        Total Investment: <CurrencyFormatter amount={group.total_investment} currency={roundData?.currency} />
+                                                      </span>
+                                                    )}
+
+                                                  </div>
+                                                </td>
+                                                <td className="text-end text-muted">0</td>
+                                                <td className="text-end text-warning fw-bold">0</td>
+                                                <td className="text-end text-muted">0</td>
+                                              </tr>
+
+                                              {/* Expanded: Individual Investors */}
+                                              {isExpanded && (group.items || []).map((inv, idx) => (
+                                                <tr key={`${rowKey}-inv-${idx}`} className="table-light">
+                                                  <td></td>
+                                                  <td className="ps-5">
+                                                    <strong>{inv.name || 'Investor'}</strong>
+                                                    {inv.email && (
+                                                      <div className="small text-muted">
+                                                        <i className="bi bi-envelope me-1"></i>{inv.email}
+                                                      </div>
+                                                    )}
+                                                    {inv.phone && (
+                                                      <div className="small text-muted">
+                                                        <i className="bi bi-telephone me-1"></i>{inv.phone}
+                                                      </div>
+                                                    )}
+
+                                                    {/* Common fields */}
+                                                    <div className="small text-muted mt-1">
+                                                      {inv.discount_rate > 0 && <span>{inv.discount_rate}% discount • </span>}
+                                                      {inv.valuation_cap > 0 && (
+                                                        <span>
+                                                          Cap: <CurrencyFormatter amount={inv.valuation_cap} currency={roundData?.currency} /> •{' '}
+                                                        </span>
+                                                      )}
+
+                                                    </div>
+
+                                                    {inv.investment > 0 && (
+                                                      <div className="small text-muted">
+                                                        Investment: <CurrencyFormatter amount={inv.investment} currency={roundData?.currency} />
+                                                      </div>
+                                                    )}
+
+                                                    {/* ✅ Convertible Note 0 5 extra fields */}
+                                                    {isConvertibleNote && (
+                                                      <>
+                                                        {inv.interest_rate > 0 && (
+                                                          <div className="small text-muted">
+                                                            Interest Rate: {inv.interest_rate}% × {parseFloat(inv.years || 0).toFixed(2)} yrs
+                                                            {inv.interest_accrued > 0 && (
+                                                              <span>
+                                                                {' '}
+                                                              </span>
+                                                            )}
+                                                          </div>
+                                                        )}
+
+                                                        {inv.maturity_date && (
+                                                          <div className="small text-muted">
+                                                            Maturity: {formatIncorporationDate(inv.maturity_date)}
+                                                          </div>
+                                                        )}
+                                                      </>
+                                                    )}
+
+
+                                                  </td>
+                                                  <td className="text-end text-muted">0</td>
+                                                  <td className="text-end text-warning fw-bold">Pending</td>
+                                                  <td className="text-end text-muted">0</td>
+                                                </tr>
+                                              ))}
+                                            </React.Fragment>
+                                          );
+                                        });
+                                      })()}
+                                    </>
+                                  );
+                                })()}
+                              </tbody>
+
+                              <tfoot className="table-light fw-bold">
+                                {(() => {
+                                  const preMoneyData = capTableData?.pre_money;
+                                  const allItems = preMoneyData?.items || [];
+                                  const totalShares = preMoneyData?.total_shares
+                                    || preMoneyData?.totals?.total_shares
+                                    || allItems
+                                      .filter(i => i.type !== 'pending')
+                                      .reduce((sum, item) => sum + (item.shares || 0), 0);
+                                  const preMoneyValuation = preMoneyData?.pre_money_valuation
+                                    || parseFloat(roundData?.pre_money)
+                                    || 0;
+                                  return (
+                                    <tr>
+                                      <td colSpan="2" className="fw-bold">TOTAL</td>
+                                      <td className="text-end fs-5">{Number(totalShares).toLocaleString()}</td>
+                                      <td className="text-end fs-5">100%</td>
+                                      <td className="text-end fs-5 text-primary">
+                                        <CurrencyFormatter amount={preMoneyValuation} currency={roundData?.currency} />
+                                      </td>
+                                    </tr>
+                                  );
+                                })()}
+                              </tfoot>
+                            </table>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* ========== POST-MONEY CAP TABLE ========== */}
+                    {activeTab === 'post-money' && (
+                      <div className="card">
+                        <div className="card-header bg-light">
+                          <h5 className="mb-0">
+                            {roundData?.instrument || 'Common Stock'} at Post-{roundData?.shareClassType || 'Investment'} Investor
+                          </h5>
+                          <small className="text-muted">
+                            After <CurrencyFormatter amount={roundData?.investment} currency={roundData?.currency} /> investment
+                            {conversionData?.length > 0 ? ` with ${conversionData.length} convertible instruments conversion` : ''}
+                          </small>
+                        </div>
+                        <div className="card-body">
+                          <div className="table-responsive">
+                            <table className="table table-striped table-hover">
+                              <thead className="table-light">
+                                <tr>
+                                  <th>Shareholder</th>
+                                  <th>Type</th>
+                                  <th className="text-end">Existing Shares</th>
+                                  <th className="text-end">New Shares</th>
+                                  <th className="text-end">Total Shares</th>
+                                  <th className="text-end">Ownership %</th>
+                                  <th className="text-end">Currency Value</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {(() => {
+                                  const isSAFERound = capTableData?.post_money?.totals?.instrumentType === 'Safe';
+                                  const allItems = capTableData?.post_money?.items || [];
+
+                                  // ✅ FIXED: pending_group bhi exclude karo total shares se
+                                  const baseTotalShares = capTableData?.post_money?.totals?.total_shares
+                                    || allItems
+                                      .filter(i => i.type !== 'pending' && i.type !== 'pending_group')
+                                      .reduce((s, i) => s + (i.shares || 0), 0);
+
+                                  const valueValuation = isSAFERound
+                                    ? (parseFloat(capTableData?.post_money?.totals?.total_value)
+                                      || parseFloat(roundData?.pre_money) || 0)
+                                    : (parseFloat(capTableData?.post_money?.post_money_valuation)
+                                      || parseFloat(roundData?.post_money) || 0);
+
+                                  const founders = allItems.filter(i => i.type === 'founder');
+                                  const optionPool = allItems.find(i => i.type === 'option_pool');
+                                  const previousGroups = allItems.filter(i => i.type === 'investor' && i.is_previous === true);
+                                  const convertedGroups = allItems.filter(i => i.type === 'investor' && i.is_converted === true);
+                                  const newGroups = allItems.filter(i => i.type === 'investor' && i.is_new_investment === true);
+
+                                  // ✅ FIXED: frontend grouping hatao 0 backend se pending_group aa raha hai
+                                  const pendingGroups = allItems.filter(i => i.type === 'pending_group');
+
+                                  const renderInvestorGroup = (group, groupIndex, colorClass, typeLabel) => {
+                                    const rowKey = `post-inv-group-${group.round_id_ref || groupIndex}-${group.name}`;
+                                    const isExpanded = !!expandedRows[rowKey];
+                                    const detailsArr = Array.isArray(group.investor_details)
+                                      ? group.investor_details
+                                      : (group.investor_details ? [group.investor_details] : []);
+
+                                    return (
+                                      <React.Fragment key={rowKey}>
+                                        <tr
+                                          className={colorClass}
+                                          onClick={() => toggleRow(rowKey)}
+                                          style={{ cursor: detailsArr.length > 0 ? 'pointer' : 'default' }}
+                                        >
+                                          <td>
+                                            <strong>
+                                              {group.name}
+                                              {detailsArr.length > 0 && (
+                                                isExpanded ? <FaChevronDown className="ms-1" /> : <FaChevronRight className="ms-1" />
+                                              )}
+                                            </strong>
+                                            <small className="text-muted d-block">
+                                              {group.label || `${detailsArr.length} investor${detailsArr.length !== 1 ? 's' : ''}`}
+                                            </small>
+                                          </td>
+                                          <td>{typeLabel}</td>
+                                          <td className="text-end">{Number(group.existing_shares || (group.is_previous ? group.shares : 0) || 0).toLocaleString()}</td>
+                                          <td className="text-end text-success fw-bold">{Number(group.new_shares || 0).toLocaleString()}</td>
+                                          <td className="text-end fw-bold">{Number(group.shares || 0).toLocaleString()}</td>
+                                          <td className="text-end fw-bold text-primary">{group.percentage_formatted}</td>
+                                          <td className="text-end">
+                                            <CurrencyFormatter amount={group.value} currency={roundData?.currency} />
+                                          </td>
+                                        </tr>
+
+                                        {isExpanded && detailsArr.map((inv, idx) => (
+                                          <tr key={`${rowKey}-inv-${idx}`} className="table-light">
+                                            <td className="ps-5">
+                                              <strong>{inv.name || `${inv.firstName || ''} ${inv.lastName || ''}`.trim()}</strong>
+                                              {inv.email && (
+                                                <div className="small text-muted">
+                                                  <i className="bi bi-envelope me-1"></i>{inv.email}
+                                                </div>
+                                              )}
+                                              {inv.phone && (
+                                                <div className="small text-muted">
+                                                  <i className="bi bi-telephone me-1"></i>{inv.phone}
+                                                </div>
+                                              )}
+                                              {inv.investment_amount > 0 && (
+                                                <div className="small text-muted">
+                                                  Investment: <CurrencyFormatter amount={inv.investment_amount} currency={roundData?.currency} />
+                                                </div>
+                                              )}
+                                            </td>
+                                            <td>{inv.share_class_type || typeLabel}</td>
+                                            <td className="text-end">{Number(inv.existing_shares || (inv.is_previous ? inv.shares : 0) || 0).toLocaleString()}</td>
+                                            <td className="text-end text-success">{Number(inv.new_shares || 0).toLocaleString()}</td>
+                                            <td className="text-end">{Number(inv.shares || 0).toLocaleString()}</td>
+                                            <td className="text-end">{inv.percentage_formatted}</td>
+                                            <td className="text-end">
+                                              <CurrencyFormatter amount={inv.value} currency={roundData?.currency} />
+                                            </td>
+                                          </tr>
+                                        ))}
+                                      </React.Fragment>
+                                    );
+                                  };
+
+                                  return (
+                                    <>
+                                      {/* 1. Founders */}
+                                      {founders.map((item, index) => (
+                                        <tr key={`founder-${index}`}>
+                                          <td>
+                                            <strong>{item.name}</strong>
+                                            {item.email && <div className="small text-muted">{item.email}</div>}
+                                          </td>
+                                          <td>Founder</td>
+                                          <td className="text-end">{Number(item.existing_shares || item.shares || 0).toLocaleString()}</td>
+                                          <td className="text-end text-muted">0</td>
+                                          <td className="text-end fw-bold">{Number(item.shares || 0).toLocaleString()}</td>
+                                          <td className="text-end fw-bold text-primary">{item.percentage_formatted}</td>
+                                          <td className="text-end">
+                                            <CurrencyFormatter amount={item.value} currency={roundData?.currency} />
+                                          </td>
+                                        </tr>
+                                      ))}
+
+                                      {/* 2. Option Pool */}
+                                      {optionPool && (
+                                        <tr className="table-info">
+                                          <td><strong>Employee Option Pool</strong></td>
+                                          <td>{optionPool.label || 'Options Pool'}</td>
+                                          <td className="text-end">{Number(optionPool.existing_shares || 0).toLocaleString()}</td>
+                                          <td className="text-end text-success fw-bold">{Number(optionPool.new_shares || 0).toLocaleString()}</td>
+                                          <td className="text-end fw-bold">{Number(optionPool.shares || 0).toLocaleString()}</td>
+                                          <td className="text-end fw-bold text-warning">{optionPool.percentage_formatted}</td>
+                                          <td className="text-end">
+                                            <CurrencyFormatter amount={optionPool.value} currency={roundData?.currency} />
+                                          </td>
+                                        </tr>
+                                      )}
+
+                                      {/* 3. Previous Investors 0 backend grouped */}
+                                      {previousGroups.map((group, i) =>
+                                        renderInvestorGroup(group, i, 'table-secondary', 'Previous Investor')
+                                      )}
+
+                                      {/* 4. Converted Investors - WITH VALUATION CAP, DISCOUNT, CONVERSION PRICE, INTEREST ETC. */}
+                                      {convertedGroups.map((group, groupIndex) => {
+                                        const rowKey = `post-conv-group-${group.round_id_ref || groupIndex}-${group.name}`;
+                                        const isExpanded = !!expandedRows[rowKey];
+                                        const detailsArr = Array.isArray(group.investor_details)
+                                          ? group.investor_details
+                                          : (group.investor_details ? [group.investor_details] : []);
+
+                                        return (
+                                          <React.Fragment key={rowKey}>
+                                            {/* Group Header */}
+                                            <tr
+                                              className="table-info"
+                                              onClick={() => toggleRow(rowKey)}
+                                              style={{ cursor: detailsArr.length > 0 ? 'pointer' : 'default' }}
+                                            >
+                                              <td>
+                                                <strong>
+                                                  {group.name}
+                                                  {detailsArr.length > 0 && (
+                                                    isExpanded ? <FaChevronDown className="ms-1" /> : <FaChevronRight className="ms-1" />
+                                                  )}
+                                                </strong>
+                                                <small className="text-muted d-block">
+                                                  {group.label || `${detailsArr.length} investor${detailsArr.length !== 1 ? 's' : ''}`}
+                                                </small>
+                                              </td>
+                                              <td>Converted</td>
+                                              <td className="text-end">0</td>
+                                              <td className="text-end text-success fw-bold">{Number(group.new_shares || group.shares || 0).toLocaleString()}</td>
+                                              <td className="text-end fw-bold">{Number(group.shares || 0).toLocaleString()}</td>
+                                              <td className="text-end fw-bold text-primary">{group.percentage_formatted}</td>
+                                              <td className="text-end">
+                                                <CurrencyFormatter amount={group.value} currency={roundData?.currency} />
+                                              </td>
+                                            </tr>
+
+                                            {/* Expanded individual converted investors with ALL details - VALUATION CAP, DISCOUNT, INTEREST ETC. */}
+                                            {isExpanded && detailsArr.map((investor, idx) => {
+                                              return (
+                                                <tr key={`${rowKey}-inv-${idx}`} className="table-light">
+                                                  <td className="ps-5" style={{ maxWidth: '450px' }}>
+                                                    <strong>{investor.name || 'Investor'}</strong> {" "}
+
+                                                    {investor.instrument_type && (
+                                                      <span className={`badge rounded-pill px-2 py-1 ${investor.instrument_type === 'Convertible Note' ? 'bg-info text-white' :
+                                                        investor.instrument_type === 'SAFE' ? 'bg-success text-white' :
+                                                          investor.instrument_type === 'Previous Investor' || investor.instrument_type === 'previous' ? 'bg-secondary text-white' :
+                                                            investor.instrument_type === 'New Investor' || investor.instrument_type === 'current' ? 'bg-primary text-white' :
+                                                              investor.instrument_type === 'Converted' || investor.instrument_type === 'converted' ? 'bg-warning text-dark' :
+                                                                'bg-light text-dark border'
+                                                        }`} style={{ fontSize: '0.7rem' }}>
+                                                        {investor.instrument_type}
+                                                      </span>
+                                                    )}
+
+                                                    {/* Contact Info */}
+                                                    {investor.email && (
+                                                      <div className="small text-muted">
+                                                        <i className="bi bi-envelope me-1"></i>{investor.email}
+                                                      </div>
+                                                    )}
+                                                    {investor.phone && (
+                                                      <div className="small text-muted">
+                                                        <i className="bi bi-telephone me-1"></i>{investor.phone}
+                                                      </div>
+                                                    )}
+
+                                                    {/* ✅ VALUATION CAP, DISCOUNT, CONVERSION PRICE - AS REQUESTED */}
+                                                    {(investor.discount_rate > 0 || investor.valuation_cap > 0 || investor.conversion_price > 0) && (
+                                                      <div className="small bg-light p-2 rounded mt-2 border-start border-info border-4">
+                                                        {/* Format: "20% discount • Cap: GBP £ 1,000,000.00 • Conv. Price: GBP £ 0.3240" */}
+                                                        <div className="fw-bold text-info mb-1">
+                                                          {investor.discount_rate > 0 && <span className="me-2">{investor.discount_rate}% discount</span>}
+                                                          {investor.discount_rate > 0 && investor.valuation_cap > 0 && <span className="me-2">•</span>}
+                                                          {investor.valuation_cap > 0 && (
+                                                            <span className="me-2">
+                                                              Cap: <CurrencyFormatter amount={investor.valuation_cap} currency={roundData?.currency} />
+                                                            </span>
+                                                          )}
+                                                          {(investor.discount_rate > 0 || investor.valuation_cap > 0) && investor.conversion_price > 0 && <span className="me-2">•</span>}
+                                                          {investor.conversion_price > 0 && (
+                                                            <span>
+                                                              Conv. Price: <CurrencyFormatter amount={investor.conversion_price} currency={roundData?.currency} digit={4} />
+                                                            </span>
+                                                          )}
+                                                        </div>
+
+                                                        {/* Investment Amount */}
+                                                        {investor.investment_amount > 0 && (
+                                                          <div className="mt-1">
+                                                            <span className="text-muted">Investment:</span>{' '}
+                                                            <CurrencyFormatter amount={investor.investment_amount} currency={roundData?.currency} />
+                                                          </div>
+                                                        )}
+
+                                                        {/* ✅ INTEREST RATE WITH ACCRUED INTEREST */}
+                                                        {investor.interest_rate > 0 && (
+                                                          <div className="mt-1">
+                                                            <span className="text-muted">Interest Rate:</span>{' '}
+                                                            {investor.interest_rate}% × {parseFloat(investor.years || 0).toFixed(2)} yrs
+                                                            {investor.interest_accrued > 0 && (
+                                                              <span> = <CurrencyFormatter amount={investor.interest_accrued} currency={roundData?.currency} /> accrued</span>
+                                                            )}
+                                                          </div>
+                                                        )}
+
+                                                        {/* ✅ TOTAL CONVERSION AMOUNT */}
+                                                        {investor.total_conversion_amount > 0 && (
+                                                          <div className="mt-1 fw-bold">
+                                                            <span className="text-muted">Total Conversion:</span>{' '}
+                                                            <CurrencyFormatter amount={investor.total_conversion_amount} currency={roundData?.currency} />
+                                                          </div>
+                                                        )}
+
+                                                        {/* ✅ MATURITY DATE */}
+                                                        {investor.maturity_date && (
+                                                          <div className="mt-1">
+                                                            <span className="text-muted">Maturity:</span>{' '}
+                                                            {formatIncorporationDate(investor.maturity_date)}
+                                                          </div>
+                                                        )}
+                                                      </div>
+                                                    )}
+
+                                                    {/* Round Name */}
+                                                    {investor.round_name && (
+                                                      <div className="small text-muted mt-2">
+                                                        <i className="bi bi-hash me-1"></i>
+                                                        {investor.round_name}
+                                                      </div>
+                                                    )}
+                                                  </td>
+                                                  <td>{investor.share_class_type || investor.instrument_type || 'Converted'}</td>
+                                                  <td className="text-end">{Number(investor.existing_shares || 0).toLocaleString()}</td>
+                                                  <td className="text-end text-success">{Number(investor.new_shares || investor.shares || 0).toLocaleString()}</td>
+                                                  <td className="text-end">{Number(investor.shares || 0).toLocaleString()}</td>
+                                                  <td className="text-end">{investor.percentage_formatted}</td>
+                                                  <td className="text-end">
+                                                    <CurrencyFormatter amount={investor.value} currency={roundData?.currency} />
+                                                  </td>
+                                                </tr>
+                                              );
+                                            })}
+                                          </React.Fragment>
+                                        );
+                                      })}
+
+                                      {/* 5. New (Current) Investors */}
+                                      {newGroups.map((group, i) =>
+                                        renderInvestorGroup(group, i, 'table-success', 'New Investor')
+                                      )}
+
+                                      {/* 6. Pending SAFE / Convertible Note 0 ✅ FIXED: pending_group from backend */}
+                                      {pendingGroups.map((group, groupIndex) => {
+                                        // Pre-money pending rowKey bhi fix karo
+                                        const rowKey = `post-pending-group-${group.round_id || groupIndex}-${group.instrument_type}`;
+                                        const isExpanded = !!expandedRows[rowKey];
+                                        const isConvertibleNote = group.instrument_type === 'Convertible Note';
+
+                                        return (
+                                          <React.Fragment key={rowKey}>
+                                            {/* Group Header */}
+                                            <tr
+                                              className="table-warning"
+                                              onClick={() => toggleRow(rowKey)}
+                                              style={{ cursor: 'pointer' }}
+                                            >
+                                              <td>
+                                                <strong>
+                                                  {group.instrument_type}
+                                                  {isExpanded ? <FaChevronDown className="ms-1" /> : <FaChevronRight className="ms-1" />}
+                                                </strong>
+                                                <span className="badge bg-warning text-dark ms-2">Pending</span>
+                                                <small className="text-muted d-block">{group.label}</small>
+                                                <div className="small text-muted mt-1">
+                                                  <span className="badge bg-light text-dark border me-1">{group.instrument_type}</span>
+                                                  {group.total_investment > 0 && (
+                                                    <span>
+                                                      Total: <CurrencyFormatter amount={group.total_investment} currency={roundData?.currency} />
+                                                    </span>
+                                                  )}
+                                                </div>
+                                              </td>
+                                              <td>{group.shareClassType}</td>
+                                              <td className="text-end text-muted">0</td>
+                                              <td className="text-end text-muted">0</td>
+                                              <td className="text-end text-warning fw-bold">
+                                                {group.total_potential_shares > 0
+                                                  ? '0'
+                                                  : '0'
+                                                }
+                                              </td>
+                                              <td className="text-end text-muted">0</td>
+                                              <td className="text-end text-muted">0</td>
+                                            </tr>
+
+                                            {/* Expanded individual investors */}
+                                            {isExpanded && (group.items || []).map((item, idx) => {
+                                              const inv = item.investor_details || {};
+                                              const email = inv.email || item.email || '';
+                                              const phone = inv.phone || item.phone || '';
+
+                                              return (
+                                                <tr key={`${rowKey}-inv-${idx}`} className="table-warning" style={{ opacity: 0.85 }}>
+                                                  <td className="ps-5">
+                                                    <strong>{item.name}</strong>
+                                                    {email && (
+                                                      <div className="small text-muted">
+                                                        <i className="bi bi-envelope me-1"></i>{email}
+                                                      </div>
+                                                    )}
+                                                    {phone && (
+                                                      <div className="small text-muted">
+                                                        <i className="bi bi-telephone me-1"></i>{phone}
+                                                      </div>
+                                                    )}
+
+                                                    {/* Common SAFE/Note fields */}
+                                                    <div className="small text-muted mt-1">
+                                                      {item.discount_rate > 0 && <span>{item.discount_rate}% discount • </span>}
+                                                      {item.valuation_cap > 0 && (
+                                                        <span>Cap: <CurrencyFormatter amount={item.valuation_cap} currency={roundData?.currency} /> • </span>
+                                                      )}
+                                                      {item.conversion_price > 0 && (
+                                                        <span>Conv. Price: <CurrencyFormatter amount={item.conversion_price} currency={roundData?.currency} digit={4} /></span>
+                                                      )}
+                                                    </div>
+
+                                                    {item.investment > 0 && (
+                                                      <div className="small text-muted">
+                                                        Investment: <CurrencyFormatter amount={item.investment} currency={roundData?.currency} />
+                                                      </div>
+                                                    )}
+
+                                                    {/* ✅ Convertible Note 5 extra fields */}
+                                                    {isConvertibleNote && (
+                                                      <>
+                                                        {item.interest_rate > 0 && (
+                                                          <div className="small text-muted">
+                                                            Interest: {item.interest_rate}% × {parseFloat(item.years || 0).toFixed(2)} yrs
+                                                            {item.interest_accrued > 0 && (
+                                                              <span> = <CurrencyFormatter amount={item.interest_accrued} currency={roundData?.currency} /> accrued</span>
+                                                            )}
+                                                          </div>
+                                                        )}
+                                                        {item.total_conversion_amount > 0 && (
+                                                          <div className="small text-muted">
+                                                            Total Conversion: <CurrencyFormatter amount={item.total_conversion_amount} currency={roundData?.currency} />
+                                                          </div>
+                                                        )}
+                                                        {item.maturity_date && (
+                                                          <div className="small text-muted">
+                                                            Maturity: {formatIncorporationDate(item.maturity_date)}
+                                                          </div>
+                                                        )}
+                                                      </>
+                                                    )}
+
+
+                                                  </td>
+                                                  <td>{item.instrument_type || 'Safe'}</td>
+                                                  <td className="text-end text-muted">0</td>
+                                                  <td className="text-end text-muted">0</td>
+                                                  <td className="text-end text-warning">
+                                                    {item.potential_shares > 0
+                                                      ? '0'
+                                                      : '0'
+                                                    }
+                                                  </td>
+                                                  <td className="text-end text-muted">0</td>
+                                                  <td className="text-end text-muted">0</td>
+                                                </tr>
+                                              );
+                                            })}
+                                          </React.Fragment>
+                                        );
+                                      })}
+                                    </>
+                                  );
+                                })()}
+                              </tbody>
+
+                              <tfoot className="table-light fw-bold">
+                                {(() => {
+                                  const isSAFERound = roundData.instrument === 'Safe' || roundData.instrument === 'Convertible Note';
+                                  const allItems = capTableData?.post_money?.items || [];
+
+                                  // ✅ FIXED: pending_group bhi exclude karo
+                                  const baseTotalShares = capTableData?.post_money?.totals?.total_shares
+                                    || allItems
+                                      .filter(i => i.type !== 'pending' && i.type !== 'pending_group')
+                                      .reduce((s, i) => s + (i.shares || 0), 0);
+
+                                  const totalNewShares = allItems.reduce((sum, i) => {
+                                    if (i.type === 'investor' && i.is_new_investment) return sum + (i.shares || 0);
+                                    // ✅ converted bhi new shares hain
+                                    if (i.type === 'investor' && i.is_converted) return sum + (i.shares || 0);
+                                    if (i.type === 'option_pool') return sum + (i.new_shares || 0);
+                                    return sum;
+                                  }, 0);
+
+                                  const totalExistingShares = baseTotalShares - totalNewShares;
+
+                                  // ✅ FIXED: pending_group se total_potential_shares lo
+                                  const totalPotentialShares = allItems
+                                    .filter(i => i.type === 'pending_group')
+                                    .reduce((s, i) => s + (i.total_potential_shares || 0), 0);
+
+                                  const valueValuation = isSAFERound
+                                    ? (parseFloat(capTableData?.post_money?.totals?.total_value)
+                                      || parseFloat(roundData?.pre_money) || 0)
+                                    : (parseFloat(capTableData?.post_money?.totals?.total_value)
+                                      || parseFloat(roundData?.post_money) || 0);
+
+                                  return (
+                                    <>
+                                      <tr>
+                                        <td colSpan="2">TOTAL</td>
+                                        <td className="text-end fs-5">{totalExistingShares.toLocaleString()}</td>
+                                        <td className="text-end fs-5 text-success">
+                                          {totalNewShares > 0 ? totalNewShares.toLocaleString() : '0'}
+                                        </td>
+                                        <td className="text-end fs-5 fw-bold">
+                                          {baseTotalShares.toLocaleString()}
+                                          {totalPotentialShares > 0 && (
+                                            <span className="text-warning ms-1 small">
+
+                                            </span>
+                                          )}
+                                        </td>
+                                        <td className="text-end fs-5">100%</td>
+                                        <td className="text-end fs-5 text-primary">
+                                          <CurrencyFormatter amount={valueValuation} currency={roundData?.currency} />
+                                          {isSAFERound && (
+                                            <div className="small text-muted fw-normal">(Company Value)</div>
+                                          )}
+                                        </td>
+                                      </tr>
+                                      <tr className="small text-muted">
+                                        <td colSpan="7" className="text-end pt-2">
+                                          <span className="me-3">
+                                            <strong>
+                                              {roundData?.instrument === "Safe" || roundData?.instrument === "Convertible Note"
+                                                ? "Company Valuation"
+                                                : "Pre-Money"}
+                                              :
+                                            </strong>{" "}
+                                            <CurrencyFormatter
+                                              amount={roundData?.pre_money}
+                                              currency={roundData?.currency}
+                                            />
+                                          </span>
+                                          <span className="me-3">Investment: <CurrencyFormatter amount={roundData?.investment} currency={roundData?.currency} /></span>
+                                          {roundData?.instrument !== "Safe" && roundData?.instrument !== "Convertible Note" && (
+                                            <span className="me-3">
+                                              Post-Money:{" "}
+                                              <CurrencyFormatter
+                                                amount={roundData?.post_money}
+                                                currency={roundData?.currency}
+                                              />
+                                            </span>
+                                          )}
+                                          <span>
+                                            Share Price: {
+                                              isUnpricedRound && !isConverted
+                                                ? 'N/A'
+                                                : <CurrencyFormatter amount={displaySharePrice} currency={roundData?.currency} digit={3} />
+                                            }
+                                          </span>
+                                        </td>
+                                      </tr>
+                                    </>
+                                  );
+                                })()}
+                              </tfoot>
+                            </table>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {/* ========== ROUND 0 PIE CHART - EXACTLY AS YOUR CODE ========== */}
+                    {isRound0 && (
+                      <div className="row mb-4">
+                        <div className="col-md-12">
+                          <div className="card border-0 shadow-sm">
+                            <div className="card-header bg-white border-0 d-flex justify-content-between align-items-center py-3">
+                              <div>
+                                <h5 className="mb-0 fw-bold text-dark">
+                                  <i className="bi bi-pie-chart-fill text-primary me-2"></i>
+                                  Founder Ownership Distribution - Round 0
+                                </h5>
+                                <p className="text-muted mb-0 small">Initial share allocation at incorporation</p>
+                              </div>
+                              <span className="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill">
+                                <i className="bi bi-shield me-1"></i>
+                                {formatNumber(capTableData?.pre_money?.totals?.total_shares || 0)} Total Shares
+                              </span>
+                            </div>
+                            <div className="card-body p-4">
+                              <div className="row">
+                                {/* Left Column - Pie Chart */}
+                                <div className="col-md-7">
+                                  <div style={{ height: '400px', position: 'relative' }}>
+                                    <Pie
+                                      data={{
+                                        labels: capTableData.pre_money.items
+                                          .filter(item => item.type === 'founder')
+                                          .map(item => {
+                                            if (item.founder_code) {
+                                              return `${item.founder_code} - ${item.name}`;
+                                            }
+                                            return item.name || `Founder ${capTableData.pre_money.items.indexOf(item) + 1}`;
+                                          }),
+                                        datasets: [
+                                          {
+                                            data: capTableData.pre_money.items
+                                              .filter(item => item.type === 'founder')
+                                              .map(item => item.shares),
+                                            backgroundColor: [
+                                              '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e',
+                                              '#e74a3b', '#6f42c1', '#fd7e14', '#20c9a6',
+                                              '#858796', '#5a5c69', '#2c9faf', '#b58df1'
+                                            ],
+                                            borderWidth: 2,
+                                            borderColor: '#ffffff',
+                                          }
+                                        ]
+                                      }}
+                                      options={{
+                                        responsive: true,
+                                        maintainAspectRatio: false,
+                                        cutout: '60%',
+                                        plugins: {
+                                          datalabels: {
+                                            display: function (context) {
+                                              const dataset = context.dataset;
+                                              const total = dataset.data.reduce((a, b) => a + b, 0);
+                                              const currentValue = dataset.data[context.dataIndex];
+                                              const percentage = (currentValue / total) * 100;
+                                              return percentage >= 5;
+                                            },
+                                            formatter: function (value, context) {
+                                              const dataset = context.dataset;
+                                              const total = dataset.data.reduce((a, b) => a + b, 0);
+                                              const percentage = ((value / total) * 100).toFixed(1);
+                                              return `${percentage}%`;
+                                            },
+                                            color: '#ffffff',
+                                            font: { weight: 'bold', size: 13 },
+                                            textShadow: '1px 1px 2px rgba(0,0,0,0.8)',
+                                            padding: 8,
+                                            backgroundColor: 'rgba(0,0,0,0.4)',
+                                            borderRadius: 6,
+                                          },
+                                          legend: {
+                                            position: 'bottom',
+                                            labels: {
+                                              padding: 20,
+                                              usePointStyle: true,
+                                              pointStyle: 'circle',
+                                              font: { size: 12, weight: '500' },
+                                              generateLabels: function (chart) {
+                                                const data = chart.data;
+                                                if (data.labels.length && data.datasets.length) {
+                                                  return data.labels.map((label, i) => {
+                                                    const value = data.datasets[0].data[i];
+                                                    const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                                    const item = capTableData?.pre_money?.items?.[i];
+                                                    let displayLabel = label;
+                                                    let sharesInfo = '';
+                                                    if (item) {
+                                                      sharesInfo = ` (${formatNumber(item.shares)} shares)`;
+                                                    }
+                                                    return {
+                                                      text: `${displayLabel}${sharesInfo} - ${percentage}%`,
+                                                      fillStyle: data.datasets[0].backgroundColor[i],
+                                                      strokeStyle: data.datasets[0].backgroundColor[i],
+                                                      lineWidth: 1,
+                                                      hidden: chart.getDatasetMeta(0).data[i].hidden,
+                                                      index: i,
+                                                      fontColor: '#2c3e50'
+                                                    };
+                                                  });
+                                                }
+                                                return [];
+                                              }
+                                            }
+                                          },
+                                          tooltip: {
+                                            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                                            titleColor: '#ffffff',
+                                            bodyColor: '#ffffff',
+                                            borderColor: 'rgba(255,255,255,0.2)',
+                                            borderWidth: 1,
+                                            cornerRadius: 8,
+                                            padding: 12,
+                                            displayColors: true,
+                                            callbacks: {
+                                              label: function (context) {
+                                                const label = context.label || '';
+                                                const value = context.parsed || 0;
+                                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                                const percentage = total > 0 ? ((value / total) * 100).toFixed(2) : 0;
+                                                const itemIndex = context.dataIndex;
+                                                const item = capTableData?.pre_money?.items?.[itemIndex];
+                                                return [
+                                                  `👤 ${label}`,
+                                                  `Shares: ${formatNumber(value)}`,
+                                                  `Ownership: ${percentage}%`,
+                                                  `Value: ${formatCurrency(item?.value || 0, roundData?.currency)}`,
+                                                  `Price/Share: ${formatCurrencyNotRound(item?.share_price || 0.01, roundData?.currency)}`
+                                                ];
+                                              },
+                                              title: function (tooltipItems) {
+                                                const index = tooltipItems[0].dataIndex;
+                                                const item = capTableData?.pre_money?.items?.[index];
+                                                if (item?.type === 'founder') {
+                                                  return `👤 Founder: ${item.founder_code || ''} ${item.name}`.trim();
+                                                }
+                                                return tooltipItems[0].label;
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+                                {/* Right Column - Founder Details */}
+                                <div className="col-md-5">
+                                  <div className="bg-light bg-opacity-50 rounded-3 p-4 h-100">
+                                    <h6 className="fw-bold mb-3 d-flex align-items-center">
+                                      <i className="bi bi-people-fill me-2 text-primary"></i>
+                                      Founder Details & Ownership
+                                    </h6>
+                                    <div className="founder-list" style={{ maxHeight: '320px', overflowY: 'auto' }}>
+                                      {capTableData?.pre_money?.items
+                                        ?.filter(item => item.type === 'founder')
+                                        .map((item, index) => {
+                                          const totalShares = capTableData.pre_money.totals.total_shares || 1;
+                                          const percentage = ((item.shares || 0) / totalShares * 100).toFixed(1);
+                                          const colors = ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'];
+                                          const color = colors[index % colors.length];
+                                          return (
+                                            <div key={index} className="d-flex align-items-center mb-3 p-3 bg-white rounded-3 shadow-sm">
+                                              <div
+                                                className="me-3 flex-shrink-0 d-flex align-items-center justify-content-center rounded-circle"
+                                                style={{
+                                                  width: '48px',
+                                                  height: '48px',
+                                                  backgroundColor: `${color}20`,
+                                                  color: color,
+                                                  fontSize: '18px',
+                                                  fontWeight: 'bold'
+                                                }}
+                                              >
+                                                {item.founder_code || `F${index + 1}`}
+                                              </div>
+                                              <div className="flex-grow-1">
+                                                <div className="d-flex justify-content-between align-items-center mb-1">
+                                                  <span className="fw-semibold">{item.name}</span>
+                                                  <span className="badge" style={{ backgroundColor: color, color: 'white' }}>
+                                                    {percentage}%
+                                                  </span>
+                                                </div>
+                                                <div className="d-flex justify-content-between align-items-center small">
+                                                  <span className="text-muted">
+                                                    {formatNumber(item.shares || 0)} shares
+                                                  </span>
+                                                  {item.email && (
+                                                    <span className="text-muted text-truncate" style={{ maxWidth: '150px' }}>
+                                                      {item.email}
+                                                    </span>
+                                                  )}
+                                                </div>
+                                                <div className="progress mt-2" style={{ height: '6px', backgroundColor: '#e9ecef' }}>
+                                                  <div
+                                                    className="progress-bar"
+                                                    role="progressbar"
+                                                    style={{
+                                                      width: `${percentage}%`,
+                                                      backgroundColor: color,
+                                                      transition: 'width 0.3s ease'
+                                                    }}
+                                                    aria-valuenow={percentage}
+                                                    aria-valuemin="0"
+                                                    aria-valuemax="100"
+                                                  />
+                                                </div>
+                                                <div className="d-flex mt-2 small text-muted">
+                                                  <span className="me-3">
+                                                    <i className="bi bi-tag me-1"></i>
+                                                    {item.share_type || 'common'}
+                                                  </span>
+                                                  <span>
+                                                    <i className="bi bi-check-circle me-1"></i>
+                                                    {item.voting || 'voting'}
+                                                  </span>
+                                                </div>
+                                              </div>
+                                            </div>
+                                          );
+                                        })}
+                                    </div>
+                                    <div className="mt-3 pt-3 border-top">
+                                      <div className="bg-white rounded-3 p-3">
+                                        <div className="row">
+                                          <div className="col-6">
+                                            <div className="d-flex flex-column">
+                                              <small className="text-muted">Total Founders</small>
+                                              <span className="fw-bold h5 mb-0">
+                                                {capTableData?.pre_money?.items?.filter(item => item.type === 'founder').length || 0}
+                                              </span>
+                                            </div>
+                                          </div>
+                                          <div className="col-6">
+                                            <div className="d-flex flex-column">
+                                              <small className="text-muted">Total Shares</small>
+                                              <span className="fw-bold h5 mb-0">
+                                                {formatNumber(capTableData?.pre_money?.totals?.total_shares || 0)}
+                                              </span>
+                                            </div>
+                                          </div>
+                                          <div className="col-6 mt-2">
+                                            <div className="d-flex flex-column">
+                                              <small className="text-muted">Share Price</small>
+                                              <span className="fw-bold text-primary">
+                                                <CurrencyFormatter
+                                                  amount={roundData?.share_price || 0.01}
+                                                  currency={roundData?.currency}
+                                                  digit={3}
+                                                />
+
+                                              </span>
+                                            </div>
+                                          </div>
+                                          <div className="col-6 mt-2">
+                                            <div className="d-flex flex-column">
+                                              <small className="text-muted">Total Value</small>
+                                              <span className="fw-bold text-success">
+                                                <CurrencyFormatter
+                                                  amount={capTableData?.pre_money?.totals?.total_value || 0}
+                                                  currency={roundData?.currency}
+                                                />
+
+                                              </span>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* CPAVATE Summary Tab - Keep as is */}
+                    {activeTab === 'summary' && summaryDetails && (
+                      <div className="card">
+                        <div className="card-header bg-light">
+                          <h5 className="mb-0">CPAVATE Calculation Summary</h5>
+                          <small className="text-muted">Detailed breakdown based on CPAVATE formulas</small>
+                        </div>
+                        <div className="card-body">
+                          {/* Key Metrics */}
+                          <div className="row mb-4">
+                            <div className="col-md-4">
+                              <div className="card bg-light">
+                                <div className="card-body">
+                                  <h6 className="card-subtitle mb-2 text-muted">
+                                    {roundData?.instrument === "Safe" || roundData?.instrument === "Convertible Note"
+                                      ? "Company Valuation"
+                                      : "Pre-Money Valuation"}
+                                  </h6>
+
+                                  <h4 className="card-title text-primary">
+                                    <CurrencyFormatter
+                                      amount={calculations.pre_money_valuation}
+                                      currency={roundData?.currency}
+                                    />
+                                  </h4>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="col-md-4">
+                              <div className="card bg-light">
+                                <div className="card-body">
+                                  <h6 className="card-subtitle mb-2 text-muted">Investment</h6>
+                                  <h4 className="card-title text-success">
+                                    <CurrencyFormatter
+                                      amount={roundData?.investment}
+                                      currency={roundData?.currency}
+                                    />
+                                  </h4>
+                                </div>
+                              </div>
+                            </div>
+
+                            {roundData?.instrument !== "Safe" && roundData?.instrument !== "Convertible Note" && (
+                              <div className="col-md-4">
+                                <div className="card bg-light">
+                                  <div className="card-body">
+                                    <h6 className="card-subtitle mb-2 text-muted">Post-Money Valuation</h6>
+                                    <h4 className="card-title text-info">
+                                      <CurrencyFormatter
+                                        amount={calculations.post_money_valuation}
+                                        currency={roundData?.currency}
+                                      />
+                                    </h4>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+
+                          {/* Share Details */}
+                          <div className="row mb-4">
+                            <div className="col-md-6">
+                              <div className="card">
+                                <div className="card-header">
+                                  <h6 className="mb-0">Share Price Calculation</h6>
+                                </div>
+                                <div className="card-body">
+                                  {/* Pre-Money Share Price */}
+                                  <div className="mb-3">
+                                    <p className="mb-1"><strong>Pre-Money Share Price:</strong></p>
+                                    <p className="mb-0">
+                                      <CurrencyFormatter
+                                        amount={calculations.pre_money_valuation}
+                                        currency={roundData?.currency}
+                                      />{" "}
+                                      ÷ {formatNumber(summaryDetails.totalSharesPre)} shares =
+                                      <strong className="ms-2">
+                                        <CurrencyFormatter
+                                          amount={summaryDetails.sharePricePre}
+                                          currency={roundData?.currency}
+                                          digit={4}
+                                        />
+                                      </strong>
+                                    </p>
+                                  </div>
+
+                                  {/* Post-Money Share Price */}
+                                  <div className="mb-3">
+                                    <p className="mb-1"><strong>Post-Money Share Price:</strong></p>
+                                    <p className="mb-0">
+                                      <CurrencyFormatter
+                                        amount={calculations.post_money_valuation}
+                                        currency={roundData?.currency}
+                                      />{" "}
+                                      ÷ {formatNumber(summaryDetails.totalSharesPost)} shares =
+                                      <strong className="ms-2">
+                                        <CurrencyFormatter
+                                          amount={summaryDetails.sharePricePost}
+                                          currency={roundData?.currency}
+                                          digit={4}
+                                        />
+                                      </strong>
+                                    </p>
+                                  </div>
+
+                                  {/* SAFE Information - Only for SAFE rounds */}
+                                  {roundData?.instrumentType === 'Safe' && (
+                                    <div className="mt-3 p-3 bg-light rounded">
+                                      <p className="mb-2"><strong>SAFE Information:</strong></p>
+                                      <p className="mb-1 small">
+                                        <span className="text-muted">Investment:</span>{' '}
+                                        <CurrencyFormatter amount={roundData?.investment} currency={roundData?.currency} />
+                                      </p>
+                                      <p className="mb-1 small">
+                                        <span className="text-muted">Discount Rate:</span>{' '}
+                                        <span className="badge bg-info">{calculations.discount_rate || 20}%</span>
+                                      </p>
+                                      <p className="mb-1 small">
+                                        <span className="text-muted">Valuation Cap:</span>{' '}
+                                        <CurrencyFormatter amount={calculations.valuation_cap || 1000000} currency={roundData?.currency} />
+                                      </p>
+                                      <p className="mb-0 small">
+                                        <span className="text-muted">Conversion Price:</span>{' '}
+                                        <CurrencyFormatter amount={calculations.conversion_price || 0} currency={roundData?.currency} digit={4} />
+                                      </p>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="col-md-6">
+                              <div className="card">
+                                <div className="card-header">
+                                  <h6 className="mb-0">Shareholder Values</h6>
+                                </div>
+                                <div className="card-body">
+                                  {/* Founder Value Pre-Money */}
+                                  <div className="mb-3">
+                                    <p className="mb-1"><strong>Founder Value (Pre-Money):</strong></p>
+                                    <p className="mb-0">
+                                      {formatNumber(capTableData?.pre_money?.totals?.total_founders || 0)} shares ×
+                                      <CurrencyFormatter
+                                        amount={summaryDetails.sharePricePre}
+                                        currency={roundData?.currency}
+                                        digit={4}
+                                      />
+                                      =
+                                      <strong className="ms-2 text-primary">
+                                        <CurrencyFormatter
+                                          amount={summaryDetails.founderValuePre}
+                                          currency={roundData?.currency}
+                                        />
+                                      </strong>
+                                    </p>
+                                  </div>
+
+                                  {/* Founder Value Post-Money */}
+                                  <div className="mb-3">
+                                    <p className="mb-1"><strong>Founder Value (Post-Money):</strong></p>
+                                    <p className="mb-0">
+                                      {formatNumber(capTableData?.post_money?.totals?.total_founders || 0)} shares ×
+                                      <CurrencyFormatter
+                                        amount={summaryDetails.sharePricePost}
+                                        currency={roundData?.currency}
+                                        digit={4}
+                                      />
+                                      =
+                                      <strong className="ms-2 text-success">
+                                        <CurrencyFormatter
+                                          amount={summaryDetails.founderValuePost}
+                                          currency={roundData?.currency}
+                                        />
+                                      </strong>
+                                    </p>
+                                  </div>
+
+                                  {/* Option Pool Value */}
+                                  <div className="mb-3">
+                                    <p className="mb-1"><strong>Option Pool Value (Post-Money):</strong></p>
+                                    <p className="mb-0">
+                                      {formatNumber(capTableData?.post_money?.totals?.total_option_pool || 0)} shares ×
+                                      <CurrencyFormatter
+                                        amount={summaryDetails.sharePricePost}
+                                        currency={roundData?.currency}
+                                        digit={4}
+                                      />
+                                      =
+                                      <strong className="ms-2 text-warning">
+                                        <CurrencyFormatter
+                                          amount={summaryDetails.optionPoolValue}
+                                          currency={roundData?.currency}
+                                        />
+                                      </strong>
+                                    </p>
+                                  </div>
+
+                                  {/* Investor Value (Previous + New) */}
+                                  <div className="mb-3">
+                                    <p className="mb-1"><strong>Investor Value (Post-Money):</strong></p>
+                                    <p className="mb-0">
+                                      {formatNumber(capTableData?.post_money?.totals?.total_investors || 0)} shares ×
+                                      <CurrencyFormatter
+                                        amount={summaryDetails.sharePricePost}
+                                        currency={roundData?.currency}
+                                        digit={4}
+                                      />
+                                      =
+                                      <strong className="ms-2 text-info">
+                                        <CurrencyFormatter
+                                          amount={summaryDetails.investorValue}
+                                          currency={roundData?.currency}
+                                        />
+                                      </strong>
+                                    </p>
+                                  </div>
+
+                                  {/* SAFE Investors - Only for SAFE rounds */}
+                                  {/* ✅ Safe OR Convertible Note dono ke liye show karo */}
+                                  {(roundData?.instrumentType === 'Safe' || roundData?.instrumentType === 'Convertible Note') && (
+                                    <div className="mt-3 p-3 bg-warning bg-opacity-10 rounded">
+
+                                      {/* ✅ Per group heading + investors */}
+                                      {(() => {
+                                        const pendingGroups = capTableData?.post_money?.items?.filter(i => i.type === 'pending_group') || [];
+
+                                        return pendingGroups.map((group, groupIdx) => {
+                                          const groupInvestors = group.items || [];
+
+                                          // ✅ dynamic label
+                                          const groupLabel = group.instrument_type === 'Convertible Note'
+                                            ? 'Convertible Note Investors'
+                                            : 'SAFE Investors';
+
+                                          return (
+                                            <div key={groupIdx} className="mb-3">
+                                              <p className="mb-2"><strong>{groupLabel}:</strong></p>
+
+                                              {groupInvestors.map((item, idx) => {
+                                                const invDetails = item.investor_details || {};
+                                                const investorName = invDetails.firstName || invDetails.lastName
+                                                  ? `${invDetails.firstName || ''} ${invDetails.lastName || ''}`.trim()
+                                                  : item.name || `${group.instrument_type} Investor`;
+
+                                                return (
+                                                  <div key={idx} className="mb-2 pb-2 border-bottom">
+                                                    <p className="mb-1 small fw-bold">{investorName}</p>
+                                                    <div className="d-flex justify-content-between small">
+                                                      <span>Investment:</span>
+                                                      <CurrencyFormatter amount={item.investment} currency={roundData?.currency} />
+                                                    </div>
+                                                    <div className="d-flex justify-content-between small">
+                                                      <span>Potential Shares:</span>
+                                                      <span>{formatNumber(item.potential_shares || 0)}</span>
+                                                    </div>
+                                                    {item.discount_rate > 0 && (
+                                                      <div className="d-flex justify-content-between small">
+                                                        <span>Discount:</span>
+                                                        <span>{item.discount_rate}%</span>
+                                                      </div>
+                                                    )}
+                                                    {item.valuation_cap > 0 && (
+                                                      <div className="d-flex justify-content-between small">
+                                                        <span>Valuation Cap:</span>
+                                                        <CurrencyFormatter amount={item.valuation_cap} currency={roundData?.currency} />
+                                                      </div>
+                                                    )}
+                                                    {/* ✅ Convertible Note extra fields */}
+                                                    {item.interest_rate > 0 && (
+                                                      <div className="d-flex justify-content-between small">
+                                                        <span>Interest Rate:</span>
+                                                        <span>{item.interest_rate}%</span>
+                                                      </div>
+                                                    )}
+                                                    {item.interest_accrued > 0 && (
+                                                      <div className="d-flex justify-content-between small">
+                                                        <span>Interest Accrued:</span>
+                                                        <CurrencyFormatter amount={item.interest_accrued} currency={roundData?.currency} />
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                );
+                                              })}
+
+                                              {/* ✅ Per-group totals — dynamic label */}
+                                              <div className="mt-2 pt-2">
+                                                <div className="d-flex justify-content-between fw-bold">
+                                                  <span>Total {group.instrument_type} Investment:</span>
+                                                  <CurrencyFormatter amount={group.total_investment} currency={roundData?.currency} />
+                                                </div>
+                                                <div className="d-flex justify-content-between fw-bold">
+                                                  <span>Total Potential Shares:</span>
+                                                  <span>{formatNumber(group.total_potential_shares || 0)}</span>
+                                                </div>
+                                              </div>
+                                            </div>
+                                          );
+                                        });
+                                      })()}
+
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Detailed Breakdown */}
+                          <div className="card mb-4">
+                            <div className="card-header">
+                              <h6 className="mb-0">Ownership Breakdown</h6>
+                            </div>
+                            <div className="card-body">
+                              <div className="table-responsive">
+                                <table className="table table-sm">
+                                  <thead>
+                                    <tr>
+                                      <th>Shareholder Type</th>
+                                      <th className="text-end">Shares</th>
+                                      <th className="text-end">% Ownership</th>
+                                      <th className="text-end">Value (Post-Money)</th>
+                                      <th className="text-end">Value per Share</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {/* Founders */}
+                                    <tr>
+                                      <td><strong>Founders</strong></td>
+                                      <td className="text-end">{formatNumber(capTableData?.post_money?.totals?.total_founders || 0)}</td>
+                                      <td className="text-end">{formatPercentage(
+                                        ((capTableData?.post_money?.totals?.total_founders || 0) / summaryDetails.totalSharesPost) * 100
+                                      )}</td>
+                                      <td className="text-end text-primary">
+                                        <CurrencyFormatter
+                                          amount={summaryDetails.founderValuePost}
+                                          currency={roundData?.currency}
+                                        />
+                                      </td>
+                                      <td className="text-end">
+                                        <CurrencyFormatter
+                                          amount={summaryDetails.sharePricePost}
+                                          currency={roundData?.currency}
+                                          digit={3}
+                                        />
+                                      </td>
+                                    </tr>
+
+                                    {/* Option Pool */}
+                                    <tr>
+                                      <td><strong>Option Pool</strong></td>
+                                      <td className="text-end">{formatNumber(capTableData?.post_money?.totals?.total_option_pool || 0)}</td>
+                                      <td className="text-end">{formatPercentage(
+                                        ((capTableData?.post_money?.totals?.total_option_pool || 0) / summaryDetails.totalSharesPost) * 100
+                                      )}</td>
+                                      <td className="text-end text-warning">
+                                        <CurrencyFormatter
+                                          amount={summaryDetails.optionPoolValue}
+                                          currency={roundData?.currency}
+                                        />
+                                      </td>
+                                      <td className="text-end">
+                                        <CurrencyFormatter
+                                          amount={summaryDetails.sharePricePost}
+                                          currency={roundData?.currency}
+                                          digit={3}
+                                        />
+                                      </td>
+                                    </tr>
+
+                                    {/* Investors (Previous + New) */}
+                                    <tr>
+                                      <td><strong>Investors</strong></td>
+                                      <td className="text-end">{formatNumber(capTableData?.post_money?.totals?.total_investors || 0)}</td>
+                                      <td className="text-end">{formatPercentage(
+                                        ((capTableData?.post_money?.totals?.total_investors || 0) / summaryDetails.totalSharesPost) * 100
+                                      )}</td>
+                                      <td className="text-end text-success">
+                                        <CurrencyFormatter
+                                          amount={summaryDetails.investorValue}
+                                          currency={roundData?.currency}
+                                        />
+                                      </td>
+                                      <td className="text-end">
+                                        <CurrencyFormatter
+                                          amount={summaryDetails.sharePricePost}
+                                          currency={roundData?.currency}
+                                          digit={3}
+                                        />
+                                      </td>
+                                    </tr>
+
+                                    {/* ✅ SAFE Investors (Pending) */}
+                                    {(() => {
+                                      const pendingItems = capTableData?.post_money?.items?.filter(i => i.type === 'pending_group') || [];
+
+                                      if (pendingItems.length === 0) return null;
+
+                                      return pendingItems.map((group, groupIdx) => {
+                                        const totalInvestment = parseFloat(group.total_investment) || 0;
+                                        const totalPotentialShares = group.total_potential_shares || 0;
+                                        const investorCount = group.items?.length || 0;
+
+                                        // ✅ instrument_type se label decide karo
+                                        const label = group.instrument_type === 'Convertible Note'
+                                          ? 'Convertible Note Investors'
+                                          : 'SAFE Investors';
+
+                                        const badgeColor = group.instrument_type === 'Convertible Note'
+                                          ? 'bg-info text-dark'
+                                          : 'bg-warning text-dark';
+
+                                        const rowColor = group.instrument_type === 'Convertible Note'
+                                          ? 'table-info'
+                                          : 'table-warning';
+
+                                        return (
+                                          <tr key={groupIdx} className={rowColor}>
+                                            <td>
+                                              <strong>{label}</strong>
+                                              <span className={`badge ${badgeColor} ms-2`}>Pending</span>
+                                              <small className="text-muted d-block">
+                                                {investorCount} investor{investorCount > 1 ? 's' : ''}
+                                              </small>
+                                              {group.round_name && (
+                                                <small className="text-muted d-block">{group.round_name}</small>
+                                              )}
+                                            </td>
+                                            <td className="text-end text-muted">
+                                              {totalPotentialShares > 0 ? '0' : '0'}
+
+                                            </td>
+                                            <td className="text-end text-muted">
+                                              {totalPotentialShares > 0 ? '0%' : '0%'}
+                                            </td>
+                                            <td className="text-end">
+                                              <CurrencyFormatter amount={totalInvestment} currency={roundData?.currency} />
+                                              <small className="d-block text-muted">investment</small>
+                                            </td>
+                                            <td className="text-end text-muted">
+                                              {group.items?.map((inv, i) => (
+                                                <div key={i}>
+                                                  <small className="text-muted">{inv.name}: </small>
+                                                  {inv.discount_rate > 0 && (
+                                                    <span className="badge bg-light text-dark me-1">{inv.discount_rate}% disc</span>
+                                                  )}
+                                                  {inv.valuation_cap > 0 && (
+                                                    <span className="badge bg-light text-dark me-1">
+                                                      cap: {formatCurrency(inv.valuation_cap, roundData?.currency)}
+                                                    </span>
+                                                  )}
+                                                  {inv.interest_rate > 0 && (
+                                                    <span className="badge bg-light text-dark">
+                                                      {inv.interest_rate}% interest
+                                                    </span>
+                                                  )}
+                                                </div>
+                                              ))}
+                                            </td>
+                                          </tr>
+                                        );
+                                      });
+                                    })()}
+
+                                    {/* TOTAL */}
+                                    <tr className="table-active">
+                                      <td><strong>TOTAL</strong></td>
+                                      <td className="text-end"><strong>{formatNumber(summaryDetails.totalSharesPost)}</strong></td>
+                                      <td className="text-end"><strong>100%</strong></td>
+                                      <td className="text-end">
+                                        <strong>
+                                          <CurrencyFormatter
+                                            amount={summaryDetails.totalSharesPost * summaryDetails.sharePricePost}
+                                            currency={roundData?.currency}
+                                          />
+                                        </strong>
+                                      </td>
+                                      <td className="text-end">
+                                        <strong>
+                                          <CurrencyFormatter
+                                            amount={summaryDetails.sharePricePost}
+                                            currency={roundData?.currency}
+                                            digit={3}
+                                          />
+                                        </strong>
+                                      </td>
+                                    </tr>
+
+                                    {/* SAFE Summary Row - Additional Info */}
+                                    {(() => {
+                                      const pendingItems = capTableData?.post_money?.items?.filter(i => i.type === 'pending_group') || [];
+                                      if (pendingItems.length === 0) return null;
+
+                                      const totalInvestment = pendingItems.reduce((sum, item) => sum + (parseFloat(item.total_investment) || 0), 0);
+                                      const totalPotentialShares = pendingItems.reduce((sum, item) => sum + (item.total_potential_shares || 0), 0);
+                                      const fullyDilutedShares = summaryDetails.totalSharesPost + 0;
+
+                                      // ✅ instrument types dynamically nikalo
+                                      const instrumentTypes = [...new Set(pendingItems.map(i => i.instrument_type).filter(Boolean))];
+                                      const label = instrumentTypes.length > 1
+                                        ? 'SAFE / Convertible Note'
+                                        : instrumentTypes[0] === 'Convertible Note'
+                                          ? 'Convertible Note'
+                                          : 'SAFE';
+
+                                      return (
+                                        <tr className="small text-muted">
+                                          <td colSpan="5" className="pt-3">
+                                            <div className="d-flex justify-content-between flex-wrap gap-2">
+                                              <span>💰 Total {label} Investment: <CurrencyFormatter amount={totalInvestment} currency={roundData?.currency} /></span>
+                                              <span>📈 Fully Diluted Shares: {formatNumber(fullyDilutedShares)}</span>
+                                              {roundData?.instrument !== "Safe" && roundData?.instrument !== "Convertible Note" && (
+                                                <span>
+                                                  🎯 Post-Money Valuation:{" "}
+                                                  <CurrencyFormatter
+                                                    amount={summaryDetails.totalSharesPost * summaryDetails.sharePricePost}
+                                                    currency={roundData?.currency}
+                                                  />
+                                                </span>
+                                              )}
+                                            </div>
+                                            {/* ✅ per-group breakdown agar multiple types hain */}
+                                            {pendingItems.length > 1 && (
+                                              <div className="d-flex gap-3 mt-1">
+                                                {pendingItems.map((group, idx) => (
+                                                  <span key={idx} className="text-muted">
+                                                    {group.instrument_type}: <CurrencyFormatter amount={group.total_investment} currency={roundData?.currency} />
+
+                                                  </span>
+                                                ))}
+                                              </div>
+                                            )}
+                                          </td>
+                                        </tr>
+                                      );
+                                    })()}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Charts */}
+                          {(preMoneyChartData || postMoneyChartData) && (
+                            <div className="row">
+                              {/* Pre-Money Chart */}
+                              {preMoneyChartData && (
+                                <div className="col-md-6">
+                                  <div className="card">
+                                    <div className="card-header d-flex justify-content-between align-items-center">
+                                      <h6 className="mb-0">Pre-Money Distribution</h6>
+                                      <span className="badge bg-primary">
+                                        Total: {formatNumber(
+                                          capTableData?.pre_money?.total_shares ||
+                                          capTableData?.pre_money?.totals?.total_shares || 0
+                                        )} shares
+                                      </span>
+                                    </div>
+                                    <div className="card-body">
+                                      <div className="row">
+
+                                        {/* Pie Chart */}
+                                        <div className="col-md-12" style={{ height: '300px' }}>
+                                          <Pie
+                                            data={preMoneyChartData}
+                                            options={{
+                                              responsive: true,
+                                              maintainAspectRatio: false,
+                                              cutout: '50%',
+                                              plugins: {
+                                                datalabels: {
+                                                  display: (context) => {
+                                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                                    return total > 0
+                                                      ? (context.dataset.data[context.dataIndex] / total) * 100 >= 3
+                                                      : false;
+                                                  },
+                                                  formatter: (value, context) => {
+                                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                                    return total > 0 ? ((value / total) * 100).toFixed(2) + '%' : '0%';
+                                                  },
+                                                  color: '#000',
+                                                  font: { weight: 'bold', size: 16 },
+                                                  textShadow: '1px 1px 2px rgba(0,0,0,0.8)',
+                                                  padding: 6,
+                                                },
+                                                legend: { display: false },
+                                                tooltip: {
+                                                  backgroundColor: 'rgba(0,0,0,0.85)',
+                                                  titleColor: '#fff',
+                                                  bodyColor: '#fff',
+                                                  borderColor: '#333',
+                                                  borderWidth: 1,
+                                                  cornerRadius: 6,
+                                                  padding: 12,
+                                                  displayColors: true,
+                                                  callbacks: {
+                                                    title: (tooltipItems) => {
+                                                      const expandedItems = preMoneyChartData?._expandedItems || [];
+                                                      const item = expandedItems[tooltipItems[0].dataIndex];
+                                                      return item?._displayName || tooltipItems[0].label;
+                                                    },
+                                                    label: (context) => {
+                                                      const expandedItems = preMoneyChartData?._expandedItems || [];
+                                                      const item = expandedItems[context.dataIndex];
+                                                      const value = context.parsed || 0;
+                                                      const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                                      const pct = total > 0 ? (value / total) * 100 : 0;
+                                                      const preMoneyVal = parseFloat(
+                                                        capTableData?.pre_money?.pre_money_valuation || roundData?.pre_money
+                                                      ) || 0;
+                                                      const valueAmount = (pct * preMoneyVal) / 100;
+
+                                                      if (item?.type === 'pending') {
+                                                        return [
+                                                          `Investment: ${formatCurrency(parseFloat(item.investment || 0), roundData?.currency)}`,
+                                                          `Potential Shares: ${formatNumber(item.potential_shares || 0)}`,
+                                                        ];
+                                                      }
+
+                                                      return [
+                                                        `Shares: ${formatNumber(value)}`,
+                                                        `Ownership: ${pct.toFixed(2)}%`,
+                                                        `Value: ${formatCurrency(valueAmount, roundData?.currency)}`,
+                                                        `Price/Share: ${formatCurrencyNotRound(total > 0 ? preMoneyVal / total : 0, roundData?.currency)}`,
+                                                      ];
+                                                    },
+                                                    afterLabel: (context) => {
+                                                      const expandedItems = preMoneyChartData?._expandedItems || [];
+                                                      const item = expandedItems[context.dataIndex];
+                                                      if (!item) return null;
+                                                      const details = [];
+
+                                                      if (item._email) details.push(`📧 ${item._email}`);
+                                                      if (item._phone) details.push(`📞 ${item._phone}`);
+
+                                                      if (item.type === 'pending') {
+                                                        if (item.discount_rate) details.push(`🏷️ Discount: ${item.discount_rate}%`);
+                                                        if (item.valuation_cap) details.push(`🎯 Cap: ${formatCurrency(item.valuation_cap, roundData?.currency)}`);
+                                                        if (item.conversion_price) details.push(`💱 Conv. Price: ${formatCurrencyNotRound(item.conversion_price, roundData?.currency)}`);
+                                                      }
+
+                                                      if (item._isExpanded && item._groupName) {
+                                                        details.push(`📋 Round: ${item._groupName}`);
+                                                      }
+
+                                                      return details.length > 0 ? details : null;
+                                                    },
+                                                  },
+                                                },
+                                              },
+                                            }}
+                                          />
+                                        </div>
+
+                                        {/* Legend 0 _expandedItems use karo */}
+                                        <div className="col-md-12">
+                                          <div className="chart-legend-permanent h-100">
+                                            <h6 className="mb-3 text-center fw-semibold">Ownership Distribution</h6>
+                                            <div className="legend-list" style={{ maxHeight: '240px', overflowY: 'auto' }}>
+                                              {(preMoneyChartData?._expandedItems || []).map((item, index) => {
+                                                const bgColors = preMoneyChartData.datasets[0].backgroundColor;
+                                                const color = Array.isArray(bgColors) ? bgColors[index] : bgColors;
+                                                const total = preMoneyChartData.datasets[0].data.reduce((a, b) => a + b, 0);
+                                                const pct = total > 0 ? ((item._shares / total) * 100).toFixed(2) : '0.0';
+
+                                                return (
+                                                  <div key={index} className="legend-item d-flex align-items-start mb-2 p-2 border rounded">
+                                                    <div
+                                                      className="legend-color me-2 mt-1 flex-shrink-0"
+                                                      style={{
+                                                        width: '14px', height: '14px', borderRadius: '50%',
+                                                        backgroundColor: item.type === 'pending' ? '#FFC107' : color,
+                                                        border: '2px solid #fff', boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                                                      }}
+                                                    />
+                                                    <div className="legend-text flex-grow-1">
+                                                      <div className="d-flex justify-content-between align-items-center">
+                                                        <small className="fw-semibold" style={{ maxWidth: '160px', whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                                                          {item._displayName}
+                                                        </small>
+                                                        {item.type === 'pending'
+                                                          ? <span className="badge bg-warning text-dark ms-2 flex-shrink-0">Pending</span>
+                                                          : <span className="badge bg-primary ms-2 flex-shrink-0">{pct}%</span>
+                                                        }
+                                                      </div>
+
+                                                      <small className="text-muted d-block">
+                                                        {formatNumber(item._shares)} shares
+                                                        {item.type === 'pending' && item.potential_shares > 0 && (
+                                                          <span className="text-warning ms-2">(potential: {formatNumber(item.potential_shares)})</span>
+                                                        )}
+                                                      </small>
+
+                                                      {item._email && (
+                                                        <small className="text-muted d-block">
+                                                          <i className="bi bi-envelope me-1"></i>{item._email}
+                                                        </small>
+                                                      )}
+                                                      {item._phone && (
+                                                        <small className="text-muted d-block">
+                                                          <i className="bi bi-telephone me-1"></i>{item._phone}
+                                                        </small>
+                                                      )}
+
+                                                      {item._isExpanded && item._groupName && (
+                                                        <small className="text-muted d-block">📋 {item._groupName}</small>
+                                                      )}
+
+                                                      {item.type === 'pending' && (
+                                                        <>
+                                                          {parseFloat(item.investment) > 0 && (
+                                                            <small className="text-muted d-block">
+                                                              💰 Investment: {formatCurrency(parseFloat(item.investment), roundData?.currency)}
+                                                            </small>
+                                                          )}
+                                                          {item.discount_rate > 0 && <small className="text-muted d-block">🏷️ Discount: {item.discount_rate}%</small>}
+                                                          {item.valuation_cap > 0 && <small className="text-muted d-block">🎯 Cap: {formatCurrency(item.valuation_cap, roundData?.currency)}</small>}
+                                                          {item.conversion_price > 0 && <small className="text-muted d-block">💱 {formatCurrencyNotRound(item.conversion_price, roundData?.currency)}</small>}
+                                                        </>
+                                                      )}
+                                                    </div>
+                                                  </div>
+                                                );
+                                              })}
+                                            </div>
+
+                                            <div className="legend-total mt-3 pt-3 border-top">
+                                              <div className="d-flex justify-content-between mb-1">
+                                                <small className="text-muted">Total Shares:</small>
+                                                <small className="fw-semibold">
+                                                  {formatNumber(
+                                                    capTableData?.pre_money?.total_shares ||
+                                                    capTableData?.pre_money?.totals?.total_shares || 0
+                                                  )}
+                                                </small>
+                                              </div>
+                                              <div className="d-flex justify-content-between">
+                                                <small className="text-muted">
+                                                  {roundData?.instrument === "Safe" || roundData?.instrument === "Convertible Note"
+                                                    ? "Company Valuation:"
+                                                    : "Pre-Money Value:"}
+                                                </small>
+
+                                                <small className="fw-semibold">
+                                                  <CurrencyFormatter
+                                                    amount={capTableData?.pre_money?.pre_money_valuation || roundData?.pre_money || 0}
+                                                    currency={roundData?.currency}
+                                                  />
+                                                </small>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      {/* Stats */}
+                                      <div className="mt-3">
+                                        <div className="row">
+                                          <div className="col-md-4">
+                                            <div className="text-center">
+                                              <p className="mb-1 text-muted"><small>Total Shares</small></p>
+                                              <h6 className="mb-0">
+                                                {formatNumber(
+                                                  capTableData?.pre_money?.total_shares ||
+                                                  capTableData?.pre_money?.totals?.total_shares || 0
+                                                )}
+                                              </h6>
+                                            </div>
+                                          </div>
+                                          <div className="col-md-4">
+                                            <div className="text-center">
+                                              <p className="mb-1 text-muted"><small>Option Pool</small></p>
+                                              <h6 className="mb-0">
+                                                {formatPercentage((() => {
+                                                  const op = capTableData?.pre_money?.items?.find(i => i.type === 'option_pool');
+                                                  const total = capTableData?.pre_money?.total_shares
+                                                    || capTableData?.pre_money?.totals?.total_shares || 1;
+                                                  return op ? ((op.shares || 0) / total * 100) : 0;
+                                                })())}
+                                              </h6>
+                                            </div>
+                                          </div>
+                                          <div className="col-md-4">
+                                            <div className="text-center">
+                                              <p className="mb-1 text-muted">
+                                                <small>
+                                                  {roundData?.instrument === "Safe" || roundData?.instrument === "Convertible Note"
+                                                    ? "Company Valuation"
+                                                    : "Pre-Money Valuation"}
+                                                </small>
+                                              </p>
+
+                                              <h6 className="mb-0">
+                                                <CurrencyFormatter
+                                                  amount={capTableData?.pre_money?.pre_money_valuation || roundData?.pre_money || 0}
+                                                  currency={roundData?.currency}
+                                                />
+                                              </h6>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Post-Money Chart */}
+                              {postMoneyChartData && (
+                                <div className="col-md-6">
+                                  <div className="card">
+                                    <div className="card-header d-flex justify-content-between align-items-center">
+                                      <h6 className="mb-0">Post-Money Distribution</h6>
+                                      <span className="badge bg-success">
+                                        Total: {formatNumber(capTableData?.post_money?.totals?.total_shares || 0)} shares
+                                      </span>
+                                    </div>
+                                    <div className="card-body">
+                                      <div className="row">
+
+                                        {/* Pie Chart */}
+                                        <div className="col-md-12" style={{ height: '300px' }}>
+                                          <Pie
+                                            data={postMoneyChartData}
+                                            options={{
+                                              responsive: true,
+                                              maintainAspectRatio: false,
+                                              cutout: '50%',
+                                              plugins: {
+                                                datalabels: {
+                                                  display: (context) => {
+                                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                                    return total > 0
+                                                      ? (context.dataset.data[context.dataIndex] / total) * 100 >= 3
+                                                      : false;
+                                                  },
+                                                  formatter: (value, context) => {
+                                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                                    return total > 0 ? ((value / total) * 100).toFixed(2) + '%' : '0%';
+                                                  },
+                                                  color: '#000',
+                                                  font: { weight: 'bold', size: 16 },
+                                                  textShadow: '1px 1px 2px rgba(0,0,0,0.8)',
+                                                  padding: 6,
+                                                },
+                                                legend: { display: false },
+                                                tooltip: {
+                                                  backgroundColor: 'rgba(0,0,0,0.85)',
+                                                  titleColor: '#fff',
+                                                  bodyColor: '#fff',
+                                                  borderColor: '#333',
+                                                  borderWidth: 1,
+                                                  cornerRadius: 6,
+                                                  padding: 12,
+                                                  displayColors: true,
+                                                  callbacks: {
+                                                    title: (tooltipItems) => {
+                                                      const expandedItems = postMoneyChartData?._expandedItems || [];
+                                                      const item = expandedItems[tooltipItems[0].dataIndex];
+                                                      return item?._displayName || tooltipItems[0].label;
+                                                    },
+                                                    label: (context) => {
+                                                      const expandedItems = postMoneyChartData?._expandedItems || [];
+                                                      const item = expandedItems[context.dataIndex];
+                                                      const value = context.parsed || 0;
+                                                      const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                                      const pct = total > 0 ? (value / total) * 100 : 0;
+
+                                                      const isSAFE = capTableData?.post_money?.totals?.instrumentType === 'Safe';
+                                                      const valuation = isSAFE
+                                                        ? (parseFloat(capTableData?.post_money?.totals?.total_value) || parseFloat(roundData?.pre_money) || 0)
+                                                        : (parseFloat(roundData?.post_money) || 0);
+                                                      const valueAmount = (pct * valuation) / 100;
+
+                                                      if (item?.type === 'pending') {
+                                                        return [
+                                                          `Investment: ${formatCurrency(parseFloat(item.investment || 0), roundData?.currency)}`,
+                                                          `Potential Shares: ${formatNumber(item.potential_shares || 0)}`,
+                                                        ];
+                                                      }
+
+                                                      return [
+                                                        `Shares: ${formatNumber(value)}`,
+                                                        `Ownership: ${pct.toFixed(2)}%`,
+                                                        `Value: ${formatCurrency(valueAmount, roundData?.currency)}`,
+                                                      ];
+                                                    },
+                                                    afterLabel: (context) => {
+                                                      const expandedItems = postMoneyChartData?._expandedItems || [];
+                                                      const item = expandedItems[context.dataIndex];
+                                                      if (!item) return null;
+
+                                                      const details = [];
+
+                                                      if (item._email) details.push(`📧 ${item._email}`);
+                                                      if (item._phone) details.push(`📞 ${item._phone}`);
+
+                                                      if (item.type === 'investor') {
+                                                        if (item._investmentAmount > 0) {
+                                                          details.push(`💰 Investment: ${formatCurrency(item._investmentAmount, roundData?.currency)}`);
+                                                        }
+                                                        if (item._roundName) {
+                                                          details.push(`📋 Round: ${item._roundName}`);
+                                                        }
+                                                      }
+
+                                                      if (item.type === 'pending') {
+                                                        if (item.discount_rate) details.push(`🏷️ Discount: ${item.discount_rate}%`);
+                                                        if (item.valuation_cap) details.push(`🎯 Cap: ${formatCurrency(item.valuation_cap, roundData?.currency)}`);
+                                                        if (item.conversion_price) details.push(`💱 Conv. Price: ${formatCurrencyNotRound(item.conversion_price, roundData?.currency)}`);
+                                                      }
+
+                                                      if (item.type === 'option_pool' && item._new_shares > 0) {
+                                                        details.push(`🆕 New Shares: ${formatNumber(item._new_shares)}`);
+                                                      }
+
+                                                      return details.length > 0 ? details : null;
+                                                    },
+                                                  },
+                                                },
+                                              },
+                                            }}
+                                          />
+                                        </div>
+
+                                        {/* Legend with expanded items */}
+                                        <div className="col-md-12">
+                                          <div className="chart-legend-permanent h-100">
+                                            <h6 className="mb-3 text-center fw-semibold">Ownership Distribution</h6>
+                                            <div className="legend-list" style={{ maxHeight: '240px', overflowY: 'auto' }}>
+                                              {(postMoneyChartData?._expandedItems || []).map((item, index) => {
+                                                const bgColors = postMoneyChartData.datasets[0].backgroundColor;
+                                                const color = Array.isArray(bgColors) ? bgColors[index] : bgColors;
+                                                const total = postMoneyChartData.datasets[0].data.reduce((a, b) => a + b, 0);
+                                                const pct = total > 0 ? ((item._shares / total) * 100).toFixed(1) : '0.0';
+
+                                                return (
+                                                  <div key={index} className="legend-item d-flex align-items-start mb-2 p-2 border rounded">
+                                                    <div
+                                                      className="legend-color me-2 mt-1 flex-shrink-0"
+                                                      style={{
+                                                        width: '14px', height: '14px', borderRadius: '50%',
+                                                        backgroundColor: item.type === 'pending' ? '#FFC107' : color,
+                                                        border: '2px solid #fff', boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                                                      }}
+                                                    />
+                                                    <div className="legend-text flex-grow-1">
+                                                      <div className="d-flex justify-content-between align-items-center">
+                                                        <small className="fw-semibold" style={{ maxWidth: '160px', whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                                                          {item._displayName}
+                                                        </small>
+                                                        {item.type === 'pending'
+                                                          ? <span className="badge bg-warning text-dark ms-2 flex-shrink-0">Pending</span>
+                                                          : <span className="badge bg-success ms-2 flex-shrink-0">{pct}%</span>
+                                                        }
+                                                      </div>
+
+                                                      <small className="text-muted d-block">
+                                                        {formatNumber(item._shares)} shares
+                                                        {item.type === 'pending' && item.potential_shares > 0 && (
+                                                          <span className="text-warning ms-2">(potential: {formatNumber(item.potential_shares)})</span>
+                                                        )}
+                                                      </small>
+
+                                                      {item._email && (
+                                                        <small className="text-muted d-block">
+                                                          <i className="bi bi-envelope me-1"></i>{item._email}
+                                                        </small>
+                                                      )}
+                                                      {item._phone && (
+                                                        <small className="text-muted d-block">
+                                                          <i className="bi bi-telephone me-1"></i>{item._phone}
+                                                        </small>
+                                                      )}
+
+                                                      {item.type === 'investor' && item._roundName && (
+                                                        <small className="text-muted d-block">
+                                                          <i className="bi bi-hash me-1"></i>{item._roundName}
+                                                        </small>
+                                                      )}
+
+                                                      {item.type === 'investor' && item._investmentAmount > 0 && (
+                                                        <small className="text-muted d-block">
+                                                          <i className="bi bi-cash me-1"></i>
+                                                          {formatCurrency(item._investmentAmount, roundData?.currency)}
+                                                        </small>
+                                                      )}
+
+                                                      {item.type === 'pending' && (
+                                                        <>
+                                                          {item.investment > 0 && (
+                                                            <small className="text-muted d-block">
+                                                              💰 {formatCurrency(item.investment, roundData?.currency)}
+                                                            </small>
+                                                          )}
+                                                          {item.discount_rate > 0 && (
+                                                            <small className="text-muted d-block">🏷️ Discount: {item.discount_rate}%</small>
+                                                          )}
+                                                          {item.valuation_cap > 0 && (
+                                                            <small className="text-muted d-block">
+                                                              🎯 Cap: {formatCurrency(item.valuation_cap, roundData?.currency)}
+                                                            </small>
+                                                          )}
+                                                        </>
+                                                      )}
+                                                    </div>
+                                                  </div>
+                                                );
+                                              })}
+                                            </div>
+
+                                            {/* Summary */}
+                                            <div className="legend-total mt-3 pt-3 border-top">
+                                              <div className="d-flex justify-content-between mb-1">
+                                                <small className="text-muted">Total Shares:</small>
+                                                <small className="fw-semibold">
+                                                  {formatNumber(capTableData?.post_money?.totals?.total_shares || 0)}
+                                                </small>
+                                              </div>
+                                              <div className="d-flex justify-content-between mb-1">
+                                                <small className="text-muted">New Shares:</small>
+                                                <small className="fw-semibold text-success">
+                                                  {formatNumber(capTableData?.post_money?.totals?.total_new_shares || 0)}
+                                                </small>
+                                              </div>
+                                              {roundData?.instrument !== "Safe" && roundData?.instrument !== "Convertible Note" && (
+                                                <div className="d-flex justify-content-between">
+                                                  <small className="text-muted">Post-Money Value:</small>
+                                                  <small className="fw-semibold">
+                                                    <CurrencyFormatter
+                                                      amount={capTableData?.post_money?.totals?.total_value || 0}
+                                                      currency={roundData?.currency}
+                                                    />
+                                                  </small>
+                                                </div>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                              <div className="col-md-12 mt-2">
+                                <div className="card">
+                                  <div className="card-header d-flex justify-content-between align-items-center">
+                                    <h6 className="mb-0">Ownership Percentage Comparison</h6>
+                                    <div>
+                                      <span className="badge bg-primary me-2">Pre-Money %</span>
+                                      <span className="badge bg-danger">Post-Money %</span>
+                                    </div>
+                                  </div>
+                                  <div className="card-body">
+                                    <div style={{ height: '400px' }}>
+                                      <Bar
+                                        data={(() => {
+                                          // ==================== STEP 1: PRE-MONEY EXPANDED ITEMS ====================
+                                          const preExpandedItems = [];
+                                          const preItems = capTableData?.pre_money?.items || [];
+
+                                          preItems.forEach((item) => {
+                                            // INVESTOR TYPE with array of investors
+                                            if (item.type === 'investor' && Array.isArray(item.investor_details) && item.investor_details.length > 0) {
+                                              // Use individual investor shares if available, otherwise split equally
+                                              item.investor_details.forEach((inv, invIdx) => {
+                                                const name = `${inv.firstName || ''} ${inv.lastName || ''}`.trim() || inv.name || `Investor ${invIdx + 1}`;
+                                                const shareType = item.share_class_type || '';
+
+                                                // Use investor's individual shares if available, otherwise split equally
+                                                const investorShares = inv.shares || Math.round((item.shares || 0) / item.investor_details.length);
+
+                                                preExpandedItems.push({
+                                                  _displayName: `👤 ${name}${shareType ? ` (${shareType})` : ''}`,
+                                                  _shares: investorShares,
+                                                  _email: inv.email || '',
+                                                  _phone: inv.phone || '',
+                                                  _type: 'pre',
+                                                  _originalType: 'investor',
+                                                  _roundId: item.round_id_ref,
+                                                  _groupName: item.name,
+                                                  _inv: inv,
+                                                  _uniqueId: `${inv.email || name}-${item.round_id_ref || ''}` // Unique ID for matching
+                                                });
+                                              });
+                                            }
+                                            // FOUNDER TYPE
+                                            else if (item.type === 'founder') {
+                                              preExpandedItems.push({
+                                                _displayName: `${item.founder_code || 'F'} - ${item.name}`,
+                                                _shares: item.shares || 0,
+                                                _email: item.email || '',
+                                                _phone: item.phone || '',
+                                                _type: 'pre',
+                                                _originalType: 'founder',
+                                                _uniqueId: `founder-${item.name}-${item.email || ''}`
+                                              });
+                                            }
+                                            // OPTION POOL
+                                            else if (item.type === 'option_pool') {
+                                              preExpandedItems.push({
+                                                _displayName: 'Employee Option Pool',
+                                                _shares: item.shares || 0,
+                                                _type: 'pre',
+                                                _originalType: 'option_pool',
+                                                _uniqueId: 'option-pool'
+                                              });
+                                            }
+                                            // PENDING (SAFE)
+                                            else if (item.type === 'pending') {
+                                              const inv = item.investor_details || {};
+                                              const name = `${inv.firstName || ''} ${inv.lastName || ''}`.trim() || item.name || 'SAFE Investor';
+                                              preExpandedItems.push({
+                                                _displayName: `👤 ${name}`,
+                                                _shares: 0,
+                                                _email: inv.email || item.email || '',
+                                                _phone: inv.phone || item.phone || '',
+                                                _type: 'pre',
+                                                _originalType: 'pending',
+                                                investment: parseFloat(item.investment) || 0,
+                                                potential_shares: item.potential_shares || 0,
+                                                _uniqueId: `pending-${inv.email || name}`
+                                              });
+                                            }
+                                          });
+
+                                          // ==================== STEP 2: POST-MONEY EXPANDED ITEMS ====================
+                                          const postExpandedItems = [];
+                                          const postItems = capTableData?.post_money?.items || [];
+
+                                          postItems.forEach((item) => {
+                                            // INVESTOR TYPE with array of investors
+                                            if (item.type === 'investor' && Array.isArray(item.investor_details) && item.investor_details.length > 0) {
+                                              item.investor_details.forEach((inv, invIdx) => {
+                                                const name = `${inv.firstName || ''} ${inv.lastName || ''}`.trim() || inv.name || `Investor ${invIdx + 1}`;
+                                                const shareType = item.share_class_type || '';
+
+                                                // Use investor's individual shares if available
+                                                const investorShares = inv.shares || Math.round((item.shares || 0) / item.investor_details.length);
+
+                                                postExpandedItems.push({
+                                                  _displayName: `👤 ${name}${shareType ? ` (${shareType})` : ''}`,
+                                                  _shares: investorShares,
+                                                  _email: inv.email || '',
+                                                  _phone: inv.phone || '',
+                                                  _type: 'post',
+                                                  _originalType: 'investor',
+                                                  _roundId: item.round_id_ref,
+                                                  _groupName: item.name,
+                                                  _inv: inv,
+                                                  _isPrevious: item.is_previous,
+                                                  _roundName: item.round_name,
+                                                  _uniqueId: `${inv.email || name}-${item.round_id_ref || ''}`
+                                                });
+                                              });
+                                            }
+                                            // FOUNDER TYPE
+                                            else if (item.type === 'founder') {
+                                              postExpandedItems.push({
+                                                _displayName: `${item.founder_code || 'F'} - ${item.name}`,
+                                                _shares: item.shares || 0,
+                                                _email: item.email || '',
+                                                _phone: item.phone || '',
+                                                _type: 'post',
+                                                _originalType: 'founder',
+                                                _uniqueId: `founder-${item.name}-${item.email || ''}`
+                                              });
+                                            }
+                                            // OPTION POOL
+                                            else if (item.type === 'option_pool') {
+                                              postExpandedItems.push({
+                                                _displayName: 'Employee Option Pool',
+                                                _shares: item.shares || 0,
+                                                _type: 'post',
+                                                _originalType: 'option_pool',
+                                                _uniqueId: 'option-pool'
+                                              });
+                                            }
+                                            // PENDING (SAFE)
+                                            else if (item.type === 'pending') {
+                                              const inv = item.investor_details || {};
+                                              const name = `${inv.firstName || ''} ${inv.lastName || ''}`.trim() || item.name || 'SAFE Investor';
+                                              postExpandedItems.push({
+                                                _displayName: `👤 ${name}`,
+                                                _shares: 0,
+                                                _email: inv.email || item.email || '',
+                                                _phone: inv.phone || item.phone || '',
+                                                _type: 'post',
+                                                _originalType: 'pending',
+                                                investment: parseFloat(item.investment) || 0,
+                                                potential_shares: item.potential_shares || 0,
+                                                _uniqueId: `pending-${inv.email || name}`
+                                              });
+                                            }
+                                          });
+
+                                          // ==================== STEP 3: CALCULATE TOTALS ====================
+                                          const totalPreShares = preExpandedItems.reduce((sum, item) => sum + (item._shares || 0), 0) || 1;
+                                          const totalPostShares = postExpandedItems.reduce((sum, item) => sum + (item._shares || 0), 0) || 1;
+                                          const isSAFERound = capTableData?.post_money?.totals?.instrumentType === 'Safe';
+
+                                          // ==================== STEP 4: MERGE BY UNIQUE IDENTIFIER ====================
+                                          const shareholderMap = new Map();
+
+                                          // First add all pre-money items
+                                          preExpandedItems.forEach((item) => {
+                                            shareholderMap.set(item._uniqueId, {
+                                              label: item._displayName,
+                                              preShares: item._shares,
+                                              postShares: 0,
+                                              isPending: item._originalType === 'pending',
+                                              email: item._email,
+                                              phone: item._phone,
+                                              investment: item.investment,
+                                              potential_shares: item.potential_shares,
+                                              type: item._originalType,
+                                              roundId: item._roundId,
+                                            });
+                                          });
+
+                                          // Then add/update with post-money items
+                                          postExpandedItems.forEach((item) => {
+                                            if (shareholderMap.has(item._uniqueId)) {
+                                              // Update existing
+                                              const existing = shareholderMap.get(item._uniqueId);
+                                              existing.postShares = item._shares;
+                                            } else {
+                                              // Add new
+                                              shareholderMap.set(item._uniqueId, {
+                                                label: item._displayName,
+                                                preShares: 0,
+                                                postShares: item._shares,
+                                                isPending: item._originalType === 'pending',
+                                                email: item._email,
+                                                phone: item._phone,
+                                                investment: item.investment,
+                                                potential_shares: item.potential_shares,
+                                                type: item._originalType,
+                                                roundId: item._roundId,
+                                              });
+                                            }
+                                          });
+
+                                          const orderedKeys = Array.from(shareholderMap.keys());
+                                          const postDenominator = isSAFERound ? totalPreShares : totalPostShares;
+
+                                          // Sort keys to maintain consistent order
+                                          orderedKeys.sort((a, b) => {
+                                            const entryA = shareholderMap.get(a);
+                                            const entryB = shareholderMap.get(b);
+
+                                            // Founders first
+                                            if (entryA.type === 'founder' && entryB.type !== 'founder') return -1;
+                                            if (entryA.type !== 'founder' && entryB.type === 'founder') return 1;
+
+                                            // Then option pool
+                                            if (entryA.type === 'option_pool' && entryB.type !== 'option_pool') return -1;
+                                            if (entryA.type !== 'option_pool' && entryB.type === 'option_pool') return 1;
+
+                                            // Then investors
+                                            return 0;
+                                          });
+
+                                          // Store for tooltip
+                                          const chartData = {
+                                            shareholderMap,
+                                            orderedKeys,
+                                            totalPreShares,
+                                            totalPostShares
+                                          };
+
+                                          if (typeof window !== 'undefined') {
+                                            window.__temp_chartData = chartData;
+                                          }
+
+                                          return {
+                                            labels: orderedKeys.map(key => shareholderMap.get(key).label),
+                                            datasets: [
+                                              {
+                                                label: 'Pre-Money %',
+                                                data: orderedKeys.map(key => {
+                                                  const entry = shareholderMap.get(key);
+                                                  if (entry.isPending) return 0;
+                                                  return parseFloat(((entry.preShares || 0) / totalPreShares * 100).toFixed(2));
+                                                }),
+                                                backgroundColor: '#4e73df',
+                                                borderColor: '#4e73df',
+                                                borderWidth: 2,
+                                                borderRadius: 5,
+                                                barThickness: 30,
+                                              },
+                                              {
+                                                label: isSAFERound ? 'Post-Money % (excl. pending)' : 'Post-Money %',
+                                                data: orderedKeys.map(key => {
+                                                  const entry = shareholderMap.get(key);
+                                                  if (entry.isPending) {
+                                                    const totalWithPending = totalPostShares + (entry.postShares || 0);
+                                                    return parseFloat(((entry.postShares || 0) / totalWithPending * 100).toFixed(2));
+                                                  }
+                                                  return parseFloat(((entry.postShares || 0) / postDenominator * 100).toFixed(2));
+                                                }),
+                                                backgroundColor: (context) => {
+                                                  const key = orderedKeys[context.dataIndex];
+                                                  return shareholderMap.get(key)?.isPending ? '#FFC107' : '#e74a3b';
+                                                },
+                                                borderColor: (context) => {
+                                                  const key = orderedKeys[context.dataIndex];
+                                                  return shareholderMap.get(key)?.isPending ? '#FFC107' : '#e74a3b';
+                                                },
+                                                borderWidth: 2,
+                                                borderRadius: 5,
+                                                barThickness: 30,
+                                              }
+                                            ]
+                                          };
+                                        })()}
+                                        options={{
+                                          responsive: true,
+                                          maintainAspectRatio: false,
+                                          plugins: {
+                                            legend: {
+                                              position: 'top',
+                                              labels: { boxWidth: 12, padding: 15, font: { size: 12 } }
+                                            },
+                                            tooltip: {
+                                              backgroundColor: 'rgba(0,0,0,0.85)',
+                                              titleColor: '#fff',
+                                              bodyColor: '#fff',
+                                              borderColor: '#333',
+                                              borderWidth: 1,
+                                              cornerRadius: 6,
+                                              padding: 12,
+                                              displayColors: true,
+                                              callbacks: {
+                                                title: (tooltipItems) => {
+                                                  const chartData = window.__temp_chartData;
+                                                  if (!chartData) return tooltipItems[0].label;
+
+                                                  const key = chartData.orderedKeys[tooltipItems[0].dataIndex];
+                                                  const entry = chartData.shareholderMap.get(key);
+                                                  return entry?.label || tooltipItems[0].label;
+                                                },
+                                                label: (context) => {
+                                                  const value = context.parsed.y || 0;
+                                                  return `${context.dataset.label}: ${value}%`;
+                                                },
+                                                afterLabel: (context) => {
+                                                  const chartData = window.__temp_chartData;
+                                                  if (!chartData) return null;
+
+                                                  const key = chartData.orderedKeys[context.dataIndex];
+                                                  const entry = chartData.shareholderMap.get(key);
+                                                  if (!entry) return null;
+
+                                                  const details = [];
+
+                                                  if (entry.email) details.push(`📧 ${entry.email}`);
+                                                  if (entry.phone) details.push(`📞 ${entry.phone}`);
+
+                                                  if (entry.isPending) {
+                                                    details.push(`👤 Pending SAFE`);
+                                                    if (entry.investment) details.push(`💰 Investment: ${formatCurrency(entry.investment, roundData?.currency)}`);
+                                                    if (entry.potential_shares) details.push(`📊 Potential: ${formatNumber(entry.potential_shares)}`);
+                                                  } else {
+                                                    const prePct = ((entry.preShares || 0) / chartData.totalPreShares * 100).toFixed(2);
+                                                    const postPct = ((entry.postShares || 0) / chartData.totalPostShares * 100).toFixed(2);
+                                                    details.push(`📊 Pre: ${prePct}% | Post: ${postPct}%`);
+                                                  }
+
+                                                  return details.length > 0 ? details : null;
+                                                }
+                                              }
+                                            },
+                                            datalabels: {
+                                              display: true,
+                                              formatter: (value) => value > 0 ? value + '%' : '',
+                                              color: '#fff',
+                                              font: { weight: 'bold', size: 10 },
+                                              anchor: 'center',
+                                              align: 'center',
+                                            }
+                                          },
+                                          scales: {
+                                            x: {
+                                              grid: { display: false },
+                                              title: { display: true, text: 'Shareholders', font: { size: 12, weight: 'bold' } },
+                                              ticks: {
+                                                maxRotation: 45,
+                                                minRotation: 45,
+                                                callback: function (val, index) {
+                                                  const label = this.getLabelForValue(val);
+                                                  return label.length > 20 ? label.substr(0, 18) + '...' : label;
+                                                }
+                                              }
+                                            },
+                                            y: {
+                                              beginAtZero: true,
+                                              max: 100,
+                                              ticks: { callback: (value) => value + '%', stepSize: 10 },
+                                              title: { display: true, text: 'Ownership Percentage', font: { size: 12, weight: 'bold' } }
+                                            }
+                                          }
+                                        }}
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Pending Conversions Tab */}
+                    {activeTab === 'pending' && pendingConversions.length > 0 && (
+                      <div className="card">
+                        <div className="card-header bg-warning">
+                          <h5 className="mb-0">Pending Conversions</h5>
+                          <small className="text-white">SAFE/Convertible Notes waiting to convert</small>
+                        </div>
+                        <div className="card-body">
+                          <div className="table-responsive">
+                            <table className="table table-striped">
+                              <thead>
+                                <tr>
+                                  <th>Instrument</th>
+                                  <th>Round</th>
+                                  <th className="text-end">Investment</th>
+                                  <th className="text-end">Conversion Price</th>
+                                  <th className="text-end">Potential Shares</th>
+                                  <th>Discount</th>
+                                  <th>Valuation Cap</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {pendingConversions.map((conv, index) => {
+                                  const mappedConv = {
+                                    instrument: conv.instrument_type || conv.instrument,
+                                    round_name: conv.round_name,
+                                    investment: conv.investment_amount || conv.investment,
+                                    conversion_price: conv.share_price || conv.conversion_price,
+                                    potential_shares: conv.estimated_shares || conv.potential_shares,
+                                    discount_rate: conv.instrument_data?.discountRate_note || conv.discount_rate,
+                                    valuation_cap: conv.instrument_data?.valuationCap_note || conv.valuation_cap
+                                  };
+
+                                  return (
+                                    <tr key={index}>
+                                      <td>
+                                        <span className={`badge ${mappedConv.instrument === 'Safe' ? 'bg-primary' : 'bg-info'}`}>
+                                          {mappedConv.instrument}
+                                        </span>
+                                      </td>
+                                      <td>{mappedConv.round_name}</td>
+                                      <td className="text-end">
+                                        <CurrencyFormatter
+                                          amount={mappedConv.investment}
+                                          currency={roundData?.currency}
+                                        />
+                                      </td>
+
+                                      <td className="text-end">
+                                        <CurrencyFormatter
+                                          amount={mappedConv.conversion_price}
+                                          currency={roundData?.currency}
+                                        />
+                                      </td>
+
+                                      <td className="text-end">{formatNumber(mappedConv.potential_shares)}</td>
+                                      <td>{mappedConv.discount_rate}%</td>
+                                      <td>
+                                        <CurrencyFormatter
+                                          amount={mappedConv.valuation_cap}
+                                          currency={roundData?.currency}
+                                        />
+                                      </td>
+
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {/* ===== OWNERSHIP STATISTICS SECTION ===== */}
+                    {roundData?.type === 'Round 0' && (
+                      <div className="row mb-4">
+                        <div className="col-md-12">
+                          <div className="card border-0 shadow-sm">
+                            <div className="card-header bg-white border-0 py-3">
+                              <h6 className="mb-0 fw-bold text-dark">
+                                <i className="bi bi-pie-chart-fill text-primary me-2"></i>
+                                Ownership Distribution Statistics
+                              </h6>
+                            </div>
+                            <div className="card-body">
+                              <div className="row text-center">
+                                {/* Largest Ownership */}
+                                <div className="col-md-4">
+                                  <div className="p-3">
+                                    <div className="d-flex align-items-center justify-content-center mb-2">
+                                      <div className="rounded-circle bg-primary bg-opacity-10 p-3 me-2">
+                                        <i className="bi bi-arrow-up-short text-primary fs-4"></i>
+                                      </div>
+                                      <div>
+                                        <small className="text-muted d-block">Largest Ownership</small>
+                                        <h3 className="mb-0 fw-bold text-primary">{stats.largest}%</h3>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Smallest Ownership */}
+                                <div className="col-md-4">
+                                  <div className="p-3">
+                                    <div className="d-flex align-items-center justify-content-center mb-2">
+                                      <div className="rounded-circle bg-info bg-opacity-10 p-3 me-2">
+                                        <i className="bi bi-arrow-down-short text-info fs-4"></i>
+                                      </div>
+                                      <div>
+                                        <small className="text-muted d-block">Smallest Ownership</small>
+                                        <h3 className="mb-0 fw-bold text-info">{stats.smallest}%</h3>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Founders Count */}
+                                <div className="col-md-4">
+                                  <div className="p-3">
+                                    <div className="d-flex align-items-center justify-content-center mb-2">
+                                      <div className="rounded-circle bg-success bg-opacity-10 p-3 me-2">
+                                        <i className="bi bi-people-fill text-success fs-4"></i>
+                                      </div>
+                                      <div>
+                                        <small className="text-muted d-block">Founders</small>
+                                        <h3 className="mb-0 fw-bold text-success">
+                                          {stats.totalFounders}
+                                        </h3>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+
+
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {activeTab === 'post-money' && (
+                      <div className="row my-4 gy-2 gx-4">
+                        <div className="col-12">
+                          <div className="card-header bg-white border-0 py-3">
+                            <h6 className="mb-0 fw-bold text-dark">
+                              <i className="bi bi-pie-chart-fill text-primary me-2"></i>
+                              Ownership Statistics
+                            </h6>
+                          </div>
+                        </div>
+
+                        <div className="col-md-4">
+                          <div className="card h-100 border-1 shadow-sm text-center">
+                            <div className="card-body py-4">
+                              <div className="d-inline-flex align-items-center justify-content-center 
+                          rounded-circle bg-primary bg-opacity-10 p-3 mb-3">
+                                <i className="bi bi-arrow-up-short text-primary fs-3"></i>
+                              </div>
+                              <small className="text-muted d-block mb-1">
+                                Largest Ownership
+                              </small>
+                              <h2 className="fw-bold text-primary mb-0">
+                                {postStats.largest}%
+                              </h2>
+                            </div>
+                          </div>
+                        </div>
+
+
+                        <div className="col-md-4">
+                          <div className="card h-100 border-1 shadow-sm text-center">
+                            <div className="card-body py-4">
+                              <div className="d-inline-flex align-items-center justify-content-center 
+                          rounded-circle bg-info bg-opacity-10 p-3 mb-3">
+                                <i className="bi bi-arrow-down-short text-info fs-3"></i>
+                              </div>
+                              <small className="text-muted d-block mb-1">
+                                Smallest Ownership
+                              </small>
+                              <h2 className="fw-bold text-info mb-0">
+                                {postStats.smallest}%
+                              </h2>
+                            </div>
+                          </div>
+                        </div>
+
+
+                        <div className="col-md-4">
+                          <div className="card h-100 border-1 shadow-sm text-center">
+                            <div className="card-body py-4">
+                              <div className="d-inline-flex align-items-center justify-content-center 
+                          rounded-circle bg-success bg-opacity-10 p-3 mb-3">
+                                <i className="bi bi-people-fill text-success fs-3"></i>
+                              </div>
+                              <small className="text-muted d-block mb-1">
+                                Shareholders
+                              </small>
+                              <h2 className="fw-bold text-success mb-0">
+                                {postStats.totalCount || 0}
+                              </h2>
+                            </div>
+                          </div>
+                        </div>
+
+                      </div>
+                    )}
+                    {/* Calculations Summary */}
+                    {roundData?.type !== 'Round 0' && (
+                      <div className="card mt-4">
+                        <div className="card-header bg-light ">
+                          <h6 className="py-2">Valuation Summary</h6>
+                        </div>
+                        <div className="custome_card p-3">
+                          <div className="row gy-3">
+                            <div className="col-md-4">
+                              <div className="d-flex custome_card_box flex-column gap-3">
+                                <p className="bg-danger custome_cardp">
+                                  <strong>
+                                    {roundData?.instrument === "Safe" || roundData?.instrument === "Convertible Note"
+                                      ? "Company Valuation"
+                                      : "Pre-Money Valuation"}
+                                  </strong>
+                                </p>
+
+                                <h4 className="text-danger">
+                                  <CurrencyFormatter
+                                    amount={calculations.pre_money_valuation}
+                                    currency={roundData?.currency}
+                                  />
+                                </h4>
+                              </div>
+                            </div>
+                            <div className="col-md-4">
+                              <div className="d-flex custome_card_box flex-column gap-3">
+                                <p className="bg-success custome_cardp"><strong>Investment</strong></p>
+                                <h4 className="text-success">
+                                  <CurrencyFormatter
+                                    amount={roundData?.investment}
+                                    currency={roundData?.currency}
+                                  />
+                                </h4>
+                              </div>
+                            </div>
+                            {roundData?.instrument !== "Safe" && roundData?.instrument !== "Convertible Note" && (
+                              <div className="col-md-4">
+                                <div className="d-flex custome_card_box flex-column gap-3">
+                                  <p className="bg-info custome_cardp">
+                                    <strong>Post-Money Valuation</strong>
+                                  </p>
+
+                                  <h4 className="text-info">
+                                    <CurrencyFormatter
+                                      amount={calculations.post_money_valuation}
+                                      currency={roundData?.currency}
+                                    />
+                                  </h4>
+                                </div>
+                              </div>
+                            )}
+
+                            <div className="col-md-4">
+                              <div className="d-flex custome_card_box flex-column gap-3">
+                                <p className="bg-primary custome_cardp"><strong>Total Shares Outstanding</strong></p>
+                                <h4 className="text-primary">{formatNumber(calculations.total_shares_outstanding)}</h4>
+                              </div>
+                            </div>
+
+                            <div className="col-md-4">
+                              <div className="d-flex custome_card_box flex-column gap-3">
+                                <p className="bg-warning custome_cardp"><strong>Share Price</strong></p>
+                                <h4 className="text-warning">{
+                                  isUnpricedRound && !isConverted
+                                    ? 'N/A'
+                                    : <CurrencyFormatter
+                                      amount={displaySharePrice}
+                                      currency={roundData?.currency}
+                                      digit={3}
+                                    />
+
+                                }</h4>
+                              </div>
+                            </div>
+                            <div className="col-md-4">
+                              <div className="d-flex custome_card_box flex-column gap-3">
+                                <p className="bg-success custome_cardp"><strong>New Shares</strong></p>
+                                <h4 className="text-success">
+                                  {formatNumber(capTableData?.post_money?.totals?.total_new_shares || 0)}</h4>
+                              </div>
+                            </div>
+                          </div>
+
+
+                        </div>
+
+                      </div>
+
+                    )}
+
+
+
+
+                    {/* Back Button */}
+                    <div className="mt-4">
+                      <button className="btn btn-secondary" onClick={() => navigate(-1)}>
+                        <i className="bi bi-arrow-left me-2"></i>
+                        Back to Rounds List
+                      </button>
+                      <button className="btn btn-primary ms-2" onClick={getCapTableData}>
+                        <i className="bi bi-arrow-clockwise me-2"></i>
+                        Refresh Data
+                      </button>
                     </div>
-                    <div className="col-md-3">
-                      <p><strong>Employee Option Pool:</strong> {
-                        (() => {
-                          const optionPool = postTable.shareholders?.find(s => s.type === "Options Pool") || {};
-                          const optionShares = optionPool.shares || 0;
-                          const totalPostShares = postTable.totalShares || 1;
-                          const optionPercentage = (optionShares / totalPostShares * 100).toFixed(1);
-                          return `${optionPercentage}%`;
-                        })()
-                      }</p>
+                    <div className="mt-4 pt-3 border-top">
+                      <h6 className="fw-bold mb-2" style={{ color: '#CC0000' }}>
+                        <i className="bi bi-exclamation-triangle-fill me-2" style={{ color: '#CC0000' }}></i>
+                        Disclaimer
+                      </h6>
+                      <p className="text-muted small mb-0 redcolor" >
+                        IMPORTANT : The calculations are for informational purpose only !<br />
+                        Please consult with your legal and financial advisors before making any investment decisions
+                      </p>
                     </div>
-                    <div className="col-md-3">
-                      <p><strong>Investor Ownership:</strong> {
-                        (() => {
-                          const investors = postTable.shareholders?.filter(s => s.type === "Investor") || [];
-                          const totalInvestorShares = investors.reduce((sum, inv) => sum + (inv.shares || 0), 0);
-                          const totalPostShares = postTable.totalShares || 1;
-                          const investorPercentage = (totalInvestorShares / totalPostShares * 100).toFixed(1);
-                          return `${investorPercentage}%`;
-                        })()
-                      }</p>
-                    </div>
-                    <div className="col-md-3">
-                      <p><strong>Fully Diluted Total:</strong> 100%</p>
-                    </div>
-                  </div>
+
+                  </SectionWrapper>
                 </div>
+
               </div>
             </div>
-          </div>
+          </section>
         </div>
       </div>
-    );
-  };
-  return (
-    <Wrapper>
-      <div className="fullpage d-block">
-        <div className="d-flex align-items-start gap-0">
-          <ModuleSideNav
-            isCollapsed={isCollapsed}
-            setIsCollapsed={setIsCollapsed}
-          />
-          <div
-            className={`global_view ${isCollapsed ? "global_view_col" : ""}`}
-          >
-            <TopBar />
-            <SectionWrapper className="d-block p-md-4 p-3">
-              <div className="container-fluid">
-                <div className="d-flex justify-content-between align-items-center mb-4">
-                  <h2>Capitalization Table</h2>
-                  <button
-                    className="btn btn-secondary"
-                    onClick={() => navigate(-1)}
-                  >
-                    Back to Rounds
-                  </button>
-                </div>
-
-                {loading && (
-                  <div className="text-center py-5">
-                    <div className="spinner-border text-primary" role="status">
-                      <span className="visually-hidden">Loading...</span>
-                    </div>
-                    <p className="mt-3">Loading cap table data...</p>
-                  </div>
-                )}
-
-                {error && (
-                  <div className="alert alert-danger" role="alert">
-                    <strong>Error:</strong> {error}
-                  </div>
-                )}
-                {!loading && !error && capTableData && (() => {
-
-                  // Normalize data for consistent checking
-                  const roundType = (capTableData.round_type).toLowerCase();
-                  const shareClassType = (capTableData.shareClassType).toLowerCase();
-                  const instrumentType = (capTableData.instrumentType || '').toLowerCase();
-
-                  // CONDITION 1: Round 0 / Incorporation (highest priority)
-                  if (roundType.includes("round 0") ||
-                    roundType.includes("incorporation") ||
-                    capTableData.isRoundZero) {
-                    return renderRoundZeroTable();
-                  }
-
-                  // CONDITION 2: Preferred Equity (check before Series/Seed)
-                  if (instrumentType === "preferred equity" ||
-                    instrumentType.includes("preferred")) {
-                    return <PreferredEquityCapTable capTableData={capTableData} />;
-                  }
-
-                  // CONDITION 3: Series A + SAFE
-                  if (
-                    shareClassType.includes("series") &&
-                    instrumentType === "safe") {
-
-                    return renderSAFESeriesRoundTable();
-                  }
-
-                  // CONDITION 4: Series A (without SAFE)
-                  if (instrumentType === 'common stock' &&
-                    shareClassType.includes("series")) {
-                    return renderSeriesATable();
-                  }
-
-                  // CONDITION 5: Seed + SAFE
-                  if ((shareClassType === 'seed' || shareClassType === 'pre-seed' || shareClassType === 'post-seed') &&
-                    instrumentType === "safe") {
-                    return renderSAFERoundTable();
-                  }
-                  if ((shareClassType === 'seed' || shareClassType === 'pre-seed' || shareClassType === 'post-seed') &&
-                    instrumentType === "convertible note") {
-                    return renderConvertibleNoteRoundTable();
-                  }
-                  if (shareClassType.includes("series") &&
-                    instrumentType === "convertible note") {
-                    return renderConvertibleNoteSeriesRoundTable();
-                  } else {
-                    return renderSeedRoundTable();
-                  }
-                  // CONDITION 6: Default - Seed Round (any remaining seed or fallback)
-
-                })()}
-
-                {!loading && !error && !capTableData && (
-                  <div className="alert alert-warning" role="alert">
-                    No cap table data available for this roundsss.
-                  </div>
-                )}
-              </div>
-            </SectionWrapper>
-          </div>
-        </div>
-      </div>
-    </Wrapper>
+    </main>
   );
 }

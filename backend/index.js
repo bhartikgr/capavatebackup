@@ -22,9 +22,12 @@ const UsercronjobRoutes = require("./routes/user/cronjob");
 const UserInvestorReportRoutes = require("./routes/user/investorreport");
 const UserInvestorRoutes = require("./routes/user/investor");
 const UserCapitalRoundRoutes = require("./routes/user/capitalround");
+const UserCapitalInvestmentRoundRoutes = require("./routes/user/capitalroundinvestment");
 const UserDashboardRoutes = require("./routes/user/dashboard");
 const UserCompanyRoutes = require("./routes/user/company");
 const CompanyAccessLogsRoutes = require("./routes/user/accesslogs");
+const Userwaitlist = require("./routes/user/waitlist");
+const Companydashboard = require("./routes/user/companydashboard");
 //User
 
 //Signatory
@@ -44,7 +47,7 @@ app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 // Serve static video files
 app.use(
   "/upload/video",
-  express.static(path.join(__dirname, "upload", "video"))
+  express.static(path.join(__dirname, "upload", "video")),
 );
 app.use("/upload/docs", express.static(path.join(__dirname, "upload", "docs")));
 
@@ -65,9 +68,13 @@ app.use("/api/user/cronjob", UsercronjobRoutes);
 app.use("/api/user/investorreport", UserInvestorReportRoutes);
 app.use("/api/user/investor", UserInvestorRoutes);
 app.use("/api/user/capitalround", UserCapitalRoundRoutes);
+app.use("/api/user/capitalroundinvestment", UserCapitalInvestmentRoundRoutes);
 app.use("/api/user/dashboard", UserDashboardRoutes);
 app.use("/api/user/company", UserCompanyRoutes);
 app.use("/api/user/accesslogs", CompanyAccessLogsRoutes);
+app.use("/api/user/waitlist", Userwaitlist);
+app.use("/api/user/companydashboard", Companydashboard);
+
 //User Routes
 
 //Signatory Routes

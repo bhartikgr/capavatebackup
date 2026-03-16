@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from "react";
-import TopBar from "../../components/Users/TopBar";
 import ModuleSideNav from "../../components/Users/ModuleSideNav";
 import "bootstrap/dist/css/bootstrap.min.css";
 import {
@@ -13,6 +12,10 @@ import { useNavigate } from "react-router-dom";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import { API_BASE_URL } from "../../config/config.js";
+import { Tooltip } from 'react-tooltip';
+import "react-tooltip/dist/react-tooltip.css";
+import SideBar from "../../components/social/SideBar";
+import TopBar from '../../components/social/TopBar';
 export default function CompanyProfile() {
   const storedUsername = localStorage.getItem("SignatoryLoginData");
   const userLogin = JSON.parse(storedUsername);
@@ -98,7 +101,7 @@ export default function CompanyProfile() {
       });
 
       const data = res.data.results[0];
-
+      console.log(data)
       // ✅ set the formData first
       setFormData(data);
       setselectedCountryStep2(data.company_country);
@@ -716,358 +719,64 @@ export default function CompanyProfile() {
       }));
     }
   };
-
   const [isCollapsed, setIsCollapsed] = useState(false);
   return (
     <>
-      <Wrapper>
-        <div className="fullpage d-block">
-          <div className="d-flex align-items-start gap-0">
-            <ModuleSideNav
-              isCollapsed={isCollapsed}
-              setIsCollapsed={setIsCollapsed}
-            />
-            <div
-              className={`global_view ${isCollapsed ? "global_view_col" : ""}`}
-            >
-              <TopBar />
-              <SectionWrapper className="d-block p-md-4 p-3">
-                <div className="container-fluid">
-                  {dangerMessage && (
-                    <div
-                      className={`flex items-center justify-between gap-3 shadow-lg ${errr ? "error_pop" : "success_pop"
-                        }`}
-                    >
-                      <div className="d-flex align-items-center gap-2">
-                        <span className="d-block">{dangerMessage}</span>
-                      </div>
 
-                      <button
-                        type="button"
-                        className="close_btnCros"
-                        onClick={() => setdangerMessage("")}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  )}
-                  <div className="profile-card">
-                    {formStep1 && (
-                      <div className="profile-header">
-                        <div className="d-flex align-items-center justify-content-between gap-3 w-100">
-                          <div className="d-flex align-items-center justify-content-start gap-2">
-                            <div className="profile-icon">
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="24"
-                                height="24"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              >
-                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z"></path>
-                                <path d="M12 14c-4.42 0-8 1.79-8 4v2h16v-2c0-2.21-3.58-4-8-4z"></path>
-                              </svg>
-                            </div>
-                            <div className="profile-title">
-                              <h2>Company Contact Info</h2>
-                            </div>
-                          </div>
-                          <p
-                            style={{
-                              background: "#ff3d41",
-                              color: "#fff",
-                              fontSize: "0.9rem",
-                              borderRadius: "8px",
-                            }}
-                            className="rounded-xl px-3 py-1 w-fit"
+      <main>
+        <div className='d-flex align-items-start gap-0'>
+          <SideBar />
+          <div className='d-flex flex-grow-1 flex-column gap-0'>
+            <TopBar />
+            <section className='px-md-3 py-4'>
+              <div className='container-fluid'>
+                <div className='row gy-4'>
+                  <div className='col-md-12 order-1 order-md-0'>
+                    <SectionWrapper className="d-block p-md-4 p-3">
+                      <div className="container-fluid">
+                        {dangerMessage && (
+                          <div
+                            className={`flex items-center justify-between gap-3 shadow-lg ${errr ? "error_pop" : "success_pop"
+                              }`}
                           >
-                            1/3
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {formStep1 && (
-                      <div className="profile-content">
-                        <form
-                          onSubmit={handleSubmitForm_One}
-                          method="post"
-                          action="javascript:void(0)"
-                        >
-                          <div className="row g-3">
-                            {/* First Name */}
-                            <div className="col-12">
-                              <label
-                                htmlFor="company_name"
-                                className="label_fontWeight"
-                              >
-                                Name of Company{" "}
-                                <span className="required">*</span>
-                              </label>
-                              <input
-                                required
-                                onChange={handleChange}
-                                value={formData.company_name}
-                                type="text"
-                                name="company_name"
-                                id="company_name"
-                                className="form-input"
-                                placeholder="Enter company name"
-                              />
-                            </div>
-                            <div className="col-12">
-                              <label
-                                htmlFor="company_name"
-                                className="label_fontWeight"
-                              >
-                                Company Email{" "}
-                                <span className="required">*</span>
-                              </label>
-                              <input
-                                required
-                                onChange={handleChange}
-                                value={formData.company_email}
-                                type="text"
-                                name="company_email"
-                                id="company_email"
-                                className="form-input"
-                                placeholder="Enter company email"
-                              />
-                            </div>
-                            <div className="col-md-6">
-                              <label
-                                htmlFor="Industry"
-                                className="label_fontWeight"
-                              >
-                                Industry <span className="required">*</span>
-                              </label>
-                              <select
-                                id="Industry"
-                                value={formData.company_industory}
-                                className="form-select"
-                                onChange={handleChange}
-                                name="company_industory"
-                                required
-                              >
-                                <option value="">--Select--</option>
-                                {IndustryExpertise.map((industry, index) => (
-                                  <option key={index} value={industry.value || industry.name}>
-                                    {industry.name}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                            <div className="col-md-6">
-                              <label
-                                htmlFor="phone"
-                                className="label_fontWeight"
-                              >
-                                Phone <span className="required">*</span>
-                              </label>
-                              <PhoneInput
-                                required
-                                value={formData.phone}
-                                name="phone"
-                                defaultCountry="CA"
-                                onChange={handlePhoneChange}
-                                className="phonregister form-control"
-                                placeholder="Enter phone number"
-                              />
-                              {phoneError && (
-                                <small style={{ color: "red" }}>
-                                  {phoneError}
-                                </small>
-                              )}
-                            </div>
-                            <div className="col-md-6">
-                              <label
-                                htmlFor="company_website"
-                                className="label_fontWeight"
-                              >
-                                Company Website / URL{" "}
-                                <span className="required">*</span>
-                              </label>
-                              <input
-                                ref={companyWebsiteRef}
-                                type="text"
-                                required
-                                value={formData.company_website}
-                                onChange={handleChange}
-                                name="company_website"
-                                id="company_website"
-                                className="form-control"
-                                placeholder="Enter your company url"
-                              />
-                              {errorUrl && (
-                                <div
-                                  style={{ fontSize: "13px" }}
-                                  className="text-danger fw-semibold"
-                                >
-                                  Please enter valid website url
-                                  (eg:www.domain.com)
-                                </div>
-                              )}
-                            </div>
-                            <div className="col-md-6">
-                              <label
-                                htmlFor="employee_number"
-                                className="label_fontWeight"
-                              >
-                                Number of Employees{" "}
-                                <span className="required">*</span>
-                              </label>
-                              <select
-                                required
-                                onChange={handleChange}
-                                value={formData.employee_number}
-                                name="employee_number"
-                                id="employee_number"
-                                className="form-select"
-                              >
-                                <option value="">
-                                  Select employee count range
-                                </option>
-                                <option value="1-10">1-10 employees</option>
-                                <option value="11-50">11-50 employees</option>
-                                <option value="51-200">51-200 employees</option>
-                                <option value="201-500">
-                                  201-500 employees
-                                </option>
-                                <option value="501-1000">
-                                  501-1000 employees
-                                </option>
-                                <option value="1000+">1000+ employees</option>
-                              </select>
-                            </div>
-                            <div className="col-12">
-                              <label
-                                htmlFor="year_registration"
-                                className="label_fontWeight"
-                              >
-                                Year of Registration{" "}
-                                <span className="required">*</span>
-                              </label>
-                              <input
-                                type="number"
-                                required
-                                value={formData.year_registration}
-                                name="year_registration"
-                                id="year_registration"
-                                className="form-control"
-                                placeholder="Enter here"
-                                onChange={(e) => {
-                                  const value = e.target.value;
-                                  if (/^\d*$/.test(value)) {
-                                    setFormData((prev) => ({
-                                      ...prev,
-                                      year_registration: value,
-                                    }));
-                                  }
-                                }}
-                              />
-                            </div>
-                            <div className="col-12">
-                              <label className="label_fontWeight">
-                                One-sentence headliner about the company{" "}
-                                <span className="required">*</span>
-                              </label>
-                              <textarea
-                                required
-                                id="description"
-                                name="descriptionStep4"
-                                className="form-control"
-                                maxLength="800"
-                                value={formData.descriptionStep4}
-                                onChange={handledescriptionStep4}
-                                placeholder="Max 800 characters..."
-                              />
-                              <div className="char-count">
-                                {charCount_descriptionStep4}/800
-                              </div>
+                            <div className="d-flex align-items-center gap-2">
+                              <span className="d-block">{dangerMessage}</span>
                             </div>
 
-                            {/* Problem */}
-                            <div className="col-12">
-                              <label className="label_fontWeight">
-                                What problem are you solving?{" "}
-                                <span className="required">*</span>
-                              </label>
-                              <textarea
-                                required
-                                id="problem"
-                                name="problemStep4"
-                                className="form-control"
-                                maxLength="400"
-                                value={formData.problemStep4}
-                                onChange={handleproblemStep4}
-                                placeholder="Max 400 characters..."
-                              />
-                              <div className="char-count">
-                                {charCount_problemStep4}/400
-                              </div>
-                            </div>
-
-                            {/* Solution */}
-                            <div className="col-12">
-                              <label className="label_fontWeight">
-                                What is Your Solution to the Problem?{" "}
-                                <span className="required">*</span>
-                              </label>
-                              <textarea
-                                required
-                                id="solution"
-                                name="solutionStep4"
-                                className="form-control"
-                                maxLength="400"
-                                value={formData.solutionStep4}
-                                onChange={handlesolutionStep4}
-                                placeholder="Max 400 characters..."
-                              />
-                              <div className="char-count">
-                                {charCount_solutionStep4}/400
-                              </div>
-                            </div>
+                            <button
+                              type="button"
+                              className="close_btnCros"
+                              onClick={() => setdangerMessage("")}
+                            >
+                              ×
+                            </button>
                           </div>
-                          <div className="col-12 mt-4">
-                            <div className="d-flex justify-content-between mt-2">
-                              <div className="flex-shrink-0"></div>
-                              <div className="flex-shrink-0">
-                                <button
-                                  disabled={isLoading}
-                                  style={{ opacity: isLoading ? 0.6 : 1 }}
-                                  type="submit"
-                                  className="global_btn w-fit  px-4 py-2 fn_size_sm  active d-flex align-items-center gap-2"
-                                >
-                                  Next
-                                  {isLoading && (
-                                    <div
-                                      className=" spinner-white spinner-border spinneronetimepay m-0"
-                                      role="status"
+                        )}
+                        <div className="profile-card">
+                          {formStep1 && (
+                            <div className="profile-header">
+                              <div className="d-flex align-items-center justify-content-between gap-3 w-100">
+                                <div className="d-flex align-items-center justify-content-start gap-2">
+                                  <div className="profile-icon">
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      width="24"
+                                      height="24"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
                                     >
-                                      <span className="visually-hidden"></span>
-                                    </div>
-                                  )}
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        </form>
-                      </div>
-                    )}
-                    {formStep2 && (
-                      <>
-                        <form
-                          onSubmit={handleSubmitForm_Two}
-                          method="post"
-                          action="javascript:void(0)"
-                        >
-                          <div className="row g-3">
-                            <div className="col-md-12 mt-5">
-                              <div className="d-flex flex-column gap-2">
+                                      <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z"></path>
+                                      <path d="M12 14c-4.42 0-8 1.79-8 4v2h16v-2c0-2.21-3.58-4-8-4z"></path>
+                                    </svg>
+                                  </div>
+                                  <div className="profile-title">
+                                    <h2>Company Contact Info</h2>
+                                  </div>
+                                </div>
                                 <p
                                   style={{
                                     background: "#ff3d41",
@@ -1077,437 +786,756 @@ export default function CompanyProfile() {
                                   }}
                                   className="rounded-xl px-3 py-1 w-fit"
                                 >
-                                  2/3
+                                  1/3
                                 </p>
-                                <label htmlFor="">
-                                  <h4>Company Mailing Address</h4>
-                                </label>
                               </div>
                             </div>
+                          )}
 
-                            <div className="col-md-6">
-                              <div className="d-flex flex-column gap-2">
-                                <label htmlFor="" className="label_fontWeight">
-                                  Street <span className="required">*</span>
-                                </label>
-
-                                <input
-                                  value={formData.company_street_address}
-                                  onChange={handleChange}
-                                  name="company_street_address"
-                                  required
-                                  id=""
-                                  className="form-control"
-                                  placeholder="Enter here"
-                                  type="text"
-                                />
-                              </div>
-                            </div>
-
-                            <div className="col-md-6">
-                              <div className="d-flex flex-column gap-2">
-                                <label htmlFor="" className="label_fontWeight">
-                                  Country <span className="required">*</span>
-                                </label>
-
-                                <select
-                                  required
-                                  defaultValue={formData.country_code}
-                                  name="company_country"
-                                  onChange={handleStep2getstate}
-                                  placeholder="Select or type a country"
-                                  className="form-select" // Add Bootstrap class or custom styling
-                                >
-                                  <option value="">
-                                    Select or type a country
-                                  </option>
-                                  {countryOptionsFormattedCode.map((option) => (
-                                    <option value={option.value}>
-                                      {option.label}
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-                            </div>
-
-                            <div className="col-12">
-                              <div className="d-flex flex-column gap-2">
-                                <label htmlFor="" className="label_fontWeight">
-                                  State / Province / Territory / District{" "}
-                                  {step2required && (
-                                    <span className="required">*</span>
-                                  )}
-                                </label>
-
-                                <select
-                                  className="form-select"
-                                  required={step2required ? true : false}
-                                  name="company_state"
-                                  defaultValue={selectedState}
-                                  onChange={handleStateChange}
-                                >
-                                  <option value="">-- Select State --</option>
-                                  {States.map((state) => (
-                                    <option
-                                      key={state.isoCode}
-                                      value={state.isoCode}
+                          {formStep1 && (
+                            <div className="profile-content">
+                              <form
+                                onSubmit={handleSubmitForm_One}
+                                method="post"
+                                action="javascript:void(0)"
+                              >
+                                <div className="row g-3">
+                                  {/* First Name */}
+                                  <div className="col-6">
+                                    <label
+                                      htmlFor="company_name"
+                                      className="label_fontWeight"
                                     >
-                                      {state.name}
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-                            </div>
-
-                            <div className="col-md-6">
-                              <div className="d-flex flex-column gap-2">
-                                <label htmlFor="" className="label_fontWeight">
-                                  City{" "}
-                                  {step2required && (
-                                    <span className="required">*</span>
-                                  )}
-                                </label>
-
-                                <select
-                                  defaultValue={formData.company_city}
-                                  required={step2required ? true : false}
-                                  name="company_country"
-                                  onChange={handleStep2getcity}
-                                  placeholder="Select or type a city"
-                                  className="form-select" // Add Bootstrap class or custom styling
-                                >
-                                  <option value="">
-                                    Select or type a city
-                                  </option>
-
-                                  {Cities.map((Citi) => (
-                                    <option key={Citi.name} value={Citi.name}>
-                                      {Citi.name}
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-                            </div>
-
-                            <div className="col-md-6">
-                              <div className="d-flex flex-column gap-2">
-                                <label htmlFor="" className="label_fontWeight">
-                                  Postal code/Zip{" "}
-                                  {step2required && (
-                                    <span className="required">*</span>
-                                  )}
-                                </label>
-
-                                <input
-                                  onChange={handleChange}
-                                  type="text"
-                                  value={formData.company_postal_code}
-                                  className="form-control"
-                                  required={step2required ? true : false}
-                                  name="company_postal_code"
-                                  placeholder="Enter postal code/zip"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                          <div className="col-12 mt-4">
-                            <div className="d-flex justify-content-between mt-2">
-                              <div className="flex-shrink-0">
-                                <button
-                                  type="button"
-                                  className="global_btn_clear w-fit  px-4 py-2 fn_size_sm  active d-flex align-items-center gap-2"
-                                  data-step="3"
-                                  onClick={() => handlebackSteps(1)}
-                                >
-                                  Back
-                                </button>
-                              </div>
-                              <div className="flex-shrink-0">
-                                <button
-                                  disabled={isLoading}
-                                  style={{ opacity: isLoading ? 0.6 : 1 }}
-                                  type="submit"
-                                  className="global_btn w-fit  px-4 py-2 fn_size_sm  active d-flex align-items-center gap-2"
-                                >
-                                  Next
-                                  {isLoading && (
-                                    <div
-                                      className=" spinner-white spinner-border spinneronetimepay m-0"
-                                      role="status"
-                                    >
-                                      <span className="visually-hidden"></span>
-                                    </div>
-                                  )}
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        </form>
-                      </>
-                    )}
-                    {formStep3 && (
-                      <form
-                        onSubmit={handleSubmit}
-                        action="javascript:void(0)"
-                        method="post"
-                      >
-                        <div className="row g-3">
-                          <div className="col-md-12 mt-5">
-                            <div className="d-flex flex-column gap-2">
-                              <p
-                                style={{
-                                  background: "#ff3d41",
-                                  color: "#fff",
-                                  fontSize: "0.9rem",
-                                  borderRadius: "8px",
-                                }}
-                                className="rounded-xl px-3 py-1 w-fit"
-                              >
-                                3/3
-                              </p>
-                              <label htmlFor="">
-                                <h4>Legal Entity Information</h4>
-                              </label>
-                            </div>
-                          </div>
-                          <div className="col-md-6">
-                            <label
-                              htmlFor="first_name"
-                              className="label_fontWeight"
-                            >
-                              Upload Articles of Incorporation{" "}
-                              <span className="required">*</span>
-                            </label>
-                            <input
-                              type="file"
-                              name="articles"
-                              id="articles"
-                              className="form-control"
-                              accept=".pdf,.doc,.docx,.jpg,.png" // restrict to supported types if needed
-                              onChange={handleFileChange}
-                              required={!Filenamearticle} // only required if no file exists
-                            />
-                            <span>{Filenamearticle}</span>
-                          </div>
-                          <div className="col-md-6">
-                            <label
-                              htmlFor="entity_name"
-                              className="label_fontWeight"
-                            >
-                              Legal Entity Name{" "}
-                              <span className="required">*</span>
-                            </label>
-                            <input
-                              defaultValue={formData.entity_name}
-                              type="text"
-                              onChange={handleChange}
-                              name="entity_name"
-                              placeholder="Enter here"
-                              value={formData.entity_name}
-                              id="entity_name"
-                              className="form-control"
-                              required
-                            />
-                          </div>
-                          <div className="col-md-6">
-                            <label
-                              htmlFor="entity_name"
-                              className="label_fontWeight"
-                            >
-                              Business Number{" "}
-                              <span className="required">*</span>
-                            </label>
-                            <input
-                              onChange={handleChange}
-                              defaultValue={formData.business_number}
-                              type="text"
-                              name="business_number"
-                              value={formData.business_number}
-                              id="business_number"
-                              className="form-control"
-                              placeholder="Enter your business number"
-                              required
-                            />
-                          </div>
-
-                          <div className="col-md-6">
-                            <label
-                              htmlFor="jurisdiction"
-                              className="label_fontWeight"
-                            >
-                              Jurisdiction of Incorporation{" "}
-                              <span className="required">*</span>
-                            </label>
-                            <select
-                              required
-                              value={formData.jurisdiction_country}
-                              name="jurisdiction_country"
-                              onChange={handleJurisdictionChange}
-                              placeholder="Select or type a country"
-                              className="form-select" // Add Bootstrap class or custom styling
-                            >
-                              <option value="">Select or type a country</option>
-                              {countryOptionsFormatted.map((option) => (
-                                <option value={option.value}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          <div className="col-md-6">
-                            <label
-                              htmlFor="entity_type"
-                              className="label_fontWeight"
-                            >
-                              Type of Entity{" "}
-                              {entityTypesByCountry[jurisdiction] && (
-                                <span className="required">*</span>
-                              )}
-                            </label>
-                            <select
-                              id="entity_type"
-                              name="entity_type"
-                              className="form-select"
-                              value={entityType}
-                              onChange={handleEntityTypeChange}
-                              disabled={!jurisdiction}
-                              required={!!entityTypesByCountry[jurisdiction]}
-                            >
-                              <option value="">Select entity type</option>
-                              {jurisdiction &&
-                                entityTypesByCountry[jurisdiction]?.map(
-                                  (type) => (
-                                    <option key={type} value={type}>
-                                      {type}
-                                    </option>
-                                  )
-                                )}
-                            </select>
-                          </div>
-                          <div className="col-md-6">
-                            <label
-                              htmlFor="date_of_incorporation"
-                              className="label_fontWeight"
-                            >
-                              Date of Incorporation{" "}
-                              <span className="required">*</span>
-                            </label>
-                            <input
-                              required
-                              onChange={handleChange}
-                              defaultValue={formData.date_of_incorporation}
-                              type="date"
-                              name="date_of_incorporation"
-                              id="date_of_incorporation"
-                              className="form-control"
-                            />
-                          </div>
-                          <div className="col-md-6">
-                            <label
-                              htmlFor="entity_structure"
-                              className="label_fontWeight"
-                            >
-                              Entity Structure{" "}
-                              <span className="required">*</span>
-                            </label>
-
-                            <select
-                              required
-                              onChange={handleChange}
-                              name="entity_structure"
-                              id="entity_structure"
-                              className="form-select"
-                              defaultValue={formData.entity_structure}
-                            >
-                              <option value="">Select</option>
-                              <option value="private">
-                                Private Corporation
-                              </option>
-                              <option value="public">Public Corporation</option>
-                            </select>
-                          </div>
-                          <div className="col-md-6">
-                            <label
-                              htmlFor="office_address"
-                              className="label_fontWeight"
-                            >
-                              Registered Office Address{" "}
-                              <span className="required">*</span>
-                            </label>
-                            <textarea
-                              onChange={handleChange}
-                              required
-                              defaultValue={formData.office_address}
-                              type="date"
-                              name="office_address"
-                              id="office_address"
-                              className="form-control"
-                              placeholder="Enter office address"
-                            />
-                          </div>
-                          <div className="col-md-12">
-                            <label
-                              htmlFor="mailing_address"
-                              className="label_fontWeight"
-                            >
-                              Mailing Address{" "}
-                              <span className="required">*</span>
-                            </label>
-                            <textarea
-                              required
-                              onChange={handleChange}
-                              value={formData.mailing_address}
-                              type="date"
-                              name="mailing_address"
-                              id="mailing_address"
-                              className="form-control"
-                              placeholder="Enter mailing address"
-                            />
-                          </div>
-                        </div>
-                        <div className="col-12 mt-4">
-                          <div className="d-flex justify-content-between mt-2">
-                            <div className="flex-shrink-0">
-                              <button
-                                type="button"
-                                onClick={() => handlebackSteps(2)}
-                                className="global_btn_clear w-fit  px-4 py-2 fn_size_sm  active d-flex align-items-center gap-2"
-                                data-step="3"
-                              >
-                                Back
-                              </button>
-                            </div>
-                            <div className="flex-shrink-0">
-                              <button
-                                disabled={isLoading}
-                                style={{ opacity: isLoading ? 0.6 : 1 }}
-                                type="submit"
-                                className="global_btn w-fit  px-4 py-2 fn_size_sm  active d-flex align-items-center gap-2"
-                              >
-                                Save
-                                {isLoading && (
-                                  <div
-                                    className=" spinner-white spinner-border spinneronetimepay m-0"
-                                    role="status"
-                                  >
-                                    <span className="visually-hidden"></span>
+                                      Name of Company{" "}
+                                      <span className="required">*</span>
+                                    </label>
+                                    <input
+                                      required
+                                      onChange={handleChange}
+                                      value={formData.company_name}
+                                      type="text"
+                                      name="company_name"
+                                      id="company_name"
+                                      className="form-input"
+                                      placeholder="Enter company name"
+                                    />
                                   </div>
-                                )}
-                              </button>
+                                  <div className="col-6">
+                                    <label
+                                      htmlFor="company_name"
+                                      className="label_fontWeight"
+                                    >
+                                      Company Email{" "}
+                                      <span className="required">*</span>
+                                    </label>
+                                    <input
+                                      required
+                                      onChange={handleChange}
+                                      value={formData.company_email}
+                                      type="text"
+                                      name="company_email"
+                                      id="company_email"
+                                      className="form-input"
+                                      placeholder="Enter company email"
+                                    />
+                                  </div>
+                                  <div className="col-md-6">
+                                    <label
+                                      htmlFor="Industry"
+                                      className="label_fontWeight"
+                                    >
+                                      Industry <span className="required">*</span>
+                                    </label>
+                                    <select
+                                      id="Industry"
+                                      value={formData.company_industory}
+                                      className="form-select"
+                                      onChange={handleChange}
+                                      name="company_industory"
+                                      required
+                                    >
+                                      <option value="">--Select--</option>
+                                      {IndustryExpertise.map((industry, index) => (
+                                        <option key={index} value={industry.value || industry.name}>
+                                          {industry.name}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                  <div className="col-md-6">
+                                    <label
+                                      htmlFor="phone"
+                                      className="label_fontWeight"
+                                    >
+                                      Phone <span className="required">*</span>
+                                    </label>
+                                    <PhoneInput
+                                      required
+                                      value={formData.phone}
+                                      name="phone"
+                                      defaultCountry="CA"
+                                      onChange={handlePhoneChange}
+                                      className="phonregister form-control"
+                                      placeholder="Enter phone number"
+                                    />
+                                    {phoneError && (
+                                      <small style={{ color: "red" }}>
+                                        {phoneError}
+                                      </small>
+                                    )}
+                                  </div>
+                                  <div className="col-md-6">
+                                    <label
+                                      htmlFor="company_website"
+                                      className="label_fontWeight"
+                                    >
+                                      Company Website / URL{" "}
+                                      <span className="required">*</span>
+                                    </label>
+                                    <input
+                                      ref={companyWebsiteRef}
+                                      type="text"
+                                      required
+                                      value={formData.company_website}
+                                      onChange={handleChange}
+                                      name="company_website"
+                                      id="company_website"
+                                      className="form-control"
+                                      placeholder="Enter your company url"
+                                    />
+                                    {errorUrl && (
+                                      <div
+                                        style={{ fontSize: "13px" }}
+                                        className="text-danger fw-semibold"
+                                      >
+                                        Please enter valid website url
+                                        (eg:www.domain.com)
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="col-md-6">
+                                    <label
+                                      htmlFor="employee_number"
+                                      className="label_fontWeight"
+                                    >
+                                      Number of Employees{" "}
+                                      <span className="required">*</span>
+                                    </label>
+                                    <select
+                                      required
+                                      onChange={handleChange}
+                                      value={formData.employee_number}
+                                      name="employee_number"
+                                      id="employee_number"
+                                      className="form-select"
+                                    >
+                                      <option value="">
+                                        Select employee count range
+                                      </option>
+                                      <option value="1-10">1-10 employees</option>
+                                      <option value="11-50">11-50 employees</option>
+                                      <option value="51-200">51-200 employees</option>
+                                      <option value="201-500">
+                                        201-500 employees
+                                      </option>
+                                      <option value="501-1000">
+                                        501-1000 employees
+                                      </option>
+                                      <option value="1000+">1000+ employees</option>
+                                    </select>
+                                  </div>
+
+
+                                  <div className="col-6">
+                                    <label
+                                      style={{
+                                        fontWeight: "600",
+                                        fontSize: "1rem",
+                                      }}
+                                    >
+                                      Date of Incorporation/Registration{" "}
+                                      <span className="required">*</span>
+                                      <span
+                                        className="tooltip-icon"
+                                        data-tooltip-id="tt-cat-1"
+                                        data-tooltip-html={`
+        <div class="d-flex flex-column gap-1 tip-content">
+          <ul style="margin:0; padding-left:15px;">
+            <li>Must match article of incorporation</li>
+          </ul>
+        </div>
+      `}
+                                      >
+                                        <img
+                                          className="blackdark"
+                                          width="15"
+                                          height="15"
+                                          src="/assets/user/images/question.png"
+                                          alt="Tip"
+                                          style={{ cursor: 'pointer' }}
+                                        />
+                                      </span>
+                                      <Tooltip
+                                        id="tt-cat-1"
+                                        place="top"
+                                        // ❌ Remove float and positionStrategy
+                                        // float={true}  // REMOVE THIS
+                                        // positionStrategy="fixed" // REMOVE THIS
+                                        effect="solid" // Add this for better performance
+                                        clickable={true}
+                                        delayShow={200} // Add small delay to prevent flicker
+                                        delayHide={100}
+                                        className="custom-tooltip"
+                                      />
+                                    </label>
+
+                                    <input
+                                      type="date"
+                                      required
+                                      value={formData.year_registration ? formData.year_registration.split('T')[0] : ''}
+                                      name="year_registration"
+                                      id="year_registration"
+                                      className="form-control"
+                                      placeholder="Enter here"
+                                      onChange={(e) => {
+                                        const value = e.target.value;
+                                        const isoDate = value ? new Date(value).toISOString() : '';
+                                        setFormData((prev) => ({
+                                          ...prev,
+                                          year_registration: isoDate,
+                                        }));
+                                      }}
+                                    />
+                                  </div>
+                                  <div className="col-6">
+                                    <label className="label_fontWeight">
+                                      One-sentence headliner about the company{" "}
+                                      <span className="required">*</span>
+                                    </label>
+                                    <textarea
+                                      required
+                                      id="description"
+                                      name="descriptionStep4"
+                                      className="form-control"
+                                      maxLength="400"
+                                      value={formData.descriptionStep4}
+                                      onChange={handledescriptionStep4}
+                                      placeholder="Max 400 characters..."
+                                    />
+                                    <div className="char-count">
+                                      {charCount_descriptionStep4}/400
+                                    </div>
+                                  </div>
+
+                                  {/* Problem */}
+                                  <div className="col-6">
+                                    <label className="label_fontWeight">
+                                      What problem are you solving?{" "}
+                                      <span className="required">*</span>
+                                    </label>
+                                    <textarea
+                                      required
+                                      id="problem"
+                                      name="problemStep4"
+                                      className="form-control"
+                                      maxLength="600"
+                                      value={formData.problemStep4}
+                                      onChange={handleproblemStep4}
+                                      placeholder="Max 600 characters..."
+                                    />
+                                    <div className="char-count">
+                                      {charCount_problemStep4}/600
+                                    </div>
+                                  </div>
+
+                                  {/* Solution */}
+                                  <div className="col-6">
+                                    <label className="label_fontWeight">
+                                      What is Your Solution to the Problem?{" "}
+                                      <span className="required">*</span>
+                                    </label>
+                                    <textarea
+                                      required
+                                      id="solution"
+                                      name="solutionStep4"
+                                      className="form-control"
+                                      maxLength="600"
+                                      value={formData.solutionStep4}
+                                      onChange={handlesolutionStep4}
+                                      placeholder="Max 600 characters..."
+                                    />
+                                    <div className="char-count">
+                                      {charCount_solutionStep4}/600
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="col-12 mt-4">
+                                  <div className="d-flex justify-content-between mt-2">
+                                    <div className="flex-shrink-0"></div>
+                                    <div className="flex-shrink-0">
+                                      <button
+                                        disabled={isLoading}
+                                        style={{ opacity: isLoading ? 0.6 : 1 }}
+                                        type="submit"
+                                        className="global_btn w-fit  px-4 py-2 fn_size_sm  active d-flex align-items-center gap-2"
+                                      >
+                                        Next
+                                        {isLoading && (
+                                          <div
+                                            className=" spinner-white spinner-border spinneronetimepay m-0"
+                                            role="status"
+                                          >
+                                            <span className="visually-hidden"></span>
+                                          </div>
+                                        )}
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </form>
                             </div>
-                          </div>
+                          )}
+                          {formStep2 && (
+                            <>
+                              <div className="profile-content">
+                                <form
+                                  onSubmit={handleSubmitForm_Two}
+                                  method="post"
+                                  action="javascript:void(0)"
+                                >
+                                  <div className="row g-3">
+                                    <div className="col-md-12 mt-5">
+                                      <div className="d-flex flex-column gap-2">
+                                        <p
+                                          style={{
+                                            background: "#ff3d41",
+                                            color: "#fff",
+                                            fontSize: "0.9rem",
+                                            borderRadius: "8px",
+                                          }}
+                                          className="rounded-xl px-3 py-1 w-fit"
+                                        >
+                                          2/3
+                                        </p>
+                                        <label htmlFor="">
+                                          <h4>Company Mailing Address</h4>
+                                        </label>
+                                      </div>
+                                    </div>
+
+                                    <div className="col-md-6">
+                                      <div className="d-flex flex-column gap-2">
+                                        <label htmlFor="" className="label_fontWeight">
+                                          Street <span className="required">*</span>
+                                        </label>
+
+                                        <input
+                                          value={formData.company_street_address}
+                                          onChange={handleChange}
+                                          name="company_street_address"
+                                          required
+                                          id=""
+                                          className="form-control"
+                                          placeholder="Enter here"
+                                          type="text"
+                                        />
+                                      </div>
+                                    </div>
+
+                                    <div className="col-md-6">
+                                      <div className="d-flex flex-column gap-2">
+                                        <label htmlFor="" className="label_fontWeight">
+                                          Country <span className="required">*</span>
+                                        </label>
+
+                                        <select
+                                          required
+                                          defaultValue={formData.country_code}
+                                          name="company_country"
+                                          onChange={handleStep2getstate}
+                                          placeholder="Select or type a country"
+                                          className="form-select" // Add Bootstrap class or custom styling
+                                        >
+                                          <option value="">
+                                            Select or type a country
+                                          </option>
+                                          {countryOptionsFormattedCode.map((option) => (
+                                            <option value={option.value}>
+                                              {option.label}
+                                            </option>
+                                          ))}
+                                        </select>
+                                      </div>
+                                    </div>
+
+                                    <div className="col-12">
+                                      <div className="d-flex flex-column gap-2">
+                                        <label htmlFor="" className="label_fontWeight">
+                                          State / Province / Territory / District{" "}
+                                          {step2required && (
+                                            <span className="required">*</span>
+                                          )}
+                                        </label>
+
+                                        <select
+                                          className="form-select"
+                                          required={step2required ? true : false}
+                                          name="company_state"
+                                          defaultValue={selectedState}
+                                          onChange={handleStateChange}
+                                        >
+                                          <option value="">-- Select State --</option>
+                                          {States.map((state) => (
+                                            <option
+                                              key={state.isoCode}
+                                              value={state.isoCode}
+                                            >
+                                              {state.name}
+                                            </option>
+                                          ))}
+                                        </select>
+                                      </div>
+                                    </div>
+
+                                    <div className="col-md-6">
+                                      <div className="d-flex flex-column gap-2">
+                                        <label htmlFor="" className="label_fontWeight">
+                                          City{" "}
+                                          {step2required && (
+                                            <span className="required">*</span>
+                                          )}
+                                        </label>
+
+                                        <select
+                                          defaultValue={formData.company_city}
+                                          required={step2required ? true : false}
+                                          name="company_country"
+                                          onChange={handleStep2getcity}
+                                          placeholder="Select or type a city"
+                                          className="form-select" // Add Bootstrap class or custom styling
+                                        >
+                                          <option value="">
+                                            Select or type a city
+                                          </option>
+
+                                          {Cities.map((Citi) => (
+                                            <option key={Citi.name} value={Citi.name}>
+                                              {Citi.name}
+                                            </option>
+                                          ))}
+                                        </select>
+                                      </div>
+                                    </div>
+
+                                    <div className="col-md-6">
+                                      <div className="d-flex flex-column gap-2">
+                                        <label htmlFor="" className="label_fontWeight">
+                                          Postal code/Zip{" "}
+                                          {step2required && (
+                                            <span className="required">*</span>
+                                          )}
+                                        </label>
+
+                                        <input
+                                          onChange={handleChange}
+                                          type="text"
+                                          value={formData.company_postal_code}
+                                          className="form-control"
+                                          required={step2required ? true : false}
+                                          name="company_postal_code"
+                                          placeholder="Enter postal code/zip"
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="col-12 mt-4">
+                                    <div className="d-flex justify-content-between mt-2">
+                                      <div className="flex-shrink-0">
+                                        <button
+                                          type="button"
+                                          className="global_btn_clear w-fit  px-4 py-2 fn_size_sm  active d-flex align-items-center gap-2"
+                                          data-step="3"
+                                          onClick={() => handlebackSteps(1)}
+                                        >
+                                          Back
+                                        </button>
+                                      </div>
+                                      <div className="flex-shrink-0">
+                                        <button
+                                          disabled={isLoading}
+                                          style={{ opacity: isLoading ? 0.6 : 1 }}
+                                          type="submit"
+                                          className="global_btn w-fit  px-4 py-2 fn_size_sm  active d-flex align-items-center gap-2"
+                                        >
+                                          Next
+                                          {isLoading && (
+                                            <div
+                                              className=" spinner-white spinner-border spinneronetimepay m-0"
+                                              role="status"
+                                            >
+                                              <span className="visually-hidden"></span>
+                                            </div>
+                                          )}
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </form>
+                              </div>
+                            </>
+                          )}
+                          {formStep3 && (
+                            <div className="profile-content">
+                              <form
+                                onSubmit={handleSubmit}
+                                action="javascript:void(0)"
+                                method="post"
+                              >
+                                <div className="row g-3">
+                                  <div className="col-md-12 mt-5">
+                                    <div className="d-flex flex-column gap-2">
+                                      <p
+                                        style={{
+                                          background: "#ff3d41",
+                                          color: "#fff",
+                                          fontSize: "0.9rem",
+                                          borderRadius: "8px",
+                                        }}
+                                        className="rounded-xl px-3 py-1 w-fit"
+                                      >
+                                        3/3
+                                      </p>
+                                      <label htmlFor="">
+                                        <h4>Legal Entity Information</h4>
+                                      </label>
+                                    </div>
+                                  </div>
+                                  <div className="col-md-6">
+                                    <label
+                                      htmlFor="first_name"
+                                      className="label_fontWeight"
+                                    >
+                                      Upload Articles of Incorporation{" "}
+                                      <span className="required">*</span>
+                                    </label>
+                                    <input
+                                      type="file"
+                                      name="articles"
+                                      id="articles"
+                                      className="form-control"
+                                      accept=".pdf,.doc,.docx,.jpg,.png" // restrict to supported types if needed
+                                      onChange={handleFileChange}
+                                      required={!Filenamearticle} // only required if no file exists
+                                    />
+                                    <span>{Filenamearticle}</span>
+                                  </div>
+                                  <div className="col-md-6">
+                                    <label
+                                      htmlFor="entity_name"
+                                      className="label_fontWeight"
+                                    >
+                                      Legal Entity Name{" "}
+                                      <span className="required">*</span>
+                                    </label>
+                                    <input
+                                      defaultValue={formData.entity_name}
+                                      type="text"
+                                      onChange={handleChange}
+                                      name="entity_name"
+                                      placeholder="Enter here"
+                                      value={formData.entity_name}
+                                      id="entity_name"
+                                      className="form-control"
+                                      required
+                                    />
+                                  </div>
+                                  <div className="col-md-6">
+                                    <label
+                                      htmlFor="entity_name"
+                                      className="label_fontWeight"
+                                    >
+                                      Business Number{" "}
+                                      <span className="required">*</span>
+                                    </label>
+                                    <input
+                                      onChange={handleChange}
+                                      defaultValue={formData.business_number}
+                                      type="text"
+                                      name="business_number"
+                                      value={formData.business_number}
+                                      id="business_number"
+                                      className="form-control"
+                                      placeholder="Enter your business number"
+                                      required
+                                    />
+                                  </div>
+
+                                  <div className="col-md-6">
+                                    <label
+                                      htmlFor="jurisdiction"
+                                      className="label_fontWeight"
+                                    >
+                                      Jurisdiction of Incorporation{" "}
+                                      <span className="required">*</span>
+                                    </label>
+                                    <select
+                                      required
+                                      value={formData.jurisdiction_country}
+                                      name="jurisdiction_country"
+                                      onChange={handleJurisdictionChange}
+                                      placeholder="Select or type a country"
+                                      className="form-select" // Add Bootstrap class or custom styling
+                                    >
+                                      <option value="">Select or type a country</option>
+                                      {countryOptionsFormatted.map((option) => (
+                                        <option value={option.value}>
+                                          {option.label}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+
+                                  <div className="col-md-6">
+                                    <label
+                                      htmlFor="entity_type"
+                                      className="label_fontWeight"
+                                    >
+                                      Type of Entity{" "}
+                                      {entityTypesByCountry[jurisdiction] && (
+                                        <span className="required">*</span>
+                                      )}
+                                    </label>
+                                    <select
+                                      id="entity_type"
+                                      name="entity_type"
+                                      className="form-select"
+                                      value={entityType}
+                                      onChange={handleEntityTypeChange}
+                                      disabled={!jurisdiction}
+                                      required={!!entityTypesByCountry[jurisdiction]}
+                                    >
+                                      <option value="">Select entity type</option>
+                                      {jurisdiction &&
+                                        entityTypesByCountry[jurisdiction]?.map(
+                                          (type) => (
+                                            <option key={type} value={type}>
+                                              {type}
+                                            </option>
+                                          )
+                                        )}
+                                    </select>
+                                  </div>
+
+                                  <div className="col-md-6">
+                                    <label
+                                      htmlFor="entity_structure"
+                                      className="label_fontWeight"
+                                    >
+                                      Entity Structure{" "}
+                                      <span className="required">*</span>
+                                    </label>
+
+                                    <select
+                                      required
+                                      onChange={handleChange}
+                                      name="entity_structure"
+                                      id="entity_structure"
+                                      className="form-select"
+                                      defaultValue={formData.entity_structure}
+                                    >
+                                      <option value="">Select</option>
+                                      <option value="private">
+                                        Private Corporation
+                                      </option>
+                                      <option value="public">Public Corporation</option>
+                                    </select>
+                                  </div>
+                                  <div className="col-md-6">
+                                    <label
+                                      htmlFor="office_address"
+                                      className="label_fontWeight"
+                                    >
+                                      Registered Office Address{" "}
+                                      <span className="required">*</span>
+                                    </label>
+                                    <textarea
+                                      onChange={handleChange}
+                                      required
+                                      defaultValue={formData.office_address}
+                                      type="date"
+                                      name="office_address"
+                                      id="office_address"
+                                      className="form-control"
+                                      placeholder="Enter office address"
+                                    />
+                                  </div>
+                                  <div className="col-md-6">
+                                    <label
+                                      htmlFor="mailing_address"
+                                      className="label_fontWeight"
+                                    >
+                                      Mailing Address{" "}
+                                      <span className="required">*</span>
+                                    </label>
+                                    <textarea
+                                      required
+                                      onChange={handleChange}
+                                      value={formData.mailing_address}
+                                      type="date"
+                                      name="mailing_address"
+                                      id="mailing_address"
+                                      className="form-control"
+                                      placeholder="Enter mailing address"
+                                    />
+                                  </div>
+                                </div>
+                                <div className="col-12 mt-4">
+                                  <div className="d-flex justify-content-between mt-2">
+                                    <div className="flex-shrink-0">
+                                      <button
+                                        type="button"
+                                        onClick={() => handlebackSteps(2)}
+                                        className="global_btn_clear w-fit  px-4 py-2 fn_size_sm  active d-flex align-items-center gap-2"
+                                        data-step="3"
+                                      >
+                                        Back
+                                      </button>
+                                    </div>
+                                    <div className="flex-shrink-0">
+                                      <button
+                                        disabled={isLoading}
+                                        style={{ opacity: isLoading ? 0.6 : 1 }}
+                                        type="submit"
+                                        className="global_btn w-fit  px-4 py-2 fn_size_sm  active d-flex align-items-center gap-2"
+                                      >
+                                        Save
+                                        {isLoading && (
+                                          <div
+                                            className=" spinner-white spinner-border spinneronetimepay m-0"
+                                            role="status"
+                                          >
+                                            <span className="visually-hidden"></span>
+                                          </div>
+                                        )}
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </form>
+                            </div>
+                          )}
+                          {/* Save Button */}
                         </div>
-                      </form>
-                    )}
-                    {/* Save Button */}
+                      </div>
+                    </SectionWrapper>
                   </div>
+
                 </div>
-              </SectionWrapper>
-            </div>
+              </div>
+            </section>
           </div>
         </div>
-      </Wrapper>
+      </main>
 
       <style jsx>{`
         .profile-card {

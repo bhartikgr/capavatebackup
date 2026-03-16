@@ -17,12 +17,15 @@ import {
 } from "../../../../components/Styles/RegisterStyles";
 import { State, City } from "country-state-city";
 import "react-tooltip/dist/react-tooltip.css";
+import { API_BASE_URL } from "../../../../config/config.js";
+import { Tooltip } from 'react-tooltip';
+import "react-tooltip/dist/react-tooltip.css";
 export default function UserAddCompany() {
   const storedUsername = localStorage.getItem("OwnerLoginData");
   const userLogin = JSON.parse(storedUsername);
-  const apiURL = "http://localhost:5000/api/user/";
-  const apiUrlCompany = "http://localhost:5000/api/user/company/";
-  var apiURLIndustry = "http://localhost:5000/api/user/capitalround/";
+  const apiURL = API_BASE_URL + "api/user/";
+  const apiUrlCompany = API_BASE_URL + "api/user/company/";
+  var apiURLIndustry = API_BASE_URL + "api/user/capitalround/";
   document.title = "Add Company";
   const [errr, seterrr] = useState(false);
   const [dangerMessage, setdangerMessage] = useState("");
@@ -948,36 +951,71 @@ export default function UserAddCompany() {
                                 </div>
 
                                 {/* Year of Registration */}
-                                <div className="col-12">
+
+                                <div className="col-6">
                                   <label
-                                    htmlFor="year_registration"
-                                    className="label_fontWeight"
+                                    style={{
+                                      fontWeight: "600",
+                                      fontSize: "1rem",
+                                    }}
                                   >
-                                    Year of Registration{" "}
+                                    Date of Incorporation/Registration{" "}
                                     <span className="required">*</span>
+                                    <span
+                                      className="tooltip-icon"
+                                      data-tooltip-id="tt-cat-1"
+                                      data-tooltip-html={`
+                                        <div class="d-flex flex-column gap-1 tip-content">
+                                          <ul style="margin:0; padding-left:15px;">
+                                            <li>Must match article of incorporation</li>
+                                          </ul>
+                                        </div>
+                                      `}
+                                    >
+                                      <img
+                                        className="blackdark"
+                                        width="15"
+                                        height="15"
+                                        src="/assets/user/images/question.png"
+                                        alt="Tip"
+                                        style={{ cursor: 'pointer' }}
+                                      />
+                                    </span>
+                                    <Tooltip
+                                      id="tt-cat-1"
+                                      place="top"
+                                      // ❌ Remove float and positionStrategy
+                                      // float={true}  // REMOVE THIS
+                                      // positionStrategy="fixed" // REMOVE THIS
+                                      effect="solid" // Add this for better performance
+                                      clickable={true}
+                                      delayShow={200} // Add small delay to prevent flicker
+                                      delayHide={100}
+                                      className="custom-tooltip"
+                                    />
                                   </label>
+
                                   <input
-                                    type="number"
+                                    type="date"
                                     required
-                                    value={formData.year_registration}
+                                    value={formData.year_registration ? formData.year_registration.split('T')[0] : ''}
                                     name="year_registration"
                                     id="year_registration"
                                     className="form-control"
                                     placeholder="Enter here"
                                     onChange={(e) => {
                                       const value = e.target.value;
-                                      if (/^\d*$/.test(value)) {
-                                        setFormData((prev) => ({
-                                          ...prev,
-                                          year_registration: value,
-                                        }));
-                                      }
+                                      const isoDate = value ? new Date(value).toISOString() : '';
+                                      setFormData((prev) => ({
+                                        ...prev,
+                                        year_registration: isoDate,
+                                      }));
                                     }}
                                   />
                                 </div>
 
                                 {/* Description */}
-                                <div className="col-12">
+                                <div className="col-6">
                                   <label className="label_fontWeight">
                                     One-sentence headliner about the company{" "}
                                     <span className="required">*</span>
@@ -987,18 +1025,18 @@ export default function UserAddCompany() {
                                     id="description"
                                     name="descriptionStep4"
                                     className="form-control"
-                                    maxLength="800"
+                                    maxLength="400"
                                     value={formData.descriptionStep4}
                                     onChange={handledescriptionStep4}
-                                    placeholder="Max 800 characters..."
+                                    placeholder="Max 400 characters..."
                                   />
                                   <div className="char-count">
-                                    {charCount_descriptionStep4}/800
+                                    {charCount_descriptionStep4}/400
                                   </div>
                                 </div>
 
                                 {/* Problem */}
-                                <div className="col-12">
+                                <div className="col-6">
                                   <label className="label_fontWeight">
                                     What problem are you solving?{" "}
                                     <span className="required">*</span>
@@ -1008,18 +1046,18 @@ export default function UserAddCompany() {
                                     id="problem"
                                     name="problemStep4"
                                     className="form-control"
-                                    maxLength="400"
+                                    maxLength="600"
                                     value={formData.problemStep4}
                                     onChange={handleproblemStep4}
-                                    placeholder="Max 400 characters..."
+                                    placeholder="Max 600 characters..."
                                   />
                                   <div className="char-count">
-                                    {charCount_problemStep4}/400
+                                    {charCount_problemStep4}/600
                                   </div>
                                 </div>
 
                                 {/* Solution */}
-                                <div className="col-12">
+                                <div className="col-6">
                                   <label className="label_fontWeight">
                                     What is Your Solution to the Problem?{" "}
                                     <span className="required">*</span>
@@ -1029,13 +1067,13 @@ export default function UserAddCompany() {
                                     id="solution"
                                     name="solutionStep4"
                                     className="form-control"
-                                    maxLength="400"
+                                    maxLength="600"
                                     value={formData.solutionStep4}
                                     onChange={handlesolutionStep4}
-                                    placeholder="Max 400 characters..."
+                                    placeholder="Max 600 characters..."
                                   />
                                   <div className="char-count">
-                                    {charCount_solutionStep4}/400
+                                    {charCount_solutionStep4}/600
                                   </div>
                                 </div>
 
