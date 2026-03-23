@@ -867,15 +867,19 @@ export default function RecordRoundList() {
     setPendingFormData(null);
   };
   const handlefundingRound = async () => {
+    console.log(records.length)
     if (records.length > 0) {
 
       setfundingroundMessage(
         "Only the most recent funding round can be edited. Once a new round is created, previous rounds become read-only."
       );
-
+      setIsfundinground(true);
     } else {
       if (isAcknowlegmentConfirmation.length > 0) {
-        // await handleCheckPayemt(); // submit form once
+        await handleCheckPayemt(); // submit form once
+      } else {
+        // navigate("/createrecord");
+        setShowRoundPopup(true);
       }
 
     }

@@ -58,7 +58,7 @@ export default function NewFooter() {
                 </li>
                 <li>
                   <a
-                    href="http://localhost:5000/user/register"
+                    href="https://capavate.com/user/register"
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -73,7 +73,7 @@ export default function NewFooter() {
               <ul className="footer-links">
                 <li>
                   <a
-                    href="http://localhost:5000/user/login"
+                    href="https://capavate.com/user/login"
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -82,7 +82,7 @@ export default function NewFooter() {
                 </li>
                 <li>
                   <a
-                    href="http://localhost:5000/user/register"
+                    href="https://capavate.com/user/register"
                     target="_blank"
                     rel="noopener noreferrer"
                   >

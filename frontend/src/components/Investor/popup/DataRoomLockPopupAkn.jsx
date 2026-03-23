@@ -119,26 +119,7 @@ export default function DataRoomLockPopupAkn({
                         {/* Body */}
                         <div style={{ padding: '32px' }}>
                             {/* Trigger info */}
-                            <div style={{
-                                background: '#f8f9fa',
-                                borderRadius: '12px',
-                                padding: '12px 16px',
-                                marginBottom: '24px',
-                                borderLeft: '4px solid #CC0000',
-                                display: 'flex',
-                                alignItems: 'flex-start',
-                                gap: '12px'
-                            }}>
-                                <AlertCircle size={18} color="#CC0000" style={{ flexShrink: 0, marginTop: '2px' }} />
-                                <p style={{
-                                    margin: 0,
-                                    color: '#495057',
-                                    fontSize: '0.85rem',
-                                    lineHeight: '1.5'
-                                }}>
-                                    <strong>Trigger:</strong> When a Signatory initiates the "lock data room" action to create a read-only snapshot and generate an AI-powered executive summary. Displayed before the lock and AI processing are triggered.
-                                </p>
-                            </div>
+
 
                             {/* Main content */}
                             <div style={{

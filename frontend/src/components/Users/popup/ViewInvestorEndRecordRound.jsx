@@ -727,7 +727,7 @@ const ViewInvestorEndRecordRound = ({ onClose, recordViewData }) => {
                   <ul className="mb-0 mt-2 ps-3">
                     {termsheetFiles.map((file, index) => {
                       const pathname = `upload/docs/doc_${recordViewData.user_id}`;
-                      const downloadUrl = `http://localhost:5000/api/${pathname}/companyRound/${file}`;
+                      const downloadUrl = `https://capavate.com/api/${pathname}/companyRound/${file}`;
 
                       return (
                         <li
@@ -763,7 +763,7 @@ const ViewInvestorEndRecordRound = ({ onClose, recordViewData }) => {
                   <ul className="mb-0 mt-2 ps-3">
                     {subscriptionDocs.map((file, index) => {
                       const pathname = `upload/docs/doc_${recordViewData.user_id}`;
-                      const downloadUrl = `http://localhost:5000/api/${pathname}/companyRound/${file}`;
+                      const downloadUrl = `https://capavate.com/api/${pathname}/companyRound/${file}`;
                       return (
                         <li
                           key={index}

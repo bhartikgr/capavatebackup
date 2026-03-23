@@ -59,9 +59,11 @@ export default function InvestorReportViewRecordRound() {
   var apiURLInvestor = API_BASE_URL + "api/user/investor/";
   document.title = "Shared Investor Report";
   const { id } = useParams();
+  const [totalOwershipInvestor, settotalOwershipInvestor] = useState('0')
   useEffect(() => {
     checkInvestor();
     getInvestorReportCapitalRound();
+    getInvestorOwnership();
   }, []);
 
   const checkInvestor = async () => {
@@ -97,7 +99,71 @@ export default function InvestorReportViewRecordRound() {
       console.error("Error generating summary", err);
     }
   };
+  const getInvestorOwnership = async () => {
+    const formData = {
+      company_id: userLogin.companies[0].id,
+      investor_id: id,
+    };
+    try {
+      const generateRes = await axios.post(
+        apiURLInvestor + "getInvestorOwnership",
+        formData,
+        {
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      console.log(generateRes.data);
 
+      const data = generateRes.data;
+
+      if (data.success && data.round_wise_ownership) {
+        // Calculate total sum of percentages from round_wise_ownership
+        const totalPercentage = data.round_wise_ownership.reduce(
+          (sum, round) => sum + (parseFloat(round.ownership_percentage) || 0),
+          0
+        );
+
+        // Format total percentage
+        const totalPercentageFormatted = totalPercentage.toFixed(2) + "%";
+
+        // Add total percentage to the data
+        data.total_percentage_sum = totalPercentage;
+        data.total_percentage_sum_formatted = totalPercentageFormatted;
+
+        // You can also calculate weighted average if needed
+        const totalShares = data.round_wise_ownership.reduce(
+          (sum, round) => sum + (parseFloat(round.shares) || 0),
+          0
+        );
+
+        const totalInvestment = data.round_wise_ownership.reduce(
+          (sum, round) => sum + (parseFloat(round.investment) || 0),
+          0
+        );
+
+        data.total_shares_all_rounds = totalShares;
+        data.total_investment_all_rounds = totalInvestment;
+
+        // Calculate weighted average percentage
+        const weightedAvgPercentage = totalShares > 0
+          ? data.round_wise_ownership.reduce(
+            (sum, round) => sum + ((parseFloat(round.ownership_percentage) || 0) * (parseFloat(round.shares) || 0)),
+            0
+          ) / totalShares
+          : 0;
+
+        data.weighted_avg_percentage = weightedAvgPercentage;
+        data.weighted_avg_percentage_formatted = weightedAvgPercentage.toFixed(2) + "%";
+
+        settotalOwershipInvestor(data.total_percentage_sum_formatted);
+      }
+    } catch (err) {
+      console.error("Error generating summary", err);
+    }
+  };
   const getInvestorReportCapitalRound = async () => {
     const formData = {
       company_id: userLogin.companies[0].id,
@@ -114,7 +180,6 @@ export default function InvestorReportViewRecordRound() {
           },
         }
       );
-      console.log(resp.data.results)
       setrecords(resp.data.results);
     } catch (err) {
       console.error("Error generating summary", err);
@@ -123,63 +188,10 @@ export default function InvestorReportViewRecordRound() {
 
 
   const handleviewData = (dataa) => {
-    console.log(dataa)
     setViewRecordRounds(true);
     setrecordViewData(dataa);
   };
-  const customStyles = {
-    table: {
-      style: {
-        border: "1px solid #dee2e6",
-        borderRadius: "12px",
-        overflow: "auto",
-      },
-    },
-    headCells: {
-      style: {
-        backgroundColor: "#efefef",
-        fontWeight: "600",
-        fontSize: "0.8rem",
-        color: "#000",
-        textTransform: "uppercase",
-        whiteSpace: "nowrap",
-      },
-    },
-    cells: {
-      style: {
-        whiteSpace: "nowrap",
-        overflow: "auto",
-        textOverflow: "ellipsis",
-      },
-    },
-    rows: {
-      style: {
-        fontSize: "0.8rem",
-        fontWeight: "500",
-      },
-      stripedStyle: {
-        backgroundColor: "#fff",
-      },
-    },
-    pagination: {
-      style: {
-        marginTop: "15px",
-        backgroundColor: "#fafafa",
-        padding: "12px 16px",
-      },
-    },
-  };
 
-  const conditionalRowStyles = [
-    {
-      when: (row) => true, // apply to all rows
-      style: {
-        "&:hover": {
-          backgroundColor: "var(--lightRed)", // apna hover color
-        },
-      },
-    },
-  ];
 
   const [searchText, setSearchText] = useState("");
 
@@ -516,7 +528,7 @@ export default function InvestorReportViewRecordRound() {
                   <div className="row g-2 mb-4">
                     {[
 
-                      { label: 'Ownership of Company (fully diluted) %', value: `${0}%`, icon: '📊', color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' },
+                      { label: 'Ownership of Company (fully diluted) %', value: `${totalOwershipInvestor}`, icon: '📊', color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' },
                       { label: 'Investor Rank', value: `#${InvestorAllRoundRecordData?.rank || 'N/A'}`, icon: '🏆', color: '#CC0000', bg: '#fff5f5', border: '#fecaca' },
                       { label: 'Min Invest', value: `${InvestorAllRoundRecordData?.currency || '$'}${(InvestorAllRoundRecordData?.min_investment || 0).toLocaleString()}`, icon: '📉', color: '#64748b', bg: '#f8fafc', border: '#e2e8f0' },
                       { label: 'Max Invest', value: `${InvestorAllRoundRecordData?.currency || '$'}${(InvestorAllRoundRecordData?.max_investment || 0).toLocaleString()}`, icon: '📈', color: '#64748b', bg: '#f8fafc', border: '#e2e8f0' },

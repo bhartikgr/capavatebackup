@@ -15,7 +15,7 @@ import "react-tooltip/dist/react-tooltip.css";
 export default function UserAddCompany() {
   const storedUsername = localStorage.getItem("OwnerLoginData");
   const userLogin = JSON.parse(storedUsername);
-  const apiUrlCompany = "http://localhost:5000/api/user/company/";
+  const apiUrlCompany = "https://capavate.com/api/user/company/";
   document.title = "Add New Signatory";
   const [errr, seterrr] = useState(false);
   const [dangerMessage, setdangerMessage] = useState("");

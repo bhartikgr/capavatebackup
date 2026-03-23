@@ -28,7 +28,7 @@ function AdminUsersCompany() {
     setIsOpen(!isOpen); // Toggle the state between true and false
   };
   const { id } = useParams();
-  const apiUrl = "http://localhost:5000/api/admin/company/";
+  const apiUrl = "https://capavate.com/api/admin/company/";
   const [records, setRecords] = useState([]);
   const [UserName, setUserName] = useState(null);
   document.title = "All Companies - Admin";

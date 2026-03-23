@@ -20,7 +20,7 @@ function AdminBroadcastSession() {
   const [selectedZone, setSelectedZone] = useState(
     Intl.DateTimeFormat().resolvedOptions().timeZone
   );
-  const apiUrl = "http://localhost:5000/api/admin/module/";
+  const apiUrl = "https://capavate.com/api/admin/module/";
   const [searchQuery, setSearchQuery] = useState("");
   const [CodeId, setCodeId] = useState("");
   // Define filtered data based on the search query

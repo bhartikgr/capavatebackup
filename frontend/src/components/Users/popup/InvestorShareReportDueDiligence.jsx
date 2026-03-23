@@ -16,8 +16,8 @@ const InvestorShareReport = ({
   allinvestor,
   returnrefresh,
 }) => {
-  var apiURLINFile = "http://localhost:5000/api/user/investorreport/";
-  var apiURLInvestor = "http://localhost:5000/api/user/investor/";
+  var apiURLINFile = "https://capavate.com/api/user/investorreport/";
+  var apiURLInvestor = "https://capavate.com/api/user/investor/";
   const storedUsername = localStorage.getItem("CompanyLoginData");
   const userLogin = JSON.parse(storedUsername);
   const [spinners, setspinners] = useState(false);

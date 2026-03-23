@@ -61,7 +61,7 @@ function DueDiligenceReportlist() {
     },
   };
   const [ClientIP, setClientIP] = useState("");
-  var apiURL = "http://localhost:5000/api/user/investor/";
+  var apiURL = "https://capavate.com/api/user/investor/";
   const storedUsername = localStorage.getItem("InvestorData");
   const userLogin = JSON.parse(storedUsername);
   const [searchText, setSearchText] = useState("");

@@ -2610,111 +2610,116 @@ export default function RecordRoundCaptable() {
                       </div>
                     )}
                     {/* ========== WARRANT SUMMARY SECTION ========== */}
-                    {WarrantData && Object.keys(WarrantData).length > 0 && (
-                      <div className="card mt-4 mb-4">
-                        <div className="card-header bg-warning text-white d-flex align-items-center">
-                          <i className="bi bi-file-earmark-text me-2 fs-5"></i>
-                          <h5 className="mb-0">Warrant Information</h5>
-                        </div>
-                        <div className="card-body">
-                          <div className="row">
-                            {/* Warrant Basic Info */}
-                            <div className="col-md-4">
-                              <div className="bg-light p-3 rounded-3">
-                                <p className="mb-1 text-muted small">Coverage Percentage</p>
-                                <h4 className="fw-bold mb-0">{WarrantData.warrant_coverage_percentage}%</h4>
-                              </div>
+                    {(activeTab === 'pre-money' || activeTab === 'post-money') && roundData?.type !== 'Round 0' && (
+                      <>
+                        {WarrantData && Object.keys(WarrantData).length > 0 && (
+                          <div className="card mt-4 mb-4">
+                            <div className="card-header bg-warning text-white d-flex align-items-center">
+                              <i className="bi bi-file-earmark-text me-2 fs-5"></i>
+                              <h5 className="mb-0">Warrant Information</h5>
                             </div>
-                            <div className="col-md-4">
-                              <div className="bg-light p-3 rounded-3">
-                                <p className="mb-1 text-muted small">Exercise Type</p>
-                                <h4 className="fw-bold mb-0">
-                                  {WarrantData.warrant_exercise_type === 'next_round_adjusted' ? 'Next Round ± Adjustment' :
-                                    WarrantData.warrant_exercise_type === 'next_round' ? 'Next Round Price' : 'Fixed Price'}
-                                </h4>
-                              </div>
-                            </div>
-                            <div className="col-md-4">
-                              <div className="bg-light p-3 rounded-3">
-                                <p className="mb-1 text-muted small">Expiration Date</p>
-                                <h4 className="fw-bold mb-0">{formatCurrentDate(WarrantData.expiration_date) || 'No Expiry'}</h4>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Adjustment Info */}
-                          {WarrantData.warrant_exercise_type === 'next_round_adjusted' && (
-                            <div className="row mt-3">
-                              <div className="col-md-6">
-                                <div className="bg-light p-3 rounded-3">
-                                  <p className="mb-1 text-muted small">Adjustment Direction</p>
-                                  <h4 className={`fw-bold mb-0 ${WarrantData.warrant_adjustment_direction === 'increase' ? 'text-success' : 'text-danger'
-                                    }`}>
-                                    {WarrantData.warrant_adjustment_direction === 'increase' ? 'Increase by' : 'Decrease by'}
-                                  </h4>
+                            <div className="card-body">
+                              <div className="row">
+                                {/* Warrant Basic Info */}
+                                <div className="col-md-4">
+                                  <div className="bg-light p-3 rounded-3">
+                                    <p className="mb-1 text-muted small">Coverage Percentage</p>
+                                    <h4 className="fw-bold mb-0">{WarrantData.warrant_coverage_percentage}%</h4>
+                                  </div>
+                                </div>
+                                <div className="col-md-4">
+                                  <div className="bg-light p-3 rounded-3">
+                                    <p className="mb-1 text-muted small">Exercise Type</p>
+                                    <h4 className="fw-bold mb-0">
+                                      {WarrantData.warrant_exercise_type === 'next_round_adjusted' ? 'Next Round ± Adjustment' :
+                                        WarrantData.warrant_exercise_type === 'next_round' ? 'Next Round Price' : 'Fixed Price'}
+                                    </h4>
+                                  </div>
+                                </div>
+                                <div className="col-md-4">
+                                  <div className="bg-light p-3 rounded-3">
+                                    <p className="mb-1 text-muted small">Expiration Date</p>
+                                    <h4 className="fw-bold mb-0">{formatCurrentDate(WarrantData.expiration_date) || 'No Expiry'}</h4>
+                                  </div>
                                 </div>
                               </div>
-                              <div className="col-md-6">
-                                <div className="bg-light p-3 rounded-3">
-                                  <p className="mb-1 text-muted small">Adjustment Percentage</p>
-                                  <h4 className="fw-bold mb-0">{WarrantData.warrant_adjustment_percent}%</h4>
+
+                              {/* Adjustment Info */}
+                              {WarrantData.warrant_exercise_type === 'next_round_adjusted' && (
+                                <div className="row mt-3">
+                                  <div className="col-md-6">
+                                    <div className="bg-light p-3 rounded-3">
+                                      <p className="mb-1 text-muted small">Adjustment Direction</p>
+                                      <h4 className={`fw-bold mb-0 ${WarrantData.warrant_adjustment_direction === 'increase' ? 'text-success' : 'text-danger'
+                                        }`}>
+                                        {WarrantData.warrant_adjustment_direction === 'increase' ? 'Increase by' : 'Decrease by'}
+                                      </h4>
+                                    </div>
+                                  </div>
+                                  <div className="col-md-6">
+                                    <div className="bg-light p-3 rounded-3">
+                                      <p className="mb-1 text-muted small">Adjustment Percentage</p>
+                                      <h4 className="fw-bold mb-0">{WarrantData.warrant_adjustment_percent}%</h4>
+                                    </div>
+                                  </div>
                                 </div>
-                              </div>
-                            </div>
-                          )}
+                              )}
 
-                          {/* Exercise Status */}
-                          <div className="row mt-3">
-                            <div className="col-md-12">
-                              <div className="bg-light p-3 rounded-3 d-flex justify-content-between align-items-center">
-                                <div>
-                                  <p className="mb-1 text-muted small">Exercise Status</p>
-                                  <h4 className="fw-bold mb-0">
-                                    <span className={`badge ${WarrantData.actual_status === 'exercised' ? 'bg-success' :
-                                      WarrantData.actual_status === 'expired' ? 'bg-danger' : 'bg-warning'
-                                      } p-2`}>
-                                      {WarrantData.actual_status === 'exercised' ? '✓ Exercised' :
-                                        WarrantData.actual_status === 'expired' ? '✗ Expired' : '⏳ Not Exercised'}
-                                    </span>
-                                  </h4>
-                                </div>
+                              {/* Exercise Status */}
+                              <div className="row mt-3">
+                                <div className="col-md-12">
+                                  <div className="bg-light p-3 rounded-3 d-flex justify-content-between align-items-center">
+                                    <div>
+                                      <p className="mb-1 text-muted small">Exercise Status</p>
+                                      <h4 className="fw-bold mb-0">
+                                        <span className={`badge ${WarrantData.actual_status === 'exercised' ? 'bg-success' :
+                                          WarrantData.actual_status === 'expired' ? 'bg-danger' : 'bg-warning'
+                                          } p-2`}>
+                                          {WarrantData.actual_status === 'exercised' ? '✓ Exercised' :
+                                            WarrantData.actual_status === 'expired' ? '✗ Expired' : '⏳ Not Exercised'}
+                                        </span>
+                                      </h4>
+                                    </div>
 
-                                {WarrantData.actual_status === 'exercised' && (
-                                  <div className="text-end">
-                                    <p className="mb-1 text-muted small">Exercised on</p>
-                                    <p className="fw-bold mb-0">{formatCurrentDate(WarrantData.exercised_date)}</p>
+                                    {WarrantData.actual_status === 'exercised' && (
+                                      <div className="text-end">
+                                        <p className="mb-1 text-muted small">Exercised on</p>
+                                        <p className="fw-bold mb-0">{formatCurrentDate(WarrantData.exercised_date)}</p>
 
-                                    {/* ✅ NEW: Show exercised in round ID */}
-                                    {WarrantData.exercised_in_round_id && (
-                                      <>
-                                        <p className="mb-1 text-muted small mt-2">Exercised in Round</p>
-                                        <p className="fw-bold mb-0">
-                                          <span className="badge bg-info">
-                                            Round #{WarrantData.exercised_in_round_id}
-                                          </span>
-                                        </p>
-                                      </>
+                                        {/* ✅ NEW: Show exercised in round ID */}
+                                        {WarrantData.exercised_in_round_id && (
+                                          <>
+                                            <p className="mb-1 text-muted small mt-2">Exercised in Round</p>
+                                            <p className="fw-bold mb-0">
+                                              <span className="badge bg-info">
+                                                Round #{WarrantData.exercised_in_round_id}
+                                              </span>
+                                            </p>
+                                          </>
+                                        )}
+                                      </div>
                                     )}
                                   </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Warrant Notes */}
-                          {WarrantData.notes && (
-                            <div className="row mt-3">
-                              <div className="col-md-12">
-                                <div className="bg-light p-3 rounded-3">
-                                  <p className="mb-1 text-muted small">Additional Notes</p>
-                                  <p className="mb-0">{WarrantData.notes}</p>
                                 </div>
                               </div>
+
+                              {/* Warrant Notes */}
+                              {WarrantData.notes && (
+                                <div className="row mt-3">
+                                  <div className="col-md-12">
+                                    <div className="bg-light p-3 rounded-3">
+                                      <p className="mb-1 text-muted small">Additional Notes</p>
+                                      <p className="mb-0">{WarrantData.notes}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
-                      </div>
+                          </div>
+                        )}
+                      </>
                     )}
+
                     {/* CPAVATE Summary Tab - Keep as is */}
                     {activeTab === 'summary' && summaryDetails && (
                       <div className="card">

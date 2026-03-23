@@ -33,8 +33,8 @@ function InvestorProfile() {
   const [errr, seterrr] = useState(false);
   const [IndustryExpertise, setIndustryExpertise] = useState([]);
   document.title = "Investor Profile";
-  var apiURLUser = "http://localhost:5000/api/user/";
-  var apiURL = "http://localhost:5000/api/user/capitalround/";
+  var apiURLUser = "https://capavate.com/api/user/";
+  var apiURL = "https://capavate.com/api/user/capitalround/";
   useEffect(() => {
     getIndustryExpertise();
   }, []);
@@ -179,7 +179,7 @@ function InvestorProfile() {
     return /\.(jpg|jpeg|png|gif)$/i.test(file);
   };
   const baseUrl =
-    "http://localhost:5000/api/upload/investor/inv_" + userLogin.id;
+    "https://capavate.com/api/upload/investor/inv_" + userLogin.id;
 
 
   // Add these state variables

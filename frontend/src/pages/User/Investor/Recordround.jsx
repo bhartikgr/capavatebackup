@@ -1411,9 +1411,8 @@ export default function Recordround() {
 
     if (isEditOperation) {
       setsuccessMsg(
-        "⚠️ WARNING: Editing this round will affect ALL subsequent rounds. " +
-        "All following investment rounds will be recalculated based on new values. " +
-        "Please review all information carefully before submitting."
+        "Please review all the information carefully before submitting. " +
+        "Once submitted, it can be officially recorded."
       );
     } else {
       setsuccessMsg(

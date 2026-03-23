@@ -288,7 +288,7 @@ export default function HomeNew() {
     });
     setHeights(newHeights);
   };
-  var apiURL = "http://localhost:5000/api/user/";
+  var apiURL = "https://capavate.com/api/user/";
   const handleSendContactInfo = async (e) => {
     e.preventDefault();
     var data = e.target;

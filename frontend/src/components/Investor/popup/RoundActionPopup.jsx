@@ -248,27 +248,7 @@ export default function RoundActionPopup({
                         {/* Body */}
                         <div style={{ padding: '32px', maxHeight: '70vh', overflowY: 'auto' }}>
                             {/* Trigger info */}
-                            <div style={{
-                                background: '#f8f9fa',
-                                borderRadius: '12px',
-                                padding: '12px 16px',
-                                marginBottom: '24px',
-                                borderLeft: '4px solid #CC0000',
-                                display: 'flex',
-                                alignItems: 'flex-start',
-                                gap: '12px'
-                            }}>
-                                <AlertCircle size={18} color="#CC0000" style={{ flexShrink: 0, marginTop: '2px' }} />
-                                <p style={{
-                                    margin: 0,
-                                    color: '#495057',
-                                    fontSize: '0.85rem',
-                                    lineHeight: '1.5'
-                                }}>
-                                    <strong>Trigger:</strong> Presented to the Signatory immediately before each round action —
-                                    {getTriggerDescription()}
-                                </p>
-                            </div>
+
 
                             {/* Action description */}
                             <div style={{

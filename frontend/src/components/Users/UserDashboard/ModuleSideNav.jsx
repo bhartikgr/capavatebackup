@@ -96,7 +96,7 @@ export default function ModuleSideNav({
   const apiUrlCompany = API_BASE_URL + "api/user/company/";
 
   const [isHovered, setIsHovered] = useState(false);
-  const apiURL = "http://localhost:5000/api/user/";
+  const apiURL = "https://capavate.com/api/user/";
 
   // Determine which state to use (props or internal)
   const isCollapsed =

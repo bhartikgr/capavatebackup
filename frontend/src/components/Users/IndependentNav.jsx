@@ -39,7 +39,7 @@ export default function IndependentNav({ isOpen }) {
   const navigate = useNavigate();
   const [openDropdown, setOpenDropdown] = useState(null);
   const [getdatamodule, setgetdatamodule] = useState([]);
-  const apiURL = "http://localhost:5000/api/user/";
+  const apiURL = "https://capavate.com/api/user/";
   const storedUsername = localStorage.getItem("CompanyLoginData");
   const userLogin = JSON.parse(storedUsername);
   useEffect(() => {

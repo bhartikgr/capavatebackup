@@ -28,7 +28,7 @@ export default function InvestorLogin() {
   const [dangerMessage, setdangerMessage] = useState("");
   const [userdataa, setuserdataa] = useState("");
   const [spinners, setspinners] = useState(false);
-  var apiURL = "http://localhost:5000/api/user/investorreport/";
+  var apiURL = "https://capavate.com/api/user/investorreport/";
 
   useEffect(() => {
     // Check if the username key exists in session storage

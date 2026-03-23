@@ -6,7 +6,7 @@ import SuccessAlert from "../../components/Admin/SuccessAlert";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 export default function AdminLogout() {
-  var apiURL = "http://localhost:5000/api/admin/";
+  var apiURL = "https://capavate.com/api/admin/";
   const navigate = useNavigate();
   useEffect(() => {
     localStorage.removeItem("adminLogin");

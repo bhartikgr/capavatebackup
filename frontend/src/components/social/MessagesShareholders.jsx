@@ -149,8 +149,8 @@ export default function ShareholderMessages() {
                   <div className='d-flex align-items-center gap-2'>
                     <button
                       className={`btn p-0 border-0 ${selectedNote.important
-                          ? 'text-primary'
-                          : 'text-secondary'
+                        ? 'text-primary'
+                        : 'text-secondary'
                         }`}
                       onClick={handleMarkImportant}
                       style={{

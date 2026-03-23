@@ -201,7 +201,7 @@ export default function Login() {
     }
   };
 
-  var apiURL = "http://localhost:5000/api/user/";
+  var apiURL = "https://capavate.com/api/user/";
 
   const countryOptionsFormatted = allcountry.map((country) => ({
     value: country.code,

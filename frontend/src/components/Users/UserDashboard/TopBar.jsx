@@ -6,8 +6,8 @@ import { Tophead, Slan } from "../../../components/Styles/MainHeadStyles";
 import axios from "axios";
 
 function TopBar() {
-  var apiURL = "http://localhost:5000/api/user/";
-  var apiURLAiFile = "http://localhost:5000/api/user/aifile/";
+  var apiURL = "https://capavate.com/api/user/";
+  var apiURLAiFile = "https://capavate.com/api/user/aifile/";
   const [menuOpen, setMenuOpen] = useState(false);
   const toggleMenu = () => {
     setMenuOpen(!menuOpen);

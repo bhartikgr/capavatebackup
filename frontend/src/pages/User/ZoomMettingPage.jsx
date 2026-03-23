@@ -243,7 +243,7 @@ export default function ZoomMettingPage() {
                             allow="camera; microphone; fullscreen"
                             sandbox="allow-same-origin allow-scripts allow-popups"
                           ></iframe> */}
-                          <Link to="http://localhost:5000/zoom/join/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InRlc3QrMDAxQGdtYWlsLmNvbSIsImlwIjoiMjIzLjE3OC4yMDkuOTQiLCJtZWV0aW5nSWQiOjg3OTk4OTYyODYyLCJpYXQiOjE3NDY0NDIwMTcsImV4cCI6MTc0NjQ0NTYxN30.ZGyKCJZlI74NjN74HGYol2Dud-zI5L6txokUEOHPMTI">
+                          <Link to="https://capavate.com/zoom/join/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InRlc3QrMDAxQGdtYWlsLmNvbSIsImlwIjoiMjIzLjE3OC4yMDkuOTQiLCJtZWV0aW5nSWQiOjg3OTk4OTYyODYyLCJpYXQiOjE3NDY0NDIwMTcsImV4cCI6MTc0NjQ0NTYxN30.ZGyKCJZlI74NjN74HGYol2Dud-zI5L6txokUEOHPMTI">
                             Join Metting
                           </Link>
                         </div>

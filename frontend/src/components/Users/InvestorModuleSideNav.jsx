@@ -73,7 +73,7 @@ export default function InvestorModuleSideNav({ isOpen }) {
   const navigate = useNavigate();
   const [openDropdown, setOpenDropdown] = useState(null);
   const [getdatamodule, setgetdatamodule] = useState([]);
-  const apiURL = "http://localhost:5000/api/user/";
+  const apiURL = "https://capavate.com/api/user/";
 
   useEffect(() => {
     // Check if the username key exists in session storage

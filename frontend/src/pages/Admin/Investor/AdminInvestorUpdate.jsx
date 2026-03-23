@@ -8,7 +8,7 @@ import { FaArrowLeft } from "react-icons/fa";
 import axios from "axios";
 function AdminInvestorUpdate() {
   const [reports, setReports] = useState([]);
-  const apiURLINFile = "http://localhost:5000/api/admin/adminall/";
+  const apiURLINFile = "https://capavate.com/api/admin/adminall/";
   const { type } = useParams();
   const [typemain, setTypemain] = useState("");
 

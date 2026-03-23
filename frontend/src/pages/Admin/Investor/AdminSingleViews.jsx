@@ -12,7 +12,7 @@ function AdminSingleViews() {
 
   const [reports, setReports] = useState([]);
   const [reportstable, setReportstable] = useState([]);
-  const apiURLINFile = "http://localhost:5000/api/admin/adminall/";
+  const apiURLINFile = "https://capavate.com/api/admin/adminall/";
 
   useEffect(() => {
     const fetchReports = async () => {

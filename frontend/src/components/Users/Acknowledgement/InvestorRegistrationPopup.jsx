@@ -117,7 +117,7 @@ export default function InvestorRegistrationPopup({
                                     You have been invited to register on Capavate by a company through its Investor CRM. This Agreement governs your access as an Investor to company profiles, funding round information, cap table data, Deal Rooms, Social Features, Angel Network content, and all other Capavate services. You must accept before accessing any company information, investment materials, or any other Platform content.
                                 </p>
                                 <p style={{ margin: '12px 0 0 0', color: '#495057', fontSize: '0.95rem', lineHeight: '1.6' }}>
-                                    By accepting, you enter into a legally binding agreement with <strong>Blueprint Catalyst Limited</strong> (trading as <strong>Capavate</strong>), incorporated in Hong Kong SAR. All Master Legal Documents at <a href="http://localhost:5000/privacy-policy" target="_blank" style={{ color: '#CC0000' }}>capavate.com/legal</a> are incorporated into this Agreement in their entirety.
+                                    By accepting, you enter into a legally binding agreement with <strong>Blueprint Catalyst Limited</strong> (trading as <strong>Capavate</strong>), incorporated in Hong Kong SAR. All Master Legal Documents at <a href="https://capavate.com/privacy-policy" target="_blank" style={{ color: '#CC0000' }}>capavate.com/legal</a> are incorporated into this Agreement in their entirety.
                                 </p>
                             </div>
 

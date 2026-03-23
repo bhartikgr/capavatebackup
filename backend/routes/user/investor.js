@@ -99,5 +99,7 @@ router.post(
   "/getRoundInvitaionAcknowlegment",
   inverstorController.getRoundInvitaionAcknowlegment,
 );
+router.post("/getInvestorOwnership", inverstorController.getInvestorOwnership);
+router.post("/getcompanyList", inverstorController.getcompanyList);
 
 module.exports = router;

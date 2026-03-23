@@ -1,22 +1,37 @@
-import React, { useState, useEffect } from 'react'
-import 'bootstrap/dist/css/bootstrap.min.css'
-import '../../../assets/style/sidebar.css'
-import { Link, useLocation } from 'react-router-dom'
-import { Menu, ChevronLeft, Users, Briefcase, MapPin, DollarSign, Award, Heart, UserPlus, Eye, EyeOff, Globe, TrendingUp, Shield, HandCoins, Building2 } from 'lucide-react'
-import AngelNetworkJoinWaitlist from './AngelNetworkJoinWaitlist.jsx'
+import React, { useState, useEffect } from "react";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "../../../assets/style/sidebar.css";
+import { Link, useLocation } from "react-router-dom";
 import {
-  RiBuildingLine,
-} from 'react-icons/ri'
-import { IoIosArrowDown } from 'react-icons/io'
-import { API_BASE_URL } from '../../../config/config.js';
+  Menu,
+  ChevronLeft,
+  Users,
+  Briefcase,
+  MapPin,
+  DollarSign,
+  Award,
+  Heart,
+  UserPlus,
+  Eye,
+  EyeOff,
+  Globe,
+  TrendingUp,
+  Shield,
+  Zap,
+  Building2,
+  ArrowRight,
+} from "lucide-react";
+import AngelNetworkJoinWaitlist from "./AngelNetworkJoinWaitlist.jsx";
+import { RiBuildingLine } from "react-icons/ri";
+import { IoIosArrowDown } from "react-icons/io";
+import { API_BASE_URL } from "../../../config/config.js";
 import axios from "axios";
 
-// ✅ STATIC MENU ITEMS - No dynamic data here
 const menuItems = [
   {
-    label: 'Edit Profile',
-    href: '/investor/profile',
-    icon: <RiBuildingLine size={18} />
+    label: "Edit Profile",
+    href: "/investor/profile",
+    icon: <RiBuildingLine size={18} />,
   },
   {
     label: 'Company List',
@@ -24,17 +39,17 @@ const menuItems = [
     icon: <Building2 size={18} />
   },
   {
-    label: 'Cap Table Rules',
+    label: "Cap Table Rules",
     icon: <Shield size={18} />,
-    modal: 'capTableRules'
+    modal: "capTableRules",
   },
 ];
 
 export default function ModuleSideNav() {
-  const [isCollapsed, setIsCollapsed] = useState(false)
-  const [openDropdown, setOpenDropdown] = useState(null)
-  const [showModal, setShowModal] = useState(false)
-  const [showAngelProfile, setShowAngelProfile] = useState(false)
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [showAngelProfile, setShowAngelProfile] = useState(false);
   const location = useLocation();
   const storedUsername = localStorage.getItem("InvestorData");
   const userLogin = JSON.parse(storedUsername);
@@ -42,26 +57,29 @@ export default function ModuleSideNav() {
   const apiURL_Investor = API_BASE_URL + "api/user/investor/";
   const [records, setRecords] = useState(null);
   const [showCapTableRules, setShowCapTableRules] = useState(false);
-
+  const [CompanyList, setCompanyList] = useState([]);
   useEffect(() => {
     const checkScreen = () => {
-      setIsCollapsed(window.innerWidth < 786)
-    }
-    checkScreen()
-    window.addEventListener('resize', checkScreen)
-    return () => window.removeEventListener('resize', checkScreen)
-  }, [])
+      setIsCollapsed(window.innerWidth < 786);
+    };
+    checkScreen();
+    window.addEventListener("resize", checkScreen);
+    return () => window.removeEventListener("resize", checkScreen);
+  }, []);
 
   useEffect(() => {
     fetchData();
+    getcompanyList();
   }, []);
 
   const fetchData = async () => {
     try {
-      const res = await axios.post(apiURL_Investor + "getinvestorData", { id: userLogin.id });
+      const res = await axios.post(apiURL_Investor + "getinvestorData", {
+        id: userLogin.id,
+      });
       if (res.data.results?.length > 0) {
         const d = res.data.results[0];
-        console.log(d.capavate_interests)
+        console.log(d.capavate_interests);
         setRecords(d);
       } else {
         setRecords({});
@@ -71,31 +89,39 @@ export default function ModuleSideNav() {
       setRecords({});
     }
   };
+  const getcompanyList = async () => {
+    try {
+      const res = await axios.post(apiURL_Investor + "getcompanyList", {
+        investor_id: userLogin.id,
+      });
 
-  const toggleDropdown = index => {
-    if (isCollapsed) setIsCollapsed(false)
-    setOpenDropdown(openDropdown === index ? null : index)
-  }
+      setCompanyList(res.data.results)
+    } catch (err) {
+
+    }
+  };
+
+  const toggleDropdown = (index) => {
+    if (isCollapsed) setIsCollapsed(false);
+    setOpenDropdown(openDropdown === index ? null : index);
+  };
 
   const toggleAngelProfile = () => {
-    setShowAngelProfile(!showAngelProfile)
-  }
+    setShowAngelProfile(!showAngelProfile);
+  };
 
   const relatedRoutes = {
-    '/record-round-list': [
-      '/createrecord',
-      '/record-round-cap-table'
-    ],
+    "/record-round-list": ["/createrecord", "/record-round-cap-table"],
   };
 
   const isActive = (path) => {
-    if (!path || path === '#') return false;
+    if (!path || path === "#") return false;
     const currentPath = location.pathname;
     if (currentPath === path) return true;
-    if (currentPath.startsWith(path + '/')) return true;
+    if (currentPath.startsWith(path + "/")) return true;
     if (
-      relatedRoutes[path]?.some((route) =>
-        currentPath === route || currentPath.startsWith(route + '/')
+      relatedRoutes[path]?.some(
+        (route) => currentPath === route || currentPath.startsWith(route + "/"),
       )
     ) {
       return true;
@@ -103,11 +129,47 @@ export default function ModuleSideNav() {
     return false;
   };
 
+  const renderBadge = (item) => {
+    if (item.status) {
+      return (
+        <span
+          className={`menu_value ${item.status === "confirmed"
+            ? "bg-success"
+            : item.status === "pending"
+              ? "bg-danger"
+              : "bg-secondary"
+            }`}
+        >
+          {item.status}
+        </span>
+      );
+    }
+    if (item.value) {
+      return <span className="menu_value bg-success">{item.value}</span>;
+    }
+    return null;
+  };
 
+  const isParentActive = (dropdown) => {
+    return dropdown?.some((sub) =>
+      sub.subItems
+        ? sub.subItems.some((item) => {
+          const current = location.pathname;
+          if (current.startsWith(item.href)) return true;
+          if (
+            relatedRoutes[item.href]?.some(
+              (route) => current === route || current.startsWith(route + "/"),
+            )
+          ) {
+            return true;
+          }
+          return false;
+        })
+        : location.pathname.startsWith(sub.href),
+    );
+  };
 
-
-
-  // Investor profile data - STATIC
+  // Investor profile data
   const investorProfile = {
     firstName: "John",
     lastName: "Doe",
@@ -117,35 +179,35 @@ export default function ModuleSideNav() {
     following: 342,
     portfolioCompanies: ["TechStart Inc.", "GrowthLabs", "FutureFund"],
     interests: records?.capavate_interests
-      ? records?.capavate_interests.split(",").map(s => s.trim())
+      ? records?.capavate_interests.split(",").map((s) => s.trim())
       : [],
     industryExpertise: ["Technology", "Healthcare", "Education"],
     typicalChequeSize: records?.cheque_size
-      ? records?.cheque_size.split(",").map(s => s.trim())
+      ? records?.cheque_size.split(",").map((s) => s.trim())
       : [],
     geographyFocus: records?.geo_focus,
     preferredStage: ["Seed", "Series A"],
-    handsOn: "Hands-on (Monthly advisory calls)"
+    handsOn: "Hands-on (Monthly advisory calls)",
   };
 
   // Cap Table Rules State
   const [capTableRules, setCapTableRules] = useState({
     // Investor Rules
     investor: {
-      contact_listed: 'No',
-      portfolio_company: 'No',
-      contact_from: 'No',
-      capavate_member: 'No',
-      everyone: 'No',
+      contact_listed: "No",
+      portfolio_company: "No",
+      contact_from: "No",
+      capavate_member: "No",
+      everyone: "No",
     },
     // Company Rules
     company: {
-      contact_listed: 'No',
-      portfolio_company: 'No',
-      contact_from: 'No',
-      capavate_member: 'No',
-      everyone: 'No',
-    }
+      contact_listed: "No",
+      portfolio_company: "No",
+      contact_from: "No",
+      capavate_member: "No",
+      everyone: "No",
+    },
   });
 
   const [rulesSaving, setRulesSaving] = useState(false);
@@ -162,32 +224,38 @@ export default function ModuleSideNav() {
 
     try {
       // Investor Rules fetch
-      const investorRes = await axios.post(apiURL_Investor + "getCapTableRules", {
-        investor_id: userLogin.id,
-        type: 'Investor'
-      });
+      const investorRes = await axios.post(
+        apiURL_Investor + "getCapTableRules",
+        {
+          investor_id: userLogin.id,
+          type: "Investor",
+        },
+      );
 
       // Company Rules fetch
-      const companyRes = await axios.post(apiURL_Investor + "getCapTableRules", {
-        investor_id: userLogin.id,
-        type: 'Company'
-      });
+      const companyRes = await axios.post(
+        apiURL_Investor + "getCapTableRules",
+        {
+          investor_id: userLogin.id,
+          type: "Company",
+        },
+      );
 
       setCapTableRules({
         investor: investorRes.data.results?.[0] || {
-          contact_listed: 'No',
-          portfolio_company: 'No',
-          contact_from: 'No',
-          capavate_member: 'No',
-          everyone: 'No',
+          contact_listed: "No",
+          portfolio_company: "No",
+          contact_from: "No",
+          capavate_member: "No",
+          everyone: "No",
         },
         company: companyRes.data.results?.[0] || {
-          contact_listed: 'No',
-          portfolio_company: 'No',
-          contact_from: 'No',
-          capavate_member: 'No',
-          everyone: 'No',
-        }
+          contact_listed: "No",
+          portfolio_company: "No",
+          contact_from: "No",
+          capavate_member: "No",
+          everyone: "No",
+        },
       });
     } catch (err) {
       console.error("Error fetching rules:", err);
@@ -199,16 +267,17 @@ export default function ModuleSideNav() {
     setSaveType(type);
 
     try {
-      const rules = type === 'Investor' ? capTableRules.investor : capTableRules.company;
+      const rules =
+        type === "Investor" ? capTableRules.investor : capTableRules.company;
 
       const payload = {
         investor_id: userLogin.id,
         type: type,
         contact_listed: rules.contact_listed,
-        portfolio_company: rules.portfolio_company || 'No',
-        contact_from: rules.contact_from || 'No',
+        portfolio_company: rules.portfolio_company || "No",
+        contact_from: rules.contact_from || "No",
         capavate_member: rules.capavate_member,
-        everyone: rules.everyone
+        everyone: rules.everyone,
       };
 
       await axios.post(apiURL_Investor + "saveCapTableRules", payload);
@@ -224,150 +293,213 @@ export default function ModuleSideNav() {
   };
 
   const toggleRule = (type, key) => {
-    setCapTableRules(prev => ({
+    setCapTableRules((prev) => ({
       ...prev,
       [type]: {
         ...prev[type],
-        [key]: prev[type][key] === 'Yes' ? 'No' : 'Yes'
-      }
+        [key]: prev[type][key] === "Yes" ? "No" : "Yes",
+      },
     }));
   };
-
   return (
     <>
       <div
-        className={`main_sidenav_social scroll_nonw d-flex flex-column gap-4 p-3 justify-content-start align-items-md-start align-items-center ${isCollapsed ? 'collapsed p-md-3' : 'p-md-4'
+        className={`main_sidenav_social scroll_nonw d-flex flex-column gap-4 p-3 justify-content-start align-items-md-start align-items-center ${isCollapsed ? "collapsed p-md-3" : "p-md-4"
           }`}
       >
-        <div className='d-flex justify-content-between align-items-center w-100'>
+        <div className="d-flex justify-content-between align-items-center w-100">
           {!isCollapsed && (
-            <Link to='/investor/dashboard' className='com_logo'>
+            <Link to="/investor/dashboard" className="com_logo">
               <img
-                src='../../../assets/images/capavate.png'
-                className='img-fluid rounded'
-                style={{ maxHeight: '50px' }}
-                alt='profile'
+                src="../../../assets/images/capavate.png"
+                className="img-fluid rounded"
+                style={{ maxHeight: "50px" }}
+                alt="profile"
                 onError={(e) => {
                   e.target.onerror = null;
-                  e.target.src = require('../../../assets/images/capavate.png');
+                  e.target.src = require("../../../assets/images/capavate.png");
                 }}
               />
             </Link>
           )}
           <button
-            className='menu_btn'
+            className="menu_btn"
             onClick={() => setIsCollapsed(!isCollapsed)}
           >
             {isCollapsed ? <Menu size={22} /> : <ChevronLeft size={22} />}
           </button>
         </div>
 
+
         {!isCollapsed && (
-          <div className='company_box bg-white border rounded-3 shadow-sm p-3 w-100'>
-            <div className="d-flex align-items-center gap-2 mb-2">
-              <div className="d-flex align-items-center gap-2 mb-2">
-                <div
-                  className="avatar-circle bg-primary text-white d-flex align-items-center justify-content-center overflow-hidden"
-                  style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '50%',
-                    position: 'relative'
-                  }}
-                >
-                  {records?.profile_picture ? (
-                    <img
-                      src={API_BASE_URL + "api/upload/investor/inv_" + records?.id + "/" + records?.profile_picture}
-                      className='img-fluid w-100 h-100'
-                      style={{
-                        objectFit: 'cover',
-                        width: '100%',
-                        height: '100%'
-                      }}
-                      alt='profile'
-
-                    />
-                  ) : (
-                    <span className="fw-bold">
+          <div className="warr-box">
+            <div className="d-flex flex-column gap-3">
+              <div className="d-flex gap-3">
+                <div className="flex-shrink-0">
+                  <div className="userimg-box rel">
+                    {records?.profile_picture ? (
                       <img
-                        src={API_BASE_URL + "api/upload/investor/inv_" + records?.id + "/" + records?.profile_picture}
-                        className='img-fluid w-100 h-100'
-                        style={{
-                          objectFit: 'cover',
-                          width: '100%',
-                          height: '100%'
-                        }}
-                        alt='profile'
+                        src={
+                          API_BASE_URL +
+                          "api/upload/investor/inv_" +
+                          records?.id +
+                          "/" +
+                          records?.profile_picture
+                        }
 
+                        alt="profile"
                       />
-                    </span>
-                  )}
-                </div>
+                    ) : (
+                      <span className="fw-bold">
+                        <img
+                          src={
+                            API_BASE_URL +
+                            "api/upload/investor/inv_" +
+                            records?.id +
+                            "/" +
+                            records?.profile_picture
+                          }
 
-              </div>
-              <div>
-                <h6 className='mb-0'>
-                  {records?.screen_name
+                          alt="profile"
+                        />
+                      </span>
+                    )}
+                    <span>Pro</span>
+                  </div>
+                </div>
+                <div className="flex-grow-1">
+                  <h4> {records?.screen_name
                     ? records.screen_name
-                    : `${records?.first_name || ""} ${records?.last_name || ""}`.trim()}
-                </h6>
+                    : `${records?.first_name || ""} ${records?.last_name || ""}`.trim()}</h4>
+                  <h5>Accredited Investor</h5>
+                </div>
               </div>
-            </div>
-            <div className='details small text-muted d-flex flex-column gap-1'>
-              <p className="mb-1 d-flex align-items-center gap-1">
-                Investor Type:
-                <span>{records?.type_of_investor}</span>
-              </p>
-            </div>
-            <div className='details small text-muted d-flex flex-column gap-1'>
-              <p className="mb-1 d-flex align-items-center gap-1">
-                <MapPin size={14} />
-                <span>{records?.full_address} {records?.company_country}</span>
-              </p>
+              <div className="d-flex gap-2 align-items-center loca-warr">
+                <div className="d-flex gap-2 align-items-center">
+                  <MapPin />
+                  <h6>{records?.company_country}</h6>
+                </div>
+                <div className="d-flex gap-2 align-items-center">
+                  <Briefcase />
+                  <h6>{records?.type_of_investor}</h6>
+                </div>
+              </div>
             </div>
           </div>
         )}
 
-        <ul className='nav flex-column gap-1 w-100'>
-          <li>
-            <Link
-              to="/investor/profile"
-              className={`sidebar_item d-flex gap-2 align-items-center ${isActive("/investor/profile") ? "active" : ""}`}
-            >
-              <RiBuildingLine size={18} />
-              {!isCollapsed && "Edit Profile"}
-            </Link>
-          </li>
+        <ul className="nav flex-column gap-1 w-100">
+          {menuItems.map((item, index) => (
+            <li key={index}>
+              {item.dropdown ? (
+                <>
+                  <div
+                    className={`sidebar_item d-flex justify-content-between align-items-center ${isParentActive(item.dropdown) ? "active" : ""}`}
+                    onClick={() => toggleDropdown(index)}
+                    style={{ cursor: "pointer" }}
+                  >
+                    <div className="d-flex gap-2 align-items-center">
+                      {item.icon}
+                      {!isCollapsed && item.label}
+                    </div>
+                    {!isCollapsed && <IoIosArrowDown />}
+                  </div>
 
-          <li>
-            <Link
-              to="/investor/company-list"
-              className={`sidebar_item d-flex gap-2 align-items-center ${isActive("/investor/company-list") || location.pathname.startsWith("/investor/company/capital-round-list") || location.pathname.startsWith("/investor/company/capital-round-list/view")
-                ? "active"
-                : ""
-                }`}
-            >
-              <Building2 size={18} />
-              {!isCollapsed && "Company List"}
-            </Link>
-          </li>
+                  {(openDropdown === index || isParentActive(item.dropdown)) &&
+                    !isCollapsed && (
+                      <ul className="submenu">
+                        {item.dropdown.map((sub, i) => (
+                          <li key={i}>
+                            {sub.subItems ? (
+                              <>
+                                <div className="sidebar_item d-flex gap-2 align-items-center fw-medium">
+                                  {sub.icon}
+                                  <span>{sub.label}</span>
+                                </div>
+                                <ul className="ps-4 mt-1 mb-2">
+                                  {sub?.subItems && sub.subItems.length > 0
+                                    ? sub.subItems.map((subItem, j) => (
+                                      <li key={j}>
+                                        {subItem.modal ? (
+                                          <span
+                                            className="sidebar_item small cursor-pointer"
+                                            onClick={() => setShowModal(true)}
+                                          >
+                                            {subItem.label}
+                                          </span>
+                                        ) : subItem.href &&
+                                          subItem.href !== "#" ? (
+                                          <Link
+                                            to={subItem.href}
+                                            className={`sidebar_item small ${isActive(subItem.href) ? "active" : ""}`}
+                                          >
+                                            <div className="d-flex justify-content-between w-100">
+                                              <span>{subItem.label}</span>
+                                              {renderBadge(subItem)}
+                                            </div>
+                                          </Link>
+                                        ) : (
+                                          <span className="sidebar_item small">
+                                            {subItem.label}
+                                          </span>
+                                        )}
+                                      </li>
+                                    ))
+                                    : null}
+                                </ul>
+                              </>
+                            ) : sub.href && sub.href !== "#" ? (
+                              <Link
+                                to={sub.href}
+                                className={`sidebar_item ${isActive(sub.href) ? "active" : ""}`}
+                              >
+                                <div className="d-flex justify-content-between w-100">
+                                  <div className="d-flex gap-2 align-items-center">
+                                    {sub.icon}
+                                    <span>{sub.label}</span>
+                                  </div>
+                                  {renderBadge(sub)}
+                                </div>
+                              </Link>
+                            ) : (
+                              <span className="sidebar_item">{sub.label}</span>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                </>
+              ) : item.modal ? (
+                <span
+                  className={`sidebar_item d-flex gap-2 align-items-center`}
+                  onClick={() => {
+                    if (item.modal === "capTableRules") {
+                      setShowCapTableRules(true);
+                    }
+                  }}
+                  style={{ cursor: "pointer" }}
+                >
+                  {item.icon}
+                  {!isCollapsed && item.label}
+                </span>
+              ) : (
+                <Link
+                  to={item.href}
+                  className={`sidebar_item d-flex gap-2 align-items-center ${isActive(item.href) ? "active" : ""}`}
+                >
+                  {item.icon}
+                  {!isCollapsed && item.label}
+                </Link>
+              )}
+            </li>
+          ))}
 
-          <li>
-            <span
-              className={`sidebar_item d-flex gap-2 align-items-center`}
-              onClick={() => setShowCapTableRules(true)}
-              style={{ cursor: 'pointer' }}
-            >
-              <Shield size={18} />
-              {!isCollapsed && "Cap Table Rules"}
-            </span>
-          </li>
-
+          {/* Angel Investor Profile Section */}
           <li className="mt-3 px-2">
             <div
               className="d-flex justify-content-between align-items-center cursor-pointer mb-2"
               onClick={toggleAngelProfile}
-              style={{ cursor: 'pointer' }}
+              style={{ cursor: "pointer" }}
             >
               <span className="fw-bold text-primary">👼 Angel Profile</span>
               {showAngelProfile ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -379,14 +511,18 @@ export default function ModuleSideNav() {
                   <div className="col-6">
                     <div className="stat-card p-2 bg-light rounded">
                       <Users size={14} className="me-1" />
-                      <span className="fw-bold">{investorProfile.followers}</span>
+                      <span className="fw-bold">
+                        {investorProfile.followers}
+                      </span>
                       <small> followers</small>
                     </div>
                   </div>
                   <div className="col-6">
                     <div className="stat-card p-2 bg-light rounded">
                       <UserPlus size={14} className="me-1" />
-                      <span className="fw-bold">{investorProfile.following}</span>
+                      <span className="fw-bold">
+                        {investorProfile.following}
+                      </span>
                       <small> following</small>
                     </div>
                   </div>
@@ -398,9 +534,11 @@ export default function ModuleSideNav() {
                     <strong>Portfolio Companies:</strong>
                   </div>
                   <ul className="ps-3 mb-0">
-                    {investorProfile?.portfolioCompanies && investorProfile.portfolioCompanies.length > 0 ? (
-                      investorProfile.portfolioCompanies.map((company, idx) => (
-                        <li key={idx} className="mb-1">{company}</li>
+                    {CompanyList.length > 0 ? (
+                      CompanyList.map((company, idx) => (
+                        <li key={idx} className="mb-1">
+                          {typeof company === 'string' ? company : company.company_name || company.name || 'Company Name'}
+                        </li>
                       ))
                     ) : (
                       <li className="text-muted">No portfolio companies listed</li>
@@ -410,96 +548,117 @@ export default function ModuleSideNav() {
 
                 <div className="mb-3">
                   <button
-                    className="btn btn-danger w-100 fw-bold py-2"
+                    className="btn btn-danger w-100 fw-bold py-2 joincapa"
                     onClick={() => setShowModal(true)}
                     style={{
-                      background: 'linear-gradient(135deg, #dc3545 0%, #bb2d3b 100%)',
-                      border: 'none',
-                      borderRadius: '8px'
+                      background:
+                        "linear-gradient(135deg, #dc3545 0%, #bb2d3b 100%)",
+                      border: "none",
+                      borderRadius: "8px",
                     }}
                   >
-                    Join Capavate Angel Network
+                    Join Capavate Angel Network <ArrowRight />
                   </button>
                 </div>
 
-                <div className="profile-details">
-                  <p className="mb-2 fw-bold">Profile:</p>
+                <div className="profile-details profile-inte">
+                  <p className="mb-2 fw-bold">Profile</p>
 
                   <div className="mb-2">
                     <div className="d-flex align-items-center gap-1">
-                      <Heart size={14} className="text-danger" />
-                      <span>Interests:</span>
+                      {/* <Heart size={14} className="text-danger" /> */}
+                      <span className="ptitle">INTERESTS</span>
                     </div>
-                    <div className="ps-3">
-                      {investorProfile?.interests && investorProfile.interests.length > 0 ? (
+                    <div className="">
+                      {investorProfile?.interests &&
+                        investorProfile.interests.length > 0 ? (
                         investorProfile.interests.map((interest, idx) => (
-                          <span key={idx} className="badge bg-light text-dark me-1 mb-1 p-2">{interest}</span>
+                          <span
+                            key={idx}
+                            className="badge bg-light text-dark me-1 mb-1 p-2"
+                          >
+                            {interest}
+                          </span>
                         ))
                       ) : (
-                        <span className="text-muted">No interests added yet</span>
+                        <span className="text-muted">
+                          No interests added yet
+                        </span>
                       )}
                     </div>
                   </div>
 
                   <div className="mb-2">
                     <div className="d-flex align-items-center gap-1">
-                      <Award size={14} className="text-warning" />
-                      <span>Industry Expertise:</span>
+                      {/* <Award size={14} className="text-warning" /> */}
+                      <span className="ptitle">INDUSTRY EXPERTISE</span>
                     </div>
-                    <div className="ps-3">
-                      {investorProfile?.industryExpertise && investorProfile.industryExpertise.length > 0 ? (
-                        investorProfile.industryExpertise.map((expertise, idx) => (
-                          <span key={idx} className="badge bg-light text-dark me-1 mb-1 p-2">{expertise}</span>
-                        ))
+                    <div className="">
+                      {investorProfile?.industryExpertise &&
+                        investorProfile.industryExpertise.length > 0 ? (
+                        investorProfile.industryExpertise.map(
+                          (expertise, idx) => (
+                            <span
+                              key={idx}
+                              className="badge bg-light text-dark me-1 mb-1 p-2"
+                            >
+                              {expertise}
+                            </span>
+                          ),
+                        )
                       ) : (
-                        <span className="text-muted">No industry expertise added yet</span>
+                        <span className="text-muted">
+                          No industry expertise added yet
+                        </span>
                       )}
                     </div>
                   </div>
 
                   <div className="mb-2">
                     <div className="d-flex align-items-center gap-1">
-                      <DollarSign size={14} className="text-success" />
-                      <span>Typical cheque size:</span>
+                      {/* <Award size={14} className="text-warning" /> */}
+                      <span className="ptitle">INVESTMENT CRITERIA</span>
                     </div>
-                    <p className="ps-3 mb-0">
-                      {Array.isArray(investorProfile.typicalChequeSize)
-                        ? investorProfile.typicalChequeSize.join(", ")
-                        : investorProfile.typicalChequeSize}
-                    </p>
+                    <div className="cheqbox d-flex flex-column">
+                      <div className="d-flex align-items-center justify-content-between">
+                        <h5>Cheque Size</h5>
+                        <h6>{Array.isArray(investorProfile.typicalChequeSize)
+                          ? investorProfile.typicalChequeSize.join(", ")
+                          : investorProfile.typicalChequeSize}</h6>
+                      </div>
+                      <div className="d-flex align-items-center justify-content-between">
+                        <h5>Geography</h5>
+                        <h6>{investorProfile.geographyFocus}</h6>
+                      </div>
+                      <div className="d-flex align-items-center justify-content-between">
+                        <h5>Stage</h5>
+                        <div className="d-flex gap-1 align-items-center">
+                          {investorProfile?.preferredStage &&
+                            investorProfile.preferredStage.length > 0 ? (
+                            investorProfile.preferredStage.map((stage, idx) => (
+                              <span
+                                key={idx}
+                                className="seedtext"
+                              >
+                                {stage}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="seedtext">
+                              No preferred stages selected
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="d-flex align-items-center justify-content-between">
+                        <h5>Hands-on (Monthly calls)</h5>
+                        <h6>{investorProfile.handsOn}</h6>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="mb-2">
-                    <div className="d-flex align-items-center gap-1">
-                      <Globe size={14} className="text-info" />
-                      <span>Geography focus:</span>
-                    </div>
-                    <p className="ps-3 mb-0">{investorProfile.geographyFocus}</p>
-                  </div>
 
-                  <div className="mb-2">
-                    <div className="d-flex align-items-center gap-1">
-                      <TrendingUp size={14} className="text-primary" />
-                      <span>Preferred stage:</span>
-                    </div>
-                    <div className="ps-3">
-                      {investorProfile?.preferredStage && investorProfile.preferredStage.length > 0 ? (
-                        investorProfile.preferredStage.map((stage, idx) => (
-                          <span key={idx} className="badge bg-light text-dark me-1 mb-1 p-2">{stage}</span>
-                        ))
-                      ) : (
-                        <span className="text-muted">No preferred stages selected</span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="mb-0">
-                    <div className="d-flex align-items-center gap-1">
-                      <Shield size={14} className="text-secondary" />
-                      <span>Hands-on vs hands-off:</span>
-                    </div>
-                    <p className="ps-3 mb-0">{investorProfile.handsOn}</p>
-                  </div>
                 </div>
               </div>
             )}
@@ -509,76 +668,131 @@ export default function ModuleSideNav() {
 
       {/* Cap Table Rules Modal */}
       {showCapTableRules && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 99999,
-          background: 'rgba(0,0,0,0.5)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          padding: '20px'
-        }}
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 99999,
+            background: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+          }}
           onClick={() => setShowCapTableRules(false)}
         >
-          <div style={{
-            background: '#fff', borderRadius: '16px',
-            maxWidth: '900px', width: '100%',
-            maxHeight: '85vh', overflowY: 'auto',
-            padding: '32px', position: 'relative'
-          }}
-            onClick={e => e.stopPropagation()}
+          <div
+            style={{
+              background: "#fff",
+              borderRadius: "16px",
+              maxWidth: "900px",
+              width: "100%",
+              maxHeight: "85vh",
+              overflowY: "auto",
+              padding: "32px",
+              position: "relative",
+            }}
+            onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
             <div className="d-flex justify-content-between align-items-center mb-4">
-              <h5 className="fw-bold mb-0" style={{ color: '#CC0000' }}>
+              <h5 className="fw-bold mb-0" style={{ color: "#CC0000" }}>
                 📋 Cap Table Visibility & Rules
               </h5>
-              <button onClick={() => setShowCapTableRules(false)}
-                style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#64748b' }}
-              >×</button>
+              <button
+                onClick={() => setShowCapTableRules(false)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  fontSize: "24px",
+                  cursor: "pointer",
+                  color: "#64748b",
+                }}
+              >
+                ×
+              </button>
             </div>
 
             <div className="row g-4">
               {/* INVESTOR VIEW */}
               <div className="col-md-6">
-                <div style={{ border: '2px solid #CC0000', borderRadius: '12px', padding: '20px', height: '100%' }}>
-                  <h6 className="fw-bold mb-3 pb-2 border-bottom"
-                    style={{ color: '#CC0000', textDecoration: 'underline' }}>
+                <div
+                  style={{
+                    border: "2px solid #CC0000",
+                    borderRadius: "12px",
+                    padding: "20px",
+                    height: "100%",
+                  }}
+                >
+                  <h6
+                    className="fw-bold mb-3 pb-2 border-bottom"
+                    style={{ color: "#CC0000", textDecoration: "underline" }}
+                  >
                     Cap Table INVESTOR view the below:
                   </h6>
 
-                  <p className="fw-semibold mb-2 small">Who can see this post:</p>
+                  <p className="fw-semibold mb-2 small">
+                    Who can see this post:
+                  </p>
                   <div className="small mb-3">
                     {/* Contacts listed */}
                     <div className="d-flex align-items-start gap-2 mb-1">
-                      <input type="checkbox"
+                      <input
+                        type="checkbox"
                         className="mt-1 flex-shrink-0"
-                        checked={capTableRules.investor.contact_listed === 'Yes'}
-                        onChange={() => toggleRule('investor', 'contact_listed')}
-                        style={{ cursor: 'pointer' }}
+                        checked={
+                          capTableRules.investor.contact_listed === "Yes"
+                        }
+                        onChange={() =>
+                          toggleRule("investor", "contact_listed")
+                        }
+                        style={{ cursor: "pointer" }}
                       />
                       <div>
                         Contacts listed on my cap table
                         <div className="ms-3 mt-1">
                           {/* Portfolio company dropdown option */}
                           <div className="d-flex align-items-start gap-2 mb-1">
-                            <input type="checkbox"
+                            <input
+                              type="checkbox"
                               className="mt-1 flex-shrink-0"
-                              checked={capTableRules.investor.portfolio_company === 'Yes'}
-                              onChange={() => toggleRule('investor', 'portfolio_company')}
-                              style={{ cursor: 'pointer' }}
+                              checked={
+                                capTableRules.investor.portfolio_company ===
+                                "Yes"
+                              }
+                              onChange={() =>
+                                toggleRule("investor", "portfolio_company")
+                              }
+                              style={{ cursor: "pointer" }}
                             />
-                            <span style={{ color: '#CC0000', fontStyle: 'italic' }}>
-                              ONLY contacts from <strong>[SELECT PORTFOLIO COMPANY FROM DROPDOWN]</strong> portfolio company
+                            <span
+                              style={{ color: "#CC0000", fontStyle: "italic" }}
+                            >
+                              ONLY contacts from{" "}
+                              <strong>
+                                [SELECT PORTFOLIO COMPANY FROM DROPDOWN]
+                              </strong>{" "}
+                              portfolio company
                             </span>
                           </div>
 
                           {/* All portfolio contacts */}
                           <div className="d-flex align-items-start gap-2">
-                            <input type="checkbox"
+                            <input
+                              type="checkbox"
                               className="mt-1 flex-shrink-0"
-                              checked={capTableRules.investor.contact_from === 'Yes'}
-                              onChange={() => toggleRule('investor', 'contact_from')}
-                              style={{ cursor: 'pointer' }}
+                              checked={
+                                capTableRules.investor.contact_from === "Yes"
+                              }
+                              onChange={() =>
+                                toggleRule("investor", "contact_from")
+                              }
+                              style={{ cursor: "pointer" }}
                             />
-                            <span>Contacts from all of my portfolio company cap tables</span>
+                            <span>
+                              Contacts from all of my portfolio company cap
+                              tables
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -586,28 +800,39 @@ export default function ModuleSideNav() {
 
                     {/* Angel Network members */}
                     <div className="d-flex align-items-start gap-2 mb-1">
-                      <input type="checkbox"
+                      <input
+                        type="checkbox"
                         className="mt-1 flex-shrink-0"
-                        checked={capTableRules.investor.capavate_member === 'Yes'}
-                        onChange={() => toggleRule('investor', 'capavate_member')}
-                        style={{ cursor: 'pointer' }}
+                        checked={
+                          capTableRules.investor.capavate_member === "Yes"
+                        }
+                        onChange={() =>
+                          toggleRule("investor", "capavate_member")
+                        }
+                        style={{ cursor: "pointer" }}
                       />
-                      <span>Only Capavate Angel Network members (if you are an active member)</span>
+                      <span>
+                        Only Capavate Angel Network members (if you are an
+                        active member)
+                      </span>
                     </div>
 
                     {/* Everyone */}
                     <div className="d-flex align-items-start gap-2">
-                      <input type="checkbox"
+                      <input
+                        type="checkbox"
                         className="mt-1 flex-shrink-0"
-                        checked={capTableRules.investor.everyone === 'Yes'}
-                        onChange={() => toggleRule('investor', 'everyone')}
-                        style={{ cursor: 'pointer' }}
+                        checked={capTableRules.investor.everyone === "Yes"}
+                        onChange={() => toggleRule("investor", "everyone")}
+                        style={{ cursor: "pointer" }}
                       />
                       <span>Everyone</span>
                     </div>
                   </div>
 
-                  <p className="fw-bold mb-2 small">RULES OF ENGAGEMENT ON POSTS:</p>
+                  <p className="fw-bold mb-2 small">
+                    RULES OF ENGAGEMENT ON POSTS:
+                  </p>
                   {[
                     "No solicitation: no sales pitches, no fundraising asks, no capital calls.",
                     "Focus on business-related content.",
@@ -621,7 +846,12 @@ export default function ModuleSideNav() {
                     "No spam: no mass tagging, repetitive posts, or irrelevant links.",
                   ].map((rule, i) => (
                     <div key={i} className="d-flex gap-2 mb-1 small">
-                      <span className="fw-bold flex-shrink-0" style={{ color: '#CC0000' }}>{i + 1}.</span>
+                      <span
+                        className="fw-bold flex-shrink-0"
+                        style={{ color: "#CC0000" }}
+                      >
+                        {i + 1}.
+                      </span>
                       <span>{rule}</span>
                     </div>
                   ))}
@@ -630,48 +860,74 @@ export default function ModuleSideNav() {
 
               {/* COMPANY VIEW */}
               <div className="col-md-6">
-                <div style={{ border: '2px solid #1e40af', borderRadius: '12px', padding: '20px', height: '100%' }}>
-                  <h6 className="fw-bold mb-3 pb-2 border-bottom"
-                    style={{ color: '#1e40af', textDecoration: 'underline' }}>
+                <div
+                  style={{
+                    border: "2px solid #1e40af",
+                    borderRadius: "12px",
+                    padding: "20px",
+                    height: "100%",
+                  }}
+                >
+                  <h6
+                    className="fw-bold mb-3 pb-2 border-bottom"
+                    style={{ color: "#1e40af", textDecoration: "underline" }}
+                  >
                     Cap Table COMPANY view the below:
                   </h6>
 
-                  <p className="fw-semibold mb-2 small">Who can see this post:</p>
+                  <p className="fw-semibold mb-2 small">
+                    Who can see this post:
+                  </p>
                   <div className="small mb-3">
                     <div className="d-flex align-items-start gap-2 mb-1">
-                      <input type="checkbox"
+                      <input
+                        type="checkbox"
                         className="mt-1 flex-shrink-0"
-                        checked={capTableRules.company.contact_listed === 'Yes'}
-                        onChange={() => toggleRule('company', 'contact_listed')}
-                        style={{ cursor: 'pointer' }}
+                        checked={capTableRules.company.contact_listed === "Yes"}
+                        onChange={() => toggleRule("company", "contact_listed")}
+                        style={{ cursor: "pointer" }}
                       />
-                      <span>Only contacts on{' '}
-                        <span style={{ color: '#CC0000', fontStyle: 'italic' }}>
+                      <span>
+                        Only contacts on{" "}
+                        <span style={{ color: "#CC0000", fontStyle: "italic" }}>
                           <strong>[COMPANY NAME]</strong>
-                        </span>{' '}cap table
+                        </span>{" "}
+                        cap table
                       </span>
                     </div>
                     <div className="d-flex align-items-start gap-2 mb-1">
-                      <input type="checkbox"
+                      <input
+                        type="checkbox"
                         className="mt-1 flex-shrink-0"
-                        checked={capTableRules.company.capavate_member === 'Yes'}
-                        onChange={() => toggleRule('company', 'capavate_member')}
-                        style={{ cursor: 'pointer' }}
+                        checked={
+                          capTableRules.company.capavate_member === "Yes"
+                        }
+                        onChange={() =>
+                          toggleRule("company", "capavate_member")
+                        }
+                        style={{ cursor: "pointer" }}
                       />
-                      <span>Only Capavate Angel Network members (if you are an active member or have previously presented to the network)</span>
+                      <span>
+                        Only Capavate Angel Network members (if you are an
+                        active member or have previously presented to the
+                        network)
+                      </span>
                     </div>
                     <div className="d-flex align-items-start gap-2">
-                      <input type="checkbox"
+                      <input
+                        type="checkbox"
                         className="mt-1 flex-shrink-0"
-                        checked={capTableRules.company.everyone === 'Yes'}
-                        onChange={() => toggleRule('company', 'everyone')}
-                        style={{ cursor: 'pointer' }}
+                        checked={capTableRules.company.everyone === "Yes"}
+                        onChange={() => toggleRule("company", "everyone")}
+                        style={{ cursor: "pointer" }}
                       />
                       <span>Everyone</span>
                     </div>
                   </div>
 
-                  <p className="fw-bold mb-2 small">RULES OF ENGAGEMENT ON POSTS:</p>
+                  <p className="fw-bold mb-2 small">
+                    RULES OF ENGAGEMENT ON POSTS:
+                  </p>
                   {[
                     "No solicitation: no sales pitches, no fundraising asks, no capital calls.",
                     "Focus on business-related content.",
@@ -685,7 +941,12 @@ export default function ModuleSideNav() {
                     "No spam: no mass tagging, repetitive posts, or irrelevant links.",
                   ].map((rule, i) => (
                     <div key={i} className="d-flex gap-2 mb-1 small">
-                      <span className="fw-bold flex-shrink-0" style={{ color: '#1e40af' }}>{i + 1}.</span>
+                      <span
+                        className="fw-bold flex-shrink-0"
+                        style={{ color: "#1e40af" }}
+                      >
+                        {i + 1}.
+                      </span>
                       <span>{rule}</span>
                     </div>
                   ))}
@@ -703,40 +964,60 @@ export default function ModuleSideNav() {
 
               {/* Investor Save Button */}
               <button
-                onClick={() => saveCapTableRules('Investor')}
+                onClick={() => saveCapTableRules("Investor")}
                 disabled={rulesSaving}
                 style={{
-                  background: '#CC0000', color: '#fff', border: 'none',
-                  borderRadius: '8px', padding: '10px 20px',
-                  fontWeight: 600, fontSize: '14px', cursor: 'pointer',
-                  opacity: rulesSaving ? 0.6 : 1
+                  background: "#CC0000",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "8px",
+                  padding: "10px 20px",
+                  fontWeight: 600,
+                  fontSize: "14px",
+                  cursor: "pointer",
+                  opacity: rulesSaving ? 0.6 : 1,
                 }}
               >
-                {rulesSaving && saveType === 'Investor' ? (
+                {rulesSaving && saveType === "Investor" ? (
                   <>
-                    <span className="spinner-border spinner-border-sm me-2" role="status" />
+                    <span
+                      className="spinner-border spinner-border-sm me-2"
+                      role="status"
+                    />
                     Saving...
                   </>
-                ) : 'Save Investor Rules'}
+                ) : (
+                  "Save Investor Rules"
+                )}
               </button>
 
               {/* Company Save Button */}
               <button
-                onClick={() => saveCapTableRules('Company')}
+                onClick={() => saveCapTableRules("Company")}
                 disabled={rulesSaving}
                 style={{
-                  background: '#1e40af', color: '#fff', border: 'none',
-                  borderRadius: '8px', padding: '10px 20px',
-                  fontWeight: 600, fontSize: '14px', cursor: 'pointer',
-                  opacity: rulesSaving ? 0.6 : 1
+                  background: "#1e40af",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "8px",
+                  padding: "10px 20px",
+                  fontWeight: 600,
+                  fontSize: "14px",
+                  cursor: "pointer",
+                  opacity: rulesSaving ? 0.6 : 1,
                 }}
               >
-                {rulesSaving && saveType === 'Company' ? (
+                {rulesSaving && saveType === "Company" ? (
                   <>
-                    <span className="spinner-border spinner-border-sm me-2" role="status" />
+                    <span
+                      className="spinner-border spinner-border-sm me-2"
+                      role="status"
+                    />
                     Saving...
                   </>
-                ) : 'Save Company Rules'}
+                ) : (
+                  "Save Company Rules"
+                )}
               </button>
             </div>
           </div>
@@ -745,5 +1026,5 @@ export default function ModuleSideNav() {
 
       {showModal && <AngelNetworkJoinWaitlist setShowModal={setShowModal} />}
     </>
-  )
+  );
 }

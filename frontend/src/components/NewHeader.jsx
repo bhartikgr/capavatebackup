@@ -49,25 +49,25 @@ export default function NewHeader() {
 
             <ul className="nav-links">
               <li>
-                <a href="http://localhost:5000/#platform">Platform</a>
+                <a href="https://capavate.com/#platform">Platform</a>
               </li>
               <li>
-                <a href="http://localhost:5000/#for-founders">Founders</a>
+                <a href="https://capavate.com/#for-founders">Founders</a>
               </li>
               <li>
-                <a href="http://localhost:5000/#for-investors">Investors</a>
+                <a href="https://capavate.com/#for-investors">Investors</a>
               </li>
               <li>
-                <a href="http://localhost:5000/#angel-network">Angel Network</a>
+                <a href="https://capavate.com/#angel-network">Angel Network</a>
               </li>
               <li>
-                <a href="http://localhost:5000/#pricing">Pricing</a>
+                <a href="https://capavate.com/#pricing">Pricing</a>
               </li>
             </ul>
 
             <div className="nav-actions">
               <a
-                href="http://localhost:5000/user/login"
+                href="https://capavate.com/user/login"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-ghost"
@@ -75,7 +75,7 @@ export default function NewHeader() {
                 Sign in
               </a>
               <a
-                href="http://localhost:5000/user/register"
+                href="https://capavate.com/user/register"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-primary"
@@ -112,7 +112,7 @@ export default function NewHeader() {
         <a href="#angel-network">Angel Network</a>
         <a href="#pricing">Pricing</a>
         <a
-          href="http://localhost:5000/user/login"
+          href="https://capavate.com/user/login"
           target="_blank"
           rel="noopener noreferrer"
         //   style={{ color: "rgba(255,255,255,0.5)" }}

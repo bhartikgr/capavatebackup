@@ -61,7 +61,7 @@ function CapitalRoundList() {
       },
     },
   };
-  var apiURL = "http://localhost:5000/api/user/capitalround/";
+  var apiURL = "https://capavate.com/api/user/capitalround/";
 
   const storedUsername = localStorage.getItem("InvestorData");
   const userLogin = JSON.parse(storedUsername);

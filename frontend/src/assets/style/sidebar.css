@@ -14,7 +14,7 @@
 .com_logo img {
   padding: 5px;
   background: white;
-  border: 1px solid #0000001f;
+  /* border: 1px solid #0000001f; */
 }
 .bg_red {
   background-color: #df383e;
@@ -113,7 +113,7 @@
   z-index: 98;
   background-color: #fff;
   top: 0;
-  flex-shrink:0;
+  flex-shrink: 0;
 }
 
 .main_sidenav_social {
@@ -154,3 +154,249 @@
   color: #000000db;
 }
 
+.warr-box {
+  background: #f8f9fa;
+  padding: 10px;
+  border-radius: 15px;
+  width: 100%;
+}
+.warr-box .userimg-box {
+  overflow: hidden;
+  border: 1px solid #ccc;
+  aspect-ratio: 1;
+  border-radius: 10px;
+  width: 40px;
+  position: relative;
+}
+.warr-box .userimg-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.warr-box .userimg-box span {
+  background: #feaa2f;
+  color: #fff;
+  text-transform: uppercase;
+  font-weight: 600;
+  border-radius: 4px;
+  font-size: 10px;
+  padding: 2px 6px;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  border: 1px solid #fff;
+}
+.warr-box h4 {
+  font-size: 14px;
+  color: #000;
+  font-weight: 600;
+}
+.warr-box h5 {
+  font-size: 12px;
+  color: #111;
+}
+.loca-warr svg {
+  width: 15px;
+  stroke: #111;
+}
+.loca-warr h6 {
+  font-size: 12px;
+  color: #808080;
+}
+.profile-inte .ptitle {
+  color: #7a7a7a;
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+.profile-inte .badge {
+  border-radius: 100px;
+  font-weight: 500;
+  color: #2b4655;
+  background: #f2f3f4;
+  border: 1px solid #dbdfe2;
+}
+.joincapa {
+  font-size: 13px;
+}
+.joincapa svg {
+  width: 20px;
+}
+.cheqbox {
+  background: #f8f9fa;
+  border-radius: 10px;
+}
+.cheqbox > div:not(:last-child) {
+  border-bottom: 1px solid #cfcfcf;
+}
+.cheqbox > div {
+  padding: 10px;
+}
+.cheqbox > div h5 {
+  font-size: 12px;
+  color: #999;
+}
+.cheqbox > div h6 {
+  font-size: 12px;
+  color: #121519;
+  font-weight: 600;
+}
+.cheqbox .seedtext {
+  font-size: 10px;
+  color: #fff;
+  font-weight: 600;
+  border-radius: 6px;
+  padding: 4px;
+  background: #1c394a;
+}
+.access-portal {
+  background: #163e64;
+  border-radius: 4px;
+  padding: 8px 10px;
+}
+.access-portal h6 {
+  font-size: 12px;
+  color: #fff;
+}
+
+/**card design***/
+.cards-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modern-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 20px;
+  transition: all 0.2s ease;
+}
+
+.modern-card:hover {
+  border-color: #e5e7eb;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+}
+
+.card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.user-meta {
+  display: flex;
+  gap: 14px;
+}
+
+.avatar-wrapper {
+  position: relative;
+  width: 48px;
+  height: 48px;
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  object-fit: cover;
+  background: #f3f4f6;
+}
+
+.status-indicator {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid white;
+  background: #10b981;
+}
+
+.name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sender-name {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.dot-separator {
+  color: #d1d5db;
+  font-size: 10px;
+}
+
+.timestamp {
+  font-size: 0.813rem;
+  color: var(--text-muted);
+}
+
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Logic for dynamic colors */
+.portfolio {
+  background: #fef2f2;
+  color: #991b1b;
+}
+.shareholder {
+  background: #eff6ff;
+  color: #1e40af;
+}
+
+.label-type {
+  opacity: 0.8;
+}
+
+.label-name {
+  font-weight: 700;
+}
+
+.star-btn {
+  background: none;
+  border: none;
+  color: #d1d5db;
+  cursor: pointer;
+  padding: 4px;
+  transition: color 0.2s;
+}
+
+.star-btn.active {
+  color: var(--primary-red);
+}
+
+.card-content {
+  margin-top: 14px;
+  padding-left: 62px;
+}
+
+.card-content p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #374151;
+}
+
+.filter-btn {
+  background: white;
+  border: 1px solid var(--border-color);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}

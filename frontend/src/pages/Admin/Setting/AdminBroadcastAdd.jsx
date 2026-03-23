@@ -11,7 +11,7 @@ import DataTable from "react-data-table-component";
 import { Modal, Button } from "react-bootstrap";
 function AdminBroadcastAdd() {
   const navigate = useNavigate();
-  const apiUrl = "http://localhost:5000/api/admin/module/";
+  const apiUrl = "https://capavate.com/api/admin/module/";
 
   const { id } = useParams("");
   useEffect(() => {

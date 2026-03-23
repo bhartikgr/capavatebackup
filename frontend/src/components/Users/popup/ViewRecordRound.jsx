@@ -1073,7 +1073,7 @@ const ViewRecordRound = ({ onClose, recordViewData }) => {
             </span>
             <ul className="mb-0 mt-2 ps-3">
               {files.map((file, index) => {
-                const downloadUrl = `http://localhost:5000/api/${pathname}/companyRound/${file}`;
+                const downloadUrl = `https://capavate.com/api/${pathname}/companyRound/${file}`;
                 return (
                   <li
                     key={index}

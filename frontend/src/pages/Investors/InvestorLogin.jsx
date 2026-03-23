@@ -14,7 +14,7 @@ import {
   SectionWrapper,
   Wrapper,
 } from "../../components/Styles/RegisterStyles";
-import { Link } from "react-router-dom";
+import { Shield } from "lucide-react";
 import { Globe, User, Lock, Eye, EyeOff } from "lucide-react";
 import "../../components/Styles/InvestorLogin.css"; // We'll create this CSS file
 
@@ -29,7 +29,7 @@ export default function InvestorLogin() {
   const [userdataa, setuserdataa] = useState("");
   const [spinners, setspinners] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  var apiURL = "http://localhost:5000/api/user/investorreport/";
+  var apiURL = "https://capavate.com/api/user/investorreport/";
   //localStorage.removeItem("InvestorData");
   useEffect(() => {
     const storedData = JSON.parse(localStorage.getItem("InvestorData"));
@@ -215,9 +215,15 @@ export default function InvestorLogin() {
 
                         <h2 className="mainh1 mb-2">Investor Login</h2>
                         <p className="mainp">
-                          You're entering a secure, invitation-only investor portal.
-                          <br />
-                          🛡 Capavate's verified network.
+                          You’re entering a secure, invitation-only investor
+                          portal. <br />
+                          <Shield
+                            size={14}
+                            style={{
+                              marginTop: "-4px",
+                            }}
+                          />{" "}
+                          Capavate’s verified network.
                         </p>
                       </div>
                       <form onSubmit={handleSubmit}>
@@ -367,6 +373,21 @@ export default function InvestorLogin() {
                           </button>
                         </div>
                       </form>
+                      <div className="access-portal d-flex flex-column gap-2">
+                        <h6>
+                          Verified Investor Portal{" "}
+                          <Lock
+                            size={14}
+                            style={{
+                              marginTop: "-4px",
+                            }}
+                          />
+                        </h6>
+                        <h6>
+                          Access restricted to invited and accredited
+                          Capavate{" "}
+                        </h6>
+                      </div>
                     </div>
                   </div>
                 </div>

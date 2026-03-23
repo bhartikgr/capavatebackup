@@ -233,6 +233,9 @@ const Investorprofile = lazy(() => import("./pages/Investors/Profile"));
 
 const InvestorDashboard = lazy(() => import("./pages/Investors/Dashboard"));
 const InvestorCompanyList = lazy(() => import("./pages/Investors/CompanyList"));
+const CompanyPortfolio = lazy(
+  () => import("./pages/Investors/CompanyPortfolio"),
+);
 const InvestorMainProfile = lazy(
   () => import("./pages/Investors/InvestorProfile"),
 );
@@ -605,6 +608,10 @@ class App extends Component {
               <Route
                 path="/investor/company-list"
                 element={<InvestorCompanyList />}
+              />{" "}
+              <Route
+                path="/investor/company-portfolio"
+                element={<CompanyPortfolio />}
               />{" "}
               <Route
                 path="/investor/dashboard"

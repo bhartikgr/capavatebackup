@@ -42,7 +42,7 @@ function AdminVisitors() {
         todayVisitors: 0
     });
 
-    const apiUrl = "http://localhost:5000/api/user/";
+    const apiUrl = "https://capavate.com/api/user/";
     document.title = "Visitors Analytics - Admin";
     const detectBrowser = (userAgent) => {
         if (!userAgent) return 'Unknown';

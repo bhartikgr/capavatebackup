@@ -12,7 +12,7 @@ import {
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import Select from 'react-select';
-
+import { Country, City } from 'country-state-city';
 const STEPS = [
   { id: 0, label: "Contact Info", icon: "📋" },
   { id: 1, label: "Investor Profile", icon: "👤" },
@@ -96,7 +96,8 @@ export default function Profile() {
   const userLogin = JSON.parse(localStorage.getItem("InvestorData") || "{}");
   const InvestorData = userLogin;
   const code = { code: userLogin.unique_code || '' };
-
+  const [kycFiles, setKycFiles] = useState([]);
+  const [profilePictureFile, setProfilePictureFile] = useState(null);
   document.title = "Investor Profile";
 
   useEffect(() => {
@@ -105,6 +106,19 @@ export default function Profile() {
     getallcountrySymbolList();
     getIndustryExpertise();
   }, []);
+  const handleKycChange = (e) => {
+    const files = Array.from(e.target.files);
+    console.log("KYC files selected:", files);
+    setKycFiles(files);
+  };
+  const handlePicChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setProfilePictureFile(file);
+    setProfilePicPreview(URL.createObjectURL(file));
+  };
+
+  // Handle profile picture selection (already have handlePicChange, update it)
 
   const fetchData = async () => {
     try {
@@ -136,6 +150,11 @@ export default function Profile() {
           geo_focus: d.geo_focus || "",
           network_bio: d.network_bio || "",
           notes: d.notes || "",
+          invest_through_company: d.invest_through_company || "",
+          investing_company_name: d.investing_company_name || "",
+          current_job_title: d.current_job_title || "",
+          investor_company_country: d.investor_company_country || "",
+          investor_company_website: d.investor_company_website || "",
         });
         setSelectedHandsOn(d.hands_on ? d.hands_on.split(",") : []);
         setSelectedMAInterests(d.ma_interests ? d.ma_interests.split(",") : []);
@@ -151,7 +170,7 @@ export default function Profile() {
           setSelectedIndustries(industries);
         }
         if (d.profile_picture) {
-          var path_img = "http://localhost:5000/api/upload/investor/inv_" + d.id + "/" + d.profile_picture;
+          var path_img = "https://capavate.com/api/upload/investor/inv_" + d.id + "/" + d.profile_picture;
           console.log(path_img);
           setProfilePicPreview(path_img)
         };
@@ -212,9 +231,11 @@ export default function Profile() {
     e.preventDefault();
     if (stepRef.current !== 2) return;
 
-    let kycFiles = e.target.kyc_document ? e.target.kyc_document.files : null;
-    console.log("KYC Files:", kycFiles);
-    let profilePictureFile = e.target.profile_picture ? e.target.profile_picture.files[0] : null;
+    console.log("KYC Files from state:", kycFiles);
+    console.log("Profile Picture from state:", profilePictureFile);
+
+    // Debug: Log files
+
 
     const digitsOnly = form.phone.replace(/\D/g, "");
     if (digitsOnly.length < 10) {
@@ -256,6 +277,11 @@ export default function Profile() {
     formdata.append("geo_focus", form.geo_focus);
     formdata.append("network_bio", form.network_bio);
     formdata.append("notes", form.notes);
+    formdata.append("invest_through_company", form.invest_through_company);
+    formdata.append("investing_company_name", form.investing_company_name);
+    formdata.append("current_job_title", form.current_job_title);
+    formdata.append("investor_company_country", form.investor_company_country);
+    formdata.append("investor_company_website", form.investor_company_website);
 
     // Multi-select fields
     formdata.append("hands_on", selectedHandsOn.join(","));
@@ -276,6 +302,7 @@ export default function Profile() {
     if (kycFiles && kycFiles.length > 0) {
       for (let i = 0; i < kycFiles.length; i++) {
         formdata.append("kyc_document[]", kycFiles[i]);
+
       }
     }
 
@@ -313,12 +340,7 @@ export default function Profile() {
     setArr(arr.includes(val) ? arr.filter(v => v !== val) : [...arr, val]);
   }, []);
 
-  const handlePicChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    setProfilePic(file);
-    setProfilePicPreview(URL.createObjectURL(file));
-  };
+
 
   const handleIndustryChange = (selectedOptions) => {
     setSelectedIndustries(selectedOptions);
@@ -332,7 +354,86 @@ export default function Profile() {
       setPhoneError("");
     }
   };
+  const [countries, setCountries] = useState([]);
+  const [cities, setCities] = useState([]);
+  useEffect(() => {
+    const allCountries = Country.getAllCountries();
+    console.log(allCountries)
+    setCountries(allCountries);
+  }, []);
+  // useEffect(() => {
+  //   console.log("Country changed:", form.country);
+  //   console.log("Countries available:", countries.length);
 
+  //   if (form.country && countries.length > 0) {
+  //     const selectedCountry = countries.find(
+  //       country => country.name === form.country
+  //     );
+
+  //     console.log("Selected country object:", selectedCountry);
+
+  //     if (selectedCountry) {
+  //       const countryCities = City.getCitiesOfCountry(selectedCountry.isoCode);
+  //       console.log("Cities found:", countryCities);
+  //       console.log("Cities count:", countryCities?.length);
+
+  //       // Make sure we're setting an array
+  //       if (countryCities && Array.isArray(countryCities)) {
+  //         setCities(countryCities);
+  //       } else {
+  //         setCities([]);
+  //       }
+
+  //       // Reset city when country changes
+  //       //setForm(prev => ({ ...prev, city: "" }));
+  //     } else {
+
+  //       setCities([]);
+  //     }
+  //   } else {
+
+  //     setCities([]);
+  //   }
+  // }, [form.country, countries]);
+  const citiesRef = useRef([]);
+
+  useEffect(() => {
+    console.log("=== useEffect RUNNING ===");
+    console.log("form.country:", form.country);
+    console.log("countries.length:", countries.length);
+
+    if (form.country && countries.length > 0) {
+      const selectedCountry = countries.find(
+        country => country.name === form.country
+      );
+
+      console.log("selectedCountry:", selectedCountry);
+
+      if (selectedCountry && selectedCountry.isoCode) {
+        console.log("ISO Code:", selectedCountry.isoCode);
+        const countryCities = City.getCitiesOfCountry(selectedCountry.isoCode);
+
+        console.log("Raw cities from API:", countryCities);
+        console.log("Cities count:", countryCities?.length);
+
+        if (countryCities && countryCities.length > 0) {
+          citiesRef.current = countryCities;
+          console.log("Setting cities with:", countryCities);
+          setCities([...countryCities]);
+        } else {
+          console.log("No cities found for this country");
+          citiesRef.current = [];
+          setCities([]);
+        }
+      } else {
+        console.log("Country not found or no ISO code");
+        setCities([]);
+      }
+    } else {
+      console.log("Condition not met - either no country or countries not loaded");
+      setCities([]);
+    }
+  }, [form.country, countries]);
   const MultiChip = ({ label, options, selected, setSelected }) => (
     <div className="mb-3">
       <label className="form-label fw-semibold small text-uppercase"
@@ -387,6 +488,107 @@ export default function Profile() {
   const stepContent = [
     // STEP 0 — Contact Info
     <div key="s0">
+      <div className="mb-4 pb-2 border-bottom">
+        <h5 className="fw-bold mb-0" style={{ color: '#CC0000' }}>Your Current Role/Work</h5>
+        <small className="text-muted">Used for cap table management</small>
+      </div>
+      <div className="row">
+        <div className="col-md-6">
+          <div className="mb-3">
+            <label className="form-label fw-semibold small text-uppercase"
+              style={{ letterSpacing: '0.05em', color: '#4a5568' }}>Screen Name</label>
+            <input
+              type="text"
+              name="screen_name"
+              className="form-control form-control-sm"
+              placeholder="@JohnSmith"
+              value={form.screen_name || ""}
+              onChange={handleChange}
+              style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }}
+              autoComplete="off"
+            />
+            <small className="text-muted d-block mt-2"
+              style={{ fontSize: '12px', color: '#6c757d' }}>
+              NOTE: Your screen name will be visible to all shareholders on the same cap table and across all social media sections of Capavate.com. Your portfolio companies, where you are a shareholder, will have access to your real name.
+            </small>
+          </div>
+        </div>
+
+        <div className="col-md-6">
+          <div className="mb-3">
+            <label className="form-label fw-semibold small text-uppercase"
+              style={{ letterSpacing: '0.05em', color: '#4a5568' }}>Current Job Title</label>
+            <input
+              type="text"
+              name="job_title"
+              className="form-control form-control-sm"
+              placeholder="Managing Partner"
+              value={form.job_title || ""}
+              onChange={handleChange}
+              style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }}
+              autoComplete="off"
+            />
+          </div>
+        </div>
+
+        <div className="col-md-6">
+          <div className="mb-3">
+            <label className="form-label fw-semibold small text-uppercase"
+              style={{ letterSpacing: '0.05em', color: '#4a5568' }}>Current Company Name</label>
+            <input
+              type="text"
+              name="company_name"
+              className="form-control form-control-sm"
+              placeholder="Acme Ventures"
+              value={form.company_name || ""}
+              onChange={handleChange}
+              style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }}
+              autoComplete="off"
+            />
+          </div>
+        </div>
+
+        <div className="col-md-6">
+          <div className="mb-3">
+            <label className="form-label fw-semibold small text-uppercase"
+              style={{ letterSpacing: '0.05em', color: '#4a5568' }}>Company Country</label>
+            <select
+              name="company_country"
+              className="form-select form-select-sm"
+              value={form.company_country || ""}
+              onChange={handleChange}
+              style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }}>
+              <option value="">— Select Country —</option>
+              {countrySymbolList.map(c => (
+                <option key={c.id || c.name} value={c.name || c.country_name}>
+                  {c.name || c.country_name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="col-md-12">
+          <div className="mb-3">
+            <label className="form-label fw-semibold small text-uppercase"
+              style={{ letterSpacing: '0.05em', color: '#4a5568' }}>Company Website</label>
+            <input
+              type="url"
+              name="company_website"
+              className="form-control form-control-sm"
+              placeholder="https://acmeventures.com"
+              value={form.company_website || ""}
+              onChange={handleChange}
+              style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }}
+              autoComplete="off"
+            />
+          </div>
+        </div>
+
+
+
+
+      </div>
       <div className="mb-4 pb-2 border-bottom">
         <h5 className="fw-bold mb-0" style={{ color: '#CC0000' }}>Contact Information</h5>
         <small className="text-muted">Used for cap table management</small>
@@ -465,60 +667,61 @@ export default function Profile() {
             )}
           </div>
         </div>
-
         <div className="col-md-6">
           <div className="mb-3">
             <label className="form-label fw-semibold small text-uppercase"
-              style={{ letterSpacing: '0.05em', color: '#4a5568' }}>City</label>
-            <input
-              type="text"
-              name="city"
-              className="form-control form-control-sm"
-              placeholder="Toronto"
-              value={form.city || ""}
-              onChange={handleChange}
-              style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }}
-              autoComplete="off"
-            />
-          </div>
-        </div>
-
-        <div className="col-md-6">
-          <div className="mb-3">
-            <label className="form-label fw-semibold small text-uppercase"
-              style={{ letterSpacing: '0.05em', color: '#4a5568' }}>Country</label>
+              style={{ letterSpacing: '0.05em', color: '#4a5568' }}>
+              Country
+            </label>
             <select
               name="country"
               className="form-select form-select-sm"
-              value={form.country || ""}
+              value={form.country}
               onChange={handleChange}
               style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }}>
               <option value="">— Select Country —</option>
-              {countrySymbolList.map(c => (
-                <option key={c.id || c.name} value={c.name || c.country_name}>
-                  {c.name || c.country_name}
+              {countries.map((country) => (
+                <option key={country.isoCode} value={country.name}>
+                  {country.name}
                 </option>
               ))}
             </select>
           </div>
         </div>
 
-        <div className="col-md-12">
+        <div className="col-md-6">
           <div className="mb-3">
             <label className="form-label fw-semibold small text-uppercase"
-              style={{ letterSpacing: '0.05em', color: '#4a5568' }}>LinkedIn or Professional Profile</label>
-            <input
-              type="text"
-              name="linkedIn_profile"
-              className="form-control form-control-sm"
-              placeholder="https://linkedin.com/in/..."
-              value={form.linkedIn_profile || ""}
+              style={{ letterSpacing: '0.05em', color: '#4a5568' }}>
+              City
+            </label>
+            <select
+              name="city"
+              className="form-select form-select-sm"
+              value={form.city}
               onChange={handleChange}
-              style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }}
-              autoComplete="off"
-            />
+              disabled={!form.country}
+              style={{
+                borderRadius: 8,
+                border: '1.5px solid #e2e8f0',
+                padding: '10px 14px',
+                backgroundColor: !form.country ? '#f8f9fa' : 'white'
+              }}>
+              <option value="">
+                {!form.country ? "— Select Country First —" : "— Select City —"}
+              </option>
+              {cities.map((city) => (
+                <option key={city.name} value={city.name}>
+                  {city.name}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
+
+
+
+
       </div>
     </div>,
 
@@ -578,22 +781,157 @@ export default function Profile() {
             <small className="text-muted">Max 240 characters</small>
           </div>
         </div>
-
         <div className="col-md-12">
           <div className="mb-3">
             <label className="form-label fw-semibold small text-uppercase"
-              style={{ letterSpacing: '0.05em', color: '#4a5568' }}>Full Mailing Address</label>
+              style={{ letterSpacing: '0.05em', color: '#4a5568' }}>LinkedIn or Professional Profile</label>
             <input
               type="text"
-              name="mailing_address"
+              name="linkedIn_profile"
               className="form-control form-control-sm"
-              placeholder="123 Main St, Suite 400..."
-              value={form.mailing_address || ""}
+              placeholder="https://linkedin.com/in/..."
+              value={form.linkedIn_profile || ""}
               onChange={handleChange}
               style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }}
               autoComplete="off"
             />
           </div>
+        </div>
+
+        <div className="col-md-12">
+          {/* Do you invest through a company? */}
+          <div className="mb-3">
+            <label className="form-label fw-semibold small text-uppercase"
+              style={{ letterSpacing: '0.05em', color: '#4a5568' }}>
+              Do you invest through a company?
+            </label>
+            <div className="d-flex gap-3">
+              <div className="form-check">
+                <input
+                  type="radio"
+                  name="invest_through_company"
+                  id="investYes"
+                  className="form-check-input"
+                  value="yes"
+                  checked={form.invest_through_company === "yes"}
+                  onChange={handleChange}
+                />
+                <label className="form-check-label" htmlFor="investYes">Yes</label>
+              </div>
+              <div className="form-check">
+                <input
+                  type="radio"
+                  name="invest_through_company"
+                  id="investNo"
+                  className="form-check-input"
+                  value="no"
+                  checked={form.invest_through_company === "no"}
+                  onChange={handleChange}
+                />
+                <label className="form-check-label" htmlFor="investNo">No</label>
+              </div>
+            </div>
+          </div>
+
+          {/* Conditional Fields - Show only if YES */}
+          {form.invest_through_company === "yes" && (
+            <>
+              {/* Investing Company Name */}
+              <div className="mb-3">
+                <label className="form-label fw-semibold small text-uppercase"
+                  style={{ letterSpacing: '0.05em', color: '#4a5568' }}>
+                  Investing Company Name
+                </label>
+                <input
+                  type="text"
+                  name="investing_company_name"
+                  className="form-control form-control-sm"
+                  placeholder="e.g., Acme Capital Partners"
+                  value={form.investing_company_name || ""}
+                  onChange={handleChange}
+                  style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }}
+                  autoComplete="off"
+                />
+              </div>
+
+              {/* Current Job Title */}
+              <div className="mb-3">
+                <label className="form-label fw-semibold small text-uppercase"
+                  style={{ letterSpacing: '0.05em', color: '#4a5568' }}>
+                  Current Job Title
+                </label>
+                <input
+                  type="text"
+                  name="current_job_title"
+                  className="form-control form-control-sm"
+                  placeholder="e.g., Managing Partner, CFO"
+                  value={form.current_job_title || ""}
+                  onChange={handleChange}
+                  style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }}
+                  autoComplete="off"
+                />
+              </div>
+
+              {/* Company Country */}
+              <div className="mb-3">
+                <label className="form-label fw-semibold small text-uppercase"
+                  style={{ letterSpacing: '0.05em', color: '#4a5568' }}>
+                  Company Country
+                </label>
+
+                <select
+                  name="investor_company_country"
+                  className="form-select form-select-sm"
+                  value={form.investor_company_country}
+                  onChange={handleChange}
+                  style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }}>
+                  <option value="">— Select Country —</option>
+                  {countries.map((country) => (
+                    <option key={country.isoCode} value={country.name}>
+                      {country.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+
+              {/* Full Mailing Address */}
+              <div className="mb-3">
+                <label className="form-label fw-semibold small text-uppercase"
+                  style={{ letterSpacing: '0.05em', color: '#4a5568' }}>
+                  Full Mailing Address
+                </label>
+                <input
+                  type="text"
+                  name="mailing_address"
+                  className="form-control form-control-sm"
+                  placeholder="123 Main St, Suite 400..."
+                  value={form.mailing_address || ""}
+                  onChange={handleChange}
+                  style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }}
+                  autoComplete="off"
+                />
+              </div>
+
+              {/* Company Website */}
+              <div className="mb-3">
+                <label className="form-label fw-semibold small text-uppercase"
+                  style={{ letterSpacing: '0.05em', color: '#4a5568' }}>
+                  Company Website
+                </label>
+                <input
+                  type="url"
+                  name="investor_company_website"
+                  className="form-control form-control-sm"
+                  placeholder="https://www.example.com"
+                  value={form.investor_company_website || ""}
+                  onChange={handleChange}
+                  style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }}
+                  autoComplete="off"
+                />
+              </div>
+            </>
+          )}
         </div>
 
         <div className="col-md-6">
@@ -632,16 +970,6 @@ export default function Profile() {
             />
           </div>
         </div>
-      </div>
-    </div>,
-
-    // STEP 2 — Network Profile
-    <div key="s2">
-      <div className="mb-4 pb-2 border-bottom">
-        <h5 className="fw-bold mb-0" style={{ color: '#CC0000' }}>Capavate Angel Investor Network Profile</h5>
-        <small className="text-muted">Visible to founders on the platform</small>
-      </div>
-      <div className="row">
         <div className="col-md-12">
           <div className="mb-3">
             <label className="form-label fw-semibold small text-uppercase"
@@ -650,7 +978,7 @@ export default function Profile() {
             <input
               type="file"
               name="kyc_document"
-              className="form-control form-control-sm mb-2"
+              className="form-control form-control-sm mb-2" onChange={handleKycChange}
               style={{ borderRadius: 8, border: '1.5px solid #e2e8f0' }}
               multiple
             />
@@ -666,7 +994,7 @@ export default function Profile() {
                       </small>
                       <div className="d-flex flex-wrap gap-2">
                         {kycFiles.map((file, index) => {
-                          const fileUrl = "http://localhost:5000/api/upload/investor/inv_" + records.id + "/" + file;
+                          const fileUrl = "https://capavate.com/api/upload/investor/inv_" + records.id + "/" + file;
                           const fileExtension = file.split('.').pop().toLowerCase();
                           const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'].includes(fileExtension);
 
@@ -765,7 +1093,6 @@ export default function Profile() {
             </small>
           </div>
         </div>
-
         <div className="col-md-12 mb-3">
           <div className="mb-3">
             <label className="form-label fw-semibold small text-uppercase"
@@ -784,93 +1111,20 @@ export default function Profile() {
           </div>
         </div>
 
-        <div className="col-md-6">
-          <div className="mb-3">
-            <label className="form-label fw-semibold small text-uppercase"
-              style={{ letterSpacing: '0.05em', color: '#4a5568' }}>Screen Name</label>
-            <input
-              type="text"
-              name="screen_name"
-              className="form-control form-control-sm"
-              placeholder="@JohnSmith"
-              value={form.screen_name || ""}
-              onChange={handleChange}
-              style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }}
-              autoComplete="off"
-            />
-          </div>
-        </div>
+      </div>
+    </div>,
 
-        <div className="col-md-6">
-          <div className="mb-3">
-            <label className="form-label fw-semibold small text-uppercase"
-              style={{ letterSpacing: '0.05em', color: '#4a5568' }}>Current Job Title</label>
-            <input
-              type="text"
-              name="job_title"
-              className="form-control form-control-sm"
-              placeholder="Managing Partner"
-              value={form.job_title || ""}
-              onChange={handleChange}
-              style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }}
-              autoComplete="off"
-            />
-          </div>
-        </div>
+    // STEP 2 — Network Profile
+    <div key="s2">
+      <div className="mb-4 pb-2 border-bottom">
+        <h5 className="fw-bold mb-0" style={{ color: '#CC0000' }}>Capavate Angel Investor Network Profile</h5>
+        <small className="text-muted">Visible to founders on the platform</small>
+      </div>
+      <div className="row">
 
-        <div className="col-md-6">
-          <div className="mb-3">
-            <label className="form-label fw-semibold small text-uppercase"
-              style={{ letterSpacing: '0.05em', color: '#4a5568' }}>Current Company Name</label>
-            <input
-              type="text"
-              name="company_name"
-              className="form-control form-control-sm"
-              placeholder="Acme Ventures"
-              value={form.company_name || ""}
-              onChange={handleChange}
-              style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }}
-              autoComplete="off"
-            />
-          </div>
-        </div>
 
-        <div className="col-md-6">
-          <div className="mb-3">
-            <label className="form-label fw-semibold small text-uppercase"
-              style={{ letterSpacing: '0.05em', color: '#4a5568' }}>Company Country</label>
-            <select
-              name="company_country"
-              className="form-select form-select-sm"
-              value={form.company_country || ""}
-              onChange={handleChange}
-              style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }}>
-              <option value="">— Select Country —</option>
-              {countrySymbolList.map(c => (
-                <option key={c.id || c.name} value={c.name || c.country_name}>
-                  {c.name || c.country_name}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
 
-        <div className="col-md-12">
-          <div className="mb-3">
-            <label className="form-label fw-semibold small text-uppercase"
-              style={{ letterSpacing: '0.05em', color: '#4a5568' }}>Company Website</label>
-            <input
-              type="url"
-              name="company_website"
-              className="form-control form-control-sm"
-              placeholder="https://acmeventures.com"
-              value={form.company_website || ""}
-              onChange={handleChange}
-              style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }}
-              autoComplete="off"
-            />
-          </div>
-        </div>
+
 
         {/* Industry Expertise - Multiple Select */}
         <div className="col-12">

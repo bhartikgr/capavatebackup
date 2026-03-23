@@ -185,7 +185,7 @@ export default function Legal() {
                     <br />
                     Platform:{" "}
                     <a
-                      href="http://localhost:5000"
+                      href="https://capavate.com"
                       target="_blank"
                       rel="noopener noreferrer"
                     >

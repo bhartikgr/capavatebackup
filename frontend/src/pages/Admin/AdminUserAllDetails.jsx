@@ -25,7 +25,7 @@ import { useNavigate, Link, useParams } from "react-router-dom";
 function AdminUserAllDetails() {
   const { id } = useParams();
   document.title = "Company Detail - Admin";
-  const apiUrlAll = "http://localhost:5000/api/admin/adminall/";
+  const apiUrlAll = "https://capavate.com/api/admin/adminall/";
   const [istotalDocs, settotalDocs] = useState("");
   const [totalsignatory, settotalsignatory] = useState("");
   const [userData, setuserData] = useState("");
@@ -330,7 +330,7 @@ function AdminUserAllDetails() {
     setOpenDropdown(openDropdown === id ? null : id);
   };
   const [InvestorDetail, setInvestorDetail] = useState([]);
-  const apiUrlCompany = "http://localhost:5000/api/admin/company/";
+  const apiUrlCompany = "https://capavate.com/api/admin/company/";
   const columnsinvestor = [
     {
       name: "First Name",

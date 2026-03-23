@@ -93,7 +93,7 @@ export default function Home2() {
 
             <div className="hero-cta-row">
               <a
-                href="http://localhost:5000/user/register"
+                href="https://capavate.com/user/register"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-primary btn-large"
@@ -1156,7 +1156,7 @@ export default function Home2() {
               </div>
 
               <a
-                href="http://localhost:5000/user/register"
+                href="https://capavate.com/user/register"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-primary"
@@ -1291,7 +1291,7 @@ export default function Home2() {
                 </ul>
 
                 <a
-                  href="http://localhost:5000/user/register"
+                  href="https://capavate.com/user/register"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn btn-primary"
@@ -1539,7 +1539,7 @@ export default function Home2() {
                 </ul>
 
                 <a
-                  href="http://localhost:5000/user/register"
+                  href="https://capavate.com/user/register"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn btn-primary"
@@ -2017,7 +2017,7 @@ export default function Home2() {
               </p>
 
               <a
-                href="http://localhost:5000/user/register"
+                href="https://capavate.com/user/register"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-primary"
@@ -2217,7 +2217,7 @@ export default function Home2() {
               </ul>
               <a
                 className="btn btn-primary"
-                href="http://localhost:5000/user/register"
+                href="https://capavate.com/user/register"
                 rel="noopener noreferrer"
                 style={{
                   justifyContent: "center",
@@ -2282,7 +2282,7 @@ export default function Home2() {
               </ul>
               <a
                 className="btn btn-primary"
-                href="http://localhost:5000/user/register"
+                href="https://capavate.com/user/register"
                 rel="noopener noreferrer"
                 style={{
                   background: "var(--capavate-gold)",
@@ -2446,7 +2446,7 @@ export default function Home2() {
           <div className="final-cta-buttons">
             <a
               className="btn btn-primary btn-large"
-              href="http://localhost:5000/user/register"
+              href="https://capavate.com/user/register"
               rel="noopener noreferrer"
               target="_blank"
             >
@@ -2454,7 +2454,7 @@ export default function Home2() {
             </a>
             <a
               className="btn btn-outline-light"
-              href="http://localhost:5000/user/login"
+              href="https://capavate.com/user/login"
               rel="noopener noreferrer"
               target="_blank"
             >

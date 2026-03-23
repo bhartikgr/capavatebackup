@@ -99,28 +99,7 @@ export default function SignatoryAcknowledgementPopup({
                         {/* Body */}
                         <div style={{ padding: '32px' }}>
                             {/* Trigger info card with #FF3E41 accent */}
-                            <div style={{
-                                background: '#f8f9fa',
-                                borderRadius: '12px',
-                                padding: '16px 20px',
-                                marginBottom: '24px',
-                                border: '1px solid #e9ecef',
-                                borderLeft: '4px solid #FF3E41',
-                                display: 'flex',
-                                alignItems: 'flex-start',
-                                gap: '12px'
-                            }}>
-                                <AlertCircle size={20} color="#FF3E41" style={{ flexShrink: 0, marginTop: '2px' }} />
-                                <p style={{
-                                    margin: 0,
-                                    color: '#495057',
-                                    fontSize: '0.95rem',
-                                    lineHeight: '1.6'
-                                }}>
-                                    <strong>Trigger:</strong> During company setup when the Account Administrator assigns a user the Signatory role.
-                                    Presented once per Signatory designated. Must be completed by the user being assigned the role before it takes effect.
-                                </p>
-                            </div>
+
 
                             {/* Main content card */}
                             <div style={{

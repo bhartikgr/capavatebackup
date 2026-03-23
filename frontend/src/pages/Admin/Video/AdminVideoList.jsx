@@ -33,7 +33,7 @@ function AdminVideoList() {
   const toggleNavAdmin = () => {
     setIsOpen(!isOpen); // Toggle the state between true and false
   };
-  const apiUrl = "http://localhost:5000/api/admin/video/";
+  const apiUrl = "https://capavate.com/api/admin/video/";
   const [records, setRecords] = useState([]);
 
   document.title = "Video List - Admin";
@@ -105,7 +105,7 @@ function AdminVideoList() {
       cell: (row) => (
         <video width="100" height="70" controls>
           <source
-            src={`http://localhost:5000/api/upload/video/${row.video}`}
+            src={`https://capavate.com/api/upload/video/${row.video}`}
             type="video/mp4"
           />
           Your browser does not support the video tag.
@@ -385,7 +385,7 @@ function AdminVideoList() {
                                     className="mx-auto"
                                   >
                                     <source
-                                      src={`http://localhost:5000/api/upload/video/${row.video}`}
+                                      src={`https://capavate.com/api/upload/video/${row.video}`}
                                       type="video/mp4"
                                     />
                                     Your browser does not support the video tag.
@@ -404,7 +404,7 @@ function AdminVideoList() {
                                       className="dataedit_btn border-0 fs-5"
                                       onClick={() =>
                                         handleviewvideo(
-                                          `http://localhost:5000/api/upload/video/${row.video}`
+                                          `https://capavate.com/api/upload/video/${row.video}`
                                         )
                                       }
                                     >
