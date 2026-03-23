@@ -213,8 +213,12 @@ export default function InvestorLogin() {
                           style={{ maxHeight: "40px" }}
                         />
 
-                        <h2 className="mainh1 mb-2"> Investor Login</h2>
-                        <p className="mainp">Access your investor dashboard</p>
+                        <h2 className="mainh1 mb-2">Investor Login</h2>
+                        <p className="mainp">
+                          You're entering a secure, invitation-only investor portal.
+                          <br />
+                          🛡 Capavate's verified network.
+                        </p>
                       </div>
                       <form onSubmit={handleSubmit}>
                         <Stepblock id="step1" className="pb-4">

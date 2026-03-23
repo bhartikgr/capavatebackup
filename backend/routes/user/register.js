@@ -96,5 +96,10 @@ router.post("/visitors", registerController.visitors);
 router.get("/visitors/:id", registerController.getVisitorById); // Get visitor by ID
 router.post("/deleteVisitor", registerController.deleteVisitor); // Delete visitor by ID
 router.get("/visitor-stats", registerController.visitorstats);
+router.post("/getUserAcknowlegment", registerController.getUserAcknowlegment);
+router.post(
+  "/saveCompanyAcknowlegment",
+  registerController.saveCompanyAcknowlegment,
+);
 
 module.exports = router;

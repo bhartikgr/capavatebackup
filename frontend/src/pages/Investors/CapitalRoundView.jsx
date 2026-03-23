@@ -23,7 +23,8 @@ import {
   IoAnalytics,
   IoFileTray
 } from "react-icons/io5";
-import SideBar from "../../components/Investor/Sidebar.jsx";
+import SideBar from '../../components/Investor/social/SideBar';
+import TopBar from '../../components/Investor/social/TopBar';
 import { BackButton } from "../../components/Styles/GlobalStyles.js";
 import {
   ArrowLeft,
@@ -43,6 +44,7 @@ import SignaturePad from "react-signature-canvas";
 import InvestNowPopup from "../../components/Investor/popup/InvestNowPopup.jsx";
 import InstrumentDataDisplay from "../../components/Investor/InstrumentDataDisplay.jsx";
 import { API_BASE_URL } from "../../config/config.js";
+import CurrencyFormatter from "../../components/CurrencyFormatter";
 function CapitalRoundView() {
   const { id, company_id } = useParams();
   const [successmessage, setSuccessmessage] = useState("");
@@ -55,10 +57,10 @@ function CapitalRoundView() {
   const [errr, seterrr] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   var apiURL = API_BASE_URL + "api/user/capitalround/";
-
+  var apiURL_investorreport = API_BASE_URL + "api/user/investorreport/";
   const storedUsername = localStorage.getItem("InvestorData");
   const userLogin = JSON.parse(storedUsername);
-
+  const [messageAll, setmessageAll] = useState('');
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [records, setRecords] = useState("");
 
@@ -140,7 +142,12 @@ function CapitalRoundView() {
   }, [records, userLogin.id]);
 
   const handleInvestNow = () => {
-    setShowPopupInvest(true);
+    if (records.roundStatus === 'CLOSED') {
+      setmessageAll('❌ This round is CLOSED. Investments are no longer accepted.');
+      seterrr(true);
+    } else {
+      setShowPopupInvest(true);
+    }
   };
 
   const handleClosePopup = () => {
@@ -151,7 +158,11 @@ function CapitalRoundView() {
   const [signatureText, setSignatureText] = useState("");
   const [signatureFontStyle, setSignatureFontStyle] = useState("normal");
   const [useTextSignature, setUseTextSignature] = useState(false);
-
+  const [capTableData, setCapTableData] = useState({
+    pre_money: { items: [], totals: {} },
+    post_money: { items: [], totals: {} }
+  });
+  const [roundData, setRoundData] = useState(null);
   // Function to get font style
   const getSignatureTextStyle = () => {
     const baseStyle = {
@@ -189,7 +200,6 @@ function CapitalRoundView() {
 
 
   // Update saveSignature function
-  console.log(records)
   const saveSignature = async () => {
 
     if (!isAllTermsAccepted()) {
@@ -201,7 +211,6 @@ function CapitalRoundView() {
       }, 3500);
       return;
     }
-    console.log('klkl', signatureType)
     // Validate based on selected type
     if (signatureType === 'draw') {
       if (!sigPadRef.current || sigPadRef.current.isEmpty()) {
@@ -232,7 +241,7 @@ function CapitalRoundView() {
     } else {
       signatureData = await createTextSignatureImage();
     }
-
+    console.log(records.sharerecordround_id)
     let formData = {
       user_id: userLogin.id,
       id: records.sharerecordround_id,
@@ -326,8 +335,43 @@ function CapitalRoundView() {
   useEffect(() => {
     getcheckCapitalMotionlist();
     getcheckNextRound();
+    getRoundsDetail();
   }, []);
+  const getRoundsDetail = async () => {
+    setIsLoading(true);
+    let formData = {
+      investor_id: userLogin.id,
+      round_id: id,
+      company_id: company_id
+    };
+    try {
+      const res = await axios.post(
+        apiURL_investorreport + "getRoundsDetail",
+        formData,
+        {
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (res.data.success) {
+        const capTable = res.data.cap_table || {
+          pre_money: { items: [], totals: {} },
+          post_money: { items: [], totals: {} }
+        };
+        console.log(res.data)
+        setCapTableData(capTable);
 
+        setRoundData(res.data.round || null);
+      }
+
+    } catch (err) {
+      console.error("Error fetching capital round data:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
   const getcheckCapitalMotionlist = async () => {
     setIsLoading(true);
     let formData = {
@@ -345,7 +389,7 @@ function CapitalRoundView() {
           },
         }
       );
-      console.log(res.data.results[0]);
+
       if (res.data.results.length === 0) {
         navigate("/investor/company/capital-round-list/" + company_id);
       } else {
@@ -512,9 +556,7 @@ function CapitalRoundView() {
   // Calculate financial metrics - Fixed calculations
   // Calculate price per share for this round
   const pricePerShare =
-    records.roundsize && records.issuedshares
-      ? records.roundsize / records.issuedshares
-      : 0;
+    records.share_price || 0;
 
   // Calculate investor shares for this round
   const investorAmount =
@@ -729,17 +771,33 @@ function CapitalRoundView() {
     link.click();
     document.body.removeChild(link);
   };
-  console.log(records);
+  const totalspost = capTableData?.post_money?.totals || {};
   return (
-    <Wrapper className="investor-login-wrapper">
-      <div className="fullpage d-block">
-        <div className="d-flex align-items-start gap-0">
-          <SideBar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
-
-          <div
-            className={`global_view ${isCollapsed ? "global_view_col" : ""}`}
-          >
+    <>
+      <main>
+        <div className='d-flex align-items-start gap-0'>
+          <SideBar />
+          <div className='d-flex flex-grow-1 flex-column gap-0'>
+            <TopBar />
             <SectionWrapper className="d-block p-md-4 p-3">
+              {messageAll && (
+                <div
+                  className={`shadow-lg ${errr ? "error_pop" : "success_pop"
+                    }`}
+                >
+                  <div className="d-flex align-items-center gap-2">
+                    <span className="d-block">{messageAll}</span>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="close_btnCros"
+                    onClick={() => setmessageAll("")}
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
               {/* Header Section */}
               <div className="container-fluid">
                 <div className="d-flex justify-content-between align-items-center mb-4">
@@ -825,12 +883,18 @@ function CapitalRoundView() {
                     <div className="funding-progress">
                       <div className="progress-stats">
                         <span>
-                          Raised: {records.currency}{" "}
-                          {Number(totalRaised).toLocaleString()}
+                          Raised:  <CurrencyFormatter
+                            amount={records.total_investment_amount}
+                            currency={records.currency}
+                          />
                         </span>
                         <span>
-                          Target: {records.currency}{" "}
-                          {Number(records.roundsize).toLocaleString()}
+                          Target:
+
+                          <CurrencyFormatter
+                            amount={records.roundsize}
+                            currency={records.currency}
+                          />
                         </span>
                       </div>
                     </div>
@@ -1003,13 +1067,14 @@ function CapitalRoundView() {
                               <IoStatsChart size={24} />
                             </div>
                             <div className="metric-content">
-                              <label>Price per Share</label>
+                              <label>Share Price</label>
                               <h3>
-                                {records.currency}{" "}
-                                {pricePerShare.toLocaleString(undefined, {
-                                  minimumFractionDigits: 3,
-                                  maximumFractionDigits: 3
-                                })}
+
+                                <CurrencyFormatter
+                                  amount={pricePerShare}
+                                  currency={records.currency}
+                                  digit={3}
+                                />
 
                               </h3>
                             </div>
@@ -1022,10 +1087,12 @@ function CapitalRoundView() {
                             <div className="metric-content">
                               <label>Total Shares</label>
                               <h3>
-                                {Number(records.issuedshares).toLocaleString("en-US", {
-                                  minimumFractionDigits: 3,
-                                  maximumFractionDigits: 3,
-                                })}
+
+                                <CurrencyFormatter
+                                  amount={capTableData?.post_money?.totals?.total_shares_formatted}
+                                  currency={records.currency}
+                                  digit={2}
+                                />
 
                               </h3>
                             </div>
@@ -1037,7 +1104,7 @@ function CapitalRoundView() {
                             </div>
                             <div className="metric-content">
                               <label>Your Ownership</label>
-                              <h3>{ownership}%</h3>
+                              <h3> {((records.requested_shares || 0) / totalspost.total_shares * 100).toFixed(2)}%</h3>
                             </div>
                           </div>
                         </div>
@@ -1050,8 +1117,11 @@ function CapitalRoundView() {
                               <div className="detail-item">
                                 <label>Your Investment</label>
                                 <span>
-                                  {records.currency}{" "}
-                                  {investmentData.investorInvestment.toLocaleString()}
+
+                                  <CurrencyFormatter
+                                    amount={records.total_investment_amount}
+                                    currency={records.currency}
+                                  />
                                 </span>
                               </div>
                               <div className="detail-item">
@@ -1116,27 +1186,7 @@ function CapitalRoundView() {
                             </div>
                           </div>
 
-                          <div className="terms-section mb-4">
-                            <h5>Voting & Conversion Rights</h5>
-                            <div className="terms-list">
-                              <div className="term-item">
-                                <label>Voting Rights:</label>{" "}
-                                <strong>{records.voting || "Standard"}</strong>
-                              </div>
-                              <div className="term-item">
-                                <label>Shares Convertible:</label>{" "}
-                                <strong>{records.convertible || "No"}</strong>
-                              </div>
-                              {records.convertible === "Yes" && (
-                                <div className="term-item">
-                                  <label>Conversion Type:</label>{" "}
-                                  <strong>
-                                    {records.convertibleType || "Automatic"}
-                                  </strong>
-                                </div>
-                              )}
-                            </div>
-                          </div>
+
 
                           <div className="terms-section mb-4">
                             <h5>Additional Rights & Preferences</h5>
@@ -1799,7 +1849,7 @@ function CapitalRoundView() {
 
                     {activeTab === "excutivesummary" && (
                       <div className="executive-summary-container mt-4">
-                        <div className="summary-header d-flex align-items-center p-3 bg-primary text-white rounded-top">
+                        <div className="summary-header d-flex align-items-center p-3 redcolor text-white rounded-top">
                           <IoAnalytics size={20} className="me-2" />
                           <h5 className="mb-0">Executive Summary</h5>
                         </div>
@@ -1836,17 +1886,18 @@ function CapitalRoundView() {
             </SectionWrapper>
           </div>
         </div>
-      </div>
+      </main>
+      {
+        ShowPopupInvest && (
+          <InvestNowPopup
+            onClose={handleClosePopup}
+            records={records}
+            nextround={nextround}
+            nextRoundData={nextRoundData}
 
-      {ShowPopupInvest && (
-        <InvestNowPopup
-          onClose={handleClosePopup}
-          records={records}
-          nextround={nextround}
-          nextRoundData={nextRoundData}
-
-        />
-      )}
+          />
+        )
+      }
 
       <style jsx>{`
         .capital-round-card {
@@ -2307,8 +2358,9 @@ function CapitalRoundView() {
           }
         }
       `}</style>
-    </Wrapper>
-  );
+      );
+    </>
+  )
 }
 
 export default CapitalRoundView;

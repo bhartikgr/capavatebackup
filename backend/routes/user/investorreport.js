@@ -64,5 +64,7 @@ router.post(
   "/getinvestorRecorData",
   inverstorReportController.getinvestorRecorData,
 );
+router.post("/getRoundsDetail", inverstorReportController.getRoundsDetail);
+router.post("/getRoundsWarrant", inverstorReportController.getRoundsWarrant);
 
 module.exports = router;

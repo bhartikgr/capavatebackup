@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from "react";
 import DataTable from "react-data-table-component";
-import TopBar from "../../../components/Users/TopBar";
 import ModuleSideNav from "../../../components/Users/ModuleSideNav.jsx";
 import { IoCloseCircleOutline } from "react-icons/io5";
 import "bootstrap/dist/css/bootstrap.min.css";
 import {
   SectionWrapper,
-  Wrapper,
 } from "../../../components/Styles/MainHeadStyles.js";
 import { DataRoomSection } from "../../../components/Styles/DataRoomStyle.js";
 import axios from "axios";
@@ -19,7 +17,10 @@ import { useNavigate } from "react-router-dom";
 import InvestorShareReport from "../../../components/Users/popup/InvestorShareReport.jsx";
 import InvestorShareReportRecordRound from "../../../components/Users/popup/InvestorShareReportRecordRound.jsx";
 import ViewRecordRound from "../../../components/Users/popup/ViewRecordRound";
+import ViewSharedRecordRounds from "../../../components/Users/popup/ViewSharedRecordRounds";
 import { API_BASE_URL } from "../../../config/config.js";
+import SideBar from "../../../components/social/SideBar";
+import TopBar from '../../../components/social/TopBar';
 export default function ShareReport() {
   const navigate = useNavigate();
   const [IsModalOpenShareReport, setIsModalOpenShareReport] = useState(false);
@@ -341,18 +342,8 @@ export default function ShareReport() {
 
     if (isNaN(date)) return "";
     const months = [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
     ];
 
     const day = date.getDate();
@@ -469,6 +460,8 @@ export default function ShareReport() {
 
   //Due diligence
   const [ViewRecordRounds, setViewRecordRounds] = useState(false);
+  const [ViewSharedRecordRound, setViewSharedRecordRound] = useState(false);
+  const [roundid, setroundid] = useState('');
   const [recordsDataroom, setrecordsDataroom] = useState([]);
   const [searchTextDataroom, setSearchTextDataroom] = useState("");
   const [IsModalOpenShareReportDataroom, setIsModalOpenShareReportDataroom] =
@@ -718,9 +711,14 @@ export default function ShareReport() {
     useState(false);
   const [recordViewData, setrecordViewData] = useState("");
   const handleViewsection = (id, rowdata) => {
+    console.log(rowdata)
     setrecordViewData(rowdata);
     setViewRecordRounds(true);
   };
+  const handleViewSharedSection = (rowdata) => {
+    setroundid(rowdata.id);
+    setViewSharedRecordRound(true);
+  }
   const columnsRecordRound = [
     {
       name: (
@@ -736,10 +734,9 @@ export default function ShareReport() {
         />
       ),
       cell: (row) => {
-        const isClosed = row.roundStatus === "CLOSED";
         const isActive = row.roundStatus === "ACTIVE";
-
-        // If ACTIVE, enable checkbox
+        const isClosed = row.roundStatus === "CLOSED";
+        // ✅ Agar ACTIVE hai to hamesha enabled
         if (isActive) {
           return (
             <input
@@ -751,30 +748,28 @@ export default function ShareReport() {
           );
         }
 
-        // If CLOSED, check the date
-        if (isClosed) {
-          // Parse the closed date (MM/DD/YYYY format)
+        // ✅ Agar CLOSED hai to date check karo
+        if (isClosed && row.dateroundclosed) {
           const closedDate = new Date(row.dateroundclosed);
           const today = new Date();
 
-          // Reset time to midnight for accurate date comparison
           closedDate.setHours(0, 0, 0, 0);
           today.setHours(0, 0, 0, 0);
 
-          // Disable if closed date has passed or is today
-          const isExpired = today >= closedDate;
+          // ✅ Agar date future mein hai to enabled, otherwise disabled
+          const isFutureDate = closedDate > today;
 
           return (
             <input
               type="checkbox"
               checked={selectedRowsRecordRound.some((r) => r.id === row.id)}
               onChange={() => handleSelectRowRecordRound(row)}
-              disabled={isExpired}
+              disabled={!isFutureDate} // Future date true hai to enabled
             />
           );
         }
 
-        // For any other status, disable checkbox
+        // ✅ Baaki sab cases mein disabled
         return (
           <input
             type="checkbox"
@@ -787,32 +782,30 @@ export default function ShareReport() {
       width: "60px",
     },
     {
-      name: "Share Class (Name of Round)",
-      selector: (row) => row.shareClassType + " " + row.nameOfRound,
+      name: "Round Name",
+      selector: (row) => row.nameOfRound,
+      sortable: true,
+    },
+    {
+      name: "Funding Round",
+      selector: (row) => row.shareClassType,
+      sortable: true,
+    },
+    {
+      name: "Instrument Type",
+      selector: (row) => row.instrumentType,
       sortable: true,
     },
     {
       name: "Target Raise Amount",
       selector: (row) => {
-        const formattedAmount = Number(row.roundsize).toLocaleString("en-IN", {
+        const amount = row.roundsize ? Number(row.roundsize) : 0;
+        const currency = row.currency || ""; // e.g., ₹ or $
+        const formattedAmount = amount.toLocaleString("en-IN", {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
         });
-        return `${row.currency} ${formattedAmount}`;
-      },
-      sortable: true,
-    },
-    {
-      name: "Number of Shares",
-      selector: (row) => {
-        const formattedAmount = Number(row.issuedshares).toLocaleString(
-          "en-IN",
-          {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          }
-        );
-        return `${formattedAmount}`;
+        return `${currency} ${formattedAmount}`;
       },
       sortable: true,
     },
@@ -822,9 +815,16 @@ export default function ShareReport() {
       sortable: true,
       cell: (row) => {
         const isActive = row.roundStatus === "ACTIVE";
-        const displayText = isActive
-          ? "ACTIVE"
-          : `CLOSED: ${formatCurrentDate(row.dateroundclosed)}`;
+        let displayText;
+
+        if (isActive) {
+          displayText = "ACTIVE";
+        } else if (!row.dateroundclosed) {
+          // Handle null, undefined, or empty date
+          displayText = "CLOSED: N/A";
+        } else {
+          displayText = `CLOSED: ${formatCurrentDate(row.dateroundclosed)}`;
+        }
 
         return (
           <span
@@ -832,8 +832,8 @@ export default function ShareReport() {
               padding: "4px 12px",
               borderRadius: "12px",
               fontWeight: "600",
-              color: isActive ? "#065f46" : "#b91c1c",
-              backgroundColor: isActive ? "#d1fae5" : "#fee2e2",
+              color: isActive ? "#065f46" : "#b91c1c", // green or red text
+              backgroundColor: isActive ? "#d1fae5" : "#fee2e2", // green or red bg
               fontSize: "12px",
               display: "inline-block",
             }}
@@ -851,28 +851,48 @@ export default function ShareReport() {
             type="button"
             title="View Record Round"
             onClick={() => {
-              if (
-                userLogin.role !== "owner" &&
-                (!authorizedData?.approve || authorizedData.approve !== "Yes")
-              ) {
-                seterrr(true);
-                setmessagesuccessError(
-                  "Signature authorized is not approved yet."
-                );
-                return;
-              }
+              // if (
+              //   userLogin.role !== "owner" &&
+              //   (!authorizedData?.approve || authorizedData.approve !== "Yes")
+              // ) {
+              //   seterrr(true);
+              //   setmessagesuccessError(
+              //     "Signature authorized is not approved yet."
+              //   );
+              //   return;
+              // }
               handleViewsection(row.user_id, row);
             }}
             className="btn btn-sm btn-outline-success fw-bold"
           >
-            <FaEye /> View
+            <FaEye /> View Detail
+          </button>
+          <button
+            type="button"
+            title="View Record Round"
+            onClick={() => {
+              // if (
+              //   userLogin.role !== "owner" &&
+              //   (!authorizedData?.approve || authorizedData.approve !== "Yes")
+              // ) {
+              //   seterrr(true);
+              //   setmessagesuccessError(
+              //     "Signature authorized is not approved yet."
+              //   );
+              //   return;
+              // }
+              handleViewSharedSection(row);
+            }}
+            className="btn btn-sm btn-outline-success fw-bold"
+          >
+            <FaEye /> View Shared List
           </button>
         </div>
       ),
       ignoreRowClick: true,
       allowOverflow: true,
       button: true,
-      width: "200px",
+      width: "300px",
     },
   ];
   // Filter data by nameofreport (case insensitive)
@@ -897,17 +917,17 @@ export default function ShareReport() {
   });
 
   const handleshareReportRecordRound = () => {
-    if (!authorizedData) {
-      seterrr(true);
-      setmessagesuccessError("No authorized signature found.");
-      return;
-    }
+    // if (!authorizedData) {
+    //   seterrr(true);
+    //   setmessagesuccessError("No authorized signature found.");
+    //   return;
+    // }
 
-    if (authorizedData.approve !== "Yes") {
-      seterrr(true);
-      setmessagesuccessError("Authorized Signature is not approved yet.");
-      return;
-    }
+    // if (authorizedData.approve !== "Yes") {
+    //   seterrr(true);
+    //   setmessagesuccessError("Authorized Signature is not approved yet.");
+    //   return;
+    // }
     if (selectedRowsRecordRound.length > 0) {
       setIsModalOpenShareRecordRound(true);
     }
@@ -915,224 +935,215 @@ export default function ShareReport() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   return (
     <>
-      <>
-        <Wrapper>
-          <div className="fullpage d-block">
-            <div className="d-flex align-items-start gap-0">
-              <ModuleSideNav
-                isCollapsed={isCollapsed}
-                setIsCollapsed={setIsCollapsed}
-              />
-              <div
-                className={`global_view ${isCollapsed ? "global_view_col" : ""
-                  }`}
-              >
-                <TopBar />
-                <SectionWrapper className="d-block p-md-4 p-3">
-                  <div className="container-fluid">
-                    {messagesuccessError && (
-                      <div
-                        className={`flex items-center justify-between gap-3 shadow-lg ${errr ? "error_pop" : "success_pop"
-                          }`}
-                      >
-                        <div className="d-flex align-items-start gap-2">
-                          <span className="d-block">{messagesuccessError}</span>
-                        </div>
 
-                        <button
-                          type="button"
-                          className="close_btnCros"
-                          onClick={() => setmessagesuccessError("")}
-                        >
-                          ×
-                        </button>
-                      </div>
-                    )}
+      <main>
+        <div className='d-flex align-items-start gap-0'>
+          <SideBar />
+          <div className='d-flex flex-grow-1 flex-column gap-0'>
+            <TopBar />
+            <SectionWrapper className="d-block p-md-4 p-3">
+              <div className="container-fluid">
+                {messagesuccessError && (
+                  <div
+                    className={`flex items-center justify-between gap-3 shadow-lg ${errr ? "error_pop" : "success_pop"
+                      }`}
+                  >
+                    <div className="d-flex align-items-start gap-2">
+                      <span className="d-block">{messagesuccessError}</span>
+                    </div>
 
-                    <DataRoomSection className="d-flex flex-column gap-2">
-                      <div className="titleroom d-flex justify-content-between align-items-center border-bottom pb-3">
-                        {/* Heading on the left */}
-                        <div className="pb-3 bar_design">
-                          <h4 className="h5 mb-0">Investor Reports</h4>
-                        </div>
-                        {/* Buttons on the right */}
-                        <div className="d-flex gap-2">
-                          <Button
-                            onClick={handleshareReport}
-                            type="button"
-                            className="btn bg-dark text-white py-2 hoverbge creditb d-flex align-items-center  active gap-2"
-                            style={{
-                              opacity: selectedRows.length === 0 ? 0.5 : 1,
-                              pointerEvents:
-                                selectedRows.length === 0 ? "none" : "auto",
-                            }}
-                          >
-                            <FaShareAlt style={{ fontSize: "14px" }} />
-                            Share Report
-                          </Button>
-                        </div>
-                      </div>
-
-                      <div className="d-flex justify-content-end my-2 p-0">
-                        <input
-                          type="search"
-                          placeholder="Search Here..."
-                          className="form-control"
-                          value={searchText}
-                          onChange={(e) => setSearchText(e.target.value)}
-                          style={{
-                            padding: "10px 15px",
-                            width: "100%",
-                            maxWidth: "300px",
-                            fontSize: "14px",
-                            borderRadius: "10px",
-                          }}
-                        />
-                      </div>
-                      <div className="d-flex flex-column justify-content-between align-items-start tb-box">
-                        <DataTable
-                          customStyles={customStyles}
-                          conditionalRowStyles={conditionalRowStyles}
-                          columns={columns}
-                          className="datatb-report"
-                          data={filteredData}
-                          pagination
-                          highlightOnHover
-                          striped
-                          responsive
-                        />
-                      </div>
-                    </DataRoomSection>
-                    <DataRoomSection className="d-flex flex-column gap-2">
-                      <div className="titleroom d-flex justify-content-between align-items-center border-bottom pb-3">
-                        {/* Heading on the left */}
-                        <div className="pb-3 bar_design">
-                          <h4 className="h5 mb-0">
-                            DataRoom Management Documents
-                          </h4>
-                        </div>
-                        {/* Buttons on the right */}
-                        <div className="d-flex gap-2">
-                          <Button
-                            onClick={handleshareReportDataroom}
-                            type="button"
-                            className="btn bg-dark text-white py-2 hoverbge creditb d-flex align-items-center  active gap-2"
-                            style={{
-                              opacity:
-                                selectedRowsDataroom.length === 0 ? 0.5 : 1,
-                              pointerEvents:
-                                selectedRowsDataroom.length === 0
-                                  ? "none"
-                                  : "auto",
-                            }}
-                          >
-                            <FaShareAlt style={{ fontSize: "14px" }} />
-                            Share Report
-                          </Button>
-                        </div>
-                      </div>
-
-                      <div className="d-flex justify-content-end my-2 p-0">
-                        <input
-                          type="search"
-                          placeholder="Search Here..."
-                          className="form-control"
-                          value={searchTextDataroom}
-                          onChange={(e) =>
-                            setSearchTextDataroom(e.target.value)
-                          }
-                          style={{
-                            padding: "10px 15px",
-                            width: "100%",
-                            maxWidth: "300px",
-                            fontSize: "14px",
-                            borderRadius: "10px",
-                          }}
-                        />
-                      </div>
-                      <div className="d-flex flex-column justify-content-between align-items-start tb-box">
-                        <DataTable
-                          customStyles={customStyles}
-                          conditionalRowStyles={conditionalRowStyles}
-                          columns={columnsDataroom}
-                          className="datatb-report"
-                          data={filteredDataDataroom}
-                          pagination
-                          highlightOnHover
-                          striped
-                          responsive
-                        />
-                      </div>
-                    </DataRoomSection>
-
-                    <DataRoomSection className="d-flex flex-column gap-2 mt-4">
-                      <div className="titleroom d-flex justify-content-between align-items-center border-bottom pb-3">
-                        {/* Heading on the left */}
-                        <div className="pb-3 bar_design">
-                          <h4 className="h5 mb-0">
-                            Capital In Motion: Record a Round
-                          </h4>
-                        </div>
-                        {/* Buttons on the right */}
-                        <div className="d-flex gap-2">
-                          <Button
-                            onClick={handleshareReportRecordRound}
-                            type="button"
-                            className="btn bg-dark text-white py-2 hoverbge creditb d-flex align-items-center  active gap-2"
-                            style={{
-                              opacity:
-                                selectedRowsRecordRound.length === 0 ? 0.5 : 1,
-                              pointerEvents:
-                                selectedRowsRecordRound.length === 0
-                                  ? "none"
-                                  : "auto",
-                            }}
-                          >
-                            <FaShareAlt style={{ fontSize: "14px" }} />
-                            Share Report
-                          </Button>
-                        </div>
-                      </div>
-
-                      <div className="d-flex justify-content-end my-2 p-0">
-                        <input
-                          type="search"
-                          placeholder="Search Here..."
-                          className="form-control"
-                          value={searchTextRecordRound}
-                          onChange={(e) =>
-                            setSearchTextRecordRound(e.target.value)
-                          }
-                          style={{
-                            padding: "10px 15px",
-                            width: "100%",
-                            maxWidth: "300px",
-                            fontSize: "14px",
-                            borderRadius: "10px",
-                          }}
-                        />
-                      </div>
-                      <div className="d-flex flex-column justify-content-between align-items-start tb-box">
-                        <DataTable
-                          customStyles={customStyles}
-                          conditionalRowStyles={conditionalRowStyles}
-                          columns={columnsRecordRound}
-                          className="datatb-report"
-                          data={filteredDataRecordRound}
-                          pagination
-                          highlightOnHover
-                          striped
-                          responsive
-                        />
-                      </div>
-                    </DataRoomSection>
+                    <button
+                      type="button"
+                      className="close_btnCros"
+                      onClick={() => setmessagesuccessError("")}
+                    >
+                      ×
+                    </button>
                   </div>
-                </SectionWrapper>
+                )}
+
+                <DataRoomSection className="d-flex flex-column gap-2">
+                  <div className="titleroom d-flex justify-content-between align-items-center border-bottom pb-3">
+                    {/* Heading on the left */}
+                    <div className="pb-3 bar_design">
+                      <h4 className="h5 mb-0">Investor Reports</h4>
+                    </div>
+                    {/* Buttons on the right */}
+                    <div className="d-flex gap-2">
+                      <Button
+                        onClick={handleshareReport}
+                        type="button"
+                        className="btn bg-dark text-white py-2 hoverbge creditb d-flex align-items-center  active gap-2"
+                        style={{
+                          opacity: selectedRows.length === 0 ? 0.5 : 1,
+                          pointerEvents:
+                            selectedRows.length === 0 ? "none" : "auto",
+                        }}
+                      >
+                        <FaShareAlt style={{ fontSize: "14px" }} />
+                        Share Report
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="d-flex justify-content-end my-2 p-0">
+                    <input
+                      type="search"
+                      placeholder="Search Here..."
+                      className="form-control"
+                      value={searchText}
+                      onChange={(e) => setSearchText(e.target.value)}
+                      style={{
+                        padding: "10px 15px",
+                        width: "100%",
+                        maxWidth: "300px",
+                        fontSize: "14px",
+                        borderRadius: "10px",
+                      }}
+                    />
+                  </div>
+                  <div className="d-flex flex-column justify-content-between align-items-start tb-box">
+                    <DataTable
+                      customStyles={customStyles}
+                      conditionalRowStyles={conditionalRowStyles}
+                      columns={columns}
+                      className="datatb-report"
+                      data={filteredData}
+                      pagination
+                      highlightOnHover
+                      striped
+                      responsive
+                    />
+                  </div>
+                </DataRoomSection>
+                <DataRoomSection className="d-flex flex-column gap-2">
+                  <div className="titleroom d-flex justify-content-between align-items-center border-bottom pb-3">
+                    {/* Heading on the left */}
+                    <div className="pb-3 bar_design">
+                      <h4 className="h5 mb-0">
+                        DataRoom Management Documents
+                      </h4>
+                    </div>
+                    {/* Buttons on the right */}
+                    <div className="d-flex gap-2">
+                      <Button
+                        onClick={handleshareReportDataroom}
+                        type="button"
+                        className="btn bg-dark text-white py-2 hoverbge creditb d-flex align-items-center  active gap-2"
+                        style={{
+                          opacity:
+                            selectedRowsDataroom.length === 0 ? 0.5 : 1,
+                          pointerEvents:
+                            selectedRowsDataroom.length === 0
+                              ? "none"
+                              : "auto",
+                        }}
+                      >
+                        <FaShareAlt style={{ fontSize: "14px" }} />
+                        Share Report
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="d-flex justify-content-end my-2 p-0">
+                    <input
+                      type="search"
+                      placeholder="Search Here..."
+                      className="form-control"
+                      value={searchTextDataroom}
+                      onChange={(e) =>
+                        setSearchTextDataroom(e.target.value)
+                      }
+                      style={{
+                        padding: "10px 15px",
+                        width: "100%",
+                        maxWidth: "300px",
+                        fontSize: "14px",
+                        borderRadius: "10px",
+                      }}
+                    />
+                  </div>
+                  <div className="d-flex flex-column justify-content-between align-items-start tb-box">
+                    <DataTable
+                      customStyles={customStyles}
+                      conditionalRowStyles={conditionalRowStyles}
+                      columns={columnsDataroom}
+                      className="datatb-report"
+                      data={filteredDataDataroom}
+                      pagination
+                      highlightOnHover
+                      striped
+                      responsive
+                    />
+                  </div>
+                </DataRoomSection>
+
+                <DataRoomSection className="d-flex flex-column gap-2 mt-4">
+                  <div className="titleroom d-flex justify-content-between align-items-center border-bottom pb-3">
+                    {/* Heading on the left */}
+                    <div className="pb-3 bar_design">
+                      <h4 className="h5 mb-0">
+                        Capital In Motion: Record a Round
+                      </h4>
+                    </div>
+                    {/* Buttons on the right */}
+                    <div className="d-flex gap-2">
+                      <Button
+                        onClick={handleshareReportRecordRound}
+                        type="button"
+                        className="btn bg-dark text-white py-2 hoverbge creditb d-flex align-items-center  active gap-2"
+                        style={{
+                          opacity:
+                            selectedRowsRecordRound.length === 0 ? 0.5 : 1,
+                          pointerEvents:
+                            selectedRowsRecordRound.length === 0
+                              ? "none"
+                              : "auto",
+                        }}
+                      >
+                        <FaShareAlt style={{ fontSize: "14px" }} />
+                        Share Report
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="d-flex justify-content-end my-2 p-0">
+                    <input
+                      type="search"
+                      placeholder="Search Here..."
+                      className="form-control"
+                      value={searchTextRecordRound}
+                      onChange={(e) =>
+                        setSearchTextRecordRound(e.target.value)
+                      }
+                      style={{
+                        padding: "10px 15px",
+                        width: "100%",
+                        maxWidth: "300px",
+                        fontSize: "14px",
+                        borderRadius: "10px",
+                      }}
+                    />
+                  </div>
+                  <div className="d-flex flex-column justify-content-between align-items-start tb-box">
+                    <DataTable
+                      customStyles={customStyles}
+                      conditionalRowStyles={conditionalRowStyles}
+                      columns={columnsRecordRound}
+                      className="datatb-report"
+                      data={filteredDataRecordRound}
+                      pagination
+                      highlightOnHover
+                      striped
+                      responsive
+                    />
+                  </div>
+                </DataRoomSection>
               </div>
-            </div>
+            </SectionWrapper>
           </div>
-        </Wrapper>
-      </>
+        </div>
+      </main>
 
       {IsModalOpenAiResponseSummary && (
         <AiInvestorReport
@@ -1172,6 +1183,12 @@ export default function ShareReport() {
         <ViewRecordRound
           onClose={() => setViewRecordRounds(false)}
           recordViewData={recordViewData}
+        />
+      )}
+      {ViewSharedRecordRound && (
+        <ViewSharedRecordRounds
+          onClose={() => setViewSharedRecordRound(false)}
+          roundid={roundid}
         />
       )}
 

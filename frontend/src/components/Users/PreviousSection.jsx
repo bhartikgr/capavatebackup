@@ -28,7 +28,7 @@ const PreviousSection = ({
 
   const [selectedFounder, setSelectedFounder] = useState(null);
   // Function to render Round 0 specific content
-  console.log(CurrDisplay)
+
   const renderRound0Content = () => (
     <div className="round-0-special-section">
       <div className="alert alert-info mb-3">
@@ -707,10 +707,10 @@ const PreviousSection = ({
               </div>
             </div>
           )}
-          {formData.instrumentType === "Preferred Equity" && formData.hasWarrants_preferred && (
+          {formData.hasWarrants_preferred && (
             <div className="col-12">
               <div className="p-3 border rounded bg-light">
-                <h6>Preferred Equity with Warrants</h6>
+                <h6>Warrants Details</h6>
                 <div className="row">
                   {/* Warrant Coverage */}
                   <div className="col-md-6">
@@ -736,28 +736,7 @@ const PreviousSection = ({
                         </div>
                       )}
 
-                      {/* DYNAMIC Calculation Display - Using current round's data */}
-                      {formData.pre_money && formData.issuedshares && formData.warrant_adjustment_percent && (
-                        <div className="col-md-6">
-                          <strong>Example Calculation:</strong>
-                          <small className="d-block text-muted">
-                            Current Round: ${Number(formData.pre_money).toLocaleString()} pre-money
-                            {formData.issuedshares && (
-                              <>
-                                <br />Share Price: ${(Number(formData.pre_money) / Number(formData.issuedshares)).toFixed(4)}/share
-                                <br />If next round = ${(Number(formData.pre_money) / Number(formData.issuedshares)).toFixed(2)}/share
-                                <br />→ Exercise at $
-                                {formData.warrant_adjustment_direction === "decrease"
-                                  ? ((Number(formData.pre_money) / Number(formData.issuedshares)) *
-                                    (1 - formData.warrant_adjustment_percent / 100)).toFixed(2)
-                                  : ((Number(formData.pre_money) / Number(formData.issuedshares)) *
-                                    (1 + formData.warrant_adjustment_percent / 100)).toFixed(2)}
-                                /share
-                              </>
-                            )}
-                          </small>
-                        </div>
-                      )}
+
                     </>
                   )}
 
@@ -769,12 +748,12 @@ const PreviousSection = ({
                   )}
 
                   {/* Warrant Status */}
-                  <div className="col-md-6">
+                  {/* <div className="col-md-6">
                     <strong>Status:</strong>{" "}
                     <span className={`badge ${formData.warrant_status === 'pending' ? 'bg-warning' : 'bg-success'}`}>
                       {formData.warrant_status === 'pending' ? 'Will exercise in next round' : 'Exercised'}
                     </span>
-                  </div>
+                  </div> */}
 
                   {/* Calculated Values (if already exercised) */}
                   {formData.calculated_exercise_price && (
@@ -1174,7 +1153,7 @@ const PreviousSection = ({
 
                     <CurrencyFormatter
                       amount={formData.optionPoolPercent}
-                      currency={CurrDisplay}
+                      currency={""}
                     />%
                   </p>
                 </div>
@@ -1192,7 +1171,7 @@ const PreviousSection = ({
 
                 <CurrencyFormatter
                   amount={formData.optionPoolPercent_post}
-                  currency={CurrDisplay}
+                  currency={""}
                 />%
               </p>
             </div>

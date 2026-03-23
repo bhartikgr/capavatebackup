@@ -18,6 +18,7 @@ import { useParams } from "react-router-dom";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import Select from 'react-select'; // Import react-select
+import InvestorRegistrationPopup from "../../components/Users/Acknowledgement/InvestorRegistrationPopup.jsx";
 // Constants from Profile component
 const CHEQUE_SIZES = ["Less than $25k", "$25k–$50k", "$50k–$100k", "$100k–$250k", "$250k–$500k", "$500k–$1M", "$1M–$5M", "$5M+"];
 const INVESTOR_TYPES = [
@@ -268,7 +269,10 @@ export default function Provideform() {
   };
 
   // Provideform.jsx में handlesubmitinfo फंक्शन अपडेट करें
-
+  const [showAgreementPopup, setShowAgreementPopup] = useState(false);
+  const [pendingFormData, setPendingFormData] = useState(null);
+  const [isFormSubmitting, setIsFormSubmitting] = useState(false);
+  const [agreementAccepted, setAgreementAccepted] = useState(false);
   const handlesubmitinfo = async (e) => {
     e.preventDefault();
 
@@ -284,67 +288,92 @@ export default function Provideform() {
       return;
     }
 
-    setspinners(true);
+    setPendingFormData({
+      kycFiles,
+      profilePictureFile,
+      formData: formData_Step2,
+      selectedHandsOn,
+      selectedMAInterests,
+      selectedStages,
+      selectedCheques,
+      selectedCapavateInterests,
+      selectedIndustries,
+      InvestorData
+    });
 
-    // IMPORTANT: FormData का उपयोग करें, plain object का नहीं
-    let formdata = new FormData();
-
-    // Contact Info
-    formdata.append("first_name", formData_Step2.first_name);
-    formdata.append("last_name", formData_Step2.last_name);
-    formdata.append("email", formData_Step2.email);
-    formdata.append("phone", formData_Step2.phone);
-    formdata.append("city", formData_Step2.city);
-    formdata.append("country", formData_Step2.country);
-    formdata.append("linkedIn_profile", formData_Step2.linkedIn_profile);
-
-    // Investor Profile
-    formdata.append("type_of_investor", formData_Step2.type_of_investor);
-    formdata.append("accredited_status", formData_Step2.accredited_status);
-    formdata.append("bio_short", formData_Step2.bio_short);
-    formdata.append("mailing_address", formData_Step2.mailing_address);
-    formdata.append("country_tax", formData_Step2.country_tax);
-    formdata.append("tax_id", formData_Step2.tax_id);
-
-    // Network Profile
-    formdata.append("screen_name", formData_Step2.screen_name);
-    formdata.append("job_title", formData_Step2.job_title);
-    formdata.append("company_name", formData_Step2.company_name);
-    formdata.append("company_country", formData_Step2.company_country);
-    formdata.append("company_website", formData_Step2.company_website);
-    formdata.append("geo_focus", formData_Step2.geo_focus);
-    formdata.append("network_bio", formData_Step2.network_bio);
-    formdata.append("notes", formData_Step2.notes);
-
-    // Multi-select fields
-    formdata.append("hands_on", selectedHandsOn.join(","));
-    formdata.append("ma_interests", selectedMAInterests.join(","));
-    formdata.append("preferred_stages", selectedStages.join(","));
-    formdata.append("cheque_size", selectedCheques.join(","));
-
-    // Original fields
-    formdata.append("capavate_interests", selectedCapavateInterests.join(","));
-    formdata.append("full_address", formData_Step2.mailing_address);
-    formdata.append("id", InvestorData.id);
-    formdata.append("code", JSON.stringify(code));
-    const industryValues = selectedIndustries.map(item => item.value).join(',');
-    formdata.append("industry_expertise", industryValues);
-    // KYC documents - multiple files with []
-    if (kycFiles && kycFiles.length > 0) {
-      for (let i = 0; i < kycFiles.length; i++) {
-        formdata.append("kyc_document[]", kycFiles[i]);
-      }
-    }
-
-    // Profile picture - single file WITHOUT brackets
-    if (profilePictureFile) {
-      formdata.append("profile_picture", profilePictureFile); // यहाँ [] नहीं है
-    }
+    setShowAgreementPopup(true);
+  };
+  const handleAcceptAgreement = async () => {
+    setIsFormSubmitting(true);
 
     try {
+      // Prepare FormData
+      let formdata = new FormData();
+
+      // Contact Info
+      formdata.append("first_name", pendingFormData.formData.first_name);
+      formdata.append("last_name", pendingFormData.formData.last_name);
+      formdata.append("email", pendingFormData.formData.email);
+      formdata.append("phone", pendingFormData.formData.phone);
+      formdata.append("city", pendingFormData.formData.city);
+      formdata.append("country", pendingFormData.formData.country);
+      formdata.append("linkedIn_profile", pendingFormData.formData.linkedIn_profile);
+
+      // Investor Profile
+      formdata.append("type_of_investor", pendingFormData.formData.type_of_investor);
+      formdata.append("accredited_status", pendingFormData.formData.accredited_status);
+      formdata.append("bio_short", pendingFormData.formData.bio_short);
+      formdata.append("mailing_address", pendingFormData.formData.mailing_address);
+      formdata.append("country_tax", pendingFormData.formData.country_tax);
+      formdata.append("tax_id", pendingFormData.formData.tax_id);
+
+      // Network Profile
+      formdata.append("screen_name", pendingFormData.formData.screen_name);
+      formdata.append("job_title", pendingFormData.formData.job_title);
+      formdata.append("company_name", pendingFormData.formData.company_name);
+      formdata.append("company_country", pendingFormData.formData.company_country);
+      formdata.append("company_website", pendingFormData.formData.company_website);
+      formdata.append("geo_focus", pendingFormData.formData.geo_focus);
+      formdata.append("network_bio", pendingFormData.formData.network_bio);
+      formdata.append("notes", pendingFormData.formData.notes);
+
+      // Multi-select fields
+      formdata.append("hands_on", pendingFormData.selectedHandsOn.join(","));
+      formdata.append("ma_interests", pendingFormData.selectedMAInterests.join(","));
+      formdata.append("preferred_stages", pendingFormData.selectedStages.join(","));
+      formdata.append("cheque_size", pendingFormData.selectedCheques.join(","));
+
+      // Original fields
+      formdata.append("capavate_interests", pendingFormData.selectedCapavateInterests.join(","));
+      formdata.append("full_address", pendingFormData.formData.mailing_address);
+      formdata.append("id", pendingFormData.InvestorData.id);
+      formdata.append("code", JSON.stringify(code));
+
+      const industryValues = pendingFormData.selectedIndustries.map(item => item.value).join(',');
+      formdata.append("industry_expertise", industryValues);
+
+      // Add agreement acknowledgment fields
+      formdata.append("agreement_accepted", "Yes");
+      formdata.append("eligibility_accepted", "Yes");
+      formdata.append("risk_warning_accepted", "Yes");
+
+
+      // KYC documents - multiple files
+      if (pendingFormData.kycFiles && pendingFormData.kycFiles.length > 0) {
+        for (let i = 0; i < pendingFormData.kycFiles.length; i++) {
+          formdata.append("kyc_document[]", pendingFormData.kycFiles[i]);
+        }
+      }
+
+      // Profile picture
+      if (pendingFormData.profilePictureFile) {
+        formdata.append("profile_picture", pendingFormData.profilePictureFile);
+      }
+
+      // Submit the form
       const res = await axios.post(
         apiURLINFile + "investorInformation",
-        formdata,  // अब यह FormData ऑब्जेक्ट है
+        formdata,
         {
           headers: {
             "Content-Type": "multipart/form-data",
@@ -360,24 +389,33 @@ export default function Provideform() {
       } else {
         if (res.data.status === "1") {
           seterr(false);
+          setShowAgreementPopup(false);
           setTimeout(() => {
             // navigate("/investor/login");
           }, 8000);
         }
-        setTimeout(() => {
-          // navigate("/investor/login");
-        }, 8000);
       }
 
       setTimeout(() => {
         // setsuccessresponse("");
       }, 8000);
+
     } catch (err) {
       console.error("Upload error:", err);
       setspinners(false);
+      seterr(true);
+      setsuccessresponse("Error submitting form. Please try again.");
+    } finally {
+      setIsFormSubmitting(false);
+      setPendingFormData(null);
     }
   };
 
+  // Handle popup close
+  const handleClosePopup = () => {
+    setShowAgreementPopup(false);
+    setPendingFormData(null);
+  };
   const handleredirectLogin = () => {
     navigate("/investor/login");
   };
@@ -1241,6 +1279,12 @@ export default function Provideform() {
           </SectionWrapper>
         </div>
       </Wrapper>
+      <InvestorRegistrationPopup
+        show={showAgreementPopup}
+        onClose={handleClosePopup}
+        onAccept={handleAcceptAgreement}
+        userName={formData_Step2.first_name}
+      />
     </>
   );
 }

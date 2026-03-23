@@ -28,6 +28,7 @@ const UserCompanyRoutes = require("./routes/user/company");
 const CompanyAccessLogsRoutes = require("./routes/user/accesslogs");
 const Userwaitlist = require("./routes/user/waitlist");
 const Companydashboard = require("./routes/user/companydashboard");
+const InvestmentHistory = require("./routes/user/investmenthistory");
 //User
 
 //Signatory
@@ -74,6 +75,7 @@ app.use("/api/user/company", UserCompanyRoutes);
 app.use("/api/user/accesslogs", CompanyAccessLogsRoutes);
 app.use("/api/user/waitlist", Userwaitlist);
 app.use("/api/user/companydashboard", Companydashboard);
+app.use("/api/user/investmenthistory", InvestmentHistory);
 
 //User Routes
 

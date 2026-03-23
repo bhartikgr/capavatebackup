@@ -81,7 +81,7 @@ const CurrencyFormatter = ({ amount, currency, digit = 2 }) => {
         // Handle NaN or invalid numbers
         if (isNaN(numAmount)) return `${currency || ''} 0.00`;
 
-        const cleanCurrency = currency?.trim()?.toUpperCase() || 'USD';
+        const cleanCurrency = currency?.trim()?.toUpperCase() || '';
 
         // Get symbol from map or fallback
         const currencyInfo = currencyMap[cleanCurrency];

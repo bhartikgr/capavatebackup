@@ -51,6 +51,7 @@ import AirwallexPaymentPopupOneTimeDataroom from "../../components/Users/Airwall
 import AirwallexPaymentPopupPerInstanceDataroom from "../../components/Users/AirwallexPaymentPopupPerInstanceDataroom.jsx";
 import { API_BASE_URL } from "../../config/config.js";
 import SideBar from "../../components/social/SideBar";
+import DataRoomLockPopupAkn from "../../components/Investor/popup/DataRoomLockPopupAkn.jsx";
 export default function DataroomDiligence() {
   const [lockId, setlockId] = useState([]);
   const [dangerMessagealertLockUnlock, setdangerMessagealertLockUnlock] =
@@ -841,6 +842,8 @@ export default function DataroomDiligence() {
     useState(false);
   const [AiUpdatesummaryID, setAiUpdatesummaryID] = useState("");
   const [AISummary, setAISummary] = useState("");
+  const [showLockPopup, setShowLockPopup] = useState(false);
+  const [isLocking, setIsLocking] = useState(false);
   const handleEditViewSummary = async (userId, id) => {
     let formData = {
       id: id,
@@ -898,6 +901,7 @@ export default function DataroomDiligence() {
   };
   const [showPopupPerInstance, setshowPopupPerInstance] = useState(false);
   const handleFinaldoc = async () => {
+
     let formData = {
       user_id: userLogin.id,
     };
@@ -910,24 +914,11 @@ export default function DataroomDiligence() {
       setdangerMessagealert(
         "⚠️ Before proceeding, confirm that all required documents have been uploaded. Clicking forward will impact your credit balance, and this action cannot be undone."
       );
+
     }
 
-    // try {
-    //   const res = await axios.post(apiURLAiFile + "generateDocFile", formData, {
-    //     headers: {
-    //       Accept: "application/json",
-    //       "Content-Type": "application/json", // Ensure the content type is JSON
-    //     },
-    //   });
-    // } catch (err) {}
   };
-  const [progress, setProgress] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [textgeneratebtn, settextgeneratebtn] = useState(
-    "Generate Executive Summary"
-  );
-  const [messageAll, setmessageAll] = useState("");
-  const handleConfirmProcess = async () => {
+  const handleLockConfirm = async () => {
     let formData = {
       company_id: userLogin.companies[0].id,
     };
@@ -1028,6 +1019,20 @@ export default function DataroomDiligence() {
         setrenew(true);
       }
     } catch (err) { }
+
+  }
+  const [progress, setProgress] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [textgeneratebtn, settextgeneratebtn] = useState(
+    "Generate Executive Summary"
+  );
+  const [messageAll, setmessageAll] = useState("");
+  const handleConfirmProcess = async () => {
+    setdangerMessagealert(
+      ""
+    );
+    setShowLockPopup(true);
+
   };
   //Upload Company Logo
   const [companyLogo, setCompanyLogo] = useState(null);
@@ -1352,11 +1357,11 @@ export default function DataroomDiligence() {
                             <button
                               type="button"
                               disabled={
-                                spinnerss || authorizedData?.approve !== "Yes"
+                                spinnerss
                               } // ✅ disable if spinner or not approved
                               style={{
                                 opacity:
-                                  spinnerss || authorizedData?.approve !== "Yes"
+                                  spinnerss
                                     ? 0.6
                                     : 1,
                               }}
@@ -1366,8 +1371,7 @@ export default function DataroomDiligence() {
                               <span
                                 style={{
                                   opacity:
-                                    !Documentcheck ||
-                                      authorizedData?.approve !== "Yes"
+                                    !Documentcheck
                                       ? 0.6
                                       : 1,
                                 }}
@@ -2041,11 +2045,11 @@ export default function DataroomDiligence() {
                               <button
                                 type="button"
                                 disabled={
-                                  spinnerss || authorizedData?.approve !== "Yes"
+                                  spinnerss
                                 } // ✅ disable if spinner or not approved
                                 style={{
                                   opacity:
-                                    spinnerss || authorizedData?.approve !== "Yes"
+                                    spinnerss
                                       ? 0.6
                                       : 1,
                                 }}
@@ -2055,8 +2059,7 @@ export default function DataroomDiligence() {
                                 <span
                                   style={{
                                     opacity:
-                                      !Documentcheck ||
-                                        authorizedData?.approve !== "Yes"
+                                      !Documentcheck
                                         ? 0.6
                                         : 1,
                                   }}
@@ -2404,75 +2407,13 @@ export default function DataroomDiligence() {
           usersubscriptiondataroomone_time_id={PayidOnetime}
         />
       )}
-      {/* {showPopupPerInstance && (
-        <>
-          <div
-            className="modal fade show d-block"
-            style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
-            tabIndex="-1"
-            role="dialog"
-            aria-labelledby="paymentModalLabel"
-            aria-hidden="false"
-          >
-            <div className="modal-dialog modal-dialog-centered modal-lg">
-              <div className="modal-content rounded-4 shadow-lg p-4">
-                <button
-                  type="button"
-                  className="btn-close position-absolute top-0 end-0 m-3"
-                  onClick={handleClosepayPopup}
-                  aria-label="Close"
-                ></button>
-                {payinfo && (
-                  <>
-                    <h2
-                      className="modal-title text-center fw-bold text-dark mb-4"
-                      id="paymentModalLabel"
-                    >
-                      Payment
-                    </h2>
-
-                    <div className="mb-4">
-                      <h5 className="fw-bold text-dark mb-2">
-                        Dataroom Management & Diligence
-                      </h5>
-                    </div>
-
-                    <div className="mb-4">
-                      <div className="fs-4 fw-semibold text-dark">
-                        Fee:{" "}
-                        <span style={{ color: "#2e5692" }} className="fw-bold">
-                          €{getDataroompay.perInstance_Fee}
-                        </span>{" "}
-                        <span className="fs-6 text-muted">
-                          (Per Additional Copy)
-                        </span>
-                      </div>
-
-                      <ul className="list-group list-group-flush mt-3">
-                        <li className="list-group-item text-dark ps-0">
-                          <strong>Receive one free executive summary</strong> to
-                          share with investors; additional copies cost{" "}
-                          <strong>€{getDataroompay.perInstance_Fee}</strong>{" "}
-                          each.
-                        </li>
-                      </ul>
-                    </div>
-                  </>
-                )}
-
-                <div className="text-center mb-4">
-                  <img
-                    src="/assets/user/images/cardimage.jpg"
-                    alt="cards"
-                    className="img-fluid rounded"
-                    style={{ maxWidth: "200px" }}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </>
-      )} */}
+      <DataRoomLockPopupAkn
+        show={showLockPopup}
+        onClose={() => setShowLockPopup(false)}
+        onConfirm={handleLockConfirm}
+        companyName={userLogin.companies[0].id}
+        isSubmitting={isLocking}
+      />
     </>
   );
 }

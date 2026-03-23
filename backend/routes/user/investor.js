@@ -91,5 +91,13 @@ router.post(
 );
 router.post("/getCapTableRules", inverstorController.getCapTableRules);
 router.post("/saveCapTableRules", inverstorController.saveCapTableRules);
+router.post(
+  "/getInvestorSharedRoundList",
+  inverstorController.getInvestorSharedRoundList,
+);
+router.post(
+  "/getRoundInvitaionAcknowlegment",
+  inverstorController.getRoundInvitaionAcknowlegment,
+);
 
 module.exports = router;

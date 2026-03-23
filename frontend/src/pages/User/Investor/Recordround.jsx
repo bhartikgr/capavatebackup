@@ -86,7 +86,6 @@ export default function Recordround() {
     pricePerShare: "",
     founders: "",
   });
-  console.log(RoundZeroCurrency)
   const [formData, setFormData] = useState({
     liquidationOther: "",
     liquidationpreferences: "",
@@ -267,7 +266,7 @@ export default function Recordround() {
 
   const getPreviousFundingRound = async () => {
     try {
-      console.log("🔄 Fetching allowed rounds...");
+
 
       const res = await axios.post(
         `${apiUrlRound}getPreviousFundingRound`,
@@ -282,8 +281,7 @@ export default function Recordround() {
         setPreviousRounds(res.data.results);
         setAllowedRounds(res.data.allowedRounds || []); // Ensure array
 
-        console.log("✅ Allowed Rounds from API:", res.data.allowedRounds);
-        console.log("📊 Allowed Count:", res.data.allowedRounds?.length || 0);
+
 
         // Show what's blocked
         if (res.data.allowedRounds) {
@@ -295,17 +293,17 @@ export default function Recordround() {
             "Series D", "Series D Extension"
           ].filter(round => !res.data.allowedRounds.includes(round));
 
-          console.log("🚫 Blocked Rounds:", blockedRounds);
+
         }
 
         // Reset if current selection not allowed
         if (selected !== "default" && res.data.allowedRounds && !res.data.allowedRounds.includes(selected)) {
-          console.log(`⚠️ Resetting selection: ${selected} is not allowed`);
+
           setSelected("default");
           handleInputChange("shareClassType", "");
         }
       } else {
-        console.error("❌ API Error:", res.data.message);
+
         // Fallback to all rounds
         setAllowedRounds([
           "Pre-Seed", "Seed", "Post-Seed",
@@ -317,7 +315,7 @@ export default function Recordround() {
         ]);
       }
     } catch (err) {
-      console.error("❌ Network Error:", err);
+
       // Fallback to all rounds
       setAllowedRounds([
         "Pre-Seed", "Seed", "Post-Seed",
@@ -334,41 +332,6 @@ export default function Recordround() {
 
 
 
-  const getAuthorizedSignature = async () => {
-    // Skip check for Owner
-    if (userLogin.role === "owner") return;
-
-    let formData = {
-      company_id: userLogin.companies[0].id,
-      user_id: userLogin.id,
-    };
-
-    try {
-      const res = await axios.post(
-        apiURLSignature + "getAuthorizedSignature",
-        formData,
-        {
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      const checkData = res.data.results;
-
-      if (checkData.length > 0) {
-        const checkSignature = checkData[0];
-        if (checkSignature.approve === "No") {
-          navigate("/record-round-list");
-        }
-      } else {
-        navigate("/record-round-list");
-      }
-    } catch (err) {
-      console.error("Error fetching authorized signature:", err);
-    }
-  };
 
   //Checkpayment
   const handleCheckPayemt = async () => {
@@ -406,6 +369,7 @@ export default function Recordround() {
   const getrecords = async () => {
     const formData = {
       company_id: userLogin.companies[0].id,
+      id: id
     };
 
     try {
@@ -422,7 +386,28 @@ export default function Recordround() {
 
       const recordedit = generateRes.data.results;
       setrecords(recordedit);
-      console.log(id)
+      if (id == undefined || id == 'undefined') {
+        const investmentRecords = recordedit.filter(record => record.round_type === 'Investment');
+
+        // Step 2: Sort by date (latest first)
+        const sortedRecords = [...investmentRecords].sort((a, b) =>
+          new Date(b.created_at) - new Date(a.created_at)
+        );
+
+        // Step 3: Get latest record
+        const latestInvestmentRecord = sortedRecords[0];
+
+        // Step 4: Check status
+        if (latestInvestmentRecord) {
+          const isActive = latestInvestmentRecord.roundStatus === 'ACTIVE';
+          const isClosed = latestInvestmentRecord.roundStatus === 'CLOSED';
+
+          if (latestInvestmentRecord.roundStatus === 'ACTIVE') {
+            navigate(`/record-round-list`);
+            return;
+          }
+        }
+      }
       if (id !== undefined && id !== 'undefined') {
         // Get all round IDs
         const roundIds = recordedit.map(r => r.id);
@@ -432,13 +417,16 @@ export default function Recordround() {
 
         // Check if current edit ID exists in the list
         const currentRoundExists = recordedit.some(r => r.id === parseInt(id));
-
+        const islock = recordedit.find(r => r.id === parseInt(id));
         if (!currentRoundExists) {
           // If current ID doesn't exist, redirect to list
           navigate(`/record-round-list`);
           return;
         }
-
+        if (islock.is_locked === 'Yes') {
+          navigate(`/record-round-list`);
+          return;
+        }
         // Check if there's any round with ID greater than current
         const nextRoundExists = roundIds.some(roundId => roundId > parseInt(id));
 
@@ -449,7 +437,7 @@ export default function Recordround() {
         }
 
         // If we reach here, it's the latest round - continue with normal flow
-        console.log(`✅ Current round ${id} is the latest round`);
+
       }
 
 
@@ -495,7 +483,8 @@ export default function Recordround() {
         // After fetching round data
         var getData = generateRes.data.results[0];
         setRoundData(getData);
-
+        const hasWarrantData = getData.warrant_coverage_percentage !== null &&
+          getData.warrant_coverage_percentage !== undefined;
         // Parse and set investment fields for edit mode
         if (getData) {
           let investments = [];
@@ -675,7 +664,15 @@ export default function Recordround() {
             pricePerShare: pricePerShareFromDB,
             // Add other Round 0 specific fields if needed
           }),
+          hasWarrants_preferred: hasWarrantData, // Set to true if warrant data exists
 
+          // Map warrant fields from the LEFT JOIN result
+          warrant_coverage_percentage: getData.warrant_coverage_percentage || "",
+          warrant_exercise_type: getData.warrant_exercise_type || "next_round_adjusted",
+          warrant_adjustment_percent: getData.warrant_adjustment_percent || "",
+          warrant_adjustment_direction: getData.warrant_adjustment_direction || "decrease",
+          expirationDate_preferred: getData.expiration_date ? getData.expiration_date.split('T')[0] : "",
+          warrant_notes: getData.notes || "",
           termsheetFile: Array.isArray(getData.termsheetFile)
             ? getData.termsheetFile.map((file) =>
               typeof file === "string" ? { name: file } : file
@@ -933,16 +930,16 @@ export default function Recordround() {
             preferred_valuation: formData.preferred_valuation || "",
 
             // ✅ WARRANT DATA (will be saved separately)
-            hasWarrants_preferred: formData.hasWarrants_preferred || false,
-            ...(formData.hasWarrants_preferred && {
-              warrant_coverage_percentage: formData.warrant_coverage_percentage || "",
-              warrant_exercise_type: formData.warrant_exercise_type || "next_round_adjusted",
-              warrant_adjustment_direction: formData.warrant_adjustment_direction || "decrease",
-              warrant_adjustment_percent: formData.warrant_adjustment_percent || "",
-              expirationDate_preferred: formData.expirationDate_preferred || "",
-              warrant_notes: formData.warrant_notes || "",
-              warrant_status: 'pending' || ""
-            })
+            // hasWarrants_preferred: formData.hasWarrants_preferred || false,
+            // ...(formData.hasWarrants_preferred && {
+            //   warrant_coverage_percentage: formData.warrant_coverage_percentage || "",
+            //   warrant_exercise_type: formData.warrant_exercise_type || "next_round_adjusted",
+            //   warrant_adjustment_direction: formData.warrant_adjustment_direction || "decrease",
+            //   warrant_adjustment_percent: formData.warrant_adjustment_percent || "",
+            //   expirationDate_preferred: formData.expirationDate_preferred || "",
+            //   warrant_notes: formData.warrant_notes || "",
+            //   warrant_status: 'pending' || ""
+            // })
           };
           break;
 
@@ -998,7 +995,6 @@ export default function Recordround() {
       );
       const createdRoundId = res.data.id;
       if (!isFirstRound &&
-        formData.instrumentType === "Preferred Equity" &&
         formData.hasWarrants_preferred &&
         createdRoundId) {
 
@@ -1772,7 +1768,7 @@ export default function Recordround() {
   });
   const calculateSeriesConvertible = () => {
     // ✅ Get input values from form
-    console.log(seriesConvertibleData)
+
     const preMoney = parseFloat(formData.pre_money || 0); // $1,200,000
     const seriesAInvestment = parseFloat(formData.roundsize || 0); // $400,000
     const optionPoolPost = parseFloat(formData.optionPoolPercent_post || 0); // 20%
@@ -1878,7 +1874,7 @@ export default function Recordround() {
       noteInvestorsPostOwnership: noteInvestorsPostOwnership.toFixed(1),
       seriesAInvestorsPostOwnership: seriesAInvestorsPostOwnership.toFixed(1)
     }));
-    console.log(totalSharesIssuedThisRound);
+
     // ✅ STEP 15: Update formData
     setFormData(prev => ({
       ...prev,
@@ -1889,7 +1885,7 @@ export default function Recordround() {
   };
   const calculationPreferredEquity = async () => {
     try {
-      console.log("🔵 ==== PREFERRED EQUITY CALCULATION START =====");
+
 
       // ✅ STEP 1: Get form inputs
       const preMoney = parseFloat(formData.pre_money || 0); // $3,000,000
@@ -1928,7 +1924,7 @@ export default function Recordround() {
       }
       // Fallback: Fetch fresh data from API
       else {
-        console.log("📡 Fetching fresh previous round data...");
+
         await fetchPreviousRoundData();
 
         // Use data from fetchPreviousRoundData result
@@ -1943,9 +1939,7 @@ export default function Recordround() {
       // ✅ STEP 3: VALIDATION
       if (preMoney <= 0 || investment <= 0 || previousRoundData.totalShares <= 0) {
         console.error("❌ Invalid input values for Preferred Equity calculation");
-        console.log("Pre-Money:", preMoney);
-        console.log("Investment:", investment);
-        console.log("Previous Total Shares:", previousRoundData.totalShares);
+
 
         // Try one more time to fetch data
         try {
@@ -1977,15 +1971,11 @@ export default function Recordround() {
         }
       }
 
-      console.log(`📊 Previous Round Data:`);
-      console.log(`   - Total Shares: ${previousRoundData.totalShares.toLocaleString()}`);
-      console.log(`   - Founders: ${previousRoundData.founderShares.toLocaleString()}`);
-      console.log(`   - Employee Pool: ${previousRoundData.employeeShares.toLocaleString()}`);
-      console.log(`   - Previous Investment: $${previousRoundData.seedInvestment.toLocaleString()}`);
+
 
       // ✅ STEP 4: Calculate Share Price (CPAVATE Formula)
       const sharePrice = preMoney / previousRoundData.totalShares;
-      console.log(`💰 Share Price: $${sharePrice.toFixed(4)} = $${preMoney} ÷ ${previousRoundData.totalShares}`);
+
 
       // ✅ STEP 5: Process Convertible Note Conversions (if applicable)
       let totalConvertedShares = 0;
@@ -1993,7 +1983,7 @@ export default function Recordround() {
 
       // Check if there are convertible notes to convert (with valuation cap > 0)
       if (previousRoundData.seedInvestment > 0 && previousRoundData.valuationCap > 0) {
-        console.log(`🔄 Processing convertible note conversion...`);
+
 
         const noteAmount = previousRoundData.seedInvestment;
         const interestRate = (previousRoundData.interestRate || 0) / 100;
@@ -2013,11 +2003,6 @@ export default function Recordround() {
         const convertedShares = conversionPrice > 0 ? Math.round(principalPlusInterest / conversionPrice) : 0;
         const convertedValue = convertedShares * sharePrice;
 
-        console.log(`   Convertible Note Details:`);
-        console.log(`      - Amount: $${noteAmount.toLocaleString()}`);
-        console.log(`      - Principal+Interest: $${principalPlusInterest.toLocaleString()}`);
-        console.log(`      - Conversion Price: $${conversionPrice.toFixed(4)}`);
-        console.log(`      - Shares: ${convertedShares.toLocaleString()}`);
 
         totalConvertedShares = convertedShares;
         totalConvertedValue = convertedValue;
@@ -2027,12 +2012,11 @@ export default function Recordround() {
       const seriesAShares = Math.round(investment / sharePrice);
       const seriesAValue = seriesAShares * sharePrice;
 
-      console.log(`💰 Series A Shares: ${seriesAShares.toLocaleString()}`);
-      console.log(`💰 Series A Value: $${Math.round(seriesAValue).toLocaleString()}`);
+
 
       // ✅ STEP 7: Total Shares before Option Pool Expansion
       const totalSharesBeforePool = previousRoundData.founderShares + totalConvertedShares + seriesAShares;
-      console.log(`📊 Total Shares before pool: ${totalSharesBeforePool.toLocaleString()}`);
+
 
       // ✅ STEP 8: Option Pool Expansion
       let totalSharesAfterPool = totalSharesBeforePool;
@@ -2047,11 +2031,7 @@ export default function Recordround() {
 
         if (newOptionShares < 0) newOptionShares = 0;
 
-        console.log(`🎯 Option Pool Calculation:`);
-        console.log(`   - Target: ${postMoneyPool}%`);
-        console.log(`   - Existing: ${previousRoundData.employeeShares.toLocaleString()}`);
-        console.log(`   - New: ${newOptionShares.toLocaleString()}`);
-        console.log(`   - Total after pool: ${totalSharesAfterPool.toLocaleString()}`);
+
       }
 
       // ✅ STEP 9: Warrant Calculation (if applicable)
@@ -2075,19 +2055,14 @@ export default function Recordround() {
         warrantShares = Math.round(seriesAShares * (warrantCoverage / 100));
         warrantValue = warrantShares * sharePrice;
 
-        console.log(`📜 Warrant Calculation:`);
-        console.log(`   - Coverage: ${warrantCoverage}%`);
-        console.log(`   - Exercise Price: $${warrantExercisePrice.toFixed(4)}`);
-        console.log(`   - Shares: ${warrantShares.toLocaleString()}`);
-        console.log(`   - Value: $${Math.round(warrantValue).toLocaleString()}`);
+
       }
 
       // ✅ STEP 10: Final Total Shares
       const finalTotalShares = totalSharesAfterPool + warrantShares;
       const postMoneyValuation = finalTotalShares * sharePrice;
 
-      console.log(`📊 Final Total Shares: ${finalTotalShares.toLocaleString()}`);
-      console.log(`💰 Post-Money Valuation: $${Math.round(postMoneyValuation).toLocaleString()}`);
+
 
       // ✅ STEP 11: Ownership Calculations
       const foundersOwnership = (previousRoundData.founderShares / finalTotalShares) * 100;
@@ -2099,7 +2074,7 @@ export default function Recordround() {
       // ✅ STEP 12: Total Shares Issued in THIS round
       const totalSharesIssuedThisRound = seriesAShares + newOptionShares + warrantShares;
 
-      console.log(`📈 Total Shares Issued This Round: ${totalSharesIssuedThisRound.toLocaleString()}`);
+
       const simplePostMoney = preMoney + investment;
       // ✅ STEP 13: Update formData
       setFormData(prev => ({
@@ -2148,7 +2123,7 @@ export default function Recordround() {
         setFormData(prev => ({ ...prev, isCalculationSource: false }));
       }, 100);
 
-      console.log("✅ ==== PREFERRED EQUITY CALCULATION COMPLETE =====");
+
 
     } catch (error) {
       console.error("❌ Preferred Equity calculation error:", error);
@@ -2239,9 +2214,7 @@ export default function Recordround() {
           // ✅ PRICED ROUND - AUTOFILL
           const preMoneyPool = parseFloat(data.existingOptionPoolPercent) || 0;
 
-          console.log(`✅ AUTOFILL: Pre-money pool = ${preMoneyPool}%`);
-          console.log(`📊 Previous post-money pool = ${data.previousPostMoneyPool}%`);
-          console.log(`📊 Employee ownership = ${data.employee_ownership_percent}%`);
+
 
           setFormData(prev => ({
             ...prev,
@@ -2257,9 +2230,7 @@ export default function Recordround() {
 
         } else {
           // 🚫 UNPRICED ROUND OR NO PREVIOUS POOL - NO AUTOFILL
-          // console.log(`🚫 NO AUTOFILL: ${formData.instrumentType || 'Unknown'} round`);
-          // console.log(`📊 Previous round had ${data.previousPostMoneyPool}% post-money pool`);
-          // console.log(`📊 Employee ownership: ${data.employee_ownership_percent}%`);
+
 
           // setFormData(prev => ({
           //   ...prev,
@@ -2287,7 +2258,7 @@ export default function Recordround() {
       formData.optionPoolPercent_post !== seriesASafeData.lastOptionPoolPost;
 
     if (shouldResetCalculation && seriesASafeData.hasCalculated) {
-      console.log("Resetting calculation flag due to input change");
+
       setSeriesASafeData(prev => ({
         ...prev,
         hasCalculated: false,
@@ -2306,11 +2277,11 @@ export default function Recordround() {
         formData.roundsize > 0 &&
         !seriesASafeData.hasCalculated;
 
-      console.log("useEffect - shouldCalculate:", shouldCalculate, seriesASafeData);
+
 
       if (!shouldCalculate) return;
 
-      console.log("Calculating for:", seriesASafeData.previousInstrumentType);
+
 
       if (seriesASafeData.previousInstrumentType === 'Safe') {
         calculateSeriesASafe();
@@ -2329,7 +2300,7 @@ export default function Recordround() {
 
   // ✅ Function 1: Common Stock with Target Pool Top-up (Series/ANY round)
   const calculateCommonStockWithTopUp = (preMoney, investment, priorTotalShares, existingPoolShares, targetPoolPercent) => {
-    console.log(preMoney, investment, priorTotalShares, existingPoolShares, targetPoolPercent)
+
     // Step 1: Shares excluding current pool
     const sharesExcludingPool = priorTotalShares - existingPoolShares;
 
@@ -2392,7 +2363,7 @@ export default function Recordround() {
 
     // ✅ Fix 3: Don't return if preMoney is 0, just handle it
     if (investment <= 0 || priorTotalShares <= 0) {
-      console.log("Missing required values for calculation");
+
       return;
     }
 
@@ -2431,15 +2402,7 @@ export default function Recordround() {
       ? ((investment / postMoney) * 100).toFixed(2)
       : "0.00";
 
-    console.log("Calculation Result:", {
-      preMoney,
-      investment,
-      postMoney,
-      sharePrice: calculationResult.sharePrice,
-      totalSharesIssued: calculationResult.totalSharesIssued,
-      totalPostShares: calculationResult.totalPostShares,
-      investorOwnershipPercent
-    });
+
 
     // ✅ Fix 6: Ensure all values are valid before setting state
     const safeSharePrice = calculationResult.sharePrice && !isNaN(calculationResult.sharePrice)
@@ -2507,7 +2470,7 @@ export default function Recordround() {
         const { previousRoundData } = res.data;
         const isSeriesRound = selected?.includes("Series");
         const isSeedRound = selected === "Seed";
-        console.log(previousRoundData)
+
         if (isSeriesRound) {
           // Auto-fill Pre-Money pool
           setFormData(prev => ({
@@ -2571,7 +2534,7 @@ export default function Recordround() {
 
       if (res.data.success && res.data.previousRoundData) {
         const previousData = res.data.previousRoundData;
-        console.log(previousData)
+
         if (previousData.instrumentType !== '') {
           setSeriesConvertibleData(prev => ({
             ...prev,
@@ -3484,7 +3447,7 @@ export default function Recordround() {
                                       onChange={(e) => {
                                         const value = e.target.value;
                                         if (value && value !== "default") {
-                                          console.log(allowedRounds.includes(value))
+
                                           // Validation check
                                           if (allowedRounds && !allowedRounds.includes(value)) {
                                             seterrorMessageCenter(`❌ ${value} is not available!\n\nAvailable rounds: ${allowedRounds.join(", ")}`);
@@ -4097,7 +4060,7 @@ export default function Recordround() {
                                                       name="warrant_exercise_type"
                                                       id="exerciseTypeAdjusted"
                                                       value="next_round_adjusted"
-                                                      checked={formData.warrant_exercise_type === "next_round_adjusted" || !formData.warrant_exercise_type}
+                                                      checked={formData.warrant_exercise_type === "next_round_adjusted"}
                                                       onChange={(e) => {
                                                         handleInputChange("warrant_exercise_type", e.target.value);
                                                         if (errors.warrant_exercise_type) {
@@ -4135,7 +4098,7 @@ export default function Recordround() {
                                                     <select
                                                       className={`form-select ${errors.warrant_adjustment_direction ? "is-invalid" : ""}`}
                                                       style={{ maxWidth: "140px" }}
-                                                      value={formData.warrant_adjustment_direction || "decrease"}
+                                                      value={formData.warrant_adjustment_direction}
                                                       onChange={(e) => {
                                                         handleInputChange("warrant_adjustment_direction", e.target.value);
                                                         if (errors.warrant_adjustment_direction) {
@@ -4143,8 +4106,9 @@ export default function Recordround() {
                                                         }
                                                       }}
                                                     >
-                                                      <option value="decrease">Decrease by</option>
                                                       <option value="increase">Increase by</option>
+                                                      <option value="decrease">Decrease by</option>
+
                                                     </select>
                                                     <input
                                                       type="number"
@@ -4250,15 +4214,11 @@ export default function Recordround() {
                                                       ? `At next priced round price ${formData.warrant_adjustment_direction === "decrease" ? "minus" : "plus"} ${formData.warrant_adjustment_percent || "___"}%`
                                                       : "Not selected"}
                                                 </li>
-                                                <li>
-                                                  <strong>Exercise Timing:</strong> Warrants will be exercised automatically in the next priced equity round
-                                                </li>
+
                                                 <li>
                                                   <strong>Share Calculation:</strong> Number of warrant shares will be calculated when next round closes
                                                 </li>
-                                                <li>
-                                                  <strong>Dilution Effect:</strong> Warrant exercise will dilute all existing shareholders proportionally
-                                                </li>
+
                                               </ul>
                                             </div>
 
@@ -4267,6 +4227,7 @@ export default function Recordround() {
                                         )}
                                       </div>
                                     </div>
+
 
 
                                     {formData.instrumentType === "Safe" && (

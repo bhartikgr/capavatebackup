@@ -2404,8 +2404,12 @@ button.nav-link.backcolor.active {
   padding: 10px;
   margin-top: 15px;
 }
-p.text-muted.small.mb-0.redcolor {
+/* p.text-muted.small.mb-0.redcolor {
   color: #cc0000 !important;
+} */
+.redcolor {
+  background-color: #cc0000 !important;
+  color: white !important;
 }
 @media (max-width: 768px) {
   .contact-hero .overlay-content {
@@ -2676,4 +2680,34 @@ a.sidebar_item.d-flex.gap-2.align-items-center.active {
 }
 .company_box.border.rounded-3.shadow-sm.p-3.w-100 {
   background: #efefef;
+}
+
+.ipCTdv input[type="url"] {
+  padding: 6px 10px 6px 35px;
+  font-size: 15px;
+  height: 37px;
+  border: none;
+  width: 100%;
+  border-radius: 6px;
+  background: #00000012;
+}
+
+.checklistgrid .form-check .form-check-input {
+  margin-top: 7px;
+}
+.checklistgrid .form-check .form-check-label {
+  font-size: 14px;
+}
+.form-check-input:checked {
+  background-color: #cc0000 !important;
+  border-color: #cc0000 !important;
+}
+.question-block .question-text {
+  font-size: 16px;
+}
+.question-block .form-check-input {
+  margin-top: 6px;
+}
+.question-block .form-check-label {
+  font-size: 14px;
 }

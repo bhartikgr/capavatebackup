@@ -551,13 +551,36 @@ export default function ModuleSideNav() {
                     <span className='sidebar_item small'>Ratio Investors</span>
                   </li>
                   <li>
-                    <Link to="/crm/investor-directory" className={`sidebar_item small ${isActive('/crm/investor-directory') ? 'active' : ''}`}>
+                    <Link to="/crm/investor-directory" className={`sidebar_item small ${location.pathname.startsWith('/crm/investor-directory') ||
+                      location.pathname.startsWith('/crm/investor/investor-info')
+                      ? 'active'
+                      : ''
+                      }`}>
                       Investor Directory
                     </Link>
                   </li>
                   <li>
                     <Link to="/crm/addnew-investor" className={`sidebar_item small ${isActive('/crm/addnew-investor') ? 'active' : ''}`}>
                       Add+ New Investor Contact
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/crm/share-with-investorreport" className={`sidebar_item small ${isActive('/crm/share-with-investorreport') ? 'active' : ''}`}>
+                      Shared-With-Investors
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/crm/investorreport" className={`sidebar_item small ${location.pathname.startsWith('/crm/investorreport') ||
+                      location.pathname.startsWith('/crm/investor-report-detail-record-round')
+                      ? 'active'
+                      : ''
+                      }`}>
+                      Investor Reports
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/crm/investment" className={`sidebar_item small ${isActive('/crm/investment') ? 'active' : ''}`}>
+                      Investment Verify
                     </Link>
                   </li>
                 </ul>
@@ -584,12 +607,13 @@ export default function ModuleSideNav() {
                   </li>
                 </ul>
               </li>
-            </ul>
-          )}
-        </li>
+            </ul >
+          )
+          }
+        </li >
 
         {/* 5. Settings - COMPLETELY STATIC */}
-        <li className={isParentActive('settings') ? 'submenu-active' : ''}>
+        <li li className={isParentActive('settings') ? 'submenu-active' : ''} >
           <div
             className={`sidebar_item d-flex justify-content-between align-items-center ${isParentActive('settings') ? 'active' : ''}`}
             onClick={() => toggleDropdown('settings')}
@@ -602,27 +626,29 @@ export default function ModuleSideNav() {
             {!isCollapsed && (shouldShowDropdown('settings') ? <IoIosArrowUp /> : <IoIosArrowDown />)}
           </div>
 
-          {shouldShowDropdown('settings') && (
-            <ul className='submenu'>
-              <li>
-                <Link to="/activity-logs" className={`sidebar_item ${isActive('/activity-logs') ? 'active' : ''}`}>
-                  <div className='d-flex gap-2 align-items-center'>
-                    <RiUserLine size={16} />
-                    <span>Activity Logs</span>
-                  </div>
-                </Link>
-              </li>
-              <li>
-                <Link to="/subscription" className={`sidebar_item ${isActive('/subscription') ? 'active' : ''}`}>
-                  <div className='d-flex gap-2 align-items-center'>
-                    <RiVipCrownLine size={16} />
-                    <span>Subscriptions</span>
-                  </div>
-                </Link>
-              </li>
-            </ul>
-          )}
-        </li>
+          {
+            shouldShowDropdown('settings') && (
+              <ul className='submenu'>
+                <li>
+                  <Link to="/activity-logs" className={`sidebar_item ${isActive('/activity-logs') ? 'active' : ''}`}>
+                    <div className='d-flex gap-2 align-items-center'>
+                      <RiUserLine size={16} />
+                      <span>Activity Logs</span>
+                    </div>
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/subscription" className={`sidebar_item ${isActive('/subscription') ? 'active' : ''}`}>
+                    <div className='d-flex gap-2 align-items-center'>
+                      <RiVipCrownLine size={16} />
+                      <span>Subscriptions</span>
+                    </div>
+                  </Link>
+                </li>
+              </ul>
+            )
+          }
+        </li >
       </>
     );
   };

@@ -9,7 +9,7 @@ import {
   Calculator,
   Info
 } from "lucide-react";
-
+import CurrencyFormatter from "../../components/CurrencyFormatter";
 const InstrumentDataDisplay = ({ records }) => {
   // Parse the instrument type data
   const getInstrumentData = () => {
@@ -57,13 +57,26 @@ const InstrumentDataDisplay = ({ records }) => {
             <DollarSign size={20} />
           </div>
           <div className="detail-content">
-            <label>Company Valuation:</label>{" "}
+            <label>Pre-Money Valuation:</label>{" "}
             <span>
               <b>
-                {records.currency}{" "}
-                {Number(
-                  instrumentData.common_stock_valuation || 0
-                ).toLocaleString()}
+
+                <CurrencyFormatter
+                  amount={records?.pre_money}
+                  currency={records?.currency}
+                />
+              </b>
+            </span>
+          </div>
+          <div className="detail-content">
+            <label>Post-Money Valuation:</label>{" "}
+            <span>
+              <b>
+
+                <CurrencyFormatter
+                  amount={records?.post_money}
+                  currency={records?.currency}
+                />
               </b>
             </span>
           </div>
@@ -157,180 +170,33 @@ const InstrumentDataDisplay = ({ records }) => {
               <DollarSign size={20} />
             </div>
             <div className="detail-content">
-              <label>Company Valuation:</label>{" "}
+              <label>Pre-Money Valuation:</label>{" "}
               <span>
                 <b>
-                  {records?.currency || "$"}{" "}
-                  {Number(instrumentData?.preferred_valuation || 0).toLocaleString()}
+
+                  <CurrencyFormatter
+                    amount={records?.pre_money}
+                    currency={records?.currency}
+                  />
                 </b>
               </span>
             </div>
+            <div className="detail-content">
+              <label>Post-Money Valuation:</label>{" "}
+              <span>
+                <b>
+
+                  <CurrencyFormatter
+                    amount={records?.post_money}
+                    currency={records?.currency}
+                  />
+                </b>
+              </span>
+            </div>
+
           </div>
 
-          {/* Warrant Section - Only show if hasWarrants is true */}
-          {hasWarrants && (
-            <>
-              <div className="warrant-section-header">
-                <h6 className="text-primary">
-                  <FileText className="me-2" size={18} />
-                  Warrant Details
-                </h6>
-              </div>
 
-              {/* Exercise Price - Only show if has value */}
-              {hasExercisePrice ? (
-                <div className="detail-card">
-                  <div className="detail-icon">
-                    <TrendingUp size={20} />
-                  </div>
-                  <div className="detail-content">
-                    <label>Exercise Price:</label>{" "}
-                    <span>
-                      <b>
-                        {records?.currency || "$"}{" "}
-                        {Number(instrumentData.exercisePrice_preferred).toLocaleString()}
-                      </b>
-                    </span>
-                  </div>
-                </div>
-              ) : (
-                <div className="detail-card">
-                  <div className="detail-icon">
-                    <TrendingUp size={20} />
-                  </div>
-                  <div className="detail-content">
-                    <label>Exercise Price:</label>{" "}
-                    <span>
-                      <b className="text-muted">To be determined at next priced round</b>
-                    </span>
-                    <div className="detail-note small text-muted">
-                      Will be calculated based on next round price per client requirements
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Expiration Date - Only show if has value */}
-              {hasExpirationDate && (
-                <div className="detail-card">
-                  <div className="detail-icon">
-                    <Calendar size={20} />
-                  </div>
-                  <div className="detail-content">
-                    <label>Expiration Date:</label>{" "}
-                    <span>
-                      <b>{instrumentData.expirationDate_preferred}</b>
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* Warrant Ratio - Only show if has value */}
-              {hasWarrantRatio ? (
-                <div className="detail-card">
-                  <div className="detail-icon">
-                    <FileText size={20} />
-                  </div>
-                  <div className="detail-content">
-                    <label>Warrant Ratio:</label>{" "}
-                    <span>
-                      <b>{instrumentData.warrantRatio_preferred}</b>
-                    </span>
-                  </div>
-                </div>
-              ) : (
-                <div className="detail-card">
-                  <div className="detail-icon">
-                    <FileText size={20} />
-                  </div>
-                  <div className="detail-content">
-                    <label>Warrant Coverage:</label>{" "}
-                    <span>
-                      <b className="text-muted">Will use coverage percentage</b>
-                    </span>
-                    <div className="detail-note small text-muted">
-                      Coverage percentage will be specified in warrant agreement
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Warrant Type - Always show if warrants exist */}
-              <div className="detail-card">
-                <div className="detail-icon">
-                  <FileText size={20} />
-                </div>
-                <div className="detail-content">
-                  <label>Warrant Type:</label>{" "}
-                  <span>
-                    <b>
-                      {instrumentData?.warrantType_preferred === "CALL"
-                        ? "Call Warrant (investor can buy shares)"
-                        : "Put Warrant (investor can sell shares)"}
-                    </b>
-                  </span>
-                  {instrumentData?.warrantType_preferred === "PUT" && (
-                    <div className="detail-note small text-warning">
-                      ⚠️ Rare structure in startups
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* 🔴 NEW CLIENT REQUIREMENT FIELDS */}
-              {/* Check for new format fields */}
-              {instrumentData?.warrant_coverage_percentage && (
-                <div className="detail-card highlight">
-                  <div className="detail-icon">
-                    <Percent size={20} />
-                  </div>
-                  <div className="detail-content">
-                    <label>Warrant Coverage:</label>{" "}
-                    <span>
-                      <b className="text-success">
-                        {instrumentData.warrant_coverage_percentage}%
-                      </b>
-                    </span>
-                    <div className="detail-note small">
-                      {instrumentData.warrant_coverage_percentage}% of investment amount
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {instrumentData?.warrant_exercise_type && (
-                <div className="detail-card">
-                  <div className="detail-icon">
-                    <Calculator size={20} />
-                  </div>
-                  <div className="detail-content">
-                    <label>Exercise Price Calculation:</label>{" "}
-                    <span>
-                      <b>
-                        {instrumentData.warrant_exercise_type === "next_round_adjusted"
-                          ? `Next Round Price ${instrumentData?.warrant_adjustment_direction === "decrease" ? "-" : "+"} ${instrumentData?.warrant_adjustment_percent || 0}%`
-                          : instrumentData.warrant_exercise_type === "next_round"
-                            ? "Next Round Price"
-                            : "Fixed Price"}
-                      </b>
-                    </span>
-                    {instrumentData.warrant_exercise_type.includes("next_round") && (
-                      <div className="detail-note small">
-                        Automatically calculated when next priced round occurs
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Summary Note */}
-              <div className="alert alert-info mt-3 p-2 small">
-                <Info className="me-2" size={16} />
-                <strong>Note:</strong> Warrant exercise price and shares will be finalized
-                when the next priced equity round occurs, per client requirements.
-              </div>
-            </>
-          )}
         </div>
       </div>
     );
@@ -344,6 +210,30 @@ const InstrumentDataDisplay = ({ records }) => {
         <div className="detail-card">
           <div className="detail-icon">
             <DollarSign size={20} />
+          </div>
+          <div className="detail-content">
+            <label>Company Valuation:</label>{" "}
+            <span>
+              <b>
+
+                <CurrencyFormatter
+                  amount={records?.post_money}
+                  currency={records?.currency}
+                />
+              </b>
+            </span>
+          </div>
+          <div className="detail-content">
+            <label>Investment:</label>{" "}
+            <span>
+              <b>
+
+                <CurrencyFormatter
+                  amount={records?.roundSize}
+                  currency={records?.currency}
+                />
+              </b>
+            </span>
           </div>
           <div className="detail-content">
             <label>Valuation Cap</label>
@@ -491,6 +381,30 @@ const InstrumentDataDisplay = ({ records }) => {
         <div className="detail-card">
           <div className="detail-icon">
             <DollarSign size={20} />
+          </div>
+          <div className="detail-content">
+            <label>Company Valuation:</label>{" "}
+            <span>
+              <b>
+
+                <CurrencyFormatter
+                  amount={records?.post_money}
+                  currency={records?.currency}
+                />
+              </b>
+            </span>
+          </div>
+          <div className="detail-content">
+            <label>Investment:</label>{" "}
+            <span>
+              <b>
+
+                <CurrencyFormatter
+                  amount={records?.roundSize}
+                  currency={records?.currency}
+                />
+              </b>
+            </span>
           </div>
           <div className="detail-content">
             <label>Valuation Cap:</label>{" "}

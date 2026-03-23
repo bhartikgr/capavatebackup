@@ -156,6 +156,8 @@ const AdminLogout = lazy(() => import("./pages/Admin/AdminLogout"));
 //
 //
 //User
+const Home2 = lazy(() => import("./pages/Home2"));
+const Legal = lazy(() => import("./pages/Legal"));
 
 const UserRegister = lazy(() => import("./pages/User/Register"));
 const UserRegisterActivateAccount = lazy(
@@ -241,6 +243,9 @@ const DueDiligenceReportlist = lazy(
 
 const CapitalRoundList = lazy(
   () => import("./pages/Investors/CapitalRoundList"),
+);
+const CapitalRoundHistory = lazy(
+  () => import("./pages/Investors/CapitalRoundListHistory"),
 );
 const CapitalRoundView = lazy(
   () => import("./pages/Investors/CapitalRoundView"),
@@ -484,7 +489,7 @@ class App extends Component {
               <Route path="/admin/visitors" element={<AdminVisitors />} />{" "}
               <Route path="/investorlist" element={<InvestorReport />} />{" "}
               <Route
-                path="/share-with-investorreport"
+                path="/crm/share-with-investorreport"
                 element={<ShareReport />}
               />{" "}
               <Route
@@ -508,8 +513,11 @@ class App extends Component {
                 element={<UserRegisterActivateAccount />}
               />{" "}
               <Route path="/user/login" element={<Login />} />{" "}
-              <Route path="/home" element={<Landing />} />{" "}
-              <Route path="/" element={<Landing />} />{" "}
+              {/* <Route path="/home" element={<Landing />} />{" "}
+              <Route path="/" element={<Landing />} />{" "} */}
+              <Route path="/home" element={<Home2 />} />{" "}
+              <Route path="/" element={<Home2 />} />{" "}
+              <Route path="/privacy-policy" element={<Legal />} />{" "}
               <Route path="/advicevideos" element={<AdviceVideos />} />{" "}
               <Route path="/dashboard" element={<SocialDashboard />} />
               <Route path="/createrecord" element={<Recordround />} />{" "}
@@ -613,6 +621,10 @@ class App extends Component {
               <Route
                 path="/investor/company/capital-round-list/:id"
                 element={<CapitalRoundList />}
+              />{" "}
+              <Route
+                path="/investor/company/capital-round-list/history/:company_id/:id"
+                element={<CapitalRoundHistory />}
               />{" "}
               <Route
                 path="/investor/company/capital-round-list/view/:company_id/:id"

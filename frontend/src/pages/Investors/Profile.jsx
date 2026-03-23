@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
 import SideBar from '../../components/Investor/social/SideBar';
 import TopBar from '../../components/Investor/social/TopBar';
@@ -9,13 +9,14 @@ import {
   Iconblock,
   Sup,
 } from "../../components/Styles/RegisterStyles";
-import Select from 'react-select'; // Import react-select
+import PhoneInput from "react-phone-number-input";
+import "react-phone-number-input/style.css";
+import Select from 'react-select';
+
 const STEPS = [
   { id: 0, label: "Contact Info", icon: "📋" },
   { id: 1, label: "Investor Profile", icon: "👤" },
   { id: 2, label: "Network Profile", icon: "🌐" },
-
-
 ];
 
 const CHEQUE_SIZES = ["Less than $25k", "$25k–$50k", "$50k–$100k", "$100k–$250k", "$250k–$500k", "$500k–$1M", "$1M–$5M", "$5M+"];
@@ -53,6 +54,7 @@ const INIT = {
   screen_name: "", job_title: "", company_name: "", company_country: "",
   company_website: "", industry_expertise: "", geo_focus: "", network_bio: "", notes: "",
 };
+
 const CAPAVATE_INTERESTS = [
   { id: "full_sale_exits", label: "Full Sale Exits", description: "Interested in discussing full company sales and strategic exits." },
   { id: "recapitalizations", label: "Recapitalizations", description: "Curious about partial sales and majority recapitalizations." },
@@ -84,10 +86,13 @@ export default function Profile() {
   const [formErrors, setFormErrors] = useState({});
   const [selectedIndustries, setSelectedIndustries] = useState([]);
   const [selectedCapavateInterests, setSelectedCapavateInterests] = useState([]);
+  const [industryOptions, setIndustryOptions] = useState([]);
+  const [phoneError, setPhoneError] = useState("");
+
   const apiURL = API_BASE_URL + "api/user/investor/";
   const apiUrlRound = API_BASE_URL + "api/user/capitalround/";
   const apiURLINFile = API_BASE_URL + "api/user/investorreport/";
-  var apiURLIndustry = API_BASE_URL + "api/user/capitalround/";
+  const apiURLIndustry = API_BASE_URL + "api/user/capitalround/";
   const userLogin = JSON.parse(localStorage.getItem("InvestorData") || "{}");
   const InvestorData = userLogin;
   const code = { code: userLogin.unique_code || '' };
@@ -137,7 +142,7 @@ export default function Profile() {
         setSelectedStages(d.preferred_stages ? d.preferred_stages.split(",") : []);
         setSelectedCheques(d.cheque_size ? d.cheque_size.split(",") : []);
         setSelectedCapavateInterests(d.capavate_interests ? d.capavate_interests.split(",") : []);
-        // Initialize selected industries
+
         if (d.industry_expertise) {
           const industries = d.industry_expertise.split(',').map(value => ({
             value: value,
@@ -146,7 +151,6 @@ export default function Profile() {
           setSelectedIndustries(industries);
         }
         if (d.profile_picture) {
-          //var path_img = API_BASE_URL + "upload/investor/inv_" + d.id + "/" + d.profile_picture;
           var path_img = "http://localhost:5000/api/upload/investor/inv_" + d.id + "/" + d.profile_picture;
           console.log(path_img);
           setProfilePicPreview(path_img)
@@ -167,16 +171,20 @@ export default function Profile() {
     } catch (err) { console.error(err); }
   };
 
-  const handleChange = (e) => {
+  const handleChange = useCallback((e) => {
     const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
-  };
+    console.log(`Field changed: ${name} = ${value}`);
+    setForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  }, []);
 
   const showMsg = (text, type = "success") => {
     setMsg({ text, type });
     setTimeout(() => setMsg({ text: "", type: "" }), 3000);
   };
-  const [industryOptions, setIndustryOptions] = useState([]);
+
   const getIndustryExpertise = async () => {
     let formData = {
       investor_id: '',
@@ -196,8 +204,10 @@ export default function Profile() {
       setIndustryOptions(options);
     } catch (err) { }
   };
+
   const stepRef = useRef(step);
   useEffect(() => { stepRef.current = step; }, [step]);
+
   const handleSave = async (e) => {
     e.preventDefault();
     if (stepRef.current !== 2) return;
@@ -246,6 +256,7 @@ export default function Profile() {
     formdata.append("geo_focus", form.geo_focus);
     formdata.append("network_bio", form.network_bio);
     formdata.append("notes", form.notes);
+
     // Multi-select fields
     formdata.append("hands_on", selectedHandsOn.join(","));
     formdata.append("ma_interests", selectedMAInterests.join(","));
@@ -260,6 +271,7 @@ export default function Profile() {
     formdata.append("full_address", form.mailing_address);
     formdata.append("code", JSON.stringify(code));
     formdata.append("capavate_interests", selectedCapavateInterests.join(","));
+
     // KYC documents
     if (kycFiles && kycFiles.length > 0) {
       for (let i = 0; i < kycFiles.length; i++) {
@@ -284,7 +296,6 @@ export default function Profile() {
       );
 
       showMsg("Profile saved successfully ✓");
-      // fetchData();
       setspinners(false);
       fetchData()
       setTimeout(() => {
@@ -298,8 +309,9 @@ export default function Profile() {
     }
   };
 
-  const toggleMulti = (arr, setArr, val) =>
+  const toggleMulti = useCallback((arr, setArr, val) => {
     setArr(arr.includes(val) ? arr.filter(v => v !== val) : [...arr, val]);
+  }, []);
 
   const handlePicChange = (e) => {
     const file = e.target.files[0];
@@ -312,72 +324,14 @@ export default function Profile() {
     setSelectedIndustries(selectedOptions);
   };
 
-  const Field = ({ label, name, type = "text", placeholder, disabled, required }) => (
-    <div className="mb-3">
-      <label className="form-label fw-semibold small text-uppercase"
-        style={{ letterSpacing: '0.05em', color: '#4a5568' }}>
-        {label}{required && <span className="text-danger ms-1">*</span>}
-      </label>
-      <input
-        type={type} name={name} className="form-control form-control-sm"
-        placeholder={placeholder}
-        value={form[name] ?? ""}
-        onChange={handleChange}
-        disabled={disabled} required={required}
-        style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }}
-      />
-    </div>
-  );
-
-  const SelectField = ({ label, name, options, required }) => (
-    <div className="mb-3">
-      <label className="form-label fw-semibold small text-uppercase"
-        style={{ letterSpacing: '0.05em', color: '#4a5568' }}>
-        {label}{required && <span className="text-danger ms-1">*</span>}
-      </label>
-      <select
-        name={name} className="form-select form-select-sm"
-        value={form[name] ?? ""}
-        onChange={handleChange}
-        style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }}>
-        <option value="">— Select —</option>
-        {options.map(o => <option key={o} value={o}>{o}</option>)}
-      </select>
-    </div>
-  );
-
-  const CountrySelect = ({ label, name }) => (
-    <div className="mb-3">
-      <label className="form-label fw-semibold small text-uppercase"
-        style={{ letterSpacing: '0.05em', color: '#4a5568' }}>{label}</label>
-      <select
-        name={name} className="form-select form-select-sm"
-        value={form[name] ?? ""}
-        onChange={handleChange}
-        style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }}>
-        <option value="">— Select Country —</option>
-        {countrySymbolList.map(c => (
-          <option key={c.id || c.name} value={c.name || c.country_name}>
-            {c.name || c.country_name}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
-
-  const TextArea = ({ label, name, maxLen, placeholder }) => (
-    <div className="mb-3">
-      <label className="form-label fw-semibold small text-uppercase"
-        style={{ letterSpacing: '0.05em', color: '#4a5568' }}>{label}</label>
-      <textarea
-        name={name} className="form-control form-control-sm" rows={3}
-        maxLength={maxLen} placeholder={placeholder}
-        value={form[name] ?? ""}
-        onChange={handleChange}
-        style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }} />
-      {maxLen && <small className="text-muted">Max {maxLen} characters</small>}
-    </div>
-  );
+  const handlePhoneChange = (value) => {
+    setForm({ ...form, phone: value });
+    if (value && value.replace(/\D/g, "").length < 10) {
+      setPhoneError("Phone number must be at least 10 digits");
+    } else {
+      setPhoneError("");
+    }
+  };
 
   const MultiChip = ({ label, options, selected, setSelected }) => (
     <div className="mb-3">
@@ -385,7 +339,6 @@ export default function Profile() {
         style={{ letterSpacing: '0.05em', color: '#4a5568' }}>{label}</label>
       <div className="d-flex flex-wrap gap-2">
         {options.map(option => {
-          // Handle both string and object options
           const value = option.id || option;
           const label_text = option.label || option;
 
@@ -439,8 +392,46 @@ export default function Profile() {
         <small className="text-muted">Used for cap table management</small>
       </div>
       <div className="row">
-        <div className="col-md-6"><Field label="First Name" name="first_name" placeholder="John" required /></div>
-        <div className="col-md-6"><Field label="Last Name" name="last_name" placeholder="Smith" required /></div>
+        <div className="col-md-6">
+          <div className="mb-3">
+            <label className="form-label fw-semibold small text-uppercase"
+              style={{ letterSpacing: '0.05em', color: '#4a5568' }}>
+              First Name <span className="text-danger ms-1">*</span>
+            </label>
+            <input
+              type="text"
+              name="first_name"
+              className="form-control form-control-sm"
+              placeholder="John"
+              value={form.first_name || ""}
+              onChange={handleChange}
+              required
+              style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }}
+              autoComplete="off"
+            />
+          </div>
+        </div>
+
+        <div className="col-md-6">
+          <div className="mb-3">
+            <label className="form-label fw-semibold small text-uppercase"
+              style={{ letterSpacing: '0.05em', color: '#4a5568' }}>
+              Last Name <span className="text-danger ms-1">*</span>
+            </label>
+            <input
+              type="text"
+              name="last_name"
+              className="form-control form-control-sm"
+              placeholder="Smith"
+              value={form.last_name || ""}
+              onChange={handleChange}
+              required
+              style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }}
+              autoComplete="off"
+            />
+          </div>
+        </div>
+
         <div className="col-md-6">
           <div className="mb-3">
             <label className="form-label fw-semibold small text-uppercase"
@@ -450,10 +441,84 @@ export default function Profile() {
               style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }} />
           </div>
         </div>
-        <div className="col-md-6"><Field label="Contact (Mobile)" name="phone" type="tel" placeholder="+1 555 000 0000" /></div>
-        <div className="col-md-6"><Field label="City" name="city" placeholder="Toronto" /></div>
-        <div className="col-md-6"><CountrySelect label="Country" name="country" /></div>
-        <div className="col-md-12"><Field label="LinkedIn or Professional Profile" name="linkedIn_profile" placeholder="https://linkedin.com/in/..." /></div>
+
+        <div className="col-md-6">
+          <div className="mb-3">
+            <label className="form-label fw-semibold small text-uppercase"
+              style={{ letterSpacing: '0.05em', color: '#4a5568' }}>
+              Contact (Mobile) <span className="text-danger ms-1">*</span>
+            </label>
+            <PhoneInput
+              required
+              value={form.phone}
+              name="phone"
+              defaultCountry="CA"
+              onChange={handlePhoneChange}
+              className="phonregister form-control"
+              placeholder="Enter phone number"
+              style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px', width: '100%' }}
+            />
+            {phoneError && (
+              <small style={{ color: "red" }}>
+                {phoneError}
+              </small>
+            )}
+          </div>
+        </div>
+
+        <div className="col-md-6">
+          <div className="mb-3">
+            <label className="form-label fw-semibold small text-uppercase"
+              style={{ letterSpacing: '0.05em', color: '#4a5568' }}>City</label>
+            <input
+              type="text"
+              name="city"
+              className="form-control form-control-sm"
+              placeholder="Toronto"
+              value={form.city || ""}
+              onChange={handleChange}
+              style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }}
+              autoComplete="off"
+            />
+          </div>
+        </div>
+
+        <div className="col-md-6">
+          <div className="mb-3">
+            <label className="form-label fw-semibold small text-uppercase"
+              style={{ letterSpacing: '0.05em', color: '#4a5568' }}>Country</label>
+            <select
+              name="country"
+              className="form-select form-select-sm"
+              value={form.country || ""}
+              onChange={handleChange}
+              style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }}>
+              <option value="">— Select Country —</option>
+              {countrySymbolList.map(c => (
+                <option key={c.id || c.name} value={c.name || c.country_name}>
+                  {c.name || c.country_name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="col-md-12">
+          <div className="mb-3">
+            <label className="form-label fw-semibold small text-uppercase"
+              style={{ letterSpacing: '0.05em', color: '#4a5568' }}>LinkedIn or Professional Profile</label>
+            <input
+              type="text"
+              name="linkedIn_profile"
+              className="form-control form-control-sm"
+              placeholder="https://linkedin.com/in/..."
+              value={form.linkedIn_profile || ""}
+              onChange={handleChange}
+              style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }}
+              autoComplete="off"
+            />
+          </div>
+        </div>
       </div>
     </div>,
 
@@ -464,13 +529,109 @@ export default function Profile() {
         <small className="text-muted">Used for cap table management</small>
       </div>
       <div className="row">
-        <div className="col-md-6"><SelectField label="Type of Investor" name="type_of_investor" options={INVESTOR_TYPES} /></div>
-        <div className="col-md-6"><SelectField label="Accredited Status" name="accredited_status" options={ACCREDITED} /></div>
-        <div className="col-md-12"><TextArea label="One sentence that describes you (max 240 chars)" name="bio_short" maxLen={240} placeholder="I'm an angel investor focused on..." /></div>
-        <div className="col-md-12"><Field label="Full Mailing Address" name="mailing_address" placeholder="123 Main St, Suite 400..." /></div>
-        <div className="col-md-6"><CountrySelect label="Country of Tax Residency" name="country_tax" /></div>
-        <div className="col-md-6"><Field label="Tax ID or National ID" name="tax_id" placeholder="XXX-XXX-XXX" /></div>
+        <div className="col-md-6">
+          <div className="mb-3">
+            <label className="form-label fw-semibold small text-uppercase"
+              style={{ letterSpacing: '0.05em', color: '#4a5568' }}>Type of Investor</label>
+            <select
+              name="type_of_investor"
+              className="form-select form-select-sm"
+              value={form.type_of_investor || ""}
+              onChange={handleChange}
+              style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }}>
+              <option value="">— Select —</option>
+              {INVESTOR_TYPES.map(o => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </div>
+        </div>
 
+        <div className="col-md-6">
+          <div className="mb-3">
+            <label className="form-label fw-semibold small text-uppercase"
+              style={{ letterSpacing: '0.05em', color: '#4a5568' }}>Accredited Status</label>
+            <select
+              name="accredited_status"
+              className="form-select form-select-sm"
+              value={form.accredited_status || ""}
+              onChange={handleChange}
+              style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }}>
+              <option value="">— Select —</option>
+              {ACCREDITED.map(o => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <div className="col-md-12">
+          <div className="mb-3">
+            <label className="form-label fw-semibold small text-uppercase"
+              style={{ letterSpacing: '0.05em', color: '#4a5568' }}>One sentence that describes you (max 240 chars)</label>
+            <textarea
+              name="bio_short"
+              className="form-control form-control-sm"
+              rows={3}
+              maxLength={240}
+              placeholder="I'm an angel investor focused on..."
+              value={form.bio_short || ""}
+              onChange={handleChange}
+              style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }}
+            />
+            <small className="text-muted">Max 240 characters</small>
+          </div>
+        </div>
+
+        <div className="col-md-12">
+          <div className="mb-3">
+            <label className="form-label fw-semibold small text-uppercase"
+              style={{ letterSpacing: '0.05em', color: '#4a5568' }}>Full Mailing Address</label>
+            <input
+              type="text"
+              name="mailing_address"
+              className="form-control form-control-sm"
+              placeholder="123 Main St, Suite 400..."
+              value={form.mailing_address || ""}
+              onChange={handleChange}
+              style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }}
+              autoComplete="off"
+            />
+          </div>
+        </div>
+
+        <div className="col-md-6">
+          <div className="mb-3">
+            <label className="form-label fw-semibold small text-uppercase"
+              style={{ letterSpacing: '0.05em', color: '#4a5568' }}>Country of Tax Residency</label>
+            <select
+              name="country_tax"
+              className="form-select form-select-sm"
+              value={form.country_tax || ""}
+              onChange={handleChange}
+              style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }}>
+              <option value="">— Select Country —</option>
+              {countrySymbolList.map(c => (
+                <option key={c.id || c.name} value={c.name || c.country_name}>
+                  {c.name || c.country_name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="col-md-6">
+          <div className="mb-3">
+            <label className="form-label fw-semibold small text-uppercase"
+              style={{ letterSpacing: '0.05em', color: '#4a5568' }}>Tax ID or National ID</label>
+            <input
+              type="text"
+              name="tax_id"
+              className="form-control form-control-sm"
+              placeholder="XXX-XXX-XXX"
+              value={form.tax_id || ""}
+              onChange={handleChange}
+              style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }}
+              autoComplete="off"
+            />
+          </div>
+        </div>
       </div>
     </div>,
 
@@ -482,165 +643,246 @@ export default function Profile() {
       </div>
       <div className="row">
         <div className="col-md-12">
-          <label className="form-label fw-semibold small text-uppercase"
-            style={{ letterSpacing: '0.05em', color: '#4a5568' }}>KYC / AML Documentation</label>
+          <div className="mb-3">
+            <label className="form-label fw-semibold small text-uppercase"
+              style={{ letterSpacing: '0.05em', color: '#4a5568' }}>KYC / AML Documentation</label>
 
-          {/* Upload new files */}
-          <input
-            type="file"
-            name="kyc_document"
-            className="form-control form-control-sm mb-2"
-            style={{ borderRadius: 8, border: '1.5px solid #e2e8f0' }}
-            multiple // Allow multiple file selection
-          />
+            <input
+              type="file"
+              name="kyc_document"
+              className="form-control form-control-sm mb-2"
+              style={{ borderRadius: 8, border: '1.5px solid #e2e8f0' }}
+              multiple
+            />
 
-          {/* Display existing uploaded files */}
-          {records.kyc_document && (() => {
-            try {
-              const kycFiles = JSON.parse(records.kyc_document);
-              if (kycFiles.length > 0) {
-                return (
-                  <div className="mt-2">
-                    <small className="text-success d-block mb-2">
-                      ✓ {kycFiles.length} document(s) already uploaded
-                    </small>
-                    <div className="d-flex flex-wrap gap-2">
-                      {kycFiles.map((file, index) => {
-                        const fileUrl = "http://localhost:5000/api/upload/investor/inv_" + records.id + "/" + file;
-                        const fileExtension = file.split('.').pop().toLowerCase();
-                        const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'].includes(fileExtension);
+            {records.kyc_document && (() => {
+              try {
+                const kycFiles = JSON.parse(records.kyc_document);
+                if (kycFiles.length > 0) {
+                  return (
+                    <div className="mt-2">
+                      <small className="text-success d-block mb-2">
+                        ✓ {kycFiles.length} document(s) already uploaded
+                      </small>
+                      <div className="d-flex flex-wrap gap-2">
+                        {kycFiles.map((file, index) => {
+                          const fileUrl = "http://localhost:5000/api/upload/investor/inv_" + records.id + "/" + file;
+                          const fileExtension = file.split('.').pop().toLowerCase();
+                          const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'].includes(fileExtension);
 
-                        // Get file icon based on extension
-                        const getFileIcon = () => {
-                          if (isImage) return '🖼️';
-                          if (fileExtension === 'pdf') return '📄';
-                          if (['doc', 'docx'].includes(fileExtension)) return '📝';
-                          if (['xls', 'xlsx', 'csv'].includes(fileExtension)) return '📊';
-                          if (['txt', 'rtf'].includes(fileExtension)) return '📃';
-                          if (['zip', 'rar', '7z'].includes(fileExtension)) return '🗜️';
-                          return '📁';
-                        };
+                          const getFileIcon = () => {
+                            if (isImage) return '🖼️';
+                            if (fileExtension === 'pdf') return '📄';
+                            if (['doc', 'docx'].includes(fileExtension)) return '📝';
+                            if (['xls', 'xlsx', 'csv'].includes(fileExtension)) return '📊';
+                            if (['txt', 'rtf'].includes(fileExtension)) return '📃';
+                            if (['zip', 'rar', '7z'].includes(fileExtension)) return '🗜️';
+                            return '📁';
+                          };
 
-                        return (
-                          <div key={index} className="card p-2" style={{ width: '160px' }}>
-                            {/* File Preview */}
-                            {isImage ? (
-                              <img
-                                src={fileUrl}
-                                alt={`KYC ${index + 1}`}
-                                style={{
-                                  width: '100%',
-                                  height: '90px',
-                                  objectFit: 'cover',
-                                  borderRadius: '4px'
-                                }}
-                                onError={(e) => {
-                                  e.target.onerror = null;
-                                  e.target.style.display = 'none';
-                                  e.target.parentElement.innerHTML = `
-                            <div class="d-flex justify-content-center align-items-center" 
-                              style="height:90px; background:#f8f9fa; border-radius:4px">
-                              <span style="font-size: 32px;">${getFileIcon()}</span>
-                            </div>
-                          `;
-                                }}
-                              />
-                            ) : (
-                              <div className="d-flex justify-content-center align-items-center"
-                                style={{
-                                  height: '90px',
-                                  background: '#f8f9fa',
-                                  borderRadius: '4px'
-                                }}>
-                                <span style={{ fontSize: '32px' }}>{getFileIcon()}</span>
+                          return (
+                            <div key={index} className="card p-2" style={{ width: '160px' }}>
+                              {isImage ? (
+                                <img
+                                  src={fileUrl}
+                                  alt={`KYC ${index + 1}`}
+                                  style={{
+                                    width: '100%',
+                                    height: '90px',
+                                    objectFit: 'cover',
+                                    borderRadius: '4px'
+                                  }}
+                                  onError={(e) => {
+                                    e.target.onerror = null;
+                                    e.target.style.display = 'none';
+                                    e.target.parentElement.innerHTML = `
+                                      <div class="d-flex justify-content-center align-items-center" 
+                                        style="height:90px; background:#f8f9fa; border-radius:4px">
+                                        <span style="font-size: 32px;">${getFileIcon()}</span>
+                                      </div>
+                                    `;
+                                  }}
+                                />
+                              ) : (
+                                <div className="d-flex justify-content-center align-items-center"
+                                  style={{
+                                    height: '90px',
+                                    background: '#f8f9fa',
+                                    borderRadius: '4px'
+                                  }}>
+                                  <span style={{ fontSize: '32px' }}>{getFileIcon()}</span>
+                                </div>
+                              )}
+
+                              <div className="mt-2">
+                                <small className="d-block text-truncate" title={file}>
+                                  {file}
+                                </small>
+                                <small className="text-muted d-block">
+                                  {fileExtension ? fileExtension.toUpperCase() : 'FILE'}
+                                </small>
                               </div>
-                            )}
 
-                            {/* File Info */}
-                            <div className="mt-2">
-                              <small className="d-block text-truncate" title={file}>
-                                {file}
-                              </small>
-                              <small className="text-muted d-block">
-                                {fileExtension ? fileExtension.toUpperCase() : 'FILE'}
-                              </small>
+                              <div className="d-flex justify-content-center gap-1 mt-2">
+                                <button
+                                  type="button"
+                                  className="btn btn-sm btn-outline-primary"
+                                  onClick={() => window.open(fileUrl, '_blank')}
+                                  style={{ fontSize: '11px', padding: '2px 8px' }}
+                                  title="View in browser"
+                                >
+                                  View
+                                </button>
+                                <a
+                                  href={fileUrl}
+                                  download
+                                  className="btn btn-sm btn-outline-success"
+                                  style={{ fontSize: '11px', padding: '2px 8px' }}
+                                  title="Download file"
+                                >
+                                  Download
+                                </a>
+                              </div>
                             </div>
-
-                            {/* Action Buttons */}
-                            <div className="d-flex justify-content-center gap-1 mt-2">
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-outline-primary"
-                                onClick={() => window.open(fileUrl, '_blank')}
-                                style={{ fontSize: '11px', padding: '2px 8px' }}
-                                title="View in browser"
-                              >
-                                View
-                              </button>
-                              <a
-                                href={fileUrl}
-                                download
-                                className="btn btn-sm btn-outline-success"
-                                style={{ fontSize: '11px', padding: '2px 8px' }}
-                                title="Download file"
-                              >
-                                Download
-                              </a>
-                            </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
+                  );
+                }
+              } catch (e) {
+                console.error("Error parsing KYC documents:", e);
+                return (
+                  <small className="text-warning d-block mt-1">
+                    ⚠ Error loading documents
+                  </small>
                 );
               }
-            } catch (e) {
-              console.error("Error parsing KYC documents:", e);
-              return (
-                <small className="text-warning d-block mt-1">
-                  ⚠ Error loading documents
-                </small>
-              );
-            }
-          })()}
+            })()}
 
-          <small className="text-muted d-block mt-2">
-            Upload passport, ID, address proof, or any relevant documentation (multiple files allowed)
-          </small>
-        </div>
-        <div className="col-md-12 mb-3">
-          <label className="form-label fw-semibold small text-uppercase"
-            style={{ letterSpacing: '0.05em', color: '#4a5568' }}>Profile Picture</label>
-          <div className="d-flex align-items-center gap-3">
-            {profilePicPreview
-              ? <img src={profilePicPreview} alt="preview" className="rounded-circle"
-                style={{ width: 64, height: 64, objectFit: 'cover', border: '2px solid #CC0000' }} />
-              : <div className="rounded-circle d-flex align-items-center justify-content-center"
-                style={{ width: 64, height: 64, background: '#f1f5f9', fontSize: 28 }}>👤</div>
-            }
-            <input type="file" accept="image/*" name="profile_picture" onChange={handlePicChange}
-              className="form-control form-control-sm w-auto"
-              style={{ borderRadius: 8, border: '1.5px solid #e2e8f0' }} />
+            <small className="text-muted d-block mt-2">
+              Upload passport, ID, address proof, or any relevant documentation (multiple files allowed)
+            </small>
           </div>
         </div>
 
-        <div className="col-md-6"><Field label="Screen Name" name="screen_name" placeholder="@JohnSmith" /></div>
-        <div className="col-md-6"><Field label="Current Job Title" name="job_title" placeholder="Managing Partner" /></div>
-        <div className="col-md-6"><Field label="Current Company Name" name="company_name" placeholder="Acme Ventures" /></div>
-        <div className="col-md-6"><CountrySelect label="Company Country" name="company_country" /></div>
-        <div className="col-md-12"><Field label="Company Website" name="company_website" type="url" placeholder="https://acmeventures.com" /></div>
+        <div className="col-md-12 mb-3">
+          <div className="mb-3">
+            <label className="form-label fw-semibold small text-uppercase"
+              style={{ letterSpacing: '0.05em', color: '#4a5568' }}>Profile Picture</label>
+            <div className="d-flex align-items-center gap-3">
+              {profilePicPreview
+                ? <img src={profilePicPreview} alt="preview" className="rounded-circle"
+                  style={{ width: 64, height: 64, objectFit: 'cover', border: '2px solid #CC0000' }} />
+                : <div className="rounded-circle d-flex align-items-center justify-content-center"
+                  style={{ width: 64, height: 64, background: '#f1f5f9', fontSize: 28 }}>👤</div>
+              }
+              <input type="file" accept="image/*" name="profile_picture" onChange={handlePicChange}
+                className="form-control form-control-sm w-auto"
+                style={{ borderRadius: 8, border: '1.5px solid #e2e8f0' }} />
+            </div>
+          </div>
+        </div>
+
+        <div className="col-md-6">
+          <div className="mb-3">
+            <label className="form-label fw-semibold small text-uppercase"
+              style={{ letterSpacing: '0.05em', color: '#4a5568' }}>Screen Name</label>
+            <input
+              type="text"
+              name="screen_name"
+              className="form-control form-control-sm"
+              placeholder="@JohnSmith"
+              value={form.screen_name || ""}
+              onChange={handleChange}
+              style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }}
+              autoComplete="off"
+            />
+          </div>
+        </div>
+
+        <div className="col-md-6">
+          <div className="mb-3">
+            <label className="form-label fw-semibold small text-uppercase"
+              style={{ letterSpacing: '0.05em', color: '#4a5568' }}>Current Job Title</label>
+            <input
+              type="text"
+              name="job_title"
+              className="form-control form-control-sm"
+              placeholder="Managing Partner"
+              value={form.job_title || ""}
+              onChange={handleChange}
+              style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }}
+              autoComplete="off"
+            />
+          </div>
+        </div>
+
+        <div className="col-md-6">
+          <div className="mb-3">
+            <label className="form-label fw-semibold small text-uppercase"
+              style={{ letterSpacing: '0.05em', color: '#4a5568' }}>Current Company Name</label>
+            <input
+              type="text"
+              name="company_name"
+              className="form-control form-control-sm"
+              placeholder="Acme Ventures"
+              value={form.company_name || ""}
+              onChange={handleChange}
+              style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }}
+              autoComplete="off"
+            />
+          </div>
+        </div>
+
+        <div className="col-md-6">
+          <div className="mb-3">
+            <label className="form-label fw-semibold small text-uppercase"
+              style={{ letterSpacing: '0.05em', color: '#4a5568' }}>Company Country</label>
+            <select
+              name="company_country"
+              className="form-select form-select-sm"
+              value={form.company_country || ""}
+              onChange={handleChange}
+              style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }}>
+              <option value="">— Select Country —</option>
+              {countrySymbolList.map(c => (
+                <option key={c.id || c.name} value={c.name || c.country_name}>
+                  {c.name || c.country_name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="col-md-12">
+          <div className="mb-3">
+            <label className="form-label fw-semibold small text-uppercase"
+              style={{ letterSpacing: '0.05em', color: '#4a5568' }}>Company Website</label>
+            <input
+              type="url"
+              name="company_website"
+              className="form-control form-control-sm"
+              placeholder="https://acmeventures.com"
+              value={form.company_website || ""}
+              onChange={handleChange}
+              style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }}
+              autoComplete="off"
+            />
+          </div>
+        </div>
 
         {/* Industry Expertise - Multiple Select */}
         <div className="col-12">
           <div className="d-flex flex-column gap-2">
-            <label htmlFor="">
+            <label className="form-label fw-semibold small text-uppercase"
+              style={{ letterSpacing: '0.05em', color: '#4a5568' }}>
               INDUSTRY EXPERTISE
               <span className="text-muted" style={{ fontSize: '12px', marginLeft: '5px' }}>
                 (you can select multiple)
               </span>
             </label>
             <Iconblock>
-
               <div style={{ width: '100%', position: 'relative' }}>
                 <Select
                   isMulti
@@ -730,11 +972,67 @@ export default function Profile() {
           </div>
         </div>
 
-        <div className="col-md-6"><SelectField label="Geography Focus" name="geo_focus" options={GEO_FOCUS} /></div>
-        <div className="col-md-12"><MultiChip label="Preferred Stage" options={STAGES} selected={selectedStages} setSelected={setSelectedStages} /></div>
-        <div className="col-md-12"><MultiChip label="Hands‑on vs Hands‑off" options={HANDS_ON} selected={selectedHandsOn} setSelected={setSelectedHandsOn} /></div>
-        <div className="col-md-12"><TextArea label="Network Bio" name="network_bio" maxLen={1000} placeholder="Tell founders about your background..." /></div>
-        <div className="col-md-12"><MultiChip label="M&A Interests" options={MA_INTERESTS} selected={selectedMAInterests} setSelected={setSelectedMAInterests} /></div>
+        <div className="col-md-6">
+          <div className="mb-3">
+            <label className="form-label fw-semibold small text-uppercase"
+              style={{ letterSpacing: '0.05em', color: '#4a5568' }}>Geography Focus</label>
+            <select
+              name="geo_focus"
+              className="form-select form-select-sm"
+              value={form.geo_focus || ""}
+              onChange={handleChange}
+              style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }}>
+              <option value="">— Select —</option>
+              {GEO_FOCUS.map(o => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <div className="col-md-12">
+          <MultiChip
+            label="Preferred Stage"
+            options={STAGES}
+            selected={selectedStages}
+            setSelected={setSelectedStages}
+          />
+        </div>
+
+        <div className="col-md-12">
+          <MultiChip
+            label="Hands‑on vs Hands‑off"
+            options={HANDS_ON}
+            selected={selectedHandsOn}
+            setSelected={setSelectedHandsOn}
+          />
+        </div>
+
+        <div className="col-md-12">
+          <div className="mb-3">
+            <label className="form-label fw-semibold small text-uppercase"
+              style={{ letterSpacing: '0.05em', color: '#4a5568' }}>Network Bio</label>
+            <textarea
+              name="network_bio"
+              className="form-control form-control-sm"
+              rows={3}
+              maxLength={1000}
+              placeholder="Tell founders about your background..."
+              value={form.network_bio || ""}
+              onChange={handleChange}
+              style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }}
+            />
+            <small className="text-muted">Max 1000 characters</small>
+          </div>
+        </div>
+
+        <div className="col-md-12">
+          <MultiChip
+            label="M&A Interests"
+            options={MA_INTERESTS}
+            selected={selectedMAInterests}
+            setSelected={setSelectedMAInterests}
+          />
+        </div>
+
         <div className="col-12 mt-4">
           <div className="mb-4 pb-2 border-bottom">
             <h5 className="fw-bold mb-0" style={{ color: '#CC0000' }}>
@@ -773,7 +1071,22 @@ export default function Profile() {
             </div>
           </div>
         </div>
-        <div className="col-md-12"><TextArea label="Notes" name="notes" placeholder="Any additional notes..." /></div>
+
+        <div className="col-md-12">
+          <div className="mb-3">
+            <label className="form-label fw-semibold small text-uppercase"
+              style={{ letterSpacing: '0.05em', color: '#4a5568' }}>Notes</label>
+            <textarea
+              name="notes"
+              className="form-control form-control-sm"
+              rows={3}
+              placeholder="Any additional notes..."
+              value={form.notes || ""}
+              onChange={handleChange}
+              style={{ borderRadius: 8, border: '1.5px solid #e2e8f0', padding: '10px 14px' }}
+            />
+          </div>
+        </div>
       </div>
     </div>,
   ];
@@ -791,11 +1104,9 @@ export default function Profile() {
                 <small className="text-muted">Manage your contact info, investor details, and network presence</small>
               </div>
 
-
               {msg.text && (
                 <div
-                  className={`flex items-center justify-between gap-3 shadow-lg ${errr ? "error_pop" : "success_pop"
-                    }`}
+                  className={`flex items-center justify-between gap-3 shadow-lg ${errr ? "error_pop" : "success_pop"}`}
                 >
                   <div className="d-flex align-items-start gap-2">
                     <span className="d-block">{msg.text}</span>

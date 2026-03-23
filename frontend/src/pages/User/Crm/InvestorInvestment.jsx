@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import DataTable from "react-data-table-component";
-import TopBar from "../../../components/Users/TopBar";
-import ModuleSideNav from "../../../components/Users/ModuleSideNav.jsx";
+import SideBar from '../../../components/social/SideBar'
+import TopBar from '../../../components/social/TopBar'
 import "bootstrap/dist/css/bootstrap.min.css";
 import {
   SectionWrapper,
@@ -11,10 +11,10 @@ import { DataRoomSection } from "../../../components/Styles/DataRoomStyle.js";
 import axios from "axios";
 import { FaEdit, FaDownload, FaLock, FaCheck, FaTrash } from "react-icons/fa"; // FontAwesome icons
 import DangerAlertPopup from "../../../components/Admin/DangerAlertPopup";
-import { Button } from "../../../components/Styles/MainStyle.js";
-import { loadStripe } from "@stripe/stripe-js";
+import CurrencyFormatter from "../../../components/CurrencyFormatter.jsx";
 import { Link, useNavigate } from "react-router-dom";
 // import { fontWeight } from "html2canvas/dist/types/css/property-descriptors/font-weight.js";
+import VeryfyInvestment from "../../../components/Investor/popup/VeryfyInvestment.jsx";
 import { API_BASE_URL } from "../../../config/config.js";
 export default function InvestorInvestoment() {
   const navigate = useNavigate();
@@ -127,7 +127,7 @@ export default function InvestorInvestoment() {
       sortable: true,
     },
     {
-      name: "Share class (Name of Round)",
+      name: "Name of Round",
       selector: (row) => row.shareClassType + " " + row.nameOfRound,
       sortable: true,
     },
@@ -135,31 +135,19 @@ export default function InvestorInvestoment() {
     {
       name: "Target Raise Amount",
       selector: (row) => {
-        const formattedAmount = Number(row.roundsize).toLocaleString("en-IN", {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        });
-        return `${row.currency}${formattedAmount}`;
-      },
-      sortable: true,
-    },
-    {
-      name: "Number of Shares",
-      selector: (row) => {
-        const formattedAmount = Number(row.issuedshares).toLocaleString(
-          "en-IN",
-          {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          }
-        );
-        return `${formattedAmount}`;
+        return <CurrencyFormatter
+          amount={row.roundsize}
+          currency={row.currency}
+        />;
       },
       sortable: true,
     },
     {
       name: "Investment Amount",
-      selector: (row) => row.currency + "" + row.investment_amount,
+      selector: (row) => <CurrencyFormatter
+        amount={row.investment_amount}
+        currency={row.currency}
+      />,
       sortable: true,
     },
     {
@@ -217,7 +205,7 @@ export default function InvestorInvestoment() {
           <div className="d-flex gap-2">
             <button
               type="button"
-              onClick={() => handleVerify(row.id)}
+              onClick={() => handleVerify(row.id, row)}
               className={`${isConfirmed ? "icon_btn green_clr" : "icon_btn red_clr"
                 }`}
               disabled={isConfirmed} // disable if already confirmed
@@ -234,34 +222,15 @@ export default function InvestorInvestoment() {
       width: "200px",
     },
   ];
+  const [showConfirmPopup, setShowConfirmPopup] = useState(false);
+  const [pendingVerifyId, setPendingVerifyId] = useState(null);
+  const [verifyInvestorData, setVerifyInvestorData] = useState(null);
+  const [isPopupSubmitting, setIsPopupSubmitting] = useState(false);
+  const handleVerify = async (idd, rowdata) => {
 
-  const handleVerify = async (idd) => {
-    const formData = {
-      company_id: userLogin.companies[0].id,
-      verify_id: idd,
-    };
-
-    try {
-      const generateRes = await axios.post(
-        apiURL + "verifyInvestment",
-        formData,
-        {
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      getInvestmentList();
-      setdangerMessagealertDoc("");
-      setmessagesuccessError("Verfied successfully");
-
-      setTimeout(() => {
-        setmessagesuccessError("");
-      }, 2500);
-    } catch (err) {
-      console.error("Error generating summary", err);
-    }
+    setPendingVerifyId(idd);
+    setVerifyInvestorData(rowdata);
+    setShowConfirmPopup(true);
   };
   const filteredData = records.filter((item) => {
     const search = searchText.toLowerCase();
@@ -316,85 +285,134 @@ export default function InvestorInvestoment() {
       console.error("Error generating summary", err);
     }
   };
+
+  const handleInvestmentConfirm = async (investment) => {
+    setIsPopupSubmitting(true);
+
+    try {
+      const formData = {
+        company_id: userLogin.companies[0].id,
+        verify_id: pendingVerifyId,
+        confirm_investment_acknowlegment: "Yes", // Add acknowledgment status
+        acknowledged_by: userLogin.id
+      };
+
+      const generateRes = await axios.post(
+        apiURL + "verifyInvestment",
+        formData,
+        {
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      getInvestmentList();
+      setdangerMessagealertDoc("");
+      setmessagesuccessError("Verified successfully");
+
+      // Close popup
+      setShowConfirmPopup(false);
+
+      setTimeout(() => {
+        setmessagesuccessError("");
+      }, 2500);
+
+    } catch (err) {
+      console.error("Error generating summary", err);
+      setmessagesuccessError("Error verifying investment");
+      setTimeout(() => {
+        setmessagesuccessError("");
+      }, 2500);
+    } finally {
+      setIsPopupSubmitting(false);
+      setPendingVerifyId(null);
+      setVerifyInvestorData(null);
+    }
+  };
+  const handlePopupClose = () => {
+    setShowConfirmPopup(false);
+    setPendingVerifyId(null);
+    setVerifyInvestorData(null);
+  };
   const [isCollapsed, setIsCollapsed] = useState(false);
   return (
     <>
-      <>
-        <Wrapper>
-          <div className="fullpage d-block">
-            <div className="d-flex align-items-start gap-0">
-              <ModuleSideNav
-                isCollapsed={isCollapsed}
-                setIsCollapsed={setIsCollapsed}
-              />
-              <div
-                className={`global_view ${isCollapsed ? "global_view_col" : ""
-                  }`}
-              >
-                <TopBar />
-                <SectionWrapper className="d-block p-md-4 p-3">
-                  <div className="container-fluid">
-                    {dangerMessagealertDoc && (
-                      <DangerAlertPopup
-                        message={dangerMessagealertDoc}
-                        onConfirm={handleConfirm}
-                        onCancel={() => {
-                          setdangerMessagealertDoc("");
-                        }}
-                      />
-                    )}
-                    {messagesuccessError && (
-                      <p
-                        className={
-                          errr ? " mt-3 error_pop" : "success_pop mt-3"
-                        }
-                      >
-                        {messagesuccessError}
-                      </p>
-                    )}
-                    <DataRoomSection className="d-flex flex-column gap-2">
-                      <div className="titleroom d-flex justify-content-between align-items-center border-bottom pb-3">
-                        <div className="pb-3 bar_design">
-                          <h4 className="h5 mb-0">Investment Confirmation</h4>
-                        </div>
-                      </div>
-                      <div className="d-flex justify-content-end my-2 p-0">
-                        <input
-                          type="search"
-                          placeholder="Search Here..."
-                          className="form-control"
-                          value={searchText} // link input to state
-                          onChange={(e) => setSearchText(e.target.value)}
-                          style={{
-                            padding: "10px 15px",
-                            width: "100%",
-                            maxWidth: "300px",
-                            fontSize: "14px",
-                            borderRadius: "10px",
-                          }}
-                        />
-                      </div>
-                      <div className="d-flex flex-column justify-content-between align-items-start tb-box">
-                        <DataTable
-                          customStyles={customStyles}
-                          conditionalRowStyles={conditionalRowStyles}
-                          columns={columns}
-                          className="datatb-report"
-                          data={filteredData}
-                          pagination
-                          highlightOnHover
-                          striped
-                          responsive
-                        />
-                      </div>
-                    </DataRoomSection>
+
+      <main>
+        <div className=' fullpage d-flex align-items-start gap-0'>
+          <SideBar />
+          <div className='d-flex flex-grow-1 flex-column gap-0'>
+            <TopBar />
+            <SectionWrapper className="d-block p-md-4 p-3">
+              <div className="container-fluid">
+                {dangerMessagealertDoc && (
+                  <DangerAlertPopup
+                    message={dangerMessagealertDoc}
+                    onConfirm={handleConfirm}
+                    onCancel={() => {
+                      setdangerMessagealertDoc("");
+                    }}
+                  />
+                )}
+                {messagesuccessError && (
+                  <p
+                    className={
+                      errr ? " mt-3 error_pop" : "success_pop mt-3"
+                    }
+                  >
+                    {messagesuccessError}
+                  </p>
+                )}
+                <DataRoomSection className="d-flex flex-column gap-2">
+                  <div className="titleroom d-flex justify-content-between align-items-center border-bottom pb-3">
+                    <div className="pb-3 bar_design">
+                      <h4 className="h5 mb-0">Investment Confirmation</h4>
+                    </div>
                   </div>
-                </SectionWrapper>
+                  <div className="d-flex justify-content-end my-2 p-0">
+                    <input
+                      type="search"
+                      placeholder="Search Here..."
+                      className="form-control"
+                      value={searchText} // link input to state
+                      onChange={(e) => setSearchText(e.target.value)}
+                      style={{
+                        padding: "10px 15px",
+                        width: "100%",
+                        maxWidth: "300px",
+                        fontSize: "14px",
+                        borderRadius: "10px",
+                      }}
+                    />
+                  </div>
+                  <div className="d-flex flex-column justify-content-between align-items-start tb-box">
+                    <DataTable
+                      customStyles={customStyles}
+                      conditionalRowStyles={conditionalRowStyles}
+                      columns={columns}
+                      className="datatb-report"
+                      data={filteredData}
+                      pagination
+                      highlightOnHover
+                      striped
+                      responsive
+                    />
+                  </div>
+                </DataRoomSection>
               </div>
-            </div>
+            </SectionWrapper>
           </div>
-        </Wrapper>
-      </>
+        </div>
+      </main>
+      <VeryfyInvestment
+        show={showConfirmPopup}
+        onClose={() => setShowConfirmPopup(false)}
+        onConfirm={handleInvestmentConfirm}
+        isSubmitting=''
+        records={verifyInvestorData}
+      />
     </>
   );
 }

@@ -66,7 +66,7 @@ export default function RecordRoundCaptable() {
   const [conversionStatus, setConversionStatus] = useState(null);
   const [conversionData, setConversionData] = useState([]); // ✅ ADD THIS LINE
   // Format currency function
-
+  const [WarrantData, setWarrantData] = useState(''); // ✅ ADD THIS LINE
   const [currencyMap, setCurrencyMap] = useState({});
 
 
@@ -362,40 +362,55 @@ export default function RecordRoundCaptable() {
           const expandedItems = [];
 
           capTable.post_money.items.forEach((item, originalIndex) => {
-            // INVESTOR TYPE - with array of investors
+            // ===== INVESTOR TYPE - with array of investors =====
             if (item.type === 'investor' && Array.isArray(item.investor_details) && item.investor_details.length > 0) {
-              // Multiple investors in array - create separate entry for EACH
               item.investor_details.forEach((inv, invIdx) => {
                 const shareType = item.share_class_type || '';
                 const investorName = `${inv.firstName || ''} ${inv.lastName || ''}`.trim() || inv.name || `Investor ${invIdx + 1}`;
 
-                // Calculate per-investor shares (split equally if not available individually)
+                // Determine icon based on investor type
+                let icon = '👤';
+                if (item.is_new_investment) icon = '🆕';
+                if (item.is_converted) icon = '🔄';
+                if (item.is_warrant) icon = '📜'; // ✅ Warrant icon
+
+                // Calculate per-investor shares
                 const perInvShares = item.shares ? Math.round(item.shares / item.investor_details.length) : 0;
 
                 expandedItems.push({
                   ...item,
-                  _displayName: `👤 ${investorName}${shareType ? ` (${shareType})` : ''}`,
+                  _displayName: `${icon} ${investorName}${shareType ? ` (${shareType})` : ''}`,
                   _shares: inv.shares || perInvShares,
                   _email: inv.email || '',
                   _phone: inv.phone || '',
                   _originalIndex: originalIndex,
                   _type: 'investor',
-                  _isPrevious: true,
+                  _investorSubType: item.is_warrant ? 'warrant' :
+                    item.is_converted ? 'converted' :
+                      item.is_new_investment ? 'new' : 'previous',
+                  _isWarrant: item.is_warrant === true,
+                  _isConverted: item.is_converted === true,
+                  _isNew: item.is_new_investment === true,
+                  _isPrevious: item.is_previous === true,
                   _roundName: item.round_name,
                   _investmentAmount: inv.investment_amount || item.investment_amount,
-                  _groupId: item.name, // Store group name for reference
+                  _groupId: item.name,
+                  _warrantId: inv.warrant_id || item.warrant_id,
                 });
               });
             }
-            // INVESTOR TYPE - single investor (no array)
+
+            // ===== INVESTOR TYPE - single investor (no array) =====
             else if (item.type === 'investor') {
               const inv = item.investor_details || {};
               const shareType = item.share_class_type || '';
               const investorName = `${inv.firstName || ''} ${inv.lastName || ''}`.trim() || item.name || 'Investor';
 
+              // Determine icon based on investor type
               let icon = '👤';
               if (item.is_new_investment) icon = '🆕';
               if (item.is_converted) icon = '🔄';
+              if (item.is_warrant) icon = '📜'; // ✅ Warrant icon
 
               expandedItems.push({
                 ...item,
@@ -405,13 +420,20 @@ export default function RecordRoundCaptable() {
                 _phone: inv.phone || item.phone || '',
                 _originalIndex: originalIndex,
                 _type: 'investor',
-                _isNew: item.is_new_investment,
-                _isPrevious: item.is_previous,
+                _investorSubType: item.is_warrant ? 'warrant' :
+                  item.is_converted ? 'converted' :
+                    item.is_new_investment ? 'new' : 'previous',
+                _isWarrant: item.is_warrant === true,
+                _isConverted: item.is_converted === true,
+                _isNew: item.is_new_investment === true,
+                _isPrevious: item.is_previous === true,
                 _roundName: item.round_name,
                 _investmentAmount: item.investment_amount,
+                _warrantId: item.warrant_id,
               });
             }
-            // FOUNDER TYPE
+
+            // ===== FOUNDER TYPE =====
             else if (item.type === 'founder') {
               expandedItems.push({
                 ...item,
@@ -421,9 +443,11 @@ export default function RecordRoundCaptable() {
                 _phone: item.phone || '',
                 _originalIndex: originalIndex,
                 _type: 'founder',
+                _investorSubType: 'founder',
               });
             }
-            // OPTION POOL
+
+            // ===== OPTION POOL =====
             else if (item.type === 'option_pool') {
               expandedItems.push({
                 ...item,
@@ -433,10 +457,11 @@ export default function RecordRoundCaptable() {
                 _new_shares: item.new_shares,
                 _originalIndex: originalIndex,
                 _type: 'option_pool',
+                _investorSubType: 'option_pool',
               });
             }
-            // PENDING (SAFE)
-            // ✅ Legacy flat 'pending' items ke liye fallback (Safe etc.)
+
+            // ===== PENDING (SAFE/CONVERTIBLE NOTE) =====
             else if (item.type === 'pending_group') {
               const investors = item.items || [];
 
@@ -449,16 +474,16 @@ export default function RecordRoundCaptable() {
 
                   expandedItems.push({
                     ...inv,
-                    _displayName: `👤 ${name} (${item.round_name})`,
+                    _displayName: `⏳ ${name} (${item.round_name})`,
                     _shares: 0,
                     _email: invDetails.email || inv.email || '',
                     _phone: invDetails.phone || inv.phone || '',
                     _originalIndex: originalIndex,
                     _type: 'pending',
+                    _investorSubType: 'pending',
                     _isPending: true,
                     _groupRoundName: item.round_name,
                     _groupInstrumentType: item.instrument_type,
-                    // ✅ investor level se fields lo — group level se nahi
                     investment: parseFloat(inv.investment) || 0,
                     potential_shares: inv.potential_shares || 0,
                     discount_rate: inv.discount_rate || 0,
@@ -472,42 +497,98 @@ export default function RecordRoundCaptable() {
                   });
                 });
               } else {
-                // Fallback — group level
                 expandedItems.push({
                   ...item,
-                  _displayName: `👤 ${item.round_name || 'Pending Investor'}`,
+                  _displayName: `⏳ ${item.round_name || 'Pending Investor'}`,
                   _shares: 0,
                   _email: '',
                   _phone: '',
                   _originalIndex: originalIndex,
                   _type: 'pending',
+                  _investorSubType: 'pending',
                   _isPending: true,
                 });
               }
             }
           });
 
-          // ✅ STEP 2: Colors array
-          const colors = [
-            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40',
-            '#8AC926', '#1982C4', '#6A0572', '#118AB2', '#06D6A0', '#FFD166',
-            '#E5989B', '#B5838D', '#6D6875', '#FFB4A2', '#C9CBFF', '#FDFFB6',
-          ];
+          // ✅ STEP 2: Sort items - Founders first, then option pool, then investors (with warrants grouped)
+          expandedItems.sort((a, b) => {
+            // Founders first
+            if (a._type === 'founder' && b._type !== 'founder') return -1;
+            if (a._type !== 'founder' && b._type === 'founder') return 1;
+
+            // Then option pool
+            if (a._type === 'option_pool' && b._type !== 'option_pool') return -1;
+            if (a._type !== 'option_pool' && b._type === 'option_pool') return 1;
+
+            // Then warrants
+            if (a._isWarrant && !b._isWarrant) return -1;
+            if (!a._isWarrant && b._isWarrant) return 1;
+
+            // Then converted
+            if (a._isConverted && !b._isConverted) return -1;
+            if (!a._isConverted && b._isConverted) return 1;
+
+            // Then new investors
+            if (a._isNew && !b._isNew) return -1;
+            if (!a._isNew && b._isNew) return 1;
+
+            // Then previous investors
+            if (a._isPrevious && !b._isPrevious) return -1;
+            if (!a._isPrevious && b._isPrevious) return 1;
+
+            // Then pending
+            if (a._type === 'pending' && b._type !== 'pending') return -1;
+            if (a._type !== 'pending' && b._type === 'pending') return 1;
+
+            return 0;
+          });
+
+          // ✅ STEP 3: Colors array
+          const colors = {
+            founder: '#4e73df',
+            option_pool: '#f6c23e',
+            warrant: '#9966FF',      // Purple for warrants
+            converted: '#1cc88a',    // Green for converted
+            new: '#36b9cc',          // Teal for new investors
+            previous: '#858796',     // Gray for previous investors
+            pending: '#FFC107',      // Yellow for pending
+            default: '#FF6384'
+          };
 
           const postMoneyData = {
             labels: expandedItems.map(item => item._displayName),
             datasets: [{
               label: 'Shares',
               data: expandedItems.map(item => item._shares),
-              backgroundColor: expandedItems.map((item, i) =>
-                item.type === 'pending' ? '#FFC107' : colors[i % colors.length]
-              ),
+              backgroundColor: expandedItems.map((item) => {
+                if (item._type === 'pending') return colors.pending;
+                if (item._isWarrant) return colors.warrant;
+                if (item._isConverted) return colors.converted;
+                if (item._isNew) return colors.new;
+                if (item._isPrevious) return colors.previous;
+                if (item._type === 'founder') return colors.founder;
+                if (item._type === 'option_pool') return colors.option_pool;
+                return colors.default;
+              }),
               borderWidth: 1,
             }],
-            // ✅ Store expanded items for legend
             _expandedItems: expandedItems,
+            _totals: {
+              total_shares: capTable?.post_money?.totals?.total_shares || 0,
+              total_warrant_shares: expandedItems
+                .filter(i => i._isWarrant)
+                .reduce((sum, i) => sum + i._shares, 0),
+              total_converted_shares: expandedItems
+                .filter(i => i._isConverted)
+                .reduce((sum, i) => sum + i._shares, 0),
+              total_new_shares: expandedItems
+                .filter(i => i._isNew)
+                .reduce((sum, i) => sum + i._shares, 0),
+            }
           };
-
+          console.log(postMoneyData)
           setPostMoneyChartData(postMoneyData);
         }
       } else {
@@ -653,8 +734,8 @@ export default function RecordRoundCaptable() {
     ).length;
 
     return {
-      largest: largest.toFixed(1),
-      smallest: smallest.toFixed(1),
+      largest: largest.toFixed(2),
+      smallest: smallest.toFixed(2),
       votingCount: founders.length,
       totalFounders: founders.length
     };
@@ -770,6 +851,39 @@ export default function RecordRoundCaptable() {
     }));
   };
 
+
+  useEffect(() => {
+    getCompanyWarrant();
+  }, []);
+
+  const getCompanyWarrant = async () => {
+    let formData = {
+      company_id: userLogin.companies[0].id,
+      round_id: id
+    };
+
+    try {
+      const res = await axios.post(
+        apiUrlRound + "getCompanyWarrant",
+        formData,
+        {
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (res.data.results.length > 0) {
+        console.log(res.data.results[0]);
+        setWarrantData(res.data.results[0]);
+      }
+
+    } catch (err) {
+      console.error("Error fetching investment history:", err);
+    }
+  };
+  const postItems = capTableData?.post_money?.items;
+  console.log(postItems)
   // Render loading state
   if (loading) {
     return (
@@ -1636,6 +1750,9 @@ export default function RecordRoundCaptable() {
                                   const convertedGroups = allItems.filter(i => i.type === 'investor' && i.is_converted === true);
                                   const newGroups = allItems.filter(i => i.type === 'investor' && i.is_new_investment === true);
 
+                                  // ✅ NEW: Filter warrant groups
+                                  const warrantGroups = allItems.filter(i => i.type === 'investor' && i.is_warrant === true);
+
                                   // ✅ FIXED: frontend grouping hatao 0 backend se pending_group aa raha hai
                                   const pendingGroups = allItems.filter(i => i.type === 'pending_group');
 
@@ -1693,6 +1810,12 @@ export default function RecordRoundCaptable() {
                                                   Investment: <CurrencyFormatter amount={inv.investment_amount} currency={roundData?.currency} />
                                                 </div>
                                               )}
+                                              {/* ✅ Show warrant ID if available */}
+                                              {inv.warrant_id && (
+                                                <div className="small text-muted">
+                                                  <i className="bi bi-tag me-1"></i>Warrant ID: {inv.warrant_id}
+                                                </div>
+                                              )}
                                             </td>
                                             <td>{inv.share_class_type || typeLabel}</td>
                                             <td className="text-end">{Number(inv.existing_shares || (inv.is_previous ? inv.shares : 0) || 0).toLocaleString()}</td>
@@ -1743,12 +1866,12 @@ export default function RecordRoundCaptable() {
                                         </tr>
                                       )}
 
-                                      {/* 3. Previous Investors 0 backend grouped */}
+                                      {/* 3. Previous Investors */}
                                       {previousGroups.map((group, i) =>
                                         renderInvestorGroup(group, i, 'table-secondary', 'Previous Investor')
                                       )}
 
-                                      {/* 4. Converted Investors - WITH VALUATION CAP, DISCOUNT, CONVERSION PRICE, INTEREST ETC. */}
+                                      {/* 4. Converted Investors */}
                                       {convertedGroups.map((group, groupIndex) => {
                                         const rowKey = `post-conv-group-${group.round_id_ref || groupIndex}-${group.name}`;
                                         const isExpanded = !!expandedRows[rowKey];
@@ -1785,7 +1908,7 @@ export default function RecordRoundCaptable() {
                                               </td>
                                             </tr>
 
-                                            {/* Expanded individual converted investors with ALL details - VALUATION CAP, DISCOUNT, INTEREST ETC. */}
+                                            {/* Expanded individual converted investors */}
                                             {isExpanded && detailsArr.map((investor, idx) => {
                                               return (
                                                 <tr key={`${rowKey}-inv-${idx}`} className="table-light">
@@ -1816,10 +1939,9 @@ export default function RecordRoundCaptable() {
                                                       </div>
                                                     )}
 
-                                                    {/* ✅ VALUATION CAP, DISCOUNT, CONVERSION PRICE - AS REQUESTED */}
+                                                    {/* VALUATION CAP, DISCOUNT, CONVERSION PRICE */}
                                                     {(investor.discount_rate > 0 || investor.valuation_cap > 0 || investor.conversion_price > 0) && (
                                                       <div className="small bg-light p-2 rounded mt-2 border-start border-info border-4">
-                                                        {/* Format: "20% discount • Cap: GBP £ 1,000,000.00 • Conv. Price: GBP £ 0.3240" */}
                                                         <div className="fw-bold text-info mb-1">
                                                           {investor.discount_rate > 0 && <span className="me-2">{investor.discount_rate}% discount</span>}
                                                           {investor.discount_rate > 0 && investor.valuation_cap > 0 && <span className="me-2">•</span>}
@@ -1844,7 +1966,7 @@ export default function RecordRoundCaptable() {
                                                           </div>
                                                         )}
 
-                                                        {/* ✅ INTEREST RATE WITH ACCRUED INTEREST */}
+                                                        {/* INTEREST RATE WITH ACCRUED INTEREST */}
                                                         {investor.interest_rate > 0 && (
                                                           <div className="mt-1">
                                                             <span className="text-muted">Interest Rate:</span>{' '}
@@ -1855,7 +1977,7 @@ export default function RecordRoundCaptable() {
                                                           </div>
                                                         )}
 
-                                                        {/* ✅ TOTAL CONVERSION AMOUNT */}
+                                                        {/* TOTAL CONVERSION AMOUNT */}
                                                         {investor.total_conversion_amount > 0 && (
                                                           <div className="mt-1 fw-bold">
                                                             <span className="text-muted">Total Conversion:</span>{' '}
@@ -1863,7 +1985,7 @@ export default function RecordRoundCaptable() {
                                                           </div>
                                                         )}
 
-                                                        {/* ✅ MATURITY DATE */}
+                                                        {/* MATURITY DATE */}
                                                         {investor.maturity_date && (
                                                           <div className="mt-1">
                                                             <span className="text-muted">Maturity:</span>{' '}
@@ -1901,9 +2023,110 @@ export default function RecordRoundCaptable() {
                                         renderInvestorGroup(group, i, 'table-success', 'New Investor')
                                       )}
 
-                                      {/* 6. Pending SAFE / Convertible Note 0 ✅ FIXED: pending_group from backend */}
+                                      {/* ✅ 6. WARRANT INVESTORS - NEW SECTION */}
+                                      {warrantGroups.length > 0 && (
+                                        <>
+                                          <tr className="table-secondary">
+                                            <td colSpan="7" className="fw-bold text-center py-2" style={{ backgroundColor: '#e9ecef' }}>
+                                              Warrant Exercises
+                                            </td>
+                                          </tr>
+                                          {warrantGroups.map((group, groupIndex) => {
+                                            const rowKey = `post-warrant-group-${group.round_id_ref || groupIndex}-${group.name}`;
+                                            const isExpanded = !!expandedRows[rowKey];
+                                            const detailsArr = Array.isArray(group.investor_details)
+                                              ? group.investor_details
+                                              : (group.investor_details ? [group.investor_details] : []);
+
+                                            return (
+                                              <React.Fragment key={rowKey}>
+                                                {/* Group Header */}
+                                                <tr
+                                                  className="table-secondary"
+                                                  onClick={() => toggleRow(rowKey)}
+                                                  style={{ cursor: detailsArr.length > 0 ? 'pointer' : 'default' }}
+                                                >
+                                                  <td>
+                                                    <strong>
+                                                      {group.name}
+                                                      {detailsArr.length > 0 && (
+                                                        isExpanded ? <FaChevronDown className="ms-1" /> : <FaChevronRight className="ms-1" />
+                                                      )}
+                                                    </strong>
+                                                    <small className="text-muted d-block">
+                                                      {group.label || `${detailsArr.length} warrant${detailsArr.length !== 1 ? 's' : ''}`}
+                                                    </small>
+                                                  </td>
+                                                  <td>Warrant</td>
+                                                  <td className="text-end">0</td>
+                                                  <td className="text-end text-success fw-bold">{Number(group.new_shares || group.shares || 0).toLocaleString()}</td>
+                                                  <td className="text-end fw-bold">{Number(group.shares || 0).toLocaleString()}</td>
+                                                  <td className="text-end fw-bold text-primary">{group.percentage_formatted}</td>
+                                                  <td className="text-end">
+                                                    <CurrencyFormatter amount={group.value} currency={roundData?.currency} />
+                                                  </td>
+                                                </tr>
+
+                                                {/* Expanded individual warrant investors */}
+                                                {isExpanded && detailsArr.map((warrant, idx) => {
+                                                  return (
+                                                    <tr key={`${rowKey}-warrant-${idx}`} className="table-light">
+                                                      <td className="ps-5" style={{ maxWidth: '450px' }}>
+                                                        <strong>{warrant.name || 'Warrant Holder'}</strong>
+
+                                                        {warrant.email && (
+                                                          <div className="small text-muted">
+                                                            <i className="bi bi-envelope me-1"></i>{warrant.email}
+                                                          </div>
+                                                        )}
+                                                        {warrant.phone && (
+                                                          <div className="small text-muted">
+                                                            <i className="bi bi-telephone me-1"></i>{warrant.phone}
+                                                          </div>
+                                                        )}
+
+                                                        {/* Warrant Details */}
+                                                        <div className="small bg-light p-2 rounded mt-2 border-start border-secondary border-4">
+                                                          {warrant.warrant_id && (
+                                                            <div className="fw-bold text-secondary mb-1">
+                                                              <i className="bi bi-tag me-1"></i>Warrant ID: {warrant.warrant_id}
+                                                            </div>
+                                                          )}
+
+                                                          {warrant.share_price > 0 && (
+                                                            <div className="mt-1">
+                                                              <span className="text-muted">Exercise Price:</span>{' '}
+                                                              <CurrencyFormatter amount={warrant.share_price} currency={roundData?.currency} digit={4} />
+                                                            </div>
+                                                          )}
+
+                                                          {/* Coverage Info from investor_details if available */}
+                                                          {warrant.investor_details?.coverage_percentage && (
+                                                            <div className="mt-1">
+                                                              <span className="text-muted">Coverage:</span> {warrant.investor_details.coverage_percentage}%
+                                                            </div>
+                                                          )}
+                                                        </div>
+                                                      </td>
+                                                      <td>Warrant</td>
+                                                      <td className="text-end">{Number(warrant.existing_shares || 0).toLocaleString()}</td>
+                                                      <td className="text-end text-success">{Number(warrant.new_shares || warrant.shares || 0).toLocaleString()}</td>
+                                                      <td className="text-end">{Number(warrant.shares || 0).toLocaleString()}</td>
+                                                      <td className="text-end">{warrant.percentage_formatted}</td>
+                                                      <td className="text-end">
+                                                        <CurrencyFormatter amount={warrant.value} currency={roundData?.currency} />
+                                                      </td>
+                                                    </tr>
+                                                  );
+                                                })}
+                                              </React.Fragment>
+                                            );
+                                          })}
+                                        </>
+                                      )}
+
+                                      {/* 7. Pending SAFE / Convertible Note */}
                                       {pendingGroups.map((group, groupIndex) => {
-                                        // Pre-money pending rowKey bhi fix karo
                                         const rowKey = `post-pending-group-${group.round_id || groupIndex}-${group.instrument_type}`;
                                         const isExpanded = !!expandedRows[rowKey];
                                         const isConvertibleNote = group.instrument_type === 'Convertible Note';
@@ -1936,10 +2159,7 @@ export default function RecordRoundCaptable() {
                                               <td className="text-end text-muted">0</td>
                                               <td className="text-end text-muted">0</td>
                                               <td className="text-end text-warning fw-bold">
-                                                {group.total_potential_shares > 0
-                                                  ? '0'
-                                                  : '0'
-                                                }
+                                                0
                                               </td>
                                               <td className="text-end text-muted">0</td>
                                               <td className="text-end text-muted">0</td>
@@ -1983,7 +2203,7 @@ export default function RecordRoundCaptable() {
                                                       </div>
                                                     )}
 
-                                                    {/* ✅ Convertible Note 5 extra fields */}
+                                                    {/* Convertible Note extra fields */}
                                                     {isConvertibleNote && (
                                                       <>
                                                         {item.interest_rate > 0 && (
@@ -2006,17 +2226,12 @@ export default function RecordRoundCaptable() {
                                                         )}
                                                       </>
                                                     )}
-
-
                                                   </td>
                                                   <td>{item.instrument_type || 'Safe'}</td>
                                                   <td className="text-end text-muted">0</td>
                                                   <td className="text-end text-muted">0</td>
                                                   <td className="text-end text-warning">
-                                                    {item.potential_shares > 0
-                                                      ? '0'
-                                                      : '0'
-                                                    }
+                                                    0
                                                   </td>
                                                   <td className="text-end text-muted">0</td>
                                                   <td className="text-end text-muted">0</td>
@@ -2033,10 +2248,9 @@ export default function RecordRoundCaptable() {
 
                               <tfoot className="table-light fw-bold">
                                 {(() => {
-                                  const isSAFERound = roundData.instrument === 'Safe' || roundData.instrument === 'Convertible Note';
+                                  const isSAFERound = roundData?.instrument === 'Safe' || roundData?.instrument === 'Convertible Note';
                                   const allItems = capTableData?.post_money?.items || [];
 
-                                  // ✅ FIXED: pending_group bhi exclude karo
                                   const baseTotalShares = capTableData?.post_money?.totals?.total_shares
                                     || allItems
                                       .filter(i => i.type !== 'pending' && i.type !== 'pending_group')
@@ -2044,15 +2258,14 @@ export default function RecordRoundCaptable() {
 
                                   const totalNewShares = allItems.reduce((sum, i) => {
                                     if (i.type === 'investor' && i.is_new_investment) return sum + (i.shares || 0);
-                                    // ✅ converted bhi new shares hain
                                     if (i.type === 'investor' && i.is_converted) return sum + (i.shares || 0);
+                                    if (i.type === 'investor' && i.is_warrant) return sum + (i.shares || 0);
                                     if (i.type === 'option_pool') return sum + (i.new_shares || 0);
                                     return sum;
                                   }, 0);
 
                                   const totalExistingShares = baseTotalShares - totalNewShares;
 
-                                  // ✅ FIXED: pending_group se total_potential_shares lo
                                   const totalPotentialShares = allItems
                                     .filter(i => i.type === 'pending_group')
                                     .reduce((s, i) => s + (i.total_potential_shares || 0), 0);
@@ -2073,11 +2286,7 @@ export default function RecordRoundCaptable() {
                                         </td>
                                         <td className="text-end fs-5 fw-bold">
                                           {baseTotalShares.toLocaleString()}
-                                          {totalPotentialShares > 0 && (
-                                            <span className="text-warning ms-1 small">
 
-                                            </span>
-                                          )}
                                         </td>
                                         <td className="text-end fs-5">100%</td>
                                         <td className="text-end fs-5 text-primary">
@@ -2102,15 +2311,6 @@ export default function RecordRoundCaptable() {
                                             />
                                           </span>
                                           <span className="me-3">Investment: <CurrencyFormatter amount={roundData?.investment} currency={roundData?.currency} /></span>
-                                          {roundData?.instrument !== "Safe" && roundData?.instrument !== "Convertible Note" && (
-                                            <span className="me-3">
-                                              Post-Money:{" "}
-                                              <CurrencyFormatter
-                                                amount={roundData?.post_money}
-                                                currency={roundData?.currency}
-                                              />
-                                            </span>
-                                          )}
                                           <span>
                                             Share Price: {
                                               isUnpricedRound && !isConverted
@@ -2193,7 +2393,7 @@ export default function RecordRoundCaptable() {
                                             formatter: function (value, context) {
                                               const dataset = context.dataset;
                                               const total = dataset.data.reduce((a, b) => a + b, 0);
-                                              const percentage = ((value / total) * 100).toFixed(1);
+                                              const percentage = ((value / total) * 100).toFixed(2);
                                               return `${percentage}%`;
                                             },
                                             color: '#ffffff',
@@ -2216,7 +2416,7 @@ export default function RecordRoundCaptable() {
                                                   return data.labels.map((label, i) => {
                                                     const value = data.datasets[0].data[i];
                                                     const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
-                                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(2) : 0;
                                                     const item = capTableData?.pre_money?.items?.[i];
                                                     let displayLabel = label;
                                                     let sharesInfo = '';
@@ -2290,7 +2490,7 @@ export default function RecordRoundCaptable() {
                                         ?.filter(item => item.type === 'founder')
                                         .map((item, index) => {
                                           const totalShares = capTableData.pre_money.totals.total_shares || 1;
-                                          const percentage = ((item.shares || 0) / totalShares * 100).toFixed(1);
+                                          const percentage = ((item.shares || 0) / totalShares * 100).toFixed(2);
                                           const colors = ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'];
                                           const color = colors[index % colors.length];
                                           return (
@@ -2409,7 +2609,112 @@ export default function RecordRoundCaptable() {
                         </div>
                       </div>
                     )}
+                    {/* ========== WARRANT SUMMARY SECTION ========== */}
+                    {WarrantData && Object.keys(WarrantData).length > 0 && (
+                      <div className="card mt-4 mb-4">
+                        <div className="card-header bg-warning text-white d-flex align-items-center">
+                          <i className="bi bi-file-earmark-text me-2 fs-5"></i>
+                          <h5 className="mb-0">Warrant Information</h5>
+                        </div>
+                        <div className="card-body">
+                          <div className="row">
+                            {/* Warrant Basic Info */}
+                            <div className="col-md-4">
+                              <div className="bg-light p-3 rounded-3">
+                                <p className="mb-1 text-muted small">Coverage Percentage</p>
+                                <h4 className="fw-bold mb-0">{WarrantData.warrant_coverage_percentage}%</h4>
+                              </div>
+                            </div>
+                            <div className="col-md-4">
+                              <div className="bg-light p-3 rounded-3">
+                                <p className="mb-1 text-muted small">Exercise Type</p>
+                                <h4 className="fw-bold mb-0">
+                                  {WarrantData.warrant_exercise_type === 'next_round_adjusted' ? 'Next Round ± Adjustment' :
+                                    WarrantData.warrant_exercise_type === 'next_round' ? 'Next Round Price' : 'Fixed Price'}
+                                </h4>
+                              </div>
+                            </div>
+                            <div className="col-md-4">
+                              <div className="bg-light p-3 rounded-3">
+                                <p className="mb-1 text-muted small">Expiration Date</p>
+                                <h4 className="fw-bold mb-0">{formatCurrentDate(WarrantData.expiration_date) || 'No Expiry'}</h4>
+                              </div>
+                            </div>
+                          </div>
 
+                          {/* Adjustment Info */}
+                          {WarrantData.warrant_exercise_type === 'next_round_adjusted' && (
+                            <div className="row mt-3">
+                              <div className="col-md-6">
+                                <div className="bg-light p-3 rounded-3">
+                                  <p className="mb-1 text-muted small">Adjustment Direction</p>
+                                  <h4 className={`fw-bold mb-0 ${WarrantData.warrant_adjustment_direction === 'increase' ? 'text-success' : 'text-danger'
+                                    }`}>
+                                    {WarrantData.warrant_adjustment_direction === 'increase' ? 'Increase by' : 'Decrease by'}
+                                  </h4>
+                                </div>
+                              </div>
+                              <div className="col-md-6">
+                                <div className="bg-light p-3 rounded-3">
+                                  <p className="mb-1 text-muted small">Adjustment Percentage</p>
+                                  <h4 className="fw-bold mb-0">{WarrantData.warrant_adjustment_percent}%</h4>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Exercise Status */}
+                          <div className="row mt-3">
+                            <div className="col-md-12">
+                              <div className="bg-light p-3 rounded-3 d-flex justify-content-between align-items-center">
+                                <div>
+                                  <p className="mb-1 text-muted small">Exercise Status</p>
+                                  <h4 className="fw-bold mb-0">
+                                    <span className={`badge ${WarrantData.actual_status === 'exercised' ? 'bg-success' :
+                                      WarrantData.actual_status === 'expired' ? 'bg-danger' : 'bg-warning'
+                                      } p-2`}>
+                                      {WarrantData.actual_status === 'exercised' ? '✓ Exercised' :
+                                        WarrantData.actual_status === 'expired' ? '✗ Expired' : '⏳ Not Exercised'}
+                                    </span>
+                                  </h4>
+                                </div>
+
+                                {WarrantData.actual_status === 'exercised' && (
+                                  <div className="text-end">
+                                    <p className="mb-1 text-muted small">Exercised on</p>
+                                    <p className="fw-bold mb-0">{formatCurrentDate(WarrantData.exercised_date)}</p>
+
+                                    {/* ✅ NEW: Show exercised in round ID */}
+                                    {WarrantData.exercised_in_round_id && (
+                                      <>
+                                        <p className="mb-1 text-muted small mt-2">Exercised in Round</p>
+                                        <p className="fw-bold mb-0">
+                                          <span className="badge bg-info">
+                                            Round #{WarrantData.exercised_in_round_id}
+                                          </span>
+                                        </p>
+                                      </>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Warrant Notes */}
+                          {WarrantData.notes && (
+                            <div className="row mt-3">
+                              <div className="col-md-12">
+                                <div className="bg-light p-3 rounded-3">
+                                  <p className="mb-1 text-muted small">Additional Notes</p>
+                                  <p className="mb-0">{WarrantData.notes}</p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                     {/* CPAVATE Summary Tab - Keep as is */}
                     {activeTab === 'summary' && summaryDetails && (
                       <div className="card">
@@ -3235,6 +3540,7 @@ export default function RecordRoundCaptable() {
                                         {/* Pie Chart */}
                                         <div className="col-md-12" style={{ height: '300px' }}>
                                           <Pie
+                                            key={`pie-chart-${postMoneyChartData.labels.length}-${Date.now()}`} // ✅ Force re-render
                                             data={postMoneyChartData}
                                             options={{
                                               responsive: true,
@@ -3244,6 +3550,9 @@ export default function RecordRoundCaptable() {
                                                 datalabels: {
                                                   display: (context) => {
                                                     const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                                    // ✅ Pending items label nahi dikhao
+                                                    const item = postMoneyChartData._expandedItems?.[context.dataIndex];
+                                                    if (item?._isPending) return false; // Fixed: _isPending check
                                                     return total > 0
                                                       ? (context.dataset.data[context.dataIndex] / total) * 100 >= 3
                                                       : false;
@@ -3280,16 +3589,28 @@ export default function RecordRoundCaptable() {
                                                       const total = context.dataset.data.reduce((a, b) => a + b, 0);
                                                       const pct = total > 0 ? (value / total) * 100 : 0;
 
+                                                      // ✅ Pending SAFE/Note
+                                                      if (item?._isPending) {
+                                                        return [
+                                                          `Investment: ${formatCurrency(parseFloat(item.investment || 0), roundData?.currency)}`,
+                                                          `Potential Shares: ${formatNumber(item.potential_shares || 0)}`,
+                                                          `Status: Pending Conversion`,
+                                                        ];
+                                                      }
+
                                                       const isSAFE = capTableData?.post_money?.totals?.instrumentType === 'Safe';
                                                       const valuation = isSAFE
                                                         ? (parseFloat(capTableData?.post_money?.totals?.total_value) || parseFloat(roundData?.pre_money) || 0)
                                                         : (parseFloat(roundData?.post_money) || 0);
                                                       const valueAmount = (pct * valuation) / 100;
 
-                                                      if (item?.type === 'pending') {
+                                                      // ✅ Warrant check
+                                                      if (item?._isWarrant) {
                                                         return [
-                                                          `Investment: ${formatCurrency(parseFloat(item.investment || 0), roundData?.currency)}`,
-                                                          `Potential Shares: ${formatNumber(item.potential_shares || 0)}`,
+                                                          `📜 Warrant Holder`,
+                                                          `Shares: ${formatNumber(value)}`,
+                                                          `Ownership: ${pct.toFixed(2)}%`,
+                                                          `Value: ${formatCurrency(valueAmount, roundData?.currency)}`,
                                                         ];
                                                       }
 
@@ -3309,7 +3630,15 @@ export default function RecordRoundCaptable() {
                                                       if (item._email) details.push(`📧 ${item._email}`);
                                                       if (item._phone) details.push(`📞 ${item._phone}`);
 
-                                                      if (item.type === 'investor') {
+                                                      // ✅ Warrant details
+                                                      if (item._isWarrant) {
+                                                        if (item._warrantId) details.push(`📜 Warrant ID: ${item._warrantId}`);
+                                                        if (item._investmentAmount) {
+                                                          details.push(`💰 Exercise Value: ${formatCurrency(item._investmentAmount, roundData?.currency)}`);
+                                                        }
+                                                      }
+
+                                                      if (item._type === 'investor') {
                                                         if (item._investmentAmount > 0) {
                                                           details.push(`💰 Investment: ${formatCurrency(item._investmentAmount, roundData?.currency)}`);
                                                         }
@@ -3318,13 +3647,13 @@ export default function RecordRoundCaptable() {
                                                         }
                                                       }
 
-                                                      if (item.type === 'pending') {
+                                                      if (item._isPending) {
                                                         if (item.discount_rate) details.push(`🏷️ Discount: ${item.discount_rate}%`);
                                                         if (item.valuation_cap) details.push(`🎯 Cap: ${formatCurrency(item.valuation_cap, roundData?.currency)}`);
                                                         if (item.conversion_price) details.push(`💱 Conv. Price: ${formatCurrencyNotRound(item.conversion_price, roundData?.currency)}`);
                                                       }
 
-                                                      if (item.type === 'option_pool' && item._new_shares > 0) {
+                                                      if (item._type === 'option_pool' && item._new_shares > 0) {
                                                         details.push(`🆕 New Shares: ${formatNumber(item._new_shares)}`);
                                                       }
 
@@ -3337,7 +3666,7 @@ export default function RecordRoundCaptable() {
                                           />
                                         </div>
 
-                                        {/* Legend with expanded items */}
+                                        {/* Legend */}
                                         <div className="col-md-12">
                                           <div className="chart-legend-permanent h-100">
                                             <h6 className="mb-3 text-center fw-semibold">Ownership Distribution</h6>
@@ -3346,7 +3675,8 @@ export default function RecordRoundCaptable() {
                                                 const bgColors = postMoneyChartData.datasets[0].backgroundColor;
                                                 const color = Array.isArray(bgColors) ? bgColors[index] : bgColors;
                                                 const total = postMoneyChartData.datasets[0].data.reduce((a, b) => a + b, 0);
-                                                const pct = total > 0 ? ((item._shares / total) * 100).toFixed(1) : '0.0';
+                                                const actualShares = item._actualShares ?? item._shares;
+                                                const pct = total > 0 ? ((item._shares / total) * 100).toFixed(2) : '0.0';
 
                                                 return (
                                                   <div key={index} className="legend-item d-flex align-items-start mb-2 p-2 border rounded">
@@ -3354,8 +3684,10 @@ export default function RecordRoundCaptable() {
                                                       className="legend-color me-2 mt-1 flex-shrink-0"
                                                       style={{
                                                         width: '14px', height: '14px', borderRadius: '50%',
-                                                        backgroundColor: item.type === 'pending' ? '#FFC107' : color,
-                                                        border: '2px solid #fff', boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                                                        backgroundColor: item._type === 'pending' ? '#FFC107' :
+                                                          item._isWarrant ? '#9966FF' : color,
+                                                        border: '2px solid #fff',
+                                                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                                                       }}
                                                     />
                                                     <div className="legend-text flex-grow-1">
@@ -3363,19 +3695,29 @@ export default function RecordRoundCaptable() {
                                                         <small className="fw-semibold" style={{ maxWidth: '160px', whiteSpace: 'normal', wordBreak: 'break-word' }}>
                                                           {item._displayName}
                                                         </small>
-                                                        {item.type === 'pending'
-                                                          ? <span className="badge bg-warning text-dark ms-2 flex-shrink-0">Pending</span>
-                                                          : <span className="badge bg-success ms-2 flex-shrink-0">{pct}%</span>
+                                                        {/* ✅ Badge — TBD / Pending / % */}
+                                                        {item._warrantTBD
+                                                          ? <span className="badge bg-purple ms-2 flex-shrink-0" style={{ backgroundColor: '#9966FF' }}>TBD</span>
+                                                          : item._type === 'pending'
+                                                            ? <span className="badge bg-warning text-dark ms-2 flex-shrink-0">Pending</span>
+                                                            : <span className="badge bg-success ms-2 flex-shrink-0">{pct}%</span>
                                                         }
                                                       </div>
 
+                                                      {/* Shares display */}
                                                       <small className="text-muted d-block">
-                                                        {formatNumber(item._shares)} shares
-                                                        {item.type === 'pending' && item.potential_shares > 0 && (
+                                                        {item._warrantTBD
+                                                          ? 'Shares: TBD (pending exercise)'
+                                                          : item._type === 'pending'
+                                                            ? `0 shares`
+                                                            : `${formatNumber(actualShares)} shares`
+                                                        }
+                                                        {item._type === 'pending' && item.potential_shares > 0 && (
                                                           <span className="text-warning ms-2">(potential: {formatNumber(item.potential_shares)})</span>
                                                         )}
                                                       </small>
 
+                                                      {/* Email / Phone */}
                                                       {item._email && (
                                                         <small className="text-muted d-block">
                                                           <i className="bi bi-envelope me-1"></i>{item._email}
@@ -3387,20 +3729,30 @@ export default function RecordRoundCaptable() {
                                                         </small>
                                                       )}
 
-                                                      {item.type === 'investor' && item._roundName && (
+                                                      {/* Round name */}
+                                                      {item._type === 'investor' && item._roundName && (
                                                         <small className="text-muted d-block">
                                                           <i className="bi bi-hash me-1"></i>{item._roundName}
                                                         </small>
                                                       )}
 
-                                                      {item.type === 'investor' && item._investmentAmount > 0 && (
+                                                      {/* Investment amount */}
+                                                      {item._type === 'investor' && item._investmentAmount > 0 && (
                                                         <small className="text-muted d-block">
                                                           <i className="bi bi-cash me-1"></i>
                                                           {formatCurrency(item._investmentAmount, roundData?.currency)}
                                                         </small>
                                                       )}
 
-                                                      {item.type === 'pending' && (
+                                                      {/* Warrant details */}
+                                                      {/* {item._isWarrant && (
+                                                        <small className="text-muted d-block">
+                                                          💱 Warrant Price: {formatCurrencyNotRound(item.warrant_price || 0, roundData?.currency)}/share
+                                                        </small>
+                                                      )} */}
+
+                                                      {/* Pending details */}
+                                                      {item._type === 'pending' && (
                                                         <>
                                                           {item.investment > 0 && (
                                                             <small className="text-muted d-block">
@@ -3451,6 +3803,7 @@ export default function RecordRoundCaptable() {
                                             </div>
                                           </div>
                                         </div>
+
                                       </div>
                                     </div>
                                   </div>
@@ -3476,25 +3829,40 @@ export default function RecordRoundCaptable() {
                                           preItems.forEach((item) => {
                                             // INVESTOR TYPE with array of investors
                                             if (item.type === 'investor' && Array.isArray(item.investor_details) && item.investor_details.length > 0) {
-                                              // Use individual investor shares if available, otherwise split equally
                                               item.investor_details.forEach((inv, invIdx) => {
-                                                const name = `${inv.firstName || ''} ${inv.lastName || ''}`.trim() || inv.name || `Investor ${invIdx + 1}`;
+                                                const invData = inv.investor_details || inv;
+                                                const firstName = invData.firstName || inv.firstName || '';
+                                                const lastName = invData.lastName || inv.lastName || '';
+                                                const name = `${firstName} ${lastName}`.trim() || inv.name || `Investor ${invIdx + 1}`;
                                                 const shareType = item.share_class_type || '';
 
-                                                // Use investor's individual shares if available, otherwise split equally
+                                                let icon = '👤';
+                                                if (item.is_warrant) icon = '📜';
+                                                if (item.is_converted) icon = '🔄';
+                                                if (item.is_new_investment) icon = '🆕';
+
                                                 const investorShares = inv.shares || Math.round((item.shares || 0) / item.investor_details.length);
 
+                                                // ✅ Create unique ID with index to avoid duplicates
+                                                const uniqueId = `${invData.email || name}-${item.is_warrant ? 'warrant' : 'investor'}-${invIdx}-${item.round_id_ref || ''}`;
+
                                                 preExpandedItems.push({
-                                                  _displayName: `👤 ${name}${shareType ? ` (${shareType})` : ''}`,
+                                                  _displayName: `${icon} ${name}${shareType ? ` (${shareType})` : ''}`,
                                                   _shares: investorShares,
-                                                  _email: inv.email || '',
-                                                  _phone: inv.phone || '',
+                                                  _email: invData.email || inv.email || '',
+                                                  _phone: invData.phone || inv.phone || '',
                                                   _type: 'pre',
-                                                  _originalType: 'investor',
+                                                  _originalType: item.is_warrant ? 'warrant' :
+                                                    item.is_converted ? 'converted' :
+                                                      item.is_new_investment ? 'new' : 'investor',
                                                   _roundId: item.round_id_ref,
                                                   _groupName: item.name,
-                                                  _inv: inv,
-                                                  _uniqueId: `${inv.email || name}-${item.round_id_ref || ''}` // Unique ID for matching
+                                                  _inv: invData,
+                                                  _isWarrant: item.is_warrant === true,
+                                                  _isConverted: item.is_converted === true,
+                                                  _isNew: item.is_new_investment === true,
+                                                  _isPrevious: item.is_previous === true,
+                                                  _uniqueId: uniqueId
                                                 });
                                               });
                                             }
@@ -3521,19 +3889,27 @@ export default function RecordRoundCaptable() {
                                               });
                                             }
                                             // PENDING (SAFE)
-                                            else if (item.type === 'pending') {
-                                              const inv = item.investor_details || {};
-                                              const name = `${inv.firstName || ''} ${inv.lastName || ''}`.trim() || item.name || 'SAFE Investor';
-                                              preExpandedItems.push({
-                                                _displayName: `👤 ${name}`,
-                                                _shares: 0,
-                                                _email: inv.email || item.email || '',
-                                                _phone: inv.phone || item.phone || '',
-                                                _type: 'pre',
-                                                _originalType: 'pending',
-                                                investment: parseFloat(item.investment) || 0,
-                                                potential_shares: item.potential_shares || 0,
-                                                _uniqueId: `pending-${inv.email || name}`
+                                            else if (item.type === 'pending' || item.type === 'pending_group') {
+                                              const investors = item.items || [item];
+                                              investors.forEach((inv, invIdx) => {
+                                                const invDetails = inv.investor_details || {};
+                                                const name = inv.name ||
+                                                  `${invDetails.firstName || ''} ${invDetails.lastName || ''}`.trim() ||
+                                                  'Pending Investor';
+
+                                                const uniqueId = `pending-${invDetails.email || name}-${invIdx}`;
+
+                                                preExpandedItems.push({
+                                                  _displayName: `⏳ ${name}`,
+                                                  _shares: 0,
+                                                  _email: invDetails.email || inv.email || '',
+                                                  _phone: invDetails.phone || inv.phone || '',
+                                                  _type: 'pre',
+                                                  _originalType: 'pending',
+                                                  investment: parseFloat(inv.investment) || 0,
+                                                  potential_shares: inv.potential_shares || 0,
+                                                  _uniqueId: uniqueId
+                                                });
                                               });
                                             }
                                           });
@@ -3542,30 +3918,85 @@ export default function RecordRoundCaptable() {
                                           const postExpandedItems = [];
                                           const postItems = capTableData?.post_money?.items || [];
 
+                                          console.log("POST ITEMS:", postItems); // Debug
+
                                           postItems.forEach((item) => {
                                             // INVESTOR TYPE with array of investors
                                             if (item.type === 'investor' && Array.isArray(item.investor_details) && item.investor_details.length > 0) {
+                                              console.log(`Processing investor group: ${item.name} with ${item.investor_details.length} investors`);
+
                                               item.investor_details.forEach((inv, invIdx) => {
-                                                const name = `${inv.firstName || ''} ${inv.lastName || ''}`.trim() || inv.name || `Investor ${invIdx + 1}`;
+                                                // ✅ FIX: inv ke andar investor_details ho sakta hai
+                                                const invData = inv.investor_details || inv;
+
+                                                const firstName = invData.firstName || inv.firstName || '';
+                                                const lastName = invData.lastName || inv.lastName || '';
+                                                const name = `${firstName} ${lastName}`.trim() || inv.name || `Investor ${invIdx + 1}`;
+
                                                 const shareType = item.share_class_type || '';
 
-                                                // Use investor's individual shares if available
+                                                let icon = '👤';
+                                                if (item.is_warrant) icon = '📜';
+                                                if (item.is_converted) icon = '🔄';
+                                                if (item.is_new_investment) icon = '🆕';
+
                                                 const investorShares = inv.shares || Math.round((item.shares || 0) / item.investor_details.length);
 
+                                                // ✅ Create truly unique ID with multiple identifiers
+                                                const uniqueId = `${invData.email || name}-${item.is_warrant ? 'warrant' : 'investor'}-${invIdx}-${item.round_id_ref || ''}-${item.name}`;
+
                                                 postExpandedItems.push({
-                                                  _displayName: `👤 ${name}${shareType ? ` (${shareType})` : ''}`,
+                                                  _displayName: `${icon} ${name}${shareType ? ` (${shareType})` : ''}`,
                                                   _shares: investorShares,
-                                                  _email: inv.email || '',
-                                                  _phone: inv.phone || '',
+                                                  _email: invData.email || inv.email || '',
+                                                  _phone: invData.phone || inv.phone || '',
                                                   _type: 'post',
-                                                  _originalType: 'investor',
+                                                  _originalType: item.is_warrant ? 'warrant' :
+                                                    item.is_converted ? 'converted' :
+                                                      item.is_new_investment ? 'new' : 'investor',
                                                   _roundId: item.round_id_ref,
                                                   _groupName: item.name,
-                                                  _inv: inv,
-                                                  _isPrevious: item.is_previous,
+                                                  _inv: invData,
+                                                  _isWarrant: item.is_warrant === true,
+                                                  _isConverted: item.is_converted === true,
+                                                  _isNew: item.is_new_investment === true,
+                                                  _isPrevious: item.is_previous === true,
                                                   _roundName: item.round_name,
-                                                  _uniqueId: `${inv.email || name}-${item.round_id_ref || ''}`
+                                                  _uniqueId: uniqueId
                                                 });
+                                              });
+                                            }
+                                            // SINGLE INVESTOR (no array)
+                                            else if (item.type === 'investor' && !Array.isArray(item.investor_details)) {
+                                              const inv = item.investor_details || {};
+                                              const name = `${inv.firstName || ''} ${inv.lastName || ''}`.trim() || item.name || 'Investor';
+                                              const shareType = item.share_class_type || '';
+
+                                              let icon = '👤';
+                                              if (item.is_warrant) icon = '📜';
+                                              if (item.is_converted) icon = '🔄';
+                                              if (item.is_new_investment) icon = '🆕';
+
+                                              const uniqueId = `${inv.email || name}-${item.is_warrant ? 'warrant' : 'investor'}-single`;
+
+                                              postExpandedItems.push({
+                                                _displayName: `${icon} ${name}${shareType ? ` (${shareType})` : ''}`,
+                                                _shares: item.shares || 0,
+                                                _email: inv.email || item.email || '',
+                                                _phone: inv.phone || item.phone || '',
+                                                _type: 'post',
+                                                _originalType: item.is_warrant ? 'warrant' :
+                                                  item.is_converted ? 'converted' :
+                                                    item.is_new_investment ? 'new' : 'investor',
+                                                _roundId: item.round_id_ref,
+                                                _groupName: item.name,
+                                                _inv: inv,
+                                                _isWarrant: item.is_warrant === true,
+                                                _isConverted: item.is_converted === true,
+                                                _isNew: item.is_new_investment === true,
+                                                _isPrevious: item.is_previous === true,
+                                                _roundName: item.round_name,
+                                                _uniqueId: uniqueId
                                               });
                                             }
                                             // FOUNDER TYPE
@@ -3591,22 +4022,32 @@ export default function RecordRoundCaptable() {
                                               });
                                             }
                                             // PENDING (SAFE)
-                                            else if (item.type === 'pending') {
-                                              const inv = item.investor_details || {};
-                                              const name = `${inv.firstName || ''} ${inv.lastName || ''}`.trim() || item.name || 'SAFE Investor';
-                                              postExpandedItems.push({
-                                                _displayName: `👤 ${name}`,
-                                                _shares: 0,
-                                                _email: inv.email || item.email || '',
-                                                _phone: inv.phone || item.phone || '',
-                                                _type: 'post',
-                                                _originalType: 'pending',
-                                                investment: parseFloat(item.investment) || 0,
-                                                potential_shares: item.potential_shares || 0,
-                                                _uniqueId: `pending-${inv.email || name}`
+                                            else if (item.type === 'pending' || item.type === 'pending_group') {
+                                              const investors = item.items || [item];
+                                              investors.forEach((inv, invIdx) => {
+                                                const invDetails = inv.investor_details || {};
+                                                const name = inv.name ||
+                                                  `${invDetails.firstName || ''} ${invDetails.lastName || ''}`.trim() ||
+                                                  'Pending Investor';
+
+                                                const uniqueId = `pending-${invDetails.email || name}-${invIdx}-${item.round_id || ''}`;
+
+                                                postExpandedItems.push({
+                                                  _displayName: `⏳ ${name}`,
+                                                  _shares: 0,
+                                                  _email: invDetails.email || inv.email || '',
+                                                  _phone: invDetails.phone || inv.phone || '',
+                                                  _type: 'post',
+                                                  _originalType: 'pending',
+                                                  investment: parseFloat(inv.investment) || 0,
+                                                  potential_shares: inv.potential_shares || 0,
+                                                  _uniqueId: uniqueId
+                                                });
                                               });
                                             }
                                           });
+
+                                          console.log("POST EXPANDED ITEMS:", postExpandedItems); // Debug
 
                                           // ==================== STEP 3: CALCULATE TOTALS ====================
                                           const totalPreShares = preExpandedItems.reduce((sum, item) => sum + (item._shares || 0), 0) || 1;
@@ -3623,6 +4064,9 @@ export default function RecordRoundCaptable() {
                                               preShares: item._shares,
                                               postShares: 0,
                                               isPending: item._originalType === 'pending',
+                                              isWarrant: item._isWarrant === true,
+                                              isConverted: item._isConverted === true,
+                                              isNew: item._isNew === true,
                                               email: item._email,
                                               phone: item._phone,
                                               investment: item.investment,
@@ -3635,16 +4079,20 @@ export default function RecordRoundCaptable() {
                                           // Then add/update with post-money items
                                           postExpandedItems.forEach((item) => {
                                             if (shareholderMap.has(item._uniqueId)) {
-                                              // Update existing
                                               const existing = shareholderMap.get(item._uniqueId);
                                               existing.postShares = item._shares;
+                                              existing.isWarrant = existing.isWarrant || item._isWarrant;
+                                              existing.isConverted = existing.isConverted || item._isConverted;
+                                              existing.isNew = existing.isNew || item._isNew;
                                             } else {
-                                              // Add new
                                               shareholderMap.set(item._uniqueId, {
                                                 label: item._displayName,
                                                 preShares: 0,
                                                 postShares: item._shares,
                                                 isPending: item._originalType === 'pending',
+                                                isWarrant: item._isWarrant === true,
+                                                isConverted: item._isConverted === true,
+                                                isNew: item._isNew === true,
                                                 email: item._email,
                                                 phone: item._phone,
                                                 investment: item.investment,
@@ -3658,24 +4106,26 @@ export default function RecordRoundCaptable() {
                                           const orderedKeys = Array.from(shareholderMap.keys());
                                           const postDenominator = isSAFERound ? totalPreShares : totalPostShares;
 
-                                          // Sort keys to maintain consistent order
+                                          // Sort keys
                                           orderedKeys.sort((a, b) => {
                                             const entryA = shareholderMap.get(a);
                                             const entryB = shareholderMap.get(b);
 
-                                            // Founders first
                                             if (entryA.type === 'founder' && entryB.type !== 'founder') return -1;
                                             if (entryA.type !== 'founder' && entryB.type === 'founder') return 1;
-
-                                            // Then option pool
                                             if (entryA.type === 'option_pool' && entryB.type !== 'option_pool') return -1;
                                             if (entryA.type !== 'option_pool' && entryB.type === 'option_pool') return 1;
-
-                                            // Then investors
+                                            if (entryA.isWarrant && !entryB.isWarrant) return -1;
+                                            if (!entryA.isWarrant && entryB.isWarrant) return 1;
+                                            if (entryA.isConverted && !entryB.isConverted) return -1;
+                                            if (!entryA.isConverted && entryB.isConverted) return 1;
+                                            if (entryA.isNew && !entryB.isNew) return -1;
+                                            if (!entryA.isNew && entryB.isNew) return 1;
                                             return 0;
                                           });
 
-                                          // Store for tooltip
+                                          console.log("FINAL SHAREHOLDER MAP:", Array.from(shareholderMap.entries())); // Debug
+
                                           const chartData = {
                                             shareholderMap,
                                             orderedKeys,
@@ -3715,11 +4165,21 @@ export default function RecordRoundCaptable() {
                                                 }),
                                                 backgroundColor: (context) => {
                                                   const key = orderedKeys[context.dataIndex];
-                                                  return shareholderMap.get(key)?.isPending ? '#FFC107' : '#e74a3b';
+                                                  const entry = shareholderMap.get(key);
+                                                  if (entry.isPending) return '#FFC107';
+                                                  if (entry.isWarrant) return '#9966FF';
+                                                  if (entry.isConverted) return '#1cc88a';
+                                                  if (entry.isNew) return '#36b9cc';
+                                                  return '#e74a3b';
                                                 },
                                                 borderColor: (context) => {
                                                   const key = orderedKeys[context.dataIndex];
-                                                  return shareholderMap.get(key)?.isPending ? '#FFC107' : '#e74a3b';
+                                                  const entry = shareholderMap.get(key);
+                                                  if (entry.isPending) return '#FFC107';
+                                                  if (entry.isWarrant) return '#9966FF';
+                                                  if (entry.isConverted) return '#1cc88a';
+                                                  if (entry.isNew) return '#36b9cc';
+                                                  return '#e74a3b';
                                                 },
                                                 borderWidth: 2,
                                                 borderRadius: 5,
@@ -3732,10 +4192,7 @@ export default function RecordRoundCaptable() {
                                           responsive: true,
                                           maintainAspectRatio: false,
                                           plugins: {
-                                            legend: {
-                                              position: 'top',
-                                              labels: { boxWidth: 12, padding: 15, font: { size: 12 } }
-                                            },
+                                            legend: { position: 'top', labels: { boxWidth: 12, padding: 15, font: { size: 12 } } },
                                             tooltip: {
                                               backgroundColor: 'rgba(0,0,0,0.85)',
                                               titleColor: '#fff',
@@ -3749,7 +4206,6 @@ export default function RecordRoundCaptable() {
                                                 title: (tooltipItems) => {
                                                   const chartData = window.__temp_chartData;
                                                   if (!chartData) return tooltipItems[0].label;
-
                                                   const key = chartData.orderedKeys[tooltipItems[0].dataIndex];
                                                   const entry = chartData.shareholderMap.get(key);
                                                   return entry?.label || tooltipItems[0].label;
@@ -3761,26 +4217,30 @@ export default function RecordRoundCaptable() {
                                                 afterLabel: (context) => {
                                                   const chartData = window.__temp_chartData;
                                                   if (!chartData) return null;
-
                                                   const key = chartData.orderedKeys[context.dataIndex];
                                                   const entry = chartData.shareholderMap.get(key);
                                                   if (!entry) return null;
 
                                                   const details = [];
+                                                  if (entry.isWarrant) details.push(`📜 Warrant Holder`);
+                                                  else if (entry.isConverted) details.push(`🔄 Converted Investor`);
+                                                  else if (entry.isNew) details.push(`🆕 New Investor`);
+                                                  else if (entry.type === 'founder') details.push(`👤 Founder`);
+                                                  else if (entry.type === 'option_pool') details.push(`📊 Option Pool`);
 
                                                   if (entry.email) details.push(`📧 ${entry.email}`);
                                                   if (entry.phone) details.push(`📞 ${entry.phone}`);
 
                                                   if (entry.isPending) {
-                                                    details.push(`👤 Pending SAFE`);
+                                                    details.push(`⏳ Pending`);
                                                     if (entry.investment) details.push(`💰 Investment: ${formatCurrency(entry.investment, roundData?.currency)}`);
                                                     if (entry.potential_shares) details.push(`📊 Potential: ${formatNumber(entry.potential_shares)}`);
                                                   } else {
                                                     const prePct = ((entry.preShares || 0) / chartData.totalPreShares * 100).toFixed(2);
                                                     const postPct = ((entry.postShares || 0) / chartData.totalPostShares * 100).toFixed(2);
                                                     details.push(`📊 Pre: ${prePct}% | Post: ${postPct}%`);
+                                                    details.push(`📈 Shares: ${formatNumber(entry.postShares || 0)}`);
                                                   }
-
                                                   return details.length > 0 ? details : null;
                                                 }
                                               }
@@ -4143,7 +4603,7 @@ export default function RecordRoundCaptable() {
                         <i className="bi bi-exclamation-triangle-fill me-2" style={{ color: '#CC0000' }}></i>
                         Disclaimer
                       </h6>
-                      <p className="text-muted small mb-0 redcolor" >
+                      <p className="text-muted small mb-0 redcolor text-white" >
                         IMPORTANT : The calculations are for informational purpose only !<br />
                         Please consult with your legal and financial advisors before making any investment decisions
                       </p>

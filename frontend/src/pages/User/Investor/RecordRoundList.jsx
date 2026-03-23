@@ -29,6 +29,7 @@ import {
 } from "@stripe/react-stripe-js";
 import ViewRecordRound from "../../../components/Users/popup/ViewRecordRound";
 import AirwallexPaymentPopupOneTimeDataroom from "../../../components/Users/AirwallexPaymentPopupOneTimeDataroom.jsx";
+import RoundActionPopup from "../../../components/Investor/popup/RoundActionPopup.jsx";
 import { API_BASE_URL } from "../../../config/config.js";
 export default function RecordRoundList() {
   const navigate = useNavigate();
@@ -44,6 +45,8 @@ export default function RecordRoundList() {
   const [LockId, setLockId] = useState("");
   const [Isfundinground, setIsfundinground] = useState(false);
   const [fundingroundMessage, setfundingroundMessage] = useState("");
+  const [isAcknowlegmentConfirmation, setAcknowlegmentConfirmation] = useState([]);
+  const apiUrlCapRound = API_BASE_URL + "api/user/capitalround/";
   document.title = "Investment Rounds Overview";
 
   const customStyles = {
@@ -90,7 +93,9 @@ export default function RecordRoundList() {
   };
   useEffect(() => {
     getAuthorizedSignature();
+    getroundManagementAcklnowlegment();
   }, []);
+
   const getAuthorizedSignature = async () => {
     let formData = {
       company_id: userLogin.companies[0].id,
@@ -111,6 +116,26 @@ export default function RecordRoundList() {
       if (checkData.length > 0) {
         setAuthorizedData(checkData[0]);
       }
+    } catch (err) { }
+  };
+  const getroundManagementAcklnowlegment = async () => {
+    let formData = {
+      company_id: userLogin.companies[0].id,
+
+    };
+    try {
+      const res = await axios.post(
+        apiUrlCapRound + "getroundManagementAcklnowlegment",
+        formData,
+        {
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      const checkData = res.data.results;
+      setAcknowlegmentConfirmation(checkData);
     } catch (err) { }
   };
   useEffect(() => {
@@ -322,7 +347,6 @@ export default function RecordRoundList() {
       id: idd,
     };
 
-    console.log(formData);
 
     try {
       const generateRes = await axios.post(
@@ -355,7 +379,7 @@ export default function RecordRoundList() {
   const handlelockreport = async (Id) => {
     setLockId(Id);
     setdangerMessage(
-      "Are you sure? Once locked, this document cannot be unlocked."
+      "⚠️ Are you sure? Once locked, this round will be visible to selected investors and cannot be edited."
     );
   };
   const handleConfirm = async () => {
@@ -363,7 +387,7 @@ export default function RecordRoundList() {
       company_id: userLogin.companies[0].id,
       lock_id: LockId,
     };
-    console.log(formData);
+
     try {
       const generateRes = await axios.post(
         apiURLInvestor + "recordRoundLock",
@@ -414,18 +438,8 @@ export default function RecordRoundList() {
 
     if (isNaN(date)) return "";
     const months = [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
     ];
 
     const day = date.getDate();
@@ -844,28 +858,79 @@ export default function RecordRoundList() {
     );
   };
   //Payment
+  const [showRoundPopup, setShowRoundPopup] = useState(false);
+  const [pendingFormData, setPendingFormData] = useState(null);
+  const [isPopupSubmitting, setIsPopupSubmitting] = useState(false);
+  const [closedcheck, setClosedcheck] = useState(false);
+  const handlePopupClose = () => {
+    setShowRoundPopup(false);
+    setPendingFormData(null);
+  };
   const handlefundingRound = async () => {
     if (records.length > 0) {
+
       setfundingroundMessage(
         "Only the most recent funding round can be edited. Once a new round is created, previous rounds become read-only."
       );
-      setIsfundinground(true);
+
     } else {
-      await handleCheckPayemt(); // submit form once
+      if (isAcknowlegmentConfirmation.length > 0) {
+        // await handleCheckPayemt(); // submit form once
+      }
+
     }
 
   }
+  const handleRoundConfirm = () => {
+    navigate("/createrecord");
+  }
   const handlefundingRoundConfirm = async () => {
-    setfundingroundMessage(
-      ""
+    // Step 1: Filter investment type records
+    const investmentRecords = records.filter(record => record.round_type === 'Investment');
+
+    // Step 2: Sort by date (latest first)
+    const sortedRecords = [...investmentRecords].sort((a, b) =>
+      new Date(b.created_at) - new Date(a.created_at)
     );
-    setIsfundinground(false);
-    await handleCheckPayemt(); // submit form once
+
+    // Step 3: Get latest record
+    const latestInvestmentRecord = sortedRecords[0];
+
+    // Step 4: Check status
+    if (latestInvestmentRecord) {
+      const isActive = latestInvestmentRecord.roundStatus === 'ACTIVE';
+      const isClosed = latestInvestmentRecord.roundStatus === 'CLOSED';
+
+      if (latestInvestmentRecord.roundStatus === 'ACTIVE') {
+        setfundingroundMessage(
+          "⚠️ You have an ACTIVE investment round. Please close the current round before creating a new one."
+        )
+      } else {
+        setfundingroundMessage(
+          ""
+        );
+        setIsfundinground(false);
+        await handleCheckPayemt();
+      }
+    } else {
+      setfundingroundMessage(
+        ""
+      );
+      setIsfundinground(false);
+      await handleCheckPayemt();
+    }
+
   }
   const handleCheckPayemt = async () => {
     // Owner bypasses all checks
+    if (isAcknowlegmentConfirmation.length === 0) {
+      // await handleCheckPayemt(); // submit form once
+      setShowRoundPopup(true);
+    } else {
+      navigate("/createrecord");
+    }
 
-    navigate("/createrecord");
+
     // if (userLogin.role === "owner") {
     //   try {
     //     const res = await axios.post(
@@ -1291,6 +1356,14 @@ export default function RecordRoundList() {
           recordViewData={recordViewData}
         />
       )}
+      <RoundActionPopup
+        show={showRoundPopup}
+        onClose={handlePopupClose}
+        onConfirm={handleRoundConfirm}
+        companyName={userLogin?.companies[0]?.name || "Your Company"}
+        closedcheck={closedcheck}
+        isSubmitting={isPopupSubmitting}
+      />
     </>
   );
 }

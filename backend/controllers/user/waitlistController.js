@@ -120,7 +120,26 @@ function sendWaitlistConfirmationEmail(to, fullName, companyName, formData) {
                 </tr>
                 <tr>
                   <td style="padding: 10px; background: #f8f9fa; border: 1px solid #e5e7eb;"><b>Application Date:</b></td>
-                  <td style="padding: 10px; border: 1px solid #e5e7eb;">${new Date().toLocaleString()}</td>
+                  <td style="padding: 10px; border: 1px solid #e5e7eb;">${new Date()
+                    .toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })
+                    .replace(/(\d+)/, (match) => {
+                      const day = parseInt(match);
+                      const suffix =
+                        day >= 11 && day <= 13
+                          ? "th"
+                          : day % 10 === 1
+                            ? "st"
+                            : day % 10 === 2
+                              ? "nd"
+                              : day % 10 === 3
+                                ? "rd"
+                                : "th";
+                      return day + suffix;
+                    })}</td>
                 </tr>
               </table>
               
@@ -167,7 +186,7 @@ function sendWaitlistConfirmationEmail(to, fullName, companyName, formData) {
   `;
 
   const mailOptions = {
-    from: "scale@blueprintcatalyst.com",
+    from: "Capavate scale@blueprintcatalyst.com",
     to,
     subject,
     html: htmlBody,
@@ -192,12 +211,6 @@ exports.saveJoinwaitlist = async (req, res) => {
   } = req.body;
 
   // Validate required fields
-  if (!company_id) {
-    return res.status(400).json({
-      status: "2",
-      message: "Company ID is required",
-    });
-  }
 
   if (!email) {
     return res.status(400).json({
@@ -228,6 +241,122 @@ exports.saveJoinwaitlist = async (req, res) => {
         return res.status(200).json({
           status: "2",
           message: `This investor (${email}) is already in the waitlist for ${company_name || "your company"}`,
+          alreadyExists: true,
+        });
+      }
+
+      // If not exists, insert into waitlist table
+      const insertQuery = `
+        INSERT INTO waitlist 
+        (code, company_id, company_name, first_name, last_name, email, phone, city, country, created_at) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+      const code = crypto.randomBytes(16).toString("hex");
+      const values = [
+        code,
+        company_id,
+        company_name || null,
+        first_name || null,
+        last_name || null,
+        email,
+        phone || null,
+        city || null,
+        country || null,
+        created_at || new Date(),
+      ];
+
+      db.query(insertQuery, values, (err, result) => {
+        if (err) {
+          console.error("Database error:", err);
+          return res.status(500).json({
+            status: "2",
+            message: "Database error",
+            error: err.message,
+          });
+        }
+
+        // Send confirmation email to user
+        const fullName = `${first_name || ""} ${last_name || ""}`.trim();
+        const formData = {
+          companyName: company_name,
+          firstName: first_name,
+          lastName: last_name,
+          email: email,
+          phone: phone,
+          city: city,
+          country: country,
+        };
+
+        // Send emails (make sure these functions exist)
+        if (typeof sendWaitlistConfirmationEmail === "function") {
+          sendWaitlistConfirmationEmail(
+            email,
+            fullName,
+            company_name,
+            formData,
+          );
+        }
+
+        return res.status(200).json({
+          status: "1",
+          message: "Successfully joined waitlist",
+          insertId: result.insertId,
+        });
+      });
+    });
+  } catch (err) {
+    console.error("Server error:", err);
+    return res.status(500).json({
+      status: "2",
+      message: "Server error",
+      error: err.message,
+    });
+  }
+};
+exports.saveAcademypopup = async (req, res) => {
+  const {
+    company_id,
+    company_name,
+    first_name,
+    last_name,
+    email,
+    phone,
+    city,
+    country,
+    created_at,
+  } = req.body;
+
+  // Validate required fields
+
+  if (!email) {
+    return res.status(400).json({
+      status: "2",
+      message: "Email is required",
+    });
+  }
+
+  try {
+    // Check if already exists in waitlist for this company
+    const checkQuery = `
+      SELECT id FROM waitlist 
+      WHERE company_name = ? AND email = ?
+    `;
+
+    db.query(checkQuery, [company_name, email], (err, existing) => {
+      if (err) {
+        console.error("Database error:", err);
+        return res.status(500).json({
+          status: "2",
+          message: "Database error",
+          error: err.message,
+        });
+      }
+
+      // If already exists, return message
+      if (existing.length > 0) {
+        return res.status(200).json({
+          status: "2",
+          message: `This investor (${email}) has already been invited to join ${company_name || "your company"}`,
           alreadyExists: true,
         });
       }

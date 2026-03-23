@@ -30,70 +30,9 @@ import {
   RiVipCrownLine,
   RiVideoLine,
 } from "react-icons/ri";
+import { API_BASE_URL } from "../../../config/config";
+import CompanyRegistrationPopup from "../Acknowledgement/CompanyRegistrationPopup";
 
-const menuItems = [
-  {
-    label: "Dashboard",
-    href: "/user/dashboard",
-    icon: <RiDashboardLine size={18} />,
-  },
-  {
-    label: "Add New Company",
-    href: "/user/addcompany",
-    icon: <RiBuilding2Line size={18} />,
-  },
-  {
-    label: "My Companies",
-    href: "/user/companylist",
-    icon: <RiBuilding2Line size={18} />,
-  },
-
-  {
-    label: "Manage Signatory",
-    icon: <RiUserLine size={18} />,
-    dropdown: [
-      {
-        label: "Add New Signatory",
-        href: "/user/add-new-signatory",
-        icon: <RiUserLine size={16} />,
-      },
-      {
-        label: "Signatory List",
-        href: "/user/signatorylist",
-        icon: <RiVipCrownLine size={16} />,
-      },
-      {
-        label: "Approve Signatories",
-        href: "/user/approval/signature",
-        icon: <RiUserLine size={16} />,
-      },
-    ],
-  },
-  // ✅ New Investor CRM Section
-
-  {
-    label: "Settings",
-    icon: <RiSettingsLine size={18} />,
-    dropdown: [
-      {
-        label: "Profile Settings",
-        href: "/user/settings/profile",
-        icon: <RiUserLine size={16} />,
-      },
-
-      // {
-      //   label: "Subscriptions",
-      //   href: "/user/subscription-page",
-      //   icon: <RiVipCrownLine size={16} />,
-      // },
-      // {
-      //   label: "Package Subscription",
-      //   href: "/user/package-subscription",
-      //   icon: <RiVipCrownLine size={16} />,
-      // },
-    ],
-  },
-];
 const customActiveMap = [
   { path: "/crm/addnew-investor", menuHref: "/crm/investor-directory" },
   { path: "/crm/edit-investor/:id", menuHref: "/crm/investor-directory" },
@@ -132,12 +71,14 @@ const customActiveMap = [
   },
   // add more custom routes here
 ];
+
 const getMappedMenuHref = (pathname) => {
   const matched = customActiveMap.find((route) =>
     matchPath({ path: route.path, end: true }, pathname)
   );
   return matched ? matched.menuHref : pathname;
 };
+
 export default function ModuleSideNav({
   isCollapsed: propIsCollapsed,
   setIsCollapsed: propSetIsCollapsed,
@@ -146,26 +87,13 @@ export default function ModuleSideNav({
   const navigate = useNavigate();
   const [openDropdown, setOpenDropdown] = useState(null);
   const [getdatamodule, setgetdatamodule] = useState([]);
-
+  const [showCompanyAgreement, setShowCompanyAgreement] = useState(false);
+  const [pendingCompanyRegistration, setPendingCompanyRegistration] = useState(false);
+  const [messageAll, setmessageAll] = useState("");
+  const [errr, seterrr] = useState(false);
   // Use internal state if no props are provided
   const [internalIsCollapsed, setInternalIsCollapsed] = useState(false);
-
-  useEffect(() => {
-    const checkScreen = () => {
-      if (window.innerWidth < 786) {
-        setInternalIsCollapsed(true); // ✅ collapse by default
-        setIsCollapsed && setIsCollapsed(true); // agar parent se state aa rhi ho
-      } else {
-        setInternalIsCollapsed(false);
-        setIsCollapsed && setIsCollapsed(false);
-      }
-    };
-
-    checkScreen(); // mount pe run
-    window.addEventListener("resize", checkScreen);
-
-    return () => window.removeEventListener("resize", checkScreen);
-  }, [internalIsCollapsed]);
+  const apiUrlCompany = API_BASE_URL + "api/user/company/";
 
   const [isHovered, setIsHovered] = useState(false);
   const apiURL = "http://localhost:5000/api/user/";
@@ -176,6 +104,91 @@ export default function ModuleSideNav({
   const setIsCollapsed = propSetIsCollapsed || setInternalIsCollapsed;
   const storedUsername = localStorage.getItem("OwnerLoginData");
   const userLogin = JSON.parse(storedUsername);
+  const [companyAcknowlegment, setcompanyAcknowlegment] = useState('');
+
+  // Define handleAddNewCompany BEFORE using it in menuItems
+  const handleAddNewCompany = (e) => {
+    e.preventDefault();
+
+    // Check if company acknowledgment is needed
+    if (companyAcknowlegment.length === 0) {
+      setShowCompanyAgreement(true);
+      setPendingCompanyRegistration(true);
+    } else {
+      // If already acknowledged, navigate directly
+      navigate("/user/addcompany");
+    }
+  };
+
+  // Define menuItems AFTER handleAddNewCompany is defined
+  const menuItems = [
+    {
+      label: "Dashboard",
+      href: "/user/dashboard",
+      icon: <RiDashboardLine size={18} />,
+    },
+    {
+      label: "Add New Company",
+      href: "/user/addcompany",
+      icon: <RiBuilding2Line size={18} />,
+      onClick: handleAddNewCompany,
+    },
+    {
+      label: "My Companies",
+      href: "/user/companylist",
+      icon: <RiBuilding2Line size={18} />,
+    },
+    {
+      label: "Manage Signatory",
+      icon: <RiUserLine size={18} />,
+      dropdown: [
+        {
+          label: "Add New Signatory",
+          href: "/user/add-new-signatory",
+          icon: <RiUserLine size={16} />,
+        },
+        {
+          label: "Signatory List",
+          href: "/user/signatorylist",
+          icon: <RiVipCrownLine size={16} />,
+        },
+        {
+          label: "Approve Signatories",
+          href: "/user/approval/signature",
+          icon: <RiUserLine size={16} />,
+        },
+      ],
+    },
+    {
+      label: "Settings",
+      icon: <RiSettingsLine size={18} />,
+      dropdown: [
+        {
+          label: "Profile Settings",
+          href: "/user/settings/profile",
+          icon: <RiUserLine size={16} />,
+        },
+      ],
+    },
+  ];
+
+  useEffect(() => {
+    const checkScreen = () => {
+      if (window.innerWidth < 786) {
+        setInternalIsCollapsed(true);
+        setIsCollapsed && setIsCollapsed(true);
+      } else {
+        setInternalIsCollapsed(false);
+        setIsCollapsed && setIsCollapsed(false);
+      }
+    };
+
+    checkScreen();
+    window.addEventListener("resize", checkScreen);
+
+    return () => window.removeEventListener("resize", checkScreen);
+  }, [internalIsCollapsed]);
+
   useEffect(() => {
     const storedData = localStorage.getItem("OwnerLoginData");
 
@@ -186,11 +199,9 @@ export default function ModuleSideNav({
       const currentTime = new Date().getTime();
 
       if (userLogin.expiry && currentTime > userLogin.expiry) {
-        // ⏰ Token expired → clear and redirect to login
         localStorage.removeItem("OwnerLoginData");
         navigate("/user/login");
       } else {
-        // ✅ Token valid → auto logout when it expires
         const timeLeft = userLogin.expiry - currentTime;
 
         const logoutTimer = setTimeout(() => {
@@ -198,18 +209,18 @@ export default function ModuleSideNav({
           navigate("/user/login");
         }, timeLeft);
 
-        // Cleanup on component unmount
         return () => clearTimeout(logoutTimer);
       }
     } else {
-      // ❌ No login data at all → redirect to login
       navigate("/user/login");
     }
   }, [navigate]);
 
   useEffect(() => {
     checkUserLogin();
+    getUserAcknowlegment();
   }, []);
+
   const checkUserLogin = async () => {
     let formData = {
       user_id: userLogin.id,
@@ -229,15 +240,67 @@ export default function ModuleSideNav({
       console.error("Error fetching modules:", err);
     }
   };
+
+  const getUserAcknowlegment = async () => {
+    let formData = {
+      user_id: userLogin.id,
+    };
+    try {
+      const res = await axios.post(apiURL + "getUserAcknowlegment", formData, {
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      });
+      console.log(res.data);
+      setcompanyAcknowlegment(res.data.results);
+    } catch (err) { }
+  };
+
+  const handleAcceptCompanyAgreement = async () => {
+    try {
+      const formData = {
+        user_id: userLogin.id,
+        status: 'Yes'
+      };
+
+      const response = await axios.post(apiURL + "saveCompanyAcknowlegment", formData, {
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      });
+      console.log(response.data)
+      if (response.data.status === "1" || response.data.success) {
+        setcompanyAcknowlegment([{ acknowledged: true }]);
+        setShowCompanyAgreement(false);
+        setmessageAll("Company registration agreement accepted successfully!");
+        setTimeout(() => {
+          if (pendingCompanyRegistration) {
+            navigate("/user/addcompany");
+            setPendingCompanyRegistration(false);
+          }
+          setmessageAll(""); // Clear message after navigation
+        }, 2500);
+
+      }
+    } catch (err) {
+      console.error("Error saving acknowledgment:", err);
+    }
+  };
+
+  const handleCloseCompanyAgreement = () => {
+    setShowCompanyAgreement(false);
+    setPendingCompanyRegistration(false);
+  };
+
   useEffect(() => {
     getModules();
-    // Check if there's a previously selected dropdown in storage
     const selectedDropdown = localStorage.getItem("selectedDropdown");
     if (selectedDropdown) {
       setOpenDropdown(Number(selectedDropdown));
     }
 
-    // Check if sidebar state is saved in localStorage
     const savedSidebarState = localStorage.getItem("sidebarCollapsed");
     if (savedSidebarState !== null) {
       const savedState = JSON.parse(savedSidebarState);
@@ -283,19 +346,53 @@ export default function ModuleSideNav({
   };
 
   const location = useLocation();
-
-  const shouldBeActive = location.pathname === "/advicevideos";
-
-  // Determine if sidebar should appear expanded (either not collapsed or hovered while collapsed)
   const isSidebarExpanded = !isCollapsed || isHovered;
   const activePathNew = getMappedMenuHref(location.pathname);
+
   return (
     <>
+      {messageAll && (
+        <div
+          className={`shadow-lg ${errr ? "error_pop" : "success_pop"}`}
+          style={{
+            position: 'fixed',
+            top: '20px',
+            right: '20px',
+            zIndex: 9999,
+            padding: '15px 20px',
+            borderRadius: '8px',
+            backgroundColor: errr ? '#f8d7da' : '#d4edda',
+            color: errr ? '#721c24' : '#155724',
+            border: `1px solid ${errr ? '#f5c6cb' : '#c3e6cb'}`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            minWidth: '300px'
+          }}
+        >
+          <div className="d-flex align-items-center gap-2">
+            <span className="d-block">{messageAll}</span>
+          </div>
+
+          <button
+            type="button"
+            className="close_btnCros"
+            onClick={() => setmessageAll("")}
+            style={{
+              background: 'none',
+              border: 'none',
+              fontSize: '20px',
+              cursor: 'pointer',
+              marginLeft: '10px'
+            }}
+          >
+            ×
+          </button>
+        </div>
+      )}
       <div
         className={`main_sidenav scroll_nonw d-flex flex-column gap-5  ${isCollapsed ? "collapsed p-3" : "p-4"
           }`}
-      // onMouseEnter={handleMouseEnter}
-      // onMouseLeave={handleMouseLeave}
       >
         <div
           className={`d-flex align-items-center  gap-3 ${isCollapsed ? "justify-content-center" : "justify-content-between"
@@ -318,10 +415,10 @@ export default function ModuleSideNav({
             </button>
           </MenuButtonWrapper>
         </div>
+
         <NavContainer isOpen={isSidebarExpanded}>
           <NavList>
             {menuItems.map((item, index) => {
-              // Determine if parent dropdown should be open
               const isDropdownOpen =
                 openDropdown === index ||
                 (item.dropdown &&
@@ -389,13 +486,9 @@ export default function ModuleSideNav({
                           title={item.label}
                           className={`${isSidebarExpanded ? "" : "p-0"}`}
                         >
-                          {/* Static dropdown items */}
                           <hr className="my-2" />
                           {item.dropdown &&
                             item.dropdown.map((sub, subIndex) => {
-                              const activePath =
-                                customActiveMap[location.pathname] ||
-                                location.pathname;
                               const isSubActive =
                                 activePathNew === sub.href ||
                                 activePathNew.startsWith(sub.href);
@@ -414,7 +507,6 @@ export default function ModuleSideNav({
                               );
                             })}
 
-                          {/* Dynamic dropdown items */}
                           {item.dynamicDropdownKey === "modules" && (
                             <>
                               {getdatamodule.map((modItem, modIndex) => {
@@ -440,7 +532,6 @@ export default function ModuleSideNav({
                                 );
                               })}
 
-                              {/* Static advice videos */}
                               <li className="list-none">
                                 <Link
                                   title="VIDEO CONTENT: Investor Presentation Structure - Expert Advice Video"
@@ -462,15 +553,28 @@ export default function ModuleSideNav({
                       )}
                     </>
                   ) : (
-                    <Link
-                      to={item.href}
-                      title={item.label}
-                      className={`sidebar d-flex align-items-start gap-2 ${isSidebarExpanded ? "" : "w-fit"
-                        } ${isActive ? "active" : ""}`}
-                    >
-                      {item.icon}
-                      {isSidebarExpanded && item.label}
-                    </Link>
+                    item.onClick ? (
+                      <div
+                        onClick={item.onClick}
+                        title={item.label}
+                        className={`sidebar d-flex align-items-start gap-2 ${isSidebarExpanded ? "" : "w-fit"
+                          } ${isActive ? "active" : ""}`}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        {item.icon}
+                        {isSidebarExpanded && item.label}
+                      </div>
+                    ) : (
+                      <Link
+                        to={item.href}
+                        title={item.label}
+                        className={`sidebar d-flex align-items-start gap-2 ${isSidebarExpanded ? "" : "w-fit"
+                          } ${isActive ? "active" : ""}`}
+                      >
+                        {item.icon}
+                        {isSidebarExpanded && item.label}
+                      </Link>
+                    )
                   )}
                 </NavItem>
               );
@@ -479,6 +583,15 @@ export default function ModuleSideNav({
         </NavContainer>
         <IPAddress />
       </div>
+
+      {showCompanyAgreement && (
+        <CompanyRegistrationPopup
+          show={showCompanyAgreement}
+          onClose={handleCloseCompanyAgreement}
+          onAccept={handleAcceptCompanyAgreement}
+          companyName=""
+        />
+      )}
 
       <style jsx>{`
         .main_sidenav {

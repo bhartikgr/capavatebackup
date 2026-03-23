@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import '../../../assets/style/sidebar.css'
 import { Link, useLocation } from 'react-router-dom'
-import { Menu, ChevronLeft, Users, Briefcase, MapPin, DollarSign, Award, Heart, UserPlus, Eye, EyeOff, Globe, TrendingUp, Shield, Zap } from 'lucide-react'
+import { Menu, ChevronLeft, Users, Briefcase, MapPin, DollarSign, Award, Heart, UserPlus, Eye, EyeOff, Globe, TrendingUp, Shield, HandCoins, Building2 } from 'lucide-react'
 import AngelNetworkJoinWaitlist from './AngelNetworkJoinWaitlist.jsx'
 import {
   RiBuildingLine,
@@ -11,11 +11,17 @@ import { IoIosArrowDown } from 'react-icons/io'
 import { API_BASE_URL } from '../../../config/config.js';
 import axios from "axios";
 
+// ✅ STATIC MENU ITEMS - No dynamic data here
 const menuItems = [
   {
     label: 'Edit Profile',
     href: '/investor/profile',
     icon: <RiBuildingLine size={18} />
+  },
+  {
+    label: 'Company List',
+    href: '/investor/company-list',
+    icon: <Building2 size={18} />
   },
   {
     label: 'Cap Table Rules',
@@ -97,47 +103,11 @@ export default function ModuleSideNav() {
     return false;
   };
 
-  const renderBadge = item => {
-    if (item.status) {
-      return (
-        <span
-          className={`menu_value ${item.status === 'confirmed'
-            ? 'bg-success'
-            : item.status === 'pending'
-              ? 'bg-danger'
-              : 'bg-secondary'
-            }`}
-        >
-          {item.status}
-        </span>
-      )
-    }
-    if (item.value) {
-      return <span className='menu_value bg-success'>{item.value}</span>
-    }
-    return null
-  }
 
-  const isParentActive = (dropdown) => {
-    return dropdown?.some((sub) =>
-      sub.subItems
-        ? sub.subItems.some((item) => {
-          const current = location.pathname;
-          if (current.startsWith(item.href)) return true;
-          if (
-            relatedRoutes[item.href]?.some((route) =>
-              current === route || current.startsWith(route + '/')
-            )
-          ) {
-            return true;
-          }
-          return false;
-        })
-        : location.pathname.startsWith(sub.href)
-    );
-  };
 
-  // Investor profile data
+
+
+  // Investor profile data - STATIC
   const investorProfile = {
     firstName: "John",
     lastName: "Doe",
@@ -262,6 +232,7 @@ export default function ModuleSideNav() {
       }
     }));
   };
+
   return (
     <>
       <div
@@ -358,110 +329,40 @@ export default function ModuleSideNav() {
         )}
 
         <ul className='nav flex-column gap-1 w-100'>
-          {menuItems.map((item, index) => (
-            <li key={index}>
-              {item.dropdown ? (
-                <>
-                  <div
-                    className={`sidebar_item d-flex justify-content-between align-items-center ${isParentActive(item.dropdown) ? "active" : ""}`}
-                    onClick={() => toggleDropdown(index)}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <div className="d-flex gap-2 align-items-center">
-                      {item.icon}
-                      {!isCollapsed && item.label}
-                    </div>
-                    {!isCollapsed && <IoIosArrowDown />}
-                  </div>
+          <li>
+            <Link
+              to="/investor/profile"
+              className={`sidebar_item d-flex gap-2 align-items-center ${isActive("/investor/profile") ? "active" : ""}`}
+            >
+              <RiBuildingLine size={18} />
+              {!isCollapsed && "Edit Profile"}
+            </Link>
+          </li>
 
-                  {(openDropdown === index || isParentActive(item.dropdown)) && !isCollapsed && (
-                    <ul className="submenu">
-                      {item.dropdown.map((sub, i) => (
-                        <li key={i}>
-                          {sub.subItems ? (
-                            <>
-                              <div className="sidebar_item d-flex gap-2 align-items-center fw-medium">
-                                {sub.icon}
-                                <span>{sub.label}</span>
-                              </div>
-                              <ul className="ps-4 mt-1 mb-2">
-                                {sub?.subItems && sub.subItems.length > 0 ? (
-                                  sub.subItems.map((subItem, j) => (
-                                    <li key={j}>
-                                      {subItem.modal ? (
-                                        <span
-                                          className="sidebar_item small cursor-pointer"
-                                          onClick={() => setShowModal(true)}
-                                        >
-                                          {subItem.label}
-                                        </span>
-                                      ) : subItem.href && subItem.href !== "#" ? (
-                                        <Link
-                                          to={subItem.href}
-                                          className={`sidebar_item small ${isActive(subItem.href) ? "active" : ""}`}
-                                        >
-                                          <div className="d-flex justify-content-between w-100">
-                                            <span>{subItem.label}</span>
-                                            {renderBadge(subItem)}
-                                          </div>
-                                        </Link>
-                                      ) : (
-                                        <span className="sidebar_item small">
-                                          {subItem.label}
-                                        </span>
-                                      )}
-                                    </li>
-                                  ))
-                                ) : null}
-                              </ul>
-                            </>
-                          ) : sub.href && sub.href !== "#" ? (
-                            <Link
-                              to={sub.href}
-                              className={`sidebar_item ${isActive(sub.href) ? "active" : ""}`}
-                            >
-                              <div className="d-flex justify-content-between w-100">
-                                <div className="d-flex gap-2 align-items-center">
-                                  {sub.icon}
-                                  <span>{sub.label}</span>
-                                </div>
-                                {renderBadge(sub)}
-                              </div>
-                            </Link>
-                          ) : (
-                            <span className="sidebar_item">{sub.label}</span>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </>
-              ) : item.modal ? (
-                <span
-                  className={`sidebar_item d-flex gap-2 align-items-center`}
-                  onClick={() => {
-                    if (item.modal === 'capTableRules') {
-                      setShowCapTableRules(true);
-                    }
-                  }}
-                  style={{ cursor: 'pointer' }}
-                >
-                  {item.icon}
-                  {!isCollapsed && item.label}
-                </span>
-              ) : (
-                <Link
-                  to={item.href}
-                  className={`sidebar_item d-flex gap-2 align-items-center ${isActive(item.href) ? "active" : ""}`}
-                >
-                  {item.icon}
-                  {!isCollapsed && item.label}
-                </Link>
-              )}
-            </li>
-          ))}
+          <li>
+            <Link
+              to="/investor/company-list"
+              className={`sidebar_item d-flex gap-2 align-items-center ${isActive("/investor/company-list") || location.pathname.startsWith("/investor/company/capital-round-list") || location.pathname.startsWith("/investor/company/capital-round-list/view")
+                ? "active"
+                : ""
+                }`}
+            >
+              <Building2 size={18} />
+              {!isCollapsed && "Company List"}
+            </Link>
+          </li>
 
-          {/* Angel Investor Profile Section */}
+          <li>
+            <span
+              className={`sidebar_item d-flex gap-2 align-items-center`}
+              onClick={() => setShowCapTableRules(true)}
+              style={{ cursor: 'pointer' }}
+            >
+              <Shield size={18} />
+              {!isCollapsed && "Cap Table Rules"}
+            </span>
+          </li>
+
           <li className="mt-3 px-2">
             <div
               className="d-flex justify-content-between align-items-center cursor-pointer mb-2"

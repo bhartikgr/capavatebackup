@@ -24,26 +24,18 @@ import {
 } from "../../components/Styles/RegisterStyles";
 
 import {
-  Globe,
-  User,
+
   Lock,
   Mail,
-  Linkedin,
-  MapPin,
+
   Building,
-  Building2,
-  Clipboard,
-  Users,
-  OctagonAlert,
+
 } from "lucide-react";
+import FounderRegistrationPopup from "../../components/Users/Acknowledgement/FounderRegistrationPopup";
 
 export default function Register() {
   const navigate = useNavigate();
   const [allcountry, setallcountry] = useState([]);
-  const [step1, setstep1] = useState(true);
-  const [step2, setstep2] = useState(true);
-  const [step3, setstep3] = useState(false);
-  const [step4, setstep4] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [errr, seterrr] = useState(false);
   const [dangerMessage, setdangerMessage] = useState("");
@@ -62,6 +54,9 @@ export default function Register() {
       window.location.href = "/dashboard";
     }
   }, [userdataa]);
+  const [showAgreementPopup, setShowAgreementPopup] = useState(false);
+  const [pendingPayload, setPendingPayload] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   useEffect(() => {
     if (referralCode) {
       checkreferralCode();
@@ -103,6 +98,8 @@ export default function Register() {
   };
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Email match validation
     if (formData.email !== "" && formData.confirm_email !== "") {
       if (formData.email !== formData.confirm_email) {
         setFormErrors((prev) => ({
@@ -112,6 +109,8 @@ export default function Register() {
         return;
       }
     }
+
+    // Required fields validation
     if (
       !formData.first_name ||
       !formData.password ||
@@ -121,15 +120,15 @@ export default function Register() {
     ) {
       return;
     }
+
+    // Password validation
     const password = formData.password;
-    const passwordRegex =
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
 
     if (!passwordRegex.test(password)) {
       setFormErrors((prev) => ({
         ...prev,
-        password:
-          "Password must be at least 8 characters long and include uppercase, lowercase, number, and special character.",
+        password: "Password must be at least 8 characters long and include uppercase, lowercase, number, and special character.",
       }));
       return;
     } else {
@@ -138,21 +137,38 @@ export default function Register() {
         password: "",
       }));
     }
+    const payload = {
+      ...formData,
+      referralCode: referralCode,
+    };
+    seterrr(false);
+    setPendingPayload(payload); // Store the payload for later submission
+    setShowAgreementPopup(true); // Show the agreement popup
+  };
+
+  const handleAcceptAgreement = async () => {
+    setIsSubmitting(true);
+
     try {
-      const payload = {
-        ...formData,
-        referralCode: referralCode, // 👈 include the referral code here
+      // Combine registration data with agreement status
+      const registerPayload = {
+        ...pendingPayload,
+        founder_acknowlegment: 'Yes', // Add agreement status
       };
-      const res = await axios.post(apiURL + "checkUserEmail", payload, {
+
+      // Single API call for registration with agreement status
+      const registerResponse = await axios.post(apiURL + "checkUserEmail", registerPayload, {
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json",
         },
       });
-      if (res.data.status === "2") {
-        seterrr(true);
-      } else {
+
+      if (registerResponse.data.status === "1") {
         seterrr(false);
+        setdangerMessage("Registration successful!");
+
+        // Clear form data
         setFormData({
           first_name: "",
           last_name: "",
@@ -161,14 +177,37 @@ export default function Register() {
           confirm_email: "",
           phone: "",
         });
-      }
 
-      setdangerMessage(res.data.message);
+        // Close popup
+        setShowAgreementPopup(false);
+        setPendingPayload(null);
+
+        // Redirect after success
+        setTimeout(() => {
+          setdangerMessage("");
+          // navigate to login or dashboard
+          // navigate("/user/login");
+        }, 2000);
+      } else {
+        seterrr(true);
+        setdangerMessage(registerResponse.data.message || "Registration failed");
+      }
+    } catch (err) {
+      console.error("Error during registration:", err);
+      seterrr(true);
+      setdangerMessage("Error during registration. Please try again.");
+    } finally {
+      setIsSubmitting(false);
       setTimeout(() => {
         seterrr(false);
         setdangerMessage("");
       }, 5500);
-    } catch (err) { }
+    }
+  };
+
+  const handleClosePopup = () => {
+    setShowAgreementPopup(false);
+    setPendingPayload(null);
   };
   const [formData, setFormData] = useState({
     first_name: "",
@@ -485,6 +524,12 @@ export default function Register() {
           </div>
         </div>
       </div>
+      <FounderRegistrationPopup
+        show={showAgreementPopup}
+        onClose={handleClosePopup}
+        onAccept={handleAcceptAgreement}
+        userName={formData.first_name}
+      />
     </>
   );
 }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import DataTable from "react-data-table-component";
-import TopBar from "../../../components/Users/TopBar";
+import SideBar from '../../../components/social/SideBar'
+import TopBar from '../../../components/social/TopBar'
 import ModuleSideNav from "../../../components/Users/ModuleSideNav.jsx";
 import { IoCloseCircleOutline } from "react-icons/io5";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -467,156 +468,147 @@ export default function InvestorReport() {
   //Capital Round
   return (
     <>
-      <>
-        <Wrapper>
-          <div className="fullpage d-block">
-            <div className="d-flex align-items-start gap-0">
-              <ModuleSideNav
-                isCollapsed={isCollapsed}
-                setIsCollapsed={setIsCollapsed}
-              />
-              <div
-                className={`global_view ${isCollapsed ? "global_view_col" : ""
-                  }`}
-              >
-                <TopBar />
-                <SectionWrapper className="d-block p-md-4 p-3">
-                  <div className="container-fluid">
-                    {messagesuccessError && (
-                      <p
-                        className={
-                          errr ? " mt-3 error_pop" : "success_pop mt-3"
-                        }
-                      >
-                        {messagesuccessError}
-                      </p>
-                    )}
-                    <DataRoomSection className="d-flex flex-column gap-2">
-                      {/* <div className="titleroom d-flex justify-content-between align-items-center border-bottom pb-3">
+
+      <main>
+        <div className='d-flex align-items-start gap-0'>
+          <SideBar />
+          <div className='d-flex flex-grow-1 flex-column gap-0'>
+            <TopBar />
+            <SectionWrapper className="d-block p-md-4 p-3">
+              <div className="container-fluid">
+                {messagesuccessError && (
+                  <p
+                    className={
+                      errr ? " mt-3 error_pop" : "success_pop mt-3"
+                    }
+                  >
+                    {messagesuccessError}
+                  </p>
+                )}
+                <DataRoomSection className="d-flex flex-column gap-2">
+                  {/* <div className="titleroom d-flex justify-content-between align-items-center border-bottom pb-3">
                        
                         <h4>Investor Report</h4>
                       </div> */}
 
-                      <div className="d-flex justify-content-between my-2 p-0">
-                        <div className="pb-3 bar_design">
-                          <h4 className="h5 mb-0">Investor Report</h4>
-                        </div>
-                        <input
-                          type="search"
-                          placeholder="Search Here..."
-                          className="form-control"
-                          value={searchText}
-                          onChange={(e) => setSearchText(e.target.value)}
-                          style={{
-                            padding: "10px 15px",
-                            width: "100%",
-                            maxWidth: "300px",
-                            fontSize: "14px",
-                            borderRadius: "10px",
-                          }}
-                        />
-                      </div>
-                      <div className="d-flex  flex-column justify-content-between align-items-start tb-box">
-                        <DataTable
-                          customStyles={customStyles}
-                          conditionalRowStyles={conditionalRowStyles}
-                          columns={columns}
-                          className="datatb-report"
-                          data={filteredData}
-                          pagination
-                          highlightOnHover
-                          striped
-                          responsive
-                        />
-                      </div>
-                    </DataRoomSection>
-                    <DataRoomSection className="d-flex flex-column gap-2">
-                      {/* <div className="titleroom d-flex justify-content-between align-items-center border-bottom pb-3">
-                       
-                        <h4>Investor Report</h4>
-                      </div> */}
-                      <div className="titleroom d-flex justify-content-between align-items-center border-bottom pb-3"></div>
-                      <div className="d-flex justify-content-between my-2 p-0">
-                        <div className="pb-3 bar_design">
-                          <h4 className="h5 mb-0">
-                            DataRoom Management Documents
-                          </h4>
-                        </div>
-                        <input
-                          type="search"
-                          placeholder="Search Here..."
-                          className="form-control"
-                          value={searchTextdue}
-                          onChange={(e) => setSearchTextdue(e.target.value)}
-                          style={{
-                            padding: "10px 15px",
-                            width: "100%",
-                            maxWidth: "300px",
-                            fontSize: "14px",
-                            borderRadius: "10px",
-                          }}
-                        />
-                      </div>
-                      <div className="d-flex flex-column justify-content-between align-items-start tb-box">
-                        <DataTable
-                          customStyles={customStyles}
-                          conditionalRowStyles={conditionalRowStyles}
-                          columns={columnsdue}
-                          className="datatb-report"
-                          data={filteredDatadue}
-                          pagination
-                          highlightOnHover
-                          striped
-                          responsive
-                        />
-                      </div>
-                    </DataRoomSection>
-                    <DataRoomSection className="d-flex flex-column gap-2">
-                      {/* <div className="titleroom d-flex justify-content-between align-items-center border-bottom pb-3">
-                       
-                        <h4>Investor Report</h4>
-                      </div> */}
-                      <div className="titleroom d-flex justify-content-between align-items-center border-bottom pb-3"></div>
-                      <div className="d-flex justify-content-between my-2 p-0">
-                        <div className="pb-3 bar_design">
-                          <h4 className="h5 mb-0">Capital Round Documents</h4>
-                        </div>
-                        <input
-                          type="search"
-                          placeholder="Search Here..."
-                          className="form-control"
-                          value={searchTextcapital}
-                          onChange={(e) => setSearchTextcapital(e.target.value)}
-                          style={{
-                            padding: "10px 15px",
-                            width: "100%",
-                            maxWidth: "300px",
-                            fontSize: "14px",
-                            borderRadius: "10px",
-                          }}
-                        />
-                      </div>
-                      <div className="d-flex flex-column justify-content-between align-items-start tb-box">
-                        <DataTable
-                          customStyles={customStyles}
-                          conditionalRowStyles={conditionalRowStyles}
-                          columns={columnscapital}
-                          className="datatb-report"
-                          data={filteredDatacapital}
-                          pagination
-                          highlightOnHover
-                          striped
-                          responsive
-                        />
-                      </div>
-                    </DataRoomSection>
+                  <div className="d-flex justify-content-between my-2 p-0">
+                    <div className="pb-3 bar_design">
+                      <h4 className="h5 mb-0">Investor Report</h4>
+                    </div>
+                    <input
+                      type="search"
+                      placeholder="Search Here..."
+                      className="form-control"
+                      value={searchText}
+                      onChange={(e) => setSearchText(e.target.value)}
+                      style={{
+                        padding: "10px 15px",
+                        width: "100%",
+                        maxWidth: "300px",
+                        fontSize: "14px",
+                        borderRadius: "10px",
+                      }}
+                    />
                   </div>
-                </SectionWrapper>
+                  <div className="d-flex  flex-column justify-content-between align-items-start tb-box">
+                    <DataTable
+                      customStyles={customStyles}
+                      conditionalRowStyles={conditionalRowStyles}
+                      columns={columns}
+                      className="datatb-report"
+                      data={filteredData}
+                      pagination
+                      highlightOnHover
+                      striped
+                      responsive
+                    />
+                  </div>
+                </DataRoomSection>
+                <DataRoomSection className="d-flex flex-column gap-2">
+                  {/* <div className="titleroom d-flex justify-content-between align-items-center border-bottom pb-3">
+                       
+                        <h4>Investor Report</h4>
+                      </div> */}
+                  <div className="titleroom d-flex justify-content-between align-items-center border-bottom pb-3"></div>
+                  <div className="d-flex justify-content-between my-2 p-0">
+                    <div className="pb-3 bar_design">
+                      <h4 className="h5 mb-0">
+                        DataRoom Management Documents
+                      </h4>
+                    </div>
+                    <input
+                      type="search"
+                      placeholder="Search Here..."
+                      className="form-control"
+                      value={searchTextdue}
+                      onChange={(e) => setSearchTextdue(e.target.value)}
+                      style={{
+                        padding: "10px 15px",
+                        width: "100%",
+                        maxWidth: "300px",
+                        fontSize: "14px",
+                        borderRadius: "10px",
+                      }}
+                    />
+                  </div>
+                  <div className="d-flex flex-column justify-content-between align-items-start tb-box">
+                    <DataTable
+                      customStyles={customStyles}
+                      conditionalRowStyles={conditionalRowStyles}
+                      columns={columnsdue}
+                      className="datatb-report"
+                      data={filteredDatadue}
+                      pagination
+                      highlightOnHover
+                      striped
+                      responsive
+                    />
+                  </div>
+                </DataRoomSection>
+                <DataRoomSection className="d-flex flex-column gap-2">
+                  {/* <div className="titleroom d-flex justify-content-between align-items-center border-bottom pb-3">
+                       
+                        <h4>Investor Report</h4>
+                      </div> */}
+                  <div className="titleroom d-flex justify-content-between align-items-center border-bottom pb-3"></div>
+                  <div className="d-flex justify-content-between my-2 p-0">
+                    <div className="pb-3 bar_design">
+                      <h4 className="h5 mb-0">Capital Round Documents</h4>
+                    </div>
+                    <input
+                      type="search"
+                      placeholder="Search Here..."
+                      className="form-control"
+                      value={searchTextcapital}
+                      onChange={(e) => setSearchTextcapital(e.target.value)}
+                      style={{
+                        padding: "10px 15px",
+                        width: "100%",
+                        maxWidth: "300px",
+                        fontSize: "14px",
+                        borderRadius: "10px",
+                      }}
+                    />
+                  </div>
+                  <div className="d-flex flex-column justify-content-between align-items-start tb-box">
+                    <DataTable
+                      customStyles={customStyles}
+                      conditionalRowStyles={conditionalRowStyles}
+                      columns={columnscapital}
+                      className="datatb-report"
+                      data={filteredDatacapital}
+                      pagination
+                      highlightOnHover
+                      striped
+                      responsive
+                    />
+                  </div>
+                </DataRoomSection>
               </div>
-            </div>
+            </SectionWrapper>
           </div>
-        </Wrapper>
-      </>
+        </div>
+      </main>
 
       {IsModalOpenAiResponseSummary && (
         <AiInvestorReport
